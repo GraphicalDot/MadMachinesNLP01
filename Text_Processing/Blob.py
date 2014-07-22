@@ -2,6 +2,8 @@
 import os
 import sys
 import inspect
+import nltk
+from nltk.tag.hunpos import HunposTagger
 db_script_path = os.path.dirname(os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe()))))
 sys.path.insert(0, db_script_path)
 from DB_Scripts import GetReviews
@@ -10,7 +12,7 @@ from textblob import TextBlob
 import re
 
 
-def ProcessingWithBlob:
+class ProcessingWithBlob:
 
 	def __init__(self, text):
 		"""
@@ -55,33 +57,31 @@ def ProcessingWithBlob:
 					polarised_sentences.append(result)
 		return polarised_sentences
 
-class PosTags:
 
+
+
+
+class PosTags:
 	def __init__(self, text):
 		"""
 		hunpos tagger only takes tokenize word for tagging
+		Args:
+			text: sentence
 		"""
 		self.text = text
-		self.sent_tokenizer = nltk.data.load('tokenizers/punkt/english.pickle')
-		self.hunpos = ht = HunposTagger(path_to_model='/usr/local/bin/en_wsj.model', path_to_bin=  '/usr/local/bin/trunk/tagger.native')
+		self.hunpos = ht = HunposTagger(path_to_model='/usr/local/bin/en_wsj.model', path_to_bin= '/usr/local/bin/trunk/tagger.native')
 		self.blob = TextBlob(self.text)
 
 
 	def hunpos_tagger(self):
-		tags = list()
-		for sentence in sent_tokenizer.tokenize(self.text.encode("utf-8")):
-			tags.append((sentence, self.hunpos.tag(nltk.word_tokenize(sentence))))
-		return tags
+		return 	self.hunpos.tag(nltk.word_tokenize(self.text))
 
 	def blob_tagger(self):
 		return self.blob.pos_tags
 
 
 	def nltk_tagger(self):
-		tags = list()
-		for sentence in sent_tokenizer.tokenize(self.text.encode("utf-8")):
-			tags.append((sentence, nltk.pos_tag(nltk.word_tokenize(sentence))))
-		return tags
+		return	nltk.pos_tag(nltk.word_tokenize(self.text))
 
 
 
@@ -89,7 +89,7 @@ class CustomParsing:
 
 	def __init__(self, sentences):
 		"""
-		sentences will be the list of tuples where first element is the sentence and the other element will the the pos 
+		sentences will be the list of tuples where first element is the sentence and the other element will the the pos
 		tag of the same sentence, The other element can be pos tags with the hunpos_tags, nltk tags or TextBlob tags
 
 		"""
@@ -97,10 +97,3 @@ class CustomParsing:
 		self.sentence = sentences
 		self.grammer = r"""Noun_Phrases:{<JJ.*>?<NN>*<NN>}"""
 		self.chunk_parser = nltk.RegexpParser(grammer)
-
-
-
-
-
-
-
