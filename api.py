@@ -55,7 +55,12 @@ class ProcessText(restful.Resource):
 			element["tag"] = chunk[1]
 			result.append(element)
 
-		return result
+		return {
+				"result": result,
+				"success": True,
+				"error": False,
+				"overall_sentiment": ProcessingWithBlob.new_blob_polarity(text)
+				}
 
 
 class cd:
