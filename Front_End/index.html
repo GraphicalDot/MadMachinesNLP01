@@ -1,0 +1,687 @@
+<html>
+	<head>
+		<title img=>Easy sales POS</title>
+		<meta name="description" content="Easy sales client module">
+		<meta charset="UTF-8">
+		<link href="css/bootstrap.css" rel="stylesheet">
+		<link href="css/bootstrap-responsive.css" rel="stylesheet">
+		<link href="css/tablecloth.css" rel="stylesheet">
+		<script src="js/libs/jquery/jquery.js"></script>
+		<script type="text/javascript" src="js/libs/bootstrap/bootstrap.js"></script>
+		<script type="text/javascript" src="js/libs/bootstrap/bootstrap-tooltip.js"></script>
+		<script type="text/javascript" src="js/libs/bootstrap/bootstrap-popover.js"></script>
+		<script type="text/javascript" src="js/libs/bootstrap/bootstrap-transition.js"></script>
+		<script type="text/javascript" src="js/libs/bootstrap/bootstrap-dropdown.js"></script>
+		<script type="text/javascript" src="js/libs/bootstrap/twitter-bootstrap-hover-dropdown.js"></script>
+		<script type="text/javascript" src="js/libs/handlebars/handlebars-1.0.rc.1.min.js"></script>
+		<script type="text/javascript" src="js/libs/mustache/mustache.js"></script>
+		<script type="text/javascript" src="js/libs/underscore/underscore.js"></script>
+		<script type="text/javascript" src="js/libs/underscore/underscore.string.min.js"></script>
+		<script type="text/javascript" src="js/libs/bootbox/bootbox.js"></script>
+		<script type="text/javascript" src="js/libs/tablecloth/jquery.metadata.js"></script>
+		<script type="text/javascript" src="js/libs/tablecloth/jquery.tablesorter.js"></script>
+		<script type="text/javascript" src="js/libs/tablecloth/jquery.tablecloth.js"></script>
+		<script type="text/javascript" src="js/libs/backbone/backbone.js"></script>
+		<script type="text/javascript" src="js/libs/Jquery-validate/jquery.validate.js"></script>
+		<script type="text/javascript" src="js/libs/jquery-cookie/jquery.cookie.js"></script>
+
+	</head>
+	<body>
+
+	<script type="text/x-mustache-template" id="login-template">
+		<fieldset class="well" >
+			<h4>Login</h4>
+
+            <div class="control-group">
+                <label class="control-label" for="LoginUserName">Username</label>
+                    <div class="controls">
+			    <input  type="text" id="username" class="input-xlarge span5" required="required" placeholder="User name" >
+		    </div>
+            </div>
+
+
+            <div class="control-group">
+                <label class="control-label" for="LoginPassword">Password</label>
+                    <div class="controls">
+			    <input type="password" name="password" id="password" class="input-xlarge span5" required="required" placeholder="Password">
+	
+                    </div>
+	    </div>
+
+			<div class="form-actions">
+				<button type="submit" id="login" class="btn btn-primary">Login</button>
+				<input type="reset" class="btn" value="Cancel">
+			</div>
+
+		</fieldset>
+	</script>
+
+
+	<script type="text/x-mustache-template" id="manage-merchants-template">
+		<thead>  
+			<tr> 
+				<th>Company name</th> 	
+            			<th>Contact name</th>  
+            			<th>Email</th>  
+            			<th>Deactivated</th>  
+	    			<th>Mobile Number</th>
+	    			<th>Plan</th>
+	    			<th>Pricing</th>
+	    			<th>Actions</th>
+    			</tr> 
+		</thead>
+	</script>
+	<script type="text/x-mustache-template" id="merchantadd-template">
+			<td>{{Company_name}}</td>
+	    		<td>{{Contact_name}}</td>
+	    		<td>{{Email}}</td>
+	    		<td>{{Deactivated}}</td>
+	    		<td>{{Mobile_number}}</td>
+	    		<td>{{Plan_name}}</td>
+	    		<td>{{Plan_pricing_name}}</td>
+			<td>
+		 		<button class="btn btn-mini btn-primary" type="button" id="editMerchant">Edit</button>
+		 		<button class="btn btn-mini btn-danger" type="button" id="deleteMerchant">Deactivate</button>
+	 		</td>
+	</script>
+	
+	
+
+    <script type="text/x-mustache-template" id="form-template">
+
+		<fieldset class="well">
+			<h4>Create Merchant</h4>
+
+            <div class="control-group">
+                <label class="control-label" for="inputCompanyName">Company name</label>
+                    <div class="controls">
+                        <input type="text" id="inputCompanyName" name="company_name" class="input-xlarge span5" required="required"
+                    data-error="Please give a company name." placeholder="Company name">
+                    </div>
+            </div>
+            <div class="control-group">
+                <label class="control-label" for="inputFullName">Contact Name</label>
+                    <div class="controls">
+                        <input  type="text" id="inputFullName" name="contact_name" class="span5" required="required" placeholder="full name of user" >
+                    </div>
+            </div>
+
+
+            <div class="control-group">
+                <label class="control-label" for="inputMobileNumber">Mobile number</label>
+                    <div class="controls">
+                        <input type="tel" id="inputMobileNumber" name="mobile_number" class="input-xlarge span5" pattern="[0-9]{10}"
+                    data-error="Please give a correct mobile number" placeholder="Mobile number">
+                    </div>
+	    </div>
+
+
+            <div class="control-group">
+		    <label class="control-label" for="inputPhoneNumber">Phone number</label>
+                    <div class="controls">
+                        <input type="tel" id="inputPhoneNumber" name="phone_number" class="input-xlarge span5" required="required"
+			pattern="[0-9]{10}" placeholder="phone number">
+                    </div>
+            </div>
+
+            <div class="control-group">
+                <label class="control-label" for="inputAddress">Address</label>
+                    <div class="controls">
+                        <input type="text" id="inputAddress" name="address" class="input-xlarge span5" 
+                    data-error="Please give a correct address" placeholder="address">
+                    </div>
+	    </div>
+
+            <div class="control-group">
+                <label class="control-label" for="inputEmail">E-mail Address</label>
+                    <div class="controls">
+                        <input type="email" id="inputEmail" name="email" class="input-xlarge span5" required="required"
+                    data-error="Please give a correct e-mail address." placeholder="email address" >
+                    </div>
+	    </div>
+
+
+	    <h5><b>Member Details</b></h5>
+
+            <div class="control-group">
+                <label class="control-label">Member Name</label>
+                    <div class="controls">
+                        <input type="text"  name="member_name" class="input-xlarge span5" placeholder="Memeber Name">
+                    </div>
+	    </div>
+            <div class="control-group">
+                <label class="control-label">Member Username</label>
+                    <div class="controls">
+                        <input type="text" name="member_username" class="input-xlarge span5" placeholder="memeber username">
+                    </div>
+	    </div>
+
+            <div class="control-group">
+		    <label class="control-label">Member Password</label>
+                    <div class="controls">
+                        <input type="password" name="member_password" id="password" class="input-xlarge span5"  placeholder="member password" >
+                    </div>
+	    </div>
+            <div class="control-group">
+		    <label class="control-label">Member Confirm Password</label>
+		    <div class="controls">
+                        <input type="password" name="member_confirm_password" id="confirmPassword"  class="input-xlarge span5"  placeholder="member password" >
+			<span id="passwordMessege" style="color: red"></span>
+		</div>
+	</div>
+	    </div>
+
+            <div class="control-group">
+                <label class="control-label">Memeber Email</label>
+                    <div class="controls">
+                        <input type="email" name="member_email" class="input-xlarge span5" placeholder="email">
+                    </div>
+	    </div>
+            <div class="control-group">
+                <label class="control-label">Member Contact Number</label>
+                    <div class="controls">
+                        <input type="text" id="accountStatus" name="Account Status" class="input-xlarge span5" placeholder="memeber contact number">
+                    </div>
+	    </div>
+
+	    <h5><b>Account Details</b></h5>
+            <div class="control-group">
+                <label class="control-label" for="accountStatus">Account Status</label>
+                    <div class="controls">
+                        <input type="text" id="accountStatus" name="Account Status" class="input-xlarge span5" 
+                    data-error="Please give a correct Member name." placeholder="Account Status" value="active" id="inputDiabled"disabled>
+                    </div>
+	    </div>
+
+            <div class="control-group">
+                <label class="control-label" for="inputAccountActivationDate">Account activation date</label>
+                    <div class="controls">
+                        <input type="date" id="inputAccountActivationDate" name="Account activation date" class="input-xlarge span5" 
+                    data-error="Please give a corret Account activation date." placeholder="Account activation date">
+                    </div>
+            </div>
+
+            <div class="control-group">
+                <label class="control-label" for="inputAccountActivationEndDate">Activation end Date</label>
+                    <div class="controls">
+                        <input type="date" id="inputAccountActivationEndDate" name="Account activation enddate" class="input-xlarge span5" 
+                    data-error="Please give a correct activation date." placeholder="Activation end date">
+                    </div>
+            </div>
+
+
+            <div class="control-group">
+                <label class="control-label" for="inputLastPaymentDate">Last Payment Date</label>
+                    <div class="controls">
+                        <input type="date" id="inputLastPaymentDate" name="Last payment date" class="input-xlarge span5" 
+                    data-error="Please give a correct grace period." placeholder="LastPayment Date">
+                    </div>
+	    </div>
+
+
+            <div class="control-group">
+                <label class="control-label" for="inputLastPaymentAmount">Last Payment Amount  </label>
+		<div class="controls">
+		       <div class="input-prepend span5">
+			<span class="add-on span2">Rs</span>
+                        <input type="text" id="inputLastPaymentAmount" id="prependedInput" name="Last payment amount" class="input-xlarge span10" 
+                    data-error="Please give a correct grace period." placeholder="Last Payment Amount">
+	    </div>
+    </div>
+            </div>
+	    
+	    <div class="control-group">
+                <label class="control-label" for="plan">Plan</label>
+		<div class="controls">
+			<select id="plan" class="input-xlarge span5"> 
+			</select>
+	    	</div>
+            </div>
+	    <div class="control-group">
+                <label class="control-label" for="pricing">Pricing</label>
+		<div class="controls">
+			<select id="pricing" class="input-xlarge span5"> 
+			</select>
+	    	</div>
+            </div>
+
+			<!-- Input type="button" -->
+			<div class="form-actions">
+				<button id="submitForm" type="submit" class="btn btn-primary">Create</button>
+				<input type="reset" class="btn" value="Cancel">
+			</div>
+		</fieldset>
+
+
+    </script>
+
+	<script type="text/x-mustache-template" id="login-template">
+		<fieldset class="well" >
+			<h4>Login</h4>
+
+            <div class="control-group">
+                <label class="control-label" for="LoginUserName">Username</label>
+                    <div class="controls">
+			    <input  type="text" id="username" class="input-xlarge span5" required="required" placeholder="User name" >
+		    </div>
+            </div>
+
+
+            <div class="control-group">
+                <label class="control-label" for="LoginPassword">Password</label>
+                    <div class="controls">
+			    <input type="password" name="password" id="password" class="input-xlarge span5" required="required" placeholder="Password">
+	
+                    </div>
+	    </div>
+
+			<div class="form-actions">
+				<button type="submit" id="login" class="btn btn-primary">Login</button>
+				<input type="reset" class="btn" value="Cancel">
+			</div>
+
+		</fieldset>
+	</script>
+	<script type="text/x-mustache-template" id="password-reset-template">
+		<fieldset class="well" >
+			<h4>Login</h4>
+	
+		<!--Old password field-->
+            <div class="control-group">
+                <label class="control-label" for="oldPassword">Old Password</label>
+                    <div class="controls">
+			    <input  type="password" id="oldPassword" class="input-xlarge span5" required="required" placeholder="User name" >
+		    </div>
+            </div>
+
+
+            <div class="control-group">
+                <label class="control-label" for="LoginPassword">New Password</label>
+                    <div class="controls">
+			    <input type="password" name="inputPassword" id="newPassword" class="input-xlarge span5" required="required" placeholder="Password">
+	
+                    </div>
+	    </div>
+	  
+	  
+	    <div class="control-group">
+                <label class="control-label" for="LoginPassword">Confirm Password</label>
+                    <div class="controls">
+			    <input type="password" name="inputPassword" id="newPassword" class="input-xlarge span5" required="required" placeholder="Password">
+	
+                    </div>
+	    </div>
+
+			<div class="form-actions">
+				<button type="submit" class="btn btn-primary">Save</button>
+				<input type="reset" class="btn" value="Cancel">
+			</div>
+
+		</fieldset>
+	</script>
+	<script type="text/x-mustache-template" id="after-login-template">
+                                    <li class=""><a href="#">Home</a></li>
+
+				<li class="dropdown"><a href="#" class="dropdown-toggle" data-toggle="dropdown" data-hover="dropdown" data-delay="10" data-close-others="false">Merchant<b class="caret"></b></a>
+                        		<ul class="dropdown-menu">
+                                		<li><a href="#/merchant/createmerchant">Create Merchant</a></li>
+                                		<li><a href="#/merchant/viewallmerchants">View all</a></li>
+                        		</ul>
+                		</li>
+				<li class="dropdown"><a href="#" class="dropdown-toggle" data-toggle="dropdown" data-hover="dropdown" data-delay="10" data-close-others="false">Plans<b class="caret"></b></a>
+                        		<ul class="dropdown-menu">
+                                		<li><a href="#/plans/addplan">Add Plan</a></li>
+                                		<li><a href="#/plans/viewplans">View Plans</a></li>
+                        		</ul>
+                		</li>
+				<li id="logout"><a tabindex="-1" href="#">logout</a></li>
+
+
+	</script>   
+
+	<script type="text/x-mustache-handlebars"  id="before-login-template">
+				    <li id="login"><a tabindex="-1" href="#/admin/login">login</a></li>
+	</script>
+
+	<script type="text/x-mustache-handlebars" id="welcome-template">
+	<div class="hero-unit">
+		  <h1>Welcome to Easy Sales</h1>
+		  <p>{{message}}</p>
+				      </div>
+	</script>
+	<script type="text/template" id="manage-merchants-details-template">
+		<fieldset class="well">
+			<h4>Edit Merchant</h4>
+
+            <div class="control-group">
+                <label class="control-label" for="inputCompanyName">Company name</label>
+                    <div class="controls">
+                        <input type="text" id="inputCompanyName" name="company_name" class="input-xlarge span5" required="required"
+                    data-error="Please give a company name." placeholder="Company name">
+                    </div>
+            </div>
+            <div class="control-group">
+                <label class="control-label" for="inputFullName">Contact Name</label>
+                    <div class="controls">
+                        <input  type="text" id="inputFullName" name="contact_name" class="span5" required="required" placeholder="full name of user" >
+                    </div>
+            </div>
+
+
+            <div class="control-group">
+                <label class="control-label" for="inputMobileNumber">Mobile number</label>
+                    <div class="controls">
+                        <input type="tel" id="inputMobileNumber" name="mobile_number" class="input-xlarge span5" pattern="[0-9]{10}"
+                    data-error="Please give a correct mobile number" placeholder="Mobile number">
+                    </div>
+	    </div>
+
+
+            <div class="control-group">
+		    <label class="control-label" for="inputPhoneNumber">Phone number</label>
+                    <div class="controls">
+                        <input type="tel" id="inputPhoneNumber" name="phone_number" class="input-xlarge span5" required="required"
+			pattern="[0-9]{10}" placeholder="phone number">
+                    </div>
+            </div>
+
+            <div class="control-group">
+                <label class="control-label" for="inputAddress">Address</label>
+                    <div class="controls">
+                        <input type="text" id="inputAddress" name="address" class="input-xlarge span5" 
+                    data-error="Please give a correct address" placeholder="address">
+                    </div>
+	    </div>
+
+            <div class="control-group">
+                <label class="control-label" for="inputEmail">E-mail Address</label>
+                    <div class="controls">
+                        <input type="email" id="inputEmail" name="email" class="input-xlarge span5" required="required"
+                    data-error="Please give a correct e-mail address." placeholder="email address" >
+                    </div>
+	    </div>
+	  
+	    <h5>Account Details</h5>
+            <div class="control-group">
+                <label class="control-label">Merchant Id</label>
+                    <div class="controls">
+                        <input type="email" id="merchantId" id="inputDisabled" name="merchant_id" class="input-xlarge span5" required="required" placeholder="email address" disabled>
+                    </div>
+	    </div>
+
+            <div class="control-group">
+		    <label class="control-label">Deactivated</label>
+                    <div class="controls">
+                        <input type="email" id="deactivated" name="deactivated" class="input-xlarge span5" id="inputDisabled" disabled>
+                    </div>
+	    </div>
+	    
+	    <div class="control-group">
+		    <label class="control-label">Last Deduction Date</label>
+                    <div class="controls">
+                        <input type="email" id="lastDeductionDate"  class="input-xlarge span5" id="inputDisabled" disabled>
+                    </div>
+	    </div>
+	    
+	    <div class="control-group">
+		    <label class="control-label">Next Deduction Date</label>
+                    <div class="controls">
+                        <input type="email" id="nextDeductionDate" class="input-xlarge span5" id="inputDisabled" disabled>
+                    </div>
+	    </div>
+
+
+	    <div class="control-group">
+                <label class="control-label" for="plan">Plan</label>
+		<div class="controls">
+			<select id="plan" class="input-xlarge span5"> 
+			</select>
+	    	</div>
+            </div>
+	    <div class="control-group">
+                <label class="control-label" for="pricing">Pricing</label>
+		<div class="controls">
+			<select id="pricing" class="input-xlarge span5"> 
+			</select>
+	    	</div>
+            </div>
+
+		<h5>Current Access</h5>
+	    <div id="addQuotas">
+		    <!-- This is where the quotas go -->
+	    </div>
+
+			<!-- Input type="button" -->
+			<div class="form-actions">
+				<button  id="receivePayment" class="btn btn-primary">Receive Payment</button>
+				<button  id="paymentHistory" class="btn btn-primary">Payment History</button>
+				<button id="update" class="btn btn-primary">Update</button>
+				<button  id="default" class="btn btn-primary">Default</button>
+			</div>
+		</fieldset>
+	</script>
+
+	<script type="text/x-mustache-handlebars" id="edit-merchant-quota-row-template">
+		    <label class="control-label">{{name}}</label>
+                    <div class="controls">
+			    <input class="input-xlarge span5" value="{{value}}" id="inputDisabled" disabled>
+                    </div>
+	</script>
+	<script type="text/x-mustache-handlebars" id="merchant-receive-payment-template">
+		<fieldset class="well">
+			<h4>Receive Payment</h4>
+
+            <div class="control-group">
+                <label class="control-label">Merchant Name</label>
+                    <div class="controls">
+			    <input type="text" id="merchantName" merchant_id="{{merchant_id}}" class="input-xlarge span5" required="required" value="{{merchant_name}}">
+                    </div>
+	    </div>
+
+            <div class="control-group">
+                <label class="control-label">Current balance</label>
+                    <div class="controls">
+			    <input  type="text" id="currentBalance" name="current_balance" class="span5"  id="disabledInput" disabled>
+                    </div>
+	    </div>
+
+            <div class="control-group">
+                <label class="control-label">Amount</label>
+                    <div class="controls">
+			    <input  type="number" id="amount" name="amount" class="span5" required="required" placeholder="amount">
+                    </div>
+	    </div>
+
+            <div class="control-group">
+                <label class="control-label">Date</label>
+                    <div class="controls">
+			    <input  type="date" id="date" name="date" class="span5" required="required">
+                    </div>
+            </div>
+	    
+	    <div class="control-group">
+                <label class="control-label">Particulars</label>
+                    <div class="controls">
+			    <textarea  rows="3"  id="particulars" name="particulars" class="span5" required="required"></textarea>
+                    </div>
+            </div>
+
+			<div class="form-actions">
+				<button  id="done" class="btn btn-primary">Done</button>
+				<button   type="reset" class="btn btn-primary">Cancel</button>
+			</div>
+		</fieldset>
+
+	</script>
+	<script type="text/x-mustache-handlebars" id="merchant-payment-history-template">
+		<thead>  
+			<tr> 
+				<th>Date</th> 	
+				<th>Key In Time</th> 	
+				<th>Amount</th> 	
+			</tr> 
+			<tbody id="addPayments">
+			</tbody>
+		</thead>
+	</script>
+	<script type="text/x-mustache-template" id="merchant-payment-history-row-template">
+			<td>{{date}}</td>
+			<td>{{keyInTime}}</td>
+	    		<td>{{amount}}</td>
+	</script>
+	<script type="text/x-mustache-handlebars" id="login-header-template">
+	<!--		<li id="login"><a tabindex="-1" href="#">Login</a></li>	-->
+	</script>
+	<script type="text/x-mustache-handlebars" id="plan-view-template">
+		<fieldset class="well">
+	    		<div class="control-group">
+                		<label class="control-label">Plan Name</label>
+                    		<div class="controls">
+			    		<input type="text" name="plan_name" id="planName" class="input-xlarge span5" required="required" placeholder="plan name">
+                    		</div>
+	    		</div>
+		
+			</br>
+			</br>
+			<h5><b>Quotas</b></h5>
+			<div id="populatePlugins">
+				<!-- This is where plugins will be populated -->
+			</div>
+
+			
+			<h5><b>Pricing</b></h5>
+			<div id="populatePlans">
+		</div>
+	    		<div class="control-group">
+				<button id="addMore" class="btn btn-info" style="margin-left: 34.8%; width: 16.4%">Add Pricing</button>
+			</div>
+
+
+			<div class="form-actions">
+				<button id="addPlan" class="btn btn-primary">Add Plan</button>
+				<input type="reset" class="btn" value="Cancel">
+			</div>
+
+		</fieldset>
+	</script>
+	<script type="text/x-mustache-handlebars" id="checkbox-template">
+	    		<div class="control-group">
+				<label class="control-label">{{name}}</label>
+                    		<div class="controls">
+					<input type="checkbox" name={{name}} id="{{quotaId}}" class="input-xlarge span5" required="required">
+                    		</div>
+	    		</div>
+	</script>
+	<script type="text/x-mustache-handlebars" id="textbox-template">
+	    		<div class="control-group">
+				<label class="control-label">{{name}}</label>
+                    		<div class="controls">
+					<input type="text" name="{{name}}" id="{{quotaId}}" class="input-xlarge span5" required="required" placeholder="{{name}}">
+                    		</div>
+	    		</div>
+	</script>
+	<script type="text/x-mustache-handlebars" id="plan-add-more-pricing-template">
+				<fieldset class="well">
+	    		<div class="control-group">
+                		<label class="control-label">Pricing Name</label>
+                    		<div class="controls">
+			    		<input type="text" name="name" id="pricingName" class="input-xlarge span5" required="required" placeholder="pricing name">
+                    		</div>
+	    		</div>
+	    		<div class="control-group">
+				<label class="control-label">Pricing Period</label>
+				<div class="controls input-prepend span8">
+					<span class="add-on">Days</span>
+			    		<input type="number" name="period" id="pricingPeriod" id="prependedInput" class="span5">
+                    		</div>
+	    		</div>
+	    		<div class="control-group">
+				<label class="control-label">Pricing Value</label>
+				<div class="controls input-prepend span9">
+					<span class="add-on">Rs</span>
+			    		<input type="number" name="value" id="pricingValue" id="prependedInput" class="span5">
+                    		</div>
+			</div>
+	    		<div class="control-group">
+				<button id="deletePlan" class="btn btn-danger" style="width: 16.4%; margin-left: 35%">Delete</button>
+			</div>
+			</fieldset>
+
+	</script>
+	<script type="text/x-mustache-template" id="view-all-plans-template">
+		<thead>  
+			<tr> 
+				<th>Plan Name</th> 	
+	    			<th>Actions</th>
+			</tr>
+			<tbody id="populateRow">
+			<tr>
+				<td><button class="btn btn-mini btn-primary" id="addPlan" style="width: 17.5%">Add More</button></td>
+				<td></td>
+			</tr>
+			</tbody>	
+		</thead>
+	</script>
+	<script type="text/x-mustache-template" id="view-all-plans-row-template">
+			<td>{{name}}</td>
+			<td>
+		 		<button class="btn btn-mini btn-danger" type="button" id="deletePlan">Delete</button>
+	 		</td>
+	</script>
+	
+
+	<script type="text/x-mustache-handlebars" id="none">
+		<tr><td>{}</td></tr>
+	</script>
+
+	<div class="container-fluid">                                                                                                              
+    
+            <div class="row-fluid">   
+		                
+                
+                
+                <div class="navbar">
+                    <div class="navbar-inner">
+        
+                        <button type="button" class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+                            <span class="icon-bar"></span>
+                            <span class="icon-bar"></span>
+                            <span class="icon-bar"></span>
+                        </button>
+                        <a class="brand span4" href="#">EasySales</a>
+                            <div class="nav-collapse collapse">
+			<ul class="nav header-nav" id="header-bar">
+
+                                </ul>
+                            </div>
+                    </div>
+            </div>
+        </div>
+
+        <div class="container">                                                                                                              
+            
+        <div class="row-fluid">
+                    <div class="span1">
+                    </div>
+                
+                    <div class="span11 pull-right">
+                        <div class="dynamic_display"></div>
+                    </div>
+                </div>
+	</div>
+</div>
+	<div id="loadingImage" style="display:none; margin-left: 15%; margin-top: 1%">
+		<img src="images/loading3.gif"/>
+	</div>
+	<script type="text/javascript" src="js/libs/backbone-indexdb/backbone-indexeddb.js"></script>
+    
+    <script src="js/admin_panel.js"></script>
+    <script>$(function() { Admin.boot($('.dynamic_display')); });</script> 
+
+
+    </body>
+</html>
+
+
+
+

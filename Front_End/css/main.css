@@ -1,0 +1,44 @@
+Wq           
+           
+
+body{
+    padding-top: 10px;
+    padding-bottom: 10px;
+    }
+
+.navbar .navbar-inner {
+    padding: 0;
+}
+
+.navbar .nav {
+    margin: 0;
+    display: table;
+    width: 100%;
+}
+
+.navbar .nav li {
+    display: table-cell;
+    width: 10%;
+    float: none;
+}
+
+.nav .nav-pills {
+    display: table;
+    margin: 0;
+    height: 100%;
+}
+
+#sidebar {
+        background-color: #2C2C2C;
+        margin-left: 0px;
+        position: absolute;
+        padding: 40%;
+        bottom: 0px;
+        height: 100%}
+
+#sidebar > .nav > li > a{
+    padding: 20px;
+margin-top: 10em;
+ margin-bottom: 40px;
+}
+
