@@ -6,6 +6,9 @@ from flask import Flask
 from flask import request, jsonify
 from flask.ext import restful
 from flask.ext.restful import reqparse
+from flask import make_response, request, current_app
+from functools import update_wrapper
+from flask import jsonify
 import hashlib
 import subprocess
 import shutil
@@ -13,35 +16,78 @@ import json
 import os
 from bson.json_util import dumps
 from Text_Processing import ProcessingWithBlob, PosTags, Classifier
-
+import time
+from datetime import timedelta
 
 
 
 app = Flask(__name__)
-api = restful.Api(app)
+#api = restful.Api(app)
 # '/register_user' arguments parser
-text_parser = reqparse.RequestParser()
+#text_parser = reqparse.RequestParser()
 
-text_parser.add_argument('text', type=str, required=True, location='form')
-
-class ProcessText(restful.Resource):
-
-    def post(self):
-		"""
-		This returns 
+#text_parser.add_argument('text', type=str, required=True, location='form')
 
 
-		"""
-		args = text_parser.parse_args()
-		text = args["text"]
+
+def crossdomain(origin=None, methods=None, headers=None, max_age=21600, attach_to_all=True, automatic_options=True):
+	if methods is not None:
+		methods = ', '.join(sorted(x.upper() for x in methods))
+        
+	if headers is not None and not isinstance(headers, basestring):
+		headers = ', '.join(x.upper() for x in headers)
+	
+	if not isinstance(origin, basestring):
+		origin = ', '.join(origin)
+        
+	if isinstance(max_age, timedelta):
+		max_age = max_age.total_seconds()
+
+	def get_methods():
+		if methods is not None:
+			return methods
+		options_resp = current_app.make_default_options_response()
+		return options_resp.headers['allow']
+
+	def decorator(f):
+		def wrapped_function(*args, **kwargs):
+			if automatic_options and request.method == 'OPTIONS':
+				resp = current_app.make_default_options_response()
+			else:
+				resp = make_response(f(*args, **kwargs))
+				
+			if not attach_to_all and request.method != 'OPTIONS':
+				return resp
+			
+			h = resp.headers
+			print h
+			h['Access-Control-Allow-Origin'] = origin
+			h['Access-Control-Allow-Methods'] = get_methods()
+			h['Access-Control-Max-Age'] = str(max_age)
+			
+			print h
+			if headers is not None:
+				h['Access-Control-Allow-Headers'] = headers
+			return resp
+
+		f.provide_automatic_options = False
+		return update_wrapper(wrapped_function, f)
+	return decorator
+
+#class ProcessText(restful.Resource):
+
+@app.route('/v1/process_text', methods=['POST', 'OPTIONS'])
+@crossdomain(origin='*')
+def return_processed_text():
+		text = request.form["text"]
 		print text
 		if not bool(text):
-			return {
+			return jsonify({
 				"error": True,
 				"success": False,
 				"error_code": 101,
 				"messege": "Text field cannot be left empty"
-				}
+				})
 
 
 		text_classfication = Classifier(text)	
@@ -55,12 +101,12 @@ class ProcessText(restful.Resource):
 			element["tag"] = chunk[1]
 			result.append(element)
 
-		return {
+		return jsonify({
 				"result": result,
 				"success": True,
 				"error": False,
 				"overall_sentiment": ProcessingWithBlob.new_blob_polarity(text)
-				}
+				})
 
 
 class cd:
@@ -76,7 +122,7 @@ class cd:
                 os.chdir(self.savedPath)
 		
 
-api.add_resource(ProcessText , '/v1/process_text')
+#api.add_resource(ProcessText , '/v1/process_text')
 
 
 
