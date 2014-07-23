@@ -6,19 +6,10 @@ $(document).ready(function(){
 
 function make_request(data){
 	console.log(data)
-	url =  "http://localhost:8000/v1/process_text" ;
-	$.ajaxSetup({
-		beforeSend: function(xhr){
-			 xhr.setRequestHeader("Content-Type", "application/json");
-		}});
+	url =  "http://localhost:8000/process_text" ;
+	console.log(JSON.stringify({"text": data}))
 
-	return 	$.ajax({
-		url: url,
-		type: "POST",
-		data: data,
-		dataType: 'json',
-  		async: false,
-	});
+	return 	$.post(url, {"text": data})
 		}
 
 /*This is the template object which uses name as an argument to return handlebar compiled template from the the html
@@ -51,48 +42,53 @@ App.RootView = Backbone.View.extend({
 		var jqhr = make_request($("#searchQuery").val())
 		jqhr.done(function(data){
 			if (data.error == false){
-				var subView = new App.RootErrorRowView({model: data.data_head})
-				$(".dynamic_display").append(subView.render().el);	
-				$.each(data.data, function(iter, text){
+				data.overall_sentiment
+				data.result
+				$.each(data.result, function(iter, text){
 					var subView = new App.RootRowView({model: text});
 					$(".dynamic_display").append(subView.render().el);	
 				})
 						}
 			else{
 				bootbox.alert(data.messege)	
-				var subView = new App.RootErrorRowView({model: data.data})
-				$(".dynamic_display").append(subView.render().el);	
+				//var subView = new App.RootErrorRowView({model: data.data})
+				//$(".dynamic_display").append(subView.render().el);	
 			}
 			})
 	},
 });
 
 App.RootRowView = Backbone.View.extend({
-	tagName: "form",
-	className: "form-horizontal",
+	tagName: "fieldset",
+	className: "well",
 	template: template("root-row"),
-	actualDate: function(){return this.model.actual_date},
-	text: function(){return this.model.text},
+
+	noun_phrases: function(){return this.model.noun_phrases},
+	polarity: function(){return this.model.polarity},
+	sentence: function(){return this.model.sentence},
+	tag: function(){return this.model.tag},
 	initialize: function(options){
 		this.model = options.model;
 	},
 	render: function(){
+		console.log(this.sentence())
 		this.$el.append(this.template(this));
+		this.$('#ddpFilter option:selected').text(this.model.tag)
 		return this;
 	},
-});
-App.RootErrorRowView = Backbone.View.extend({
-	tagName: "form",
-	className: "form-horizontal",
-	template: template("root-row-error"),
-	text: function(){return this.model.data_tag},
-	imageSrc: function(){return this.model.image_src},
-	initialize: function(options){
-		this.model = options.model;
+
+	events: {
+		    "change #ddpFilter" : "changeTag"
 	},
-	render: function(){
-		this.$el.append(this.template(this));
-		return this;
+
+	changeTag: function(event){
+		event.preventDefault()
+		console.log(this.$('#ddpFilter option:selected').text())
+		bootbox.confirm("Are you sure?", function(result) {
+			if (result == true){
+				console.log("value changed");
+			}	
+		}); 
 	},
 });
 

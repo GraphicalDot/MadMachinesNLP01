@@ -34,7 +34,7 @@
             <div class="control-group">
                 <label class="control-label">Enter Review</label>
                     <div class="controls">
-			    <textarea type="text" id="searchQuery" class="input-xlarge span10" rows="3" required="required" placeholder="enter the review to be processed" ></textarea>
+			    <textarea type="text" id="searchQuery" class="input-xlarge span8" rows="3" required="required" placeholder="enter the review to be processed" ></textarea>
 			    <button type="submit" id="submitQuery" class="btn btn-primary" rows="3" style="width: 15%">Submit</button>
 		    </div>
             </div>
@@ -42,28 +42,39 @@
 		</fieldset>
 	</script>
 	<script type="text/x-mustache-template" id="root-row-template">
-		<div class="span7">
-			<p style="text-align: center">{{sentence}}</p>
-		</div>
-		<div class="span1">
-			<p style="text-align: center">{{polarity}}</p>
-		</div>
+<!--		<form class="form-horizontal plan">
+	<fieldset class="well"> -->
+            <div class="row-fluid plan">   
 		<div class="span2">
-			<div class="btn-group">
-				<select id="ddpFilter" class="btn btn-success dropdown-toggle btn-xs" data-toggle="dropdown" style="width: 90%">
-					<option value="1">food</option>
-					<option value="2">service</option>
-					<option value="3">ambience</option>
-					<option value="4">cost</option>
-				</select>
-			</div>
-			</div>
-
-		<div class="span2">
-			<p style="text-align: center">{{noun_phrases}}</p>
+			<p style="padding-top: 20%; text-align: center">{{actualDate}}</p>
 		</div>
-			
+            	<div class="span10">
+<!--			<form class="form-horizontal plan">
+	<fieldset class="well" > -->
+            				<div class="control-group">
+						<p>{{text}}</p>
+		    			</div>
+		<!--		</fieldset>
+</form> -->
+            			</div>
+			<!--	</fieldset>
+	</form> -->
+	</div>
 </script>
+	<script type="text/x-mustache-template" id="root-row-error-template">
+		<div class="span4">
+			<img src="{{imageSrc}}" width="100%" height="100%">
+		</div>
+            	<div class="span8">
+			<form class="form-horizontal plan">
+				<fieldset class="well" >
+            				<div class="control-group">
+						<p>{{text}}</p>
+		    			</div>
+				</fieldset>
+			</form>
+		</div>
+	</script>
 <div class="container-fluid">                                                                                                              
             <div class="row-fluid">   
 		                
@@ -82,7 +93,9 @@
 
             
         <div class="row-fluid" >
-                    <div class="span12">
+                    <div class="span1">
+                    </div>
+                    <div class="span10">
                         <div class="dynamic_display_header">
 			</div>
                         <div class="dynamic_display">

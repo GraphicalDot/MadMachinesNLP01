@@ -64,10 +64,12 @@ def crossdomain(origin=None, methods=None, headers=None, max_age=21600, attach_t
 			h['Access-Control-Allow-Origin'] = origin
 			h['Access-Control-Allow-Methods'] = get_methods()
 			h['Access-Control-Max-Age'] = str(max_age)
+			h['Content-Type'] = "application/json"
 			
-			print h
 			if headers is not None:
+				print "headers files not empyt"
 				h['Access-Control-Allow-Headers'] = headers
+			print h
 			return resp
 
 		f.provide_automatic_options = False
@@ -76,8 +78,8 @@ def crossdomain(origin=None, methods=None, headers=None, max_age=21600, attach_t
 
 #class ProcessText(restful.Resource):
 
-@app.route('/v1/process_text', methods=['POST', 'OPTIONS'])
-@crossdomain(origin='*')
+@app.route('/process_text', methods=['POST', 'OPTIONS'])
+@crossdomain(origin='*', headers='Content-Type')
 def return_processed_text():
 		text = request.form["text"]
 		print text
@@ -96,7 +98,7 @@ def return_processed_text():
 			element = dict()
 			instance = ProcessingWithBlob(chunk[0])
 			element["sentence"] = chunk[0]
-			element["polarity"] = instance.sentiment_polarity()
+			element["polarity"] = '%.2f'%instance.sentiment_polarity()
 			element["noun_phrases"] = list(instance.noun_phrase())
 			element["tag"] = chunk[1]
 			result.append(element)
