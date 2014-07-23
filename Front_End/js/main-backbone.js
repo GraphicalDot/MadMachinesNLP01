@@ -60,7 +60,7 @@ App.RootView = Backbone.View.extend({
 
 App.RootRowView = Backbone.View.extend({
 	tagName: "fieldset",
-	className: "well",
+	className: "well plan",
 	template: template("root-row"),
 
 	noun_phrases: function(){return this.model.noun_phrases},
@@ -68,12 +68,13 @@ App.RootRowView = Backbone.View.extend({
 	sentence: function(){return this.model.sentence},
 	tag: function(){return this.model.tag},
 	initialize: function(options){
+		this.values = {"food": 1, "service": 2, "ambience": 3, "cost": 4, "null": 5};
 		this.model = options.model;
 	},
 	render: function(){
 		console.log(this.sentence())
 		this.$el.append(this.template(this));
-		this.$('#ddpFilter option:selected').text(this.model.tag)
+		this.$("#ddpFilter option[value='" + this.values[this.model.tag] + "']").attr("selected", "selected")
 		return this;
 	},
 
@@ -84,7 +85,7 @@ App.RootRowView = Backbone.View.extend({
 	changeTag: function(event){
 		event.preventDefault()
 		console.log(this.$('#ddpFilter option:selected').text())
-		bootbox.confirm("Are you sure?", function(result) {
+		bootbox.confirm("Are you sure you want to change the tag of this sentence?", function(result) {
 			if (result == true){
 				console.log("value changed");
 			}	
