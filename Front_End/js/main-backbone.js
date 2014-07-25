@@ -18,8 +18,8 @@ var template = function(name){
 
 
 App.RootView = Backbone.View.extend({
-	tagName: "form",
-	className: "form-horizontal",
+	tagName: "fieldset",
+	className: "well plan",
 	template: template("root"),
 	initialize: function(){
 		console.log("Root view called")
@@ -55,7 +55,7 @@ App.RootView = Backbone.View.extend({
 
 App.RootTopView = Backbone.View.extend({
 	tagName: "fieldset",
-	className: "well plan",
+	className: "well plan-name-silver",
 	template: template("root-top"),
 
 	phrases: function(){return this.model.phrases},

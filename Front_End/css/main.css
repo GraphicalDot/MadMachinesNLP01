@@ -3,19 +3,22 @@
 body{
     padding-top: 10px;
     padding-bottom: 10px;
-    }
+	background-image: url("bg1.jpg");
+	background-size:   cover;                      /* <------ */
+	    background-repeat: no-repeat;
+}
 
 .pricing-table .plan {
   border-radius: 5px;
   text-align: center;
   background-color: #f3f3f3;
-  -moz-box-shadow: 0 0 6px 2px #b0b2ab;
+  -moz-box-shadow: 0 0 50px 2px #b0b2ab;
   -webkit-box-shadow: 0 0 6px 2px #b0b2ab;
-  box-shadow: 0 0 6px 2px #b0b2ab;
+  box-shadow: 0 0 50px 2px #b0b2ab;
 }
  
  .plan:hover {
-  background-color: #fff;
+  background-color: initial;
   -moz-box-shadow: 0 0 12px 3px #b0b2ab;
   -webkit-box-shadow: 0 0 12px 3px #b0b2ab;
   box-shadow: 0 0 12px 3px #b0b2ab;
