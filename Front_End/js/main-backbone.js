@@ -83,7 +83,7 @@ App.RootRowView = Backbone.View.extend({
 	tag: function(){return this.model.tag},
 	
 	initialize: function(options){
-		this.values = {"food": 1, "service": 2, "ambience": 3, "cost": 4, "null": 5};
+		this.values = {"food": 1, "service": 2, "ambience": 3, "cost": 4, "null": 5, "overall": 6};
 		this.polarity_tag = {"positive": 1, "negative": 2,};
 		console.log(this.sentence() + this.polarity_tag[this.polarity_name()] + this.polarity_value() + this.polarity_name());
 		this.model = options.model;
