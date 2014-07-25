@@ -105,7 +105,8 @@ App.RootRowView = Backbone.View.extend({
 
 				var jqhr = $.post("http://localhost:8000/update_model", {"text": sentence, "tag": changed_tag})	
 				jqhr.done(function(data){
-					if (data.messege == "success"){
+					console.log(data.success)
+					if (data.success == true){
 						bootbox.alert("Tag has been changed")
 						}
 					else {
