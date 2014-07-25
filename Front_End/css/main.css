@@ -3,7 +3,7 @@
 body{
     padding-top: 10px;
     padding-bottom: 10px;
-	background-image: url("bg1.jpg");
+	background-image: url("bg3.jpg");
 	background-size:   cover;                      /* <------ */
 	    background-repeat: no-repeat;
 }
@@ -19,11 +19,21 @@ body{
  
  .plan:hover {
   background-color: initial;
-  -moz-box-shadow: 0 0 12px 3px #b0b2ab;
-  -webkit-box-shadow: 0 0 12px 3px #b0b2ab;
-  box-shadow: 0 0 12px 3px #b0b2ab;
+	font-size: 150% ;
+	text-decoration: line-through ;
+	text-align: auto ;
+	font-weight: bold ;
+	color: #FFFFFF ; 
+  -moz-box-shadow: 0 0 12px 3px #b0b2ab ;
+  -webkit-box-shadow: 0 0 12px 3px #b0b2ab ;
+  box-shadow: 0 0 12px 3px #b0b2ab ;
 }
- 
+
+
+.plan:hover .btn-group #ddpFilter{
+
+}
+
  .plan {
   padding: 20px;
   color: #ff;
