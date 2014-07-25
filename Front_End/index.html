@@ -41,6 +41,16 @@
 
 		</fieldset>
 	</script>
+	<script type="text/x-mustache-template" id="root-top-template">
+		<div class="span3">
+			<p style="text-align: center">overall sentiment   {{sentiment}}</p>
+		</div>
+		<div class="span9">
+			<p style="text-align: center">{{phrases}}</p>
+		</div>
+	
+	
+	</script>
 	<script type="text/x-mustache-template" id="root-row-template">
 		<div class="span7">
 			<p style="text-align: center">{{sentence}}</p>
@@ -50,7 +60,7 @@
 		</div>
 		<div class="span2">
 			<div class="btn-group">
-				<select id="ddpFilter" class="btn btn-success dropdown-toggle btn-xs" data-toggle="dropdown" style="width: 90%">
+				<select id="ddpFilter" class="btn btn-success dropdown-toggle btn-xs" data-toggle="dropdown" style="width: 98%">
 					<option value="1">food</option>
 					<option value="2">service</option>
 					<option value="3">ambience</option>

@@ -22,11 +22,6 @@ from datetime import timedelta
 
 
 app = Flask(__name__)
-#api = restful.Api(app)
-# '/register_user' arguments parser
-#text_parser = reqparse.RequestParser()
-
-#text_parser.add_argument('text', type=str, required=True, location='form')
 
 
 
@@ -76,8 +71,6 @@ def crossdomain(origin=None, methods=None, headers=None, max_age=21600, attach_t
 		return update_wrapper(wrapped_function, f)
 	return decorator
 
-#class ProcessText(restful.Resource):
-
 @app.route('/process_text', methods=['POST', 'OPTIONS'])
 @crossdomain(origin='*', headers='Content-Type')
 def return_processed_text():
@@ -93,6 +86,7 @@ def return_processed_text():
 
 
 		text_classfication = Classifier(text)	
+		noun_phrase = list()
 		result = list() 
 		for chunk in text_classfication.with_svm():
 			element = dict()
@@ -102,13 +96,30 @@ def return_processed_text():
 			element["noun_phrases"] = list(instance.noun_phrase())
 			element["tag"] = chunk[1]
 			result.append(element)
+			noun_phrase.append(list(instance.noun_phrase()))
 
 		return jsonify({
 				"result": result,
 				"success": True,
 				"error": False,
-				"overall_sentiment": ProcessingWithBlob.new_blob_polarity(text)
+				"overall_sentiment": '%.2f'%ProcessingWithBlob.new_blob_polarity(text),
+				"noun_phrase": noun_phrase,
 				})
+
+@app.route('/update', methods=['POST', 'OPTIONS'])
+@crossdomain(origin='*', headers='Content-Type')
+def update_model():
+	"""
+	This method is used to update the files corresponding to the user decision that the displayed content belogs to a different category
+	rather then the category displayed by the existing model"
+	"""
+	text = request.form["text"]
+	tag = request.form["tag"]
+	print text, tag
+	return {"success":  True,
+		"error": False,
+		}
+
 
 
 class cd:

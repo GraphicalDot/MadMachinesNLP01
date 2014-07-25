@@ -43,7 +43,8 @@ App.RootView = Backbone.View.extend({
 		jqhr.done(function(data){
 			if (data.error == false){
 				data.overall_sentiment
-				data.result
+				var subView = new App.RootTopView({model: {"sentiment": data.overall_sentiment, "phrases": data.noun_phrase}})
+				$(".dynamic_display").append(subView.render().el);	
 				$.each(data.result, function(iter, text){
 					var subView = new App.RootRowView({model: text});
 					$(".dynamic_display").append(subView.render().el);	
@@ -51,12 +52,29 @@ App.RootView = Backbone.View.extend({
 						}
 			else{
 				bootbox.alert(data.messege)	
-				//var subView = new App.RootErrorRowView({model: data.data})
-				//$(".dynamic_display").append(subView.render().el);	
 			}
 			})
 	},
 });
+
+App.RootTopView = Backbone.View.extend({
+	tagName: "fieldset",
+	className: "well plan",
+	template: template("root-top"),
+
+	phrases: function(){return this.model.phrases},
+	sentiment: function(){return this.model.sentiment},
+	
+	initialize: function(options){
+		this.model = options.model;
+	},
+	render: function(){
+		this.$el.append(this.template(this));
+		return this;
+	},
+
+});
+
 
 App.RootRowView = Backbone.View.extend({
 	tagName: "fieldset",
@@ -83,11 +101,25 @@ App.RootRowView = Backbone.View.extend({
 	},
 
 	changeTag: function(event){
+		var self = this;
 		event.preventDefault()
-		console.log(this.$('#ddpFilter option:selected').text())
 		bootbox.confirm("Are you sure you want to change the tag of this sentence?", function(result) {
 			if (result == true){
-				console.log("value changed");
+				changed_tag = this.$('#ddpFilter option:selected').text();
+				sentence = self.sentence();
+				var jqhr = $.post("http://localhost:8000/update_model", {"sentence": sentence, "tag": changed_tag})	
+				jqhr.done(function(data){
+					if (data.messege == "success"){
+						bootbox.alert("Tag has been changed")
+						}
+					else {
+						bootbox.alert("Tag cannot be changed")
+					}	
+				})
+				
+				jqhr.fail(function(){
+					bootbox.alert("Either the api or internet connection is not working, Try again later")
+				})
 			}	
 		}); 
 	},
