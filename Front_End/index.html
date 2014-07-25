@@ -49,11 +49,11 @@
 	
 	</script>
 	<script type="text/x-mustache-template" id="root-row-template">
-		<div class="span7">
+		<div class="span5">
 			<p style="text-align: center">{{sentence}}</p>
 		</div>
 		<div class="span1">
-			<p style="text-align: center">{{polarity}}</p>
+			<p style="text-align: center">{{polarity_value}}</p>
 		</div>
 		<div class="span2">
 			<div class="btn-group">
@@ -63,6 +63,14 @@
 					<option value="3">ambience</option>
 					<option value="4">cost</option>
 					<option value="5">null</option>
+				</select>
+			</div>
+			</div>
+		<div class="span2">
+			<div class="btn-group">
+				<select id="ddpFiltersentiment" class="btn btn-success dropdown-toggle btn-xs" data-toggle="dropdown" style="width: 98%">
+					<option value="1">positive</option>
+					<option value="2">negative</option>
 				</select>
 			</div>
 			</div>

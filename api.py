@@ -84,11 +84,14 @@ def return_processed_text():
 		text_classfication = Classifier(text)	
 		noun_phrase = list()
 		result = list() 
+
+		polarity=lambda x: "postive" if float(x)>= 0 else "negative"
+
 		for chunk in text_classfication.with_svm():
 			element = dict()
 			instance = ProcessingWithBlob(chunk[0])
 			element["sentence"] = chunk[0]
-			element["polarity"] = '%.2f'%instance.sentiment_polarity()
+			element["polarity"] = {"name": polarity('%.1f'%instance.sentiment_polarity()), "value": '%.1f'%instance.sentiment_polarity()}
 			element["noun_phrases"] = list(instance.noun_phrase())
 			element["tag"] = chunk[1]
 			result.append(element)

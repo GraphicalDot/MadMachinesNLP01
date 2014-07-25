@@ -76,25 +76,55 @@ App.RootRowView = Backbone.View.extend({
 	tagName: "fieldset",
 	className: "well plan",
 	template: template("root-row"),
-
 	noun_phrases: function(){return this.model.noun_phrases},
-	polarity: function(){return this.model.polarity},
+	polarity_name: function(){return this.model.polarity.name},
+	polarity_value: function(){return this.model.polarity.value},
 	sentence: function(){return this.model.sentence},
 	tag: function(){return this.model.tag},
+	
 	initialize: function(options){
 		this.values = {"food": 1, "service": 2, "ambience": 3, "cost": 4, "null": 5};
+		this.polarity_tag = {"positive": 1, "negative": 2,};
+		console.log(this.sentence() + this.polarity_tag[this.polarity_name()] + this.polarity_value() + this.polarity_name());
 		this.model = options.model;
 	},
+	
 	render: function(){
 		this.$el.append(this.template(this));
 		this.$("#ddpFilter option[value='" + this.values[this.model.tag] + "']").attr("selected", "selected")
+		this.$("#ddpFiltersentiment option[value='" + this.polarity_tag[this.polarity_name()] + "']").attr("selected", "selected")
 		return this;
 	},
 
 	events: {
-		    "change #ddpFilter" : "changeTag"
+		    "change #ddpFilter" : "changeTag",
+		    "change #ddpFiltersentiment" : "changeSentiment",
 	},
 
+	changeSentiment: function(event){
+		var self = this;
+		event.preventDefault()
+		bootbox.confirm("Are you sure you want to change the polarity of this sentence?", function(result) {
+			if (result == true){
+				sentence = self.sentence();
+				changed_polarity = self.$('#ddpFiltersentiment option:selected').text();
+				var jqhr = $.post("http://localhost:8000/update_model", {"text": sentence, "tag": changed_polarity})	
+				jqhr.done(function(data){
+					console.log(data.success)
+					if (data.success == true){
+						bootbox.alert("Polarity has been changed")
+						}
+					else {
+						bootbox.alert(data.messege)
+					}	
+				})
+				
+				jqhr.fail(function(){
+					bootbox.alert("Either the api or internet connection is not working, Try again later")
+				})
+				}	
+		}); 
+	},
 	changeTag: function(event){
 		var self = this;
 		event.preventDefault()
