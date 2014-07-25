@@ -55,16 +55,13 @@ def crossdomain(origin=None, methods=None, headers=None, max_age=21600, attach_t
 				return resp
 			
 			h = resp.headers
-			print h
 			h['Access-Control-Allow-Origin'] = origin
 			h['Access-Control-Allow-Methods'] = get_methods()
 			h['Access-Control-Max-Age'] = str(max_age)
 			h['Content-Type'] = "application/json"
 			
 			if headers is not None:
-				print "headers files not empyt"
 				h['Access-Control-Allow-Headers'] = headers
-			print h
 			return resp
 
 		f.provide_automatic_options = False
@@ -75,7 +72,6 @@ def crossdomain(origin=None, methods=None, headers=None, max_age=21600, attach_t
 @crossdomain(origin='*', headers='Content-Type')
 def return_processed_text():
 		text = request.form["text"]
-		print text
 		if not bool(text):
 			return jsonify({
 				"error": True,
@@ -106,19 +102,32 @@ def return_processed_text():
 				"noun_phrase": noun_phrase,
 				})
 
-@app.route('/update', methods=['POST', 'OPTIONS'])
+@app.route('/update_model', methods=['POST', 'OPTIONS'])
 @crossdomain(origin='*', headers='Content-Type')
 def update_model():
-	"""
-	This method is used to update the files corresponding to the user decision that the displayed content belogs to a different category
-	rather then the category displayed by the existing model"
-	"""
 	text = request.form["text"]
 	tag = request.form["tag"]
-	print text, tag
-	return {"success":  True,
+
+	path = (os.path.join(os.path.dirname(os.path.abspath(__file__)) + "/trainers/%s.txt"%tag))
+	
+	print "Ihis is the path that is being opened%s"%path
+
+	if not os.path.exists(path):
+		return jsonify({"success": False,
+				"error": True,
+				"messege": "The tag you mentioned doesnt exist in the learning model",
+				"error_code": 201,
+			})
+
+
+
+	with open(path, "a") as myfile:
+		myfile.write(text)
+		myfile.write("\n")
+
+	return jsonify({"success":  True,
 		"error": False,
-		}
+		})
 
 
 

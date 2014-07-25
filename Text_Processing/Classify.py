@@ -25,12 +25,14 @@ class Classifier:
 		self.services_data = self.sent_tokenizer.tokenize(open("%s/trainers/service.txt"%path).read())
 		self.costing_data = self.sent_tokenizer.tokenize(open("%s/trainers/cost.txt"%path).read())
 		self.food_data = self.sent_tokenizer.tokenize(open("%s/trainers/food.txt"%path).read())
+		self.null_data = self.sent_tokenizer.tokenize(open("%s/trainers/null.txt"%path).read())
 		#self.ambience_documents = [(nltk.wordpunct_tokenize(sent), "ambience") for sent in self.ambience_data if sent != ""]
 		self.ambience_documents = [(sent, "ambience") for sent in self.ambience_data if sent != ""]
 		self.services_documents = [(sent, "service") for sent in self.services_data if sent != ""]
 		self.costing_documents = [(sent, "cost") for sent in self.costing_data if sent != ""]
 		self.food_documents = [(sent, "food") for sent in self.food_data if sent != ""]
-		self.whole_set = self.ambience_documents + self.services_documents + self.costing_documents + self.food_documents
+		self.null_documents = [(sent, "null") for sent in self.null_data if sent != ""]
+		self.whole_set = self.ambience_documents + self.services_documents + self.costing_documents + self.food_documents + self.null_documents
 		random.shuffle(self.whole_set)
 
 	def document_features(document):

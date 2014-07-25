@@ -5,10 +5,7 @@ $(document).ready(function(){
 
 
 function make_request(data){
-	console.log(data)
 	url =  "http://localhost:8000/process_text" ;
-	console.log(JSON.stringify({"text": data}))
-
 	return 	$.post(url, {"text": data})
 		}
 
@@ -29,7 +26,6 @@ App.RootView = Backbone.View.extend({
 	},
 	render: function(){
 		this.$el.append(this.template(this));
-		console.log( this.el)
 		return this;
 	},
 	events: {
@@ -90,7 +86,6 @@ App.RootRowView = Backbone.View.extend({
 		this.model = options.model;
 	},
 	render: function(){
-		console.log(this.sentence())
 		this.$el.append(this.template(this));
 		this.$("#ddpFilter option[value='" + this.values[this.model.tag] + "']").attr("selected", "selected")
 		return this;
@@ -105,22 +100,24 @@ App.RootRowView = Backbone.View.extend({
 		event.preventDefault()
 		bootbox.confirm("Are you sure you want to change the tag of this sentence?", function(result) {
 			if (result == true){
-				changed_tag = this.$('#ddpFilter option:selected').text();
+				changed_tag = self.$('#ddpFilter option:selected').text();
 				sentence = self.sentence();
-				var jqhr = $.post("http://localhost:8000/update_model", {"sentence": sentence, "tag": changed_tag})	
+
+				var jqhr = $.post("http://localhost:8000/update_model", {"text": sentence, "tag": changed_tag})	
 				jqhr.done(function(data){
 					if (data.messege == "success"){
 						bootbox.alert("Tag has been changed")
 						}
 					else {
-						bootbox.alert("Tag cannot be changed")
+						bootbox.alert(data.messege)
 					}	
 				})
 				
 				jqhr.fail(function(){
 					bootbox.alert("Either the api or internet connection is not working, Try again later")
 				})
-			}	
+			
+				}	
 		}); 
 	},
 });
@@ -137,7 +134,6 @@ App.Router = Backbone.Router.extend({
 	},
 	
 	welcome: function(){
-		console.log("Home view calledd")
 		var str = new App.RootView()
 		this.el.html(str.render().el);
 	},
