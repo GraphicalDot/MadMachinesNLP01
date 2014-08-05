@@ -9,7 +9,7 @@ import os
 import time
 
 env.use_ssh_config = True
-env.hosts = ["ec2-54-186-108-68.us-west-2.compute.amazonaws.com"]
+env.hosts = ["ec2-50-112-147-199.us-west-2.compute.amazonaws.com"]
 env.user = "ubuntu"
 env.key_filename = "/home/k/Programs/Canworks/canworks.pem"
 env.warn_only = False
@@ -25,7 +25,6 @@ def basic_setup():
 
 	"""
 	run("sudo apt-get update")
-	run("sudo apt-get upgrade")
 	run("sudo apt-get install -y python-pip")
 	run("sudo apt-get install -y libevent-dev")
 	run("sudo apt-get install -y python-all-dev")
@@ -62,16 +61,18 @@ def virtual_env():
 
 	run("sudo pip install virtualenv")
 	with cd("/home/ubuntu/"):
-		run("virtualenv --no-site-packages VirtualEnvironment")
-		with cd("/home/ubuntu/VirtualEnvironment"):
-			run("sudo apt-get install -y git")
-			with prefix("source bin/activate && cd /home/ubuntu/VirtualEnvironment"):
-				if not exists("applogs", use_sudo=True):
-					run("sudo mkdir applogs")
-					run("sudo chown -R ubuntu:ubuntu applogs")
-				if not exists("canworks", use_sudo=True):	
-					run(" git clone https://github.com/kaali-python/canworks.git")
-
+		if not exists("VirtualEnvironment", use_sudo=True):
+			run("virtualenv --no-site-packages VirtualEnvironment")
+			with cd("/home/ubuntu/VirtualEnvironment"):
+				run("sudo apt-get install -y git")
+				with prefix("source bin/activate && cd /home/ubuntu/VirtualEnvironment/"):
+					if not exists("applogs", use_sudo=True):
+						run("sudo mkdir applogs")
+						run("sudo chown -R ubuntu:ubuntu applogs")
+					if not exists("canworks", use_sudo=True):	
+						run(" git clone https://github.com/AdityaKhanna/canworks.git")
+					with cd("canworks"):
+						run("pip install -r requirements.txt")
 
 
 def download_corpora():
@@ -185,7 +186,7 @@ def update():
 
 def deploy():
 	print(_green("Connecting to EC2 Instance..."))	
-	execute(basic_setup)
+#	execute(basic_setup)
 	execute(virtual_env)
 #	execute(after_env)
 #	execute(installing_requirements)
