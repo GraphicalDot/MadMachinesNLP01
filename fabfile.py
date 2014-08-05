@@ -9,9 +9,9 @@ import os
 import time
 
 env.use_ssh_config = True
-env.hosts = ["ec2-54-187-46-240.us-west-2.compute.amazonaws.com"]
+env.hosts = ["ec2-54-186-108-68.us-west-2.compute.amazonaws.com"]
 env.user = "ubuntu"
-env.key_filename = "/home/k/Programs/python/Canworks/canworks.pem"
+env.key_filename = "/home/k/Programs/Canworks/canworks.pem"
 env.warn_only = False
 
 """
@@ -37,7 +37,7 @@ def basic_setup():
 	run("sudo apt-get install -y python-lxml")
 	#Dependencies for installating sklearn
 	run("sudo apt-get install -y build-essential python-dev python-setuptools python-numpy python-scipy libatlas-dev libatlas3gf-base")
-	run("sudo apt-get install python-matplotlib")
+	run("sudo apt-get install -y python-matplotlib")
 
 def hunpos_tagger():
 	"""
@@ -65,23 +65,13 @@ def virtual_env():
 		run("virtualenv --no-site-packages VirtualEnvironment")
 		with cd("/home/ubuntu/VirtualEnvironment"):
 			run("sudo apt-get install -y git")
-			with prefix("source bin/activate"):
-				if not exists("/applogs", use_sudo=True):
-					run("sudo mkdir /applogs")
-					run("sudo chown -R ubuntu:ubuntu /applogs")
-				if not exists("/home/ubuntu/VirtualEnvironment/python-goose", use_sudo=True):	
-					run("git clone https://github.com/grangier/python-goose.git")
-				if not exists("/home/ubuntu/VirtualEnvironment/canworks", use_sudo=True):	
+			with prefix("source bin/activate && cd /home/ubuntu/VirtualEnvironment"):
+				if not exists("applogs", use_sudo=True):
+					run("sudo mkdir applogs")
+					run("sudo chown -R ubuntu:ubuntu applogs")
+				if not exists("canworks", use_sudo=True):	
 					run(" git clone https://github.com/kaali-python/canworks.git")
 
-
-def installing_requirements():
-	"""
-	This function installs all the requirements required to run the package with the help of requirements.txt
-	"""
-	with prefix("cd /home/ubuntu/VirtualEnvironment && source bin/activate && cd python-goose"):
-		run("sudo pip install -r requirements.txt")
-		run("python setup.py install")
 
 
 def download_corpora():
@@ -98,7 +88,7 @@ def update_git():
 	This method will be run everytime the git repository is updated on the main machine.This clones the pushed updated 
 	repository on the git on the remote server
 	"""
-	with prefix("cd /home/ubuntu/VirtualEnvironment &&source bin/activate && cd canworks"):
+	with prefix("cd /home/ubuntu/VirtualEnvironment && source bin/activate && cd canworks"):
 		run("git pull origin master")
 
 
@@ -195,15 +185,16 @@ def update():
 
 def deploy():
 	print(_green("Connecting to EC2 Instance..."))	
-	execute(before_env)
+	execute(basic_setup)
 	execute(virtual_env)
-	execute(after_env)
-	execute(installing_requirements)
-	execute(nginx)
-	execute(mongo)
-	execute(status)
-	execute(install_phantomjs)
+#	execute(after_env)
+#	execute(installing_requirements)
+#	execute(nginx)
+#	execute(mongo)
+#	execute(status)
+#	execute(install_phantomjs)
 	print(_yellow("...Disconnecting EC2 instance..."))
-	run("sudo reboot")
-	disconnect_all()
+#	run("sudo reboot")
+#	disconnect_all()
+
 
