@@ -180,7 +180,10 @@ def mongo_status():
 
 
 def supervisord_conf():
-	run("echo_supervisord_conf > /etc/supervisord.conf")
+	with cd("/home/ubuntu/VirtualEnvironment/"):
+		with prefix("source bin/activate"):
+			run("sudo cp /home/ubuntu/VirtualEnvironment/canworks/configs/supervisord.conf /etc/supervisord.conf")
+	
 
 def reboot():
 	run("sudo reboot")
@@ -219,10 +222,6 @@ def deploy():
 	execute(nginx)
 	execute(mongo)
 	execute(status)
-
-#	execute(after_env)
-#	execute(installing_requirements)
-#	execute(install_phantomjs)
 	print(_yellow("...Disconnecting EC2 instance..."))
 #	run("sudo reboot")
 	disconnect_all()
