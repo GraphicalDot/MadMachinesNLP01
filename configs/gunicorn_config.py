@@ -11,5 +11,5 @@ graceful_timeout = 30
 keepalive = 5
 debug = True
 daemon = True
-accesslog = "/applogs/gunicorn_access.log"
-errorlog = "/applogs/gunicorn_error.log"
+accesslog = "/home/ubuntu/VirtualEnvironment/applogs/gunicorn_access.log"
+errorlog = "/home/ubuntu/VirtualEnvironment/applogs/gunicorn_error.log"

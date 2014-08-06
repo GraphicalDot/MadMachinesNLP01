@@ -40,9 +40,17 @@ def basic_setup():
 	#Dependencies for installating scipy
 	run("sudo apt-get install -y liblapack-dev libatlas-dev gfortran")
 	run("sudo apt-get install -y libatlas-base-dev gfortran build-essential g++ libblas-dev")
+	#Dependicies to install hunpostagger
+	run("sudo apt-get install -y ocaml-nox")
 
 
 def increase_swap():
+	"""
+	Scipy needs generally need more ram to install, this function increase the swap by allocating some harddisk 
+	space to ram, which is slow but solves the purpose.
+	Required only on amazom ec-2 micro instance
+	"""
+
 	run("sudo /bin/dd if=/dev/zero of=/var/swap.1 bs=1M count=1024")
 	run("sudo /sbin/mkswap /var/swap.1")
 	run("sudo /sbin/swapon /var/swap.1")
@@ -59,8 +67,8 @@ def hunpos_tagger():
 		run("sudo cp -r trunk/ /usr/local/bin")
 		
 	with cd("/usr/local/bin"):
-		run("wget https://hunpos.googlecode.com/files/en_wsj.model.gz")
-		run("gunzip en_wsj.model.gz")
+		run("sudo wget https://hunpos.googlecode.com/files/en_wsj.model.gz")
+		run("sudo gunzip en_wsj.model.gz")
 
 
 def virtual_env():
@@ -85,13 +93,12 @@ def virtual_env():
 
 
 def download_corpora():
-	run("python -m textblob.download_corpora")
+	with cd("/home/ubuntu/VirtualEnvironment/"):
+		with prefix("source bin/activate"):
+			print(_green("Now downloading textblob packages"))	
+			run("python -m textblob.download_corpora")
 
 
-1
-
-#	with prefix("cd /home/ubuntu/VirtualEnvironment &&source bin/activate"):
-#		run("sudo pip install -r canworks/requirements.txt")
 
 def update_git():
 	"""
@@ -107,8 +114,7 @@ def nginx():
 	This function installs nginx on the remote server and replaces its conf file with the one available in the
 	git repository.Finally restart the nginx server
 	"""
-	with prefix("cd /home/ubuntu/VirtualEnvironment"):
-		run("sudo apt-get install -y nginx")
+	run("sudo apt-get install -y nginx")
 	#with prefix("cd /home/ubuntu/VirtualEnvironment/news_classification/configs"):
 	#	run("sudo cp nginx.conf /etc/nginx/nginx.conf")
 
@@ -167,6 +173,9 @@ def mongo_status():
 		return 
 
 
+def supervisord_conf():
+	run("echo_supervisord_conf > /etc/supervisord.conf")
+
 def reboot():
 	run("sudo reboot")
 
@@ -195,16 +204,21 @@ def update():
 
 def deploy():
 	print(_green("Connecting to EC2 Instance..."))	
-#	execute(basic_setup)
+	execute(basic_setup)
+	execute(increase_swap)
 	execute(virtual_env)
+	execute(hunpos_tagger)
+	execute(download_corpora)
+
+	execute(nginx)
+	execute(mongo)
+	execute(status)
+
 #	execute(after_env)
 #	execute(installing_requirements)
-#	execute(nginx)
-#	execute(mongo)
-#	execute(status)
 #	execute(install_phantomjs)
 	print(_yellow("...Disconnecting EC2 instance..."))
 #	run("sudo reboot")
-#	disconnect_all()
+	disconnect_all()
 
 
