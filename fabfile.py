@@ -129,8 +129,9 @@ def nginx():
 
 def nginx_status():
 	    """
-	    Check if nginx is installed.
+	    Check if nginx is running fine or not.
 	    """
+	    print ("\t\t%s"%_yellow("Checking nginx status"))
 	    with settings(hide("running", "stderr", "stdout")):
 	    	result = run('if ps aux | grep -v grep | grep -i "nginx"; then echo 1; else echo ""; fi')
 	    	if result:
@@ -145,6 +146,16 @@ def nginx_status():
 				    	run("sudo service nginx restart")
 				    	run("sudo tail -n 50 /applogs/nginx_error.logs")
 		return 
+
+def gunicorn_status():
+	    """
+	    Check if  gunicorn is running fine or not.
+	    """
+	    print ("\n\n\t\t%s"%_yellow("Checking gunicorn status"))
+	    with settings(hide("running", "stderr", "stdout")):
+	   	 result = run('ps aux | grep gunicorn')
+	    print (_green(result))
+	    return 
 
 
 def mongo():
@@ -164,12 +175,13 @@ def mongo():
 
 def mongo_status():
 	    """
-	    Check if nginx is installed.
+	    Check if mongodb is running fine
 	    """
+	    print ("\n\n\t\t%s"%_yellow("Checking mongo status"))
 	    with settings(hide("running", "stderr", "stdout")):
 	    	result = run('if ps aux | grep -v grep | grep -i "mongodb"; then echo 1; else echo ""; fi')
 	    	if result:
-			    print (_green("Mongodb is running fine......................"))
+			    print ("\n\n%s\n\n"%_green("Mongodb is running fine......................"))
 	    	else:
 			    print (_red("Mongodb is not running ......................"))
 			    confirmation = confirm("Do you want to trouble shoot here??it will delete mongo.lock file", default=True)
@@ -177,6 +189,21 @@ def mongo_status():
 					run("sudo rm -rf  /var/lib/mongodb/mongod.lock ")
 				    	run("sudo service mongodb restart")
 		return 
+
+
+def disk_usage():
+	    with settings(hide("running", "stderr", "stdout")):
+	   	 result = run('df -h')
+	    
+	    print ("\n\n\t\t%s"%_yellow("Checking disk usage"))
+	    print ("\n\n%s\n\n"%_green(result))
+
+def ram_usage():
+	    with settings(hide("running", "stderr", "stdout")):
+	   	 result = run('free -m')
+	    print ("\n\n\t\t%s"%_yellow("Checking ram usage"))
+	    print ("\n\n%s\n\n"%_green(result))
+	    return 
 
 
 def supervisord_conf():
@@ -189,11 +216,13 @@ def reboot():
 	run("sudo reboot")
 
 
-def status():
+def health_check():
 	print(_green("Connecting to EC2 Instance..."))	
-	run("free -m")
 	execute(mongo_status)
 	execute(nginx_status)
+	execute(gunicorn_status)
+	execute(disk_usage)
+	execute(ram_usage)
 	print(_yellow("...Disconnecting EC2 instance..."))
 	disconnect_all()
 
@@ -221,6 +250,7 @@ def deploy():
 	execute(supervisord_conf)
 	execute(nginx)
 	execute(mongo)
+	execute(health_check)
 	execute(status)
 	print(_yellow("...Disconnecting EC2 instance..."))
 #	run("sudo reboot")
