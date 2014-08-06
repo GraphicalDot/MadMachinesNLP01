@@ -5,7 +5,7 @@ $(document).ready(function(){
 
 
 function make_request(data){
-	url =  "http://localhost:8000/process_text" ;
+	url =  "http://http://ec2-50-112-147-199.us-west-2.compute.amazonaws.com:8000/process_text" ;
 	return 	$.post(url, {"text": data})
 		}
 

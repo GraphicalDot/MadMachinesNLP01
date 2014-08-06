@@ -183,7 +183,7 @@ def supervisord_conf():
 	with cd("/home/ubuntu/VirtualEnvironment/"):
 		with prefix("source bin/activate"):
 			run("sudo cp /home/ubuntu/VirtualEnvironment/canworks/configs/supervisord.conf /etc/supervisord.conf")
-	
+			run("supervisorctl reload")	
 
 def reboot():
 	run("sudo reboot")
