@@ -108,7 +108,7 @@ App.RootRowView = Backbone.View.extend({
 			if (result == true){
 				sentence = self.sentence();
 				changed_polarity = self.$('#ddpFiltersentiment option:selected').text();
-				var jqhr = $.post("http://localhost:8000/update_model", {"text": sentence, "tag": changed_polarity})	
+				var jqhr = $.post("http://ec2-50-112-147-199.us-west-2.compute.amazonaws.com:8000/update_model", {"text": sentence, "tag": changed_polarity})	
 				jqhr.done(function(data){
 					console.log(data.success)
 					if (data.success == true){
@@ -133,7 +133,7 @@ App.RootRowView = Backbone.View.extend({
 				changed_tag = self.$('#ddpFilter option:selected').text();
 				sentence = self.sentence();
 
-				var jqhr = $.post("http://localhost:8000/update_model", {"text": sentence, "tag": changed_tag})	
+				var jqhr = $.post("http://ec2-50-112-147-199.us-west-2.compute.amazonaws.com:8000/update_model", {"text": sentence, "tag": changed_tag})	
 				jqhr.done(function(data){
 					console.log(data.success)
 					if (data.success == true){
