@@ -37,15 +37,25 @@ def basic_setup():
 	#Dependencies for installating sklearn
 	run("sudo apt-get install -y build-essential python-dev python-setuptools python-numpy python-scipy libatlas-dev libatlas3gf-base")
 	run("sudo apt-get install -y python-matplotlib")
+	#Dependencies for installating scipy
+	run("sudo apt-get install -y liblapack-dev libatlas-dev gfortran")
+	run("sudo apt-get install -y libatlas-base-dev gfortran build-essential g++ libblas-dev")
+
+
+def increase_swap():
+	run("sudo /bin/dd if=/dev/zero of=/var/swap.1 bs=1M count=1024")
+	run("sudo /sbin/mkswap /var/swap.1")
+	run("sudo /sbin/swapon /var/swap.1")
+
 
 def hunpos_tagger():
 	"""
 	This script installs the hunpos tagger 
 	"""
-	with cd("/home/ubuntu/Canworks/canworks/trunk"):
+	with cd("/home/ubuntu/VirtualEnvironment/canworks/trunk"):
 		run("./build.sh build")
 	
-	with cd("/home/ubuntu/Canworks/canworks"):
+	with cd("/home/ubuntu/VirtualEnvironment/canworks"):
 		run("sudo cp -r trunk/ /usr/local/bin")
 		
 	with cd("/usr/local/bin"):
@@ -63,23 +73,22 @@ def virtual_env():
 	with cd("/home/ubuntu/"):
 		if not exists("VirtualEnvironment", use_sudo=True):
 			run("virtualenv --no-site-packages VirtualEnvironment")
-			with cd("/home/ubuntu/VirtualEnvironment"):
+			with cd("/home/ubuntu/VirtualEnvironment/"):
 				run("sudo apt-get install -y git")
-				with prefix("source bin/activate && cd /home/ubuntu/VirtualEnvironment/"):
+				with prefix("source bin/activate"):
 					if not exists("applogs", use_sudo=True):
 						run("sudo mkdir applogs")
 						run("sudo chown -R ubuntu:ubuntu applogs")
 					if not exists("canworks", use_sudo=True):	
 						run(" git clone https://github.com/AdityaKhanna/canworks.git")
-					with cd("canworks"):
-						run("pip install -r requirements.txt")
+					run("pip install -r canworks/requirements.txt")
 
 
 def download_corpora():
 	run("python -m textblob.download_corpora")
 
 
-
+1
 
 #	with prefix("cd /home/ubuntu/VirtualEnvironment &&source bin/activate"):
 #		run("sudo pip install -r canworks/requirements.txt")
