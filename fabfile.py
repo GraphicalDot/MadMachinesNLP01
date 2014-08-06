@@ -115,9 +115,16 @@ def nginx():
 	git repository.Finally restart the nginx server
 	"""
 	run("sudo apt-get install -y nginx")
-	#with prefix("cd /home/ubuntu/VirtualEnvironment/news_classification/configs"):
-	#	run("sudo cp nginx.conf /etc/nginx/nginx.conf")
-
+	with prefix("cd /home/ubuntu/VirtualEnvironment/canworks/configs"):
+		run("sudo cp nginx.conf /etc/nginx/nginx.conf")
+		run("sudo cp nginx_default.conf /etc/nginx/sites-enabled/default")
+		
+	
+	print (_green("Checking nginx configuration file"))
+	run("sudo nginx -t")
+	
+	print ("\n\n%s\n\n"%_green("Restarting nginx"))
+	run("sudo service nginx restart")
 
 
 def nginx_status():
@@ -151,7 +158,6 @@ def mongo():
 		run("echo -e 'deb http://downloads-distro.mongodb.org/repo/ubuntu-upstart dist 10gen' | sudo tee /etc/apt/sources.list.d/mongodb.list")
 		run("sudo apt-get update")
 		run("sudo apt-get install -y mongodb-10gen")
-#		run("sudo cp configs/mongodb.conf /etc/mongodb.conf")
 	run("sudo rm -rf  /var/lib/mongodb/mongod.lock")
 	run("sudo service mongodb restart")
 
@@ -209,7 +215,7 @@ def deploy():
 	execute(virtual_env)
 	execute(hunpos_tagger)
 	execute(download_corpora)
-
+	execute(supervisord_conf)
 	execute(nginx)
 	execute(mongo)
 	execute(status)
