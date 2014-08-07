@@ -21,11 +21,11 @@ class Classifier:
 		self.sent_tokenizer = nltk.data.load('tokenizers/punkt/english.pickle')
 
 		
-		self.ambience_data = self.sent_tokenizer.tokenize(open("%s/trainers/ambience.txt"%path).read())
-		self.services_data = self.sent_tokenizer.tokenize(open("%s/trainers/service.txt"%path).read())
-		self.costing_data = self.sent_tokenizer.tokenize(open("%s/trainers/cost.txt"%path).read())
-		self.food_data = self.sent_tokenizer.tokenize(open("%s/trainers/food.txt"%path).read())
-		self.null_data = self.sent_tokenizer.tokenize(open("%s/trainers/null.txt"%path).read())
+		self.ambience_data = self.sent_tokenizer.tokenize(open("%s/trainers/ambience.txt"%path).read(), realign_boundaries=True)
+		self.services_data = self.sent_tokenizer.tokenize(open("%s/trainers/service.txt"%path).read(), realign_boundaries=True)
+		self.costing_data = self.sent_tokenizer.tokenize(open("%s/trainers/cost.txt"%path).read(), realign_boundaries=True)
+		self.food_data = self.sent_tokenizer.tokenize(open("%s/trainers/food.txt"%path).read(), realign_boundaries=True)
+		self.null_data = self.sent_tokenizer.tokenize(open("%s/trainers/null.txt"%path).read(), realign_boundaries=True)
 		#self.ambience_documents = [(nltk.wordpunct_tokenize(sent), "ambience") for sent in self.ambience_data if sent != ""]
 		self.ambience_documents = [(sent, "ambience") for sent in self.ambience_data if sent != ""]
 		self.services_documents = [(sent, "service") for sent in self.services_data if sent != ""]
@@ -128,7 +128,7 @@ class Classifier:
 	def with_svm(self):
 
 		classifier = self.svm_classifier()
-		new_data = self.sent_tokenizer.tokenize(self.text)
+		new_data = self.sent_tokenizer.tokenize(self.text, realign_boundaries= True)
 		
 		print new_data
 		predicted = classifier.predict(new_data)

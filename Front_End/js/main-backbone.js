@@ -2,10 +2,12 @@
 $(document).ready(function(){
    	App = {} ;
 	window.App = App ;
-
+	//window.url = "http://ec2-50-112-147-199.us-west-2.compute.amazonaws.com:8000";
+	window.url = "http://localhost:8000";
 
 function make_request(data){
-	url =  "http://ec2-50-112-147-199.us-west-2.compute.amazonaws.com:8000/process_text" ;
+	url =  window.url + "/process_text" ;
+	console.log(window.url)
 	return 	$.post(url, {"text": data})
 		}
 
@@ -108,7 +110,7 @@ App.RootRowView = Backbone.View.extend({
 			if (result == true){
 				sentence = self.sentence();
 				changed_polarity = self.$('#ddpFiltersentiment option:selected').text();
-				var jqhr = $.post("http://ec2-50-112-147-199.us-west-2.compute.amazonaws.com:8000/update_model", {"text": sentence, "tag": changed_polarity})	
+				var jqhr = $.post(window.url+"/update_model", {"text": sentence, "tag": changed_polarity})	
 				jqhr.done(function(data){
 					console.log(data.success)
 					if (data.success == true){
@@ -133,7 +135,7 @@ App.RootRowView = Backbone.View.extend({
 				changed_tag = self.$('#ddpFilter option:selected').text();
 				sentence = self.sentence();
 
-				var jqhr = $.post("http://ec2-50-112-147-199.us-west-2.compute.amazonaws.com:8000/update_model", {"text": sentence, "tag": changed_tag})	
+				var jqhr = $.post(window.url+"/update_model", {"text": sentence, "tag": changed_tag})	
 				jqhr.done(function(data){
 					console.log(data.success)
 					if (data.success == true){
