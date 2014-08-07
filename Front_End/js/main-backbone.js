@@ -2,11 +2,13 @@
 $(document).ready(function(){
    	App = {} ;
 	window.App = App ;
-	//window.url = "http://ec2-50-112-147-199.us-west-2.compute.amazonaws.com:8000";
-	window.url = "http://localhost:8000";
+	window.process_text_url = "http://ec2-50-112-147-199.us-west-2.compute.amazonaws.com:8000/process_text";
+	window.update_model_url = "http://ec2-50-112-147-199.us-west-2.compute.amazonaws.com:8000/update_model";
+	//window.process_text_url = "http://localhost:8000/process_text";
+	//window.update_model_url = "http://localhost:8000/update_model";
 
 function make_request(data){
-	url =  window.url + "/process_text" ;
+	url =  window.process_text_url ;
 	console.log(window.url)
 	return 	$.post(url, {"text": data})
 		}
@@ -52,12 +54,16 @@ App.RootView = Backbone.View.extend({
 				bootbox.alert(data.messege)	
 			}
 			})
+		jqhr.fail(function(){
+				bootbox.alert("Either the api or internet connection is not working, Try again later")
+			})
+		
 	},
 });
 
 App.RootTopView = Backbone.View.extend({
 	tagName: "fieldset",
-	className: "well plan-name-silver",
+	className: "well",
 	template: template("root-top"),
 
 	phrases: function(){return this.model.phrases},
@@ -67,8 +73,51 @@ App.RootTopView = Backbone.View.extend({
 		this.model = options.model;
 	},
 	render: function(){
+		var self = this;
 		this.$el.append(this.template(this));
+		$(this.model.phrases).each(function(index, value){
+				self.subView = new App.NounPhraseView({model: value});
+				self.$("#tagcloud").append(self.subView.render().el);	
+				self.$("#tagcloud").append('&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;');	
+		})
+
+		this.afterRender();
 		return this;
+	},
+		
+	afterRender: function(){
+		this.$("#tagcloud a").tagcloud({
+			size: {
+				start: 10,
+				end: 25,
+				unit: 'px'},
+			color: {
+				start: "#CDE",
+				end: "#FS2",}
+				})
+			},
+});
+
+App.NounPhraseView = Backbone.View.extend({
+	template: Mustache.compile('{{nounPhrase}}'),
+	tagName: "a",
+	items: Array(5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20),
+	size: function(){return this.items[Math.floor(Math.random()*this.items.length)] },
+	nounPhrase: function(){return this.model},
+
+	initialize: function(options){
+		this.model = options.model;
+		console.log(this.size())
+	},
+
+	render: function(){
+		this.$el.append(this.template(this));
+		this.afterRender();
+		return this;
+	},
+
+	afterRender: function(){
+		this.$el.attr({href: "#", rel: this.size()});
 	},
 
 });
@@ -110,7 +159,7 @@ App.RootRowView = Backbone.View.extend({
 			if (result == true){
 				sentence = self.sentence();
 				changed_polarity = self.$('#ddpFiltersentiment option:selected').text();
-				var jqhr = $.post(window.url+"/update_model", {"text": sentence, "tag": changed_polarity})	
+				var jqhr = $.post(window.update_model_url, {"text": sentence, "tag": changed_polarity})	
 				jqhr.done(function(data){
 					console.log(data.success)
 					if (data.success == true){
@@ -135,7 +184,7 @@ App.RootRowView = Backbone.View.extend({
 				changed_tag = self.$('#ddpFilter option:selected').text();
 				sentence = self.sentence();
 
-				var jqhr = $.post(window.url+"/update_model", {"text": sentence, "tag": changed_tag})	
+				var jqhr = $.post(window.update_model_url, {"text": sentence, "tag": changed_tag})	
 				jqhr.done(function(data){
 					console.log(data.success)
 					if (data.success == true){

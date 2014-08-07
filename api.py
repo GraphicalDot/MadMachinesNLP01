@@ -95,7 +95,7 @@ def return_processed_text():
 			element["noun_phrases"] = list(instance.noun_phrase())
 			element["tag"] = chunk[1]
 			result.append(element)
-			noun_phrase.append(list(instance.noun_phrase()))
+			noun_phrase.extend(list(instance.noun_phrase()))
 
 		return jsonify({
 				"result": result,

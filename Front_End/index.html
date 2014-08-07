@@ -25,6 +25,7 @@
 		<script type="text/javascript" src="js/libs/backbone/backbone.js"></script>
 		<script type="text/javascript" src="js/libs/Jquery-validate/jquery.validate.js"></script>
 		<script type="text/javascript" src="js/libs/jquery-cookie/jquery.cookie.js"></script>
+		<script type="text/javascript" src="js/libs/jquery.tagcloud.js"></script>
 
 	</head>
 	<body>
@@ -43,10 +44,14 @@
 			<p style="text-align: center">overall sentiment   {{sentiment}}</p>
 		</div>
 		<div class="span9">
-			<p style="text-align: center">{{phrases}}</p>
+			<div id="tagcloud">
+			</div>
 		</div>
-	
-	
+
+	</script>
+	<script type="text/x-mustache-template" id="noun-phrase-template">
+		<a href="#" rel="{{size}}">{{nounPhrase}}</a>
+
 	</script>
 	<script type="text/x-mustache-template" id="root-row-template">
 		<div class="span5">
