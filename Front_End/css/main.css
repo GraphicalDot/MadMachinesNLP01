@@ -3,7 +3,7 @@
 body{
     padding-top: 10px;
     padding-bottom: 10px;
-	background-image: url("bg3.jpg");
+/*	background-image: url("bg3.jpg"); */
 	background-size:   cover;                      /* <------ */
 	    background-repeat: no-repeat;
 }
@@ -19,9 +19,9 @@ body{
  
  .plan:hover {
   background-color: initial;
-	color: #FFFFFF ; 
+	/*color: #FFFFFF ;*/ 
 	font-size: 150% ;
-	text-decoration: line-through ;
+	/*text-decoration: line-through ;*/
 	text-align: auto ;
 	font-weight: bold ;
   -moz-box-shadow: 0 0 12px 3px #b0b2ab ;

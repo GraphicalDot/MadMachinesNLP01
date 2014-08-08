@@ -63,7 +63,7 @@ App.RootView = Backbone.View.extend({
 
 App.RootTopView = Backbone.View.extend({
 	tagName: "fieldset",
-	className: "well",
+	className: "well plan",
 	template: template("root-top"),
 
 	phrases: function(){return this.model.phrases},

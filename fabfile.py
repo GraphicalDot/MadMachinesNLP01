@@ -212,6 +212,33 @@ def supervisord_conf():
 			run("sudo cp /home/ubuntu/VirtualEnvironment/canworks/configs/supervisord.conf /etc/supervisord.conf")
 			run("supervisorctl reload")	
 
+
+def restart_gunicorn():
+	with cd("/home/ubuntu/VirtualEnvironment/"):
+		with prefix("source bin/activate && cd canworks"):
+	    		result = run('if ps aux | grep -v grep | grep -i "gunicorn"; then echo 1; else echo ""; fi')
+	    		if result:
+				print ("\n\n%s\n\n"%_green("Gunicorn is running"))
+				confirmation = confirm("Do you want to restart gunicorn", default=True)
+				if confirmation:
+					pid = run("ps aux | grep gunicorn | awk 'NR==1 {print $2}'")
+					run("sudo kill -9 %s"%pid)
+		
+	    				result = run('if ps aux | grep -v grep | grep -i "gunicorn"; then echo 1; else echo ""; fi')
+					if not result:
+						print ("\n\n%s\n\n"%_red("Gunicorn has been stopped and is starting with new repo"))
+						run("gunicorn -c configs/gunicorn_config.py api:app")
+	    					result = run('if ps aux | grep -v grep | grep -i "gunicorn"; then echo 1; else echo ""; fi')
+						if result:
+							print ("\n\n%s\n\n"%_green("Gunicorn is running"))
+						else:
+							print ("\n\n%s\n\n"%_red("Gunicorn is not running, U need to login to the server"))
+
+					else:
+						print ("\n\n%s\n\n"%_red("Gunicorn has not been stopped"))
+						return
+
+
 def reboot():
 	run("sudo reboot")
 
