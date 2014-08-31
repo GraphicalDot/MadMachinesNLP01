@@ -215,8 +215,8 @@ def supervisord_conf():
 
 def restart_gunicorn():
 	with cd("/home/ubuntu/VirtualEnvironment/"):
-		with prefix("source bin/activate && cd canworks"):
-	    		result = run('if ps aux | grep -v grep | grep -i "gunicorn"; then echo 1; else echo ""; fi')
+		with prefix("source bin/activate"):
+			result = run('if ps aux | grep -v grep | grep -i "gunicorn"; then echo 1; else echo ""; fi')
 	    		if result:
 				print ("\n\n%s\n\n"%_green("Gunicorn is running"))
 				confirmation = confirm("Do you want to restart gunicorn", default=True)
@@ -227,7 +227,8 @@ def restart_gunicorn():
 	    				result = run('if ps aux | grep -v grep | grep -i "gunicorn"; then echo 1; else echo ""; fi')
 					if not result:
 						print ("\n\n%s\n\n"%_red("Gunicorn has been stopped and is starting with new repo"))
-						run("gunicorn -c configs/gunicorn_config.py api:app")
+						with cd("canworks"):
+							run("gunicorn -c canworks/configs/gunicorn_config.py api:app")
 	    					result = run('if ps aux | grep -v grep | grep -i "gunicorn"; then echo 1; else echo ""; fi')
 						if result:
 							print ("\n\n%s\n\n"%_green("Gunicorn is running"))
