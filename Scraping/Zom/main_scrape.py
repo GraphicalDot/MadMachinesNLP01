@@ -416,8 +416,7 @@ def csv_writer(name):
 	return (writer, csvfile)
 
 
-
-def scrape(url, number_of_restaurants, skip=0):
+def scrape_links(url, number_of_restaurants, skip=0):
 	"""
 	Args:
 		url: 
@@ -440,23 +439,14 @@ def scrape(url, number_of_restaurants, skip=0):
 		The keys included in one restaurant doictionary are as follows
 		
 	"""
-
-
-
-	eateries_list = [{"eatery_url": "http://www.zomato.com/ncr/threesixty-degrees-the-oberoi-zakir-hussain-marg-delhi", "eatery_name": "360 oberoi"}]
-
-
-def scrape_links(url, number_of_restaurants, skip=0):
 	instance = EateriesList(url, int(number_of_restaurants))
 	eateries_list = instance.eateries_list()[int(skip): int(number_of_restaurants)+int(skip)]
 	eatery_modified_list = list()
 
-
-
-
-
-
-for eatery_dict in eateries_list:
+		
+	
+	
+	for eatery_dict in eateries_list:
 		instance = EateryData(eatery_dict)
 		#eatery_modified_list.append(dict([(key, value) for key, value in instance.eatery.iteritems() if key.startswith("eatery")]))
 		#reviews_list.extend(instance.eatery.get("reviews"))
@@ -520,14 +510,12 @@ for eatery_dict in eateries_list:
 		DBInsert.db_insert_users(users_list)
 
 		csvfile.close()
+
 	return
-
-
 
 if __name__ == "__main__":
 
-
 #	scrape("http://www.zomato.com/ncr/malviya-nagar-delhi-restaurants?category=1", 30, 18) 
-	scrape("http://www.zomato.com/ncr/malviya-nagar-delhi-restaurants?category=1", 20, 0) 
+	scrape_links("https://www.zomato.com/ncr/south-delhi-restaurants", 5, 19) 
 #	scrape("http://www.zomato.com/ncr/khan-market-delhi-restaurants?category=1", 28, 1) 
 

@@ -53,12 +53,14 @@ class DBInsert(object):
 	
 		
 		for user in users:
+			try:
+				result = user_collection.update({"user_id": user.get("user_id"), "user_name": user.get("user_name")},{"$set": {"user_url": user.get("user_url"), "user_followers": user.get("user_followers"), "user_reviews" : user.get("user_reviews"), "updated_on": int(time.time())}}, upsert=True)	
 
-			result = user_collection.update({"user_id": user.get("user_id"), "user_name": user.get("user_name")},{"$set": {"user_url": user.get("user_url"), "user_followers": user.get("user_followers"), "user_reviews" : user.get("user_reviews"), "updated_on": int(time.time())}}, upsert=True)	
-
-			print user.get("user_id"), type(user.get("user_id"))
-			print user_collection.find_one({"user_id": user.get("user_id")})
-			print result.get("updatedExisting"), "\n\n"
+				print user.get("user_id"), type(user.get("user_id"))
+				print user_collection.find_one({"user_id": user.get("user_id")})
+				print result.get("updatedExisting"), "\n\n"
+			except Exception as e:
+				print "%s occurred while updating %s"%(e, user.get("user_id"))
 		return
 
 
