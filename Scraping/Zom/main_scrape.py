@@ -441,25 +441,22 @@ def scrape_links(url, number_of_restaurants, skip=0):
 	"""
 	instance = EateriesList(url, int(number_of_restaurants))
 	eateries_list = instance.eateries_list()[int(skip): int(number_of_restaurants)+int(skip)]
-	eatery_modified_list = list()
-
-		
+	return eateries_list	
 	
-	
-	for eatery_dict in eateries_list:
-		instance = EateryData(eatery_dict)
-		#eatery_modified_list.append(dict([(key, value) for key, value in instance.eatery.iteritems() if key.startswith("eatery")]))
-		#reviews_list.extend(instance.eatery.get("reviews"))
-		eatery_modified = dict([(key, value) for key, value in instance.eatery.iteritems() if key.startswith("eatery")])
+def eatery_specific(eatery_dict):	
+	instance = EateryData(eatery_dict)
+	#eatery_modified_list.append(dict([(key, value) for key, value in instance.eatery.iteritems() if key.startswith("eatery")]))
+	#reviews_list.extend(instance.eatery.get("reviews"))
+	eatery_modified = dict([(key, value) for key, value in instance.eatery.iteritems() if key.startswith("eatery")])
 		
 		
-		#Creating csvfile witht he name of extery name
-		writer = csv_writer(eatery_modified.get("eatery_name"))[0]
-		csvfile = csv_writer(eatery_modified.get("eatery_name"))[1]
+	#Creating csvfile witht he name of extery name
+	writer = csv_writer(eatery_modified.get("eatery_name"))[0]
+	csvfile = csv_writer(eatery_modified.get("eatery_name"))[1]
 		
-		station = lambda x : (x.get("name"), x.get("distance")) if x else (None, None)
+	station = lambda x : (x.get("name"), x.get("distance")) if x else (None, None)
 
-		eatery_row = [eatery_modified.get('eatery_adddress'), eatery_modified.get('eatery_cost'), eatery_modified.get('eatery_cuisine'), 
+	eatery_row = [eatery_modified.get('eatery_adddress'), eatery_modified.get('eatery_cost'), eatery_modified.get('eatery_cuisine'), 
 			eatery_modified.get('eatery_id'), eatery_modified.get('eatery_name'), 
 			station(eatery_modified.get("eatery_F_M_Station"))[1], 
 			station(eatery_modified.get("eatery_F_M_Station"))[0],
@@ -474,48 +471,47 @@ def scrape_links(url, number_of_restaurants, skip=0):
 			eatery_modified.get("eatery_wishlist"), eatery_modified.get('eatery_url'), 
 			eatery_modified.get('converted_to_epoch'),eatery_modified.get('eatery_id')]
 
-		writer.writerow(eatery_row)
-		print "\n\n\n", eatery_modified, "\n\n"
-		DBInsert.db_insert_eateries(eatery_modified)
+	writer.writerow(eatery_row)
+	print "\n\n\n", eatery_modified, "\n\n"
+	DBInsert.db_insert_eateries(eatery_modified)
 		
-		reviews = instance.eatery.get("reviews")
-		DBInsert.db_insert_reviews(reviews)
+	reviews = instance.eatery.get("reviews")
+	DBInsert.db_insert_reviews(reviews)
 
 
-		users_list = list()
-		for review in  reviews:
-			text = review.get("review_text")
-			name = review.get("user_name")
-			
-			try:	
-				review["review_text"] = text.decode("ascii", "ignore")
-			except Exception:
-				review["review_text"] = ''
-
-
-			try:	
-				review["user_name"] = name.decode("ascii", "ignore")
-
-			except Exception:
-				review["user_name"] = ''
-
-			review_append = ["" for i in range(0, 22)]
-			review_append.extend([value for key, value in review.iteritems()])
-			#print review_append
-			writer.writerow(review_append)
+	users_list = list()
+	for review in  reviews:
+		text = review.get("review_text")
+		name = review.get("user_name")
 		
-			users = dict([(key, value) for key, value in review.iteritems()])
-			users_list.append(users)
-		
-		DBInsert.db_insert_users(users_list)
+		try:	
+			review["review_text"] = text.decode("ascii", "ignore")
+		except Exception:
+			review["review_text"] = ''
 
-		csvfile.close()
+		try:	
+			review["user_name"] = name.decode("ascii", "ignore")
+
+		except Exception:
+			review["user_name"] = ''
+
+		review_append = ["" for i in range(0, 22)]
+		review_append.extend([value for key, value in review.iteritems()])
+		#print review_append
+		writer.writerow(review_append)
+		
+		users = dict([(key, value) for key, value in review.iteritems()])
+		users_list.append(users)
+		
+	DBInsert.db_insert_users(users_list)
+
+	csvfile.close()
 
 	return
-
+"""
 if __name__ == "__main__":
 
 #	scrape("http://www.zomato.com/ncr/malviya-nagar-delhi-restaurants?category=1", 30, 18) 
-	scrape_links("https://www.zomato.com/ncr/south-delhi-restaurants", 5, 19) 
+	scrape_links("https://www.zomato.com/ncr/south-delhi-restaurants", 2, 26) 
 #	scrape("http://www.zomato.com/ncr/khan-market-delhi-restaurants?category=1", 28, 1) 
-
+"""

@@ -11,6 +11,8 @@ import time
 import pymongo
 import random
 from celery_app.App import app
+from main_scrape import scrape_links, eatery_specific
+
 
 from celery import task, subtask, group
 connection = pymongo.Connection()
@@ -19,16 +21,17 @@ collection = db.intermediate_collection
 
 
 @app.task(ignore_result = True, max_retries=3, retry=True)
-def eateries_list(amount):
-	return [i for i in range(amount)]
-
+def eateries_list(url, number_of_restaurants, skip):
+	print "got into eateries list"
+	eateries_list = scrape_links(url, number_of_restaurants, skip)
+	return eateries_list
 
 
 
 @app.task(ignore_result = True, max_retries=3, retry=True)
-def process_eatery(item):
-	post = {"key": item, "messege": "this is the item %s"%item}
-	print collection.insert(post)
+def process_eatery(eatery_dict):
+	print "got into process_eatery"
+	eatery_specific(eatery_dict)
 	return
 
 @app.task(ignore_result = True, max_retries=3, retry=True)
@@ -38,8 +41,8 @@ def dmap(it, callback):
 	return group(callback.clone([arg,]) for arg in it)()
 
 @app.task(ignore_result = True, max_retries=3, retry=True)
-def runn():
-	process_list = eateries_list.s(10) | dmap.s(process_eatery.s())
+def runn(url, number_of_restaurants, skip):
+	process_list = eateries_list.s(url, number_of_restaurants, skip) | dmap.s(process_eatery.s())
 	process_list()
 	return
 
