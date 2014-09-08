@@ -62,5 +62,4 @@ CELERYD_CONCURRENCY = 20
 #CELERYD_LOG_FILE="%s/celery.log"%os.path.dirname(os.path.abspath(__file__))
 CELERY_DISABLE_RATE_LIMITS = True
 CELERY_RESULT_PERSISTENT = True #Keeps the result even after broker restart
-
-
+#CELERYD_POOL = 'gevent'

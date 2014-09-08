@@ -19,10 +19,13 @@ from db_insertion import DBInsert
 
 class EateriesList(object):
 
-	def __init__(self, url, stop_at=None):
+	def __init__(self, url, number_of_restaurants, skip, stop_at=None):
 		self.url = url
 		self.soup = self.prepare_soup(self.url)
 		self.stop_at = stop_at
+		self.number_of_restaurants = number_of_restaurants
+		self.skip = skip
+
 
         def prepare_soup(self, url):
 		"""
@@ -33,7 +36,7 @@ class EateriesList(object):
 
 		"""
 		goose_instance = goose.Goose()
-		data = goose_instance.extract(self.url)
+		data = goose_instance.extract(url)
 		data = data.raw_html
 		soup = BeautifulSoup.BeautifulSoup(data)
 		return soup
@@ -54,7 +57,7 @@ class EateriesList(object):
 		except AttributeError:
 			pages_number = 1
 		
-		pages_url = ["%s&page=%s"%(self.url, page_number) for page_number in range(1, int(pages_number)+1)]
+		pages_url = ["%s?page=%s"%(self.url, page_number) for page_number in range(1, int(pages_number)+1)]
 		return pages_url
 
 
@@ -72,25 +75,31 @@ class EateriesList(object):
 			'eatery_url': 'http://url/ncr/urban-spoon-1-malviya-nagar-delhi', 'eatery_name': u'Urban Spoon'}]
 		"""	
 		eateries = list()
+		self.start_page_number = self.skip/30 #Keeping in mind that zomato does have 30 restaurants per page
+			
+		self.end_page_number = self.number_of_restaurants/30 
+
 		pages = self.pagination_links()
-		for page in pages:
+
+		print pages[self.start_page_number: self.start_page_number + self.end_page_number]
+		
+		for page in pages[self.start_page_number: self.start_page_number + self.end_page_number]:
 			time.sleep(random.choice(range(0, 30)))
 			eateries.extend(self.fetch_eateries(page))
-			if len(eateries) >= self.stop_at:
-				break
+		
 		return eateries
-
+	
 	def fetch_eateries(self, page_url):
 		"""
 		This fetches all the li elements which belongs to individual eatries present on the page present on the urlgiven
 
 		"""
+		
 		eateries_list = list()
 		soup = self.prepare_soup(page_url)
 		eatries_soup = soup.findAll("li", {"class": "resZS mb5 pb5 brstd even  status1"})
 		for eatery_soup in eatries_soup:
 			eateries_list.append(self.each_eatery(eatery_soup))
-
 		return eateries_list
 
 	def each_eatery(self, eatery_soup):
@@ -289,6 +298,7 @@ class EateryData(object):
 
 		
 		driver.implicitly_wait(30)
+		time.sleep(20)
 		html = driver.page_source
 		driver.implicitly_wait(random.choice(range(5, 11)))
 		driver.close()
@@ -439,8 +449,10 @@ def scrape_links(url, number_of_restaurants, skip=0):
 		The keys included in one restaurant doictionary are as follows
 		
 	"""
-	instance = EateriesList(url, int(number_of_restaurants))
-	eateries_list = instance.eateries_list()[int(skip): int(number_of_restaurants)+int(skip)]
+	instance = EateriesList(url, int(number_of_restaurants), int(skip))
+
+	eateries_list = instance.eateries_list()
+	print eateries_list
 	return eateries_list	
 	
 def eatery_specific(eatery_dict):	
@@ -451,8 +463,8 @@ def eatery_specific(eatery_dict):
 		
 		
 	#Creating csvfile witht he name of extery name
-	writer = csv_writer(eatery_modified.get("eatery_name"))[0]
-	csvfile = csv_writer(eatery_modified.get("eatery_name"))[1]
+	#writer = csv_writer(eatery_modified.get("eatery_name"))[0]
+	#csvfile = csv_writer(eatery_modified.get("eatery_name"))[1]
 		
 	station = lambda x : (x.get("name"), x.get("distance")) if x else (None, None)
 
@@ -471,7 +483,7 @@ def eatery_specific(eatery_dict):
 			eatery_modified.get("eatery_wishlist"), eatery_modified.get('eatery_url'), 
 			eatery_modified.get('converted_to_epoch'),eatery_modified.get('eatery_id')]
 
-	writer.writerow(eatery_row)
+	#writer.writerow(eatery_row)
 	print "\n\n\n", eatery_modified, "\n\n"
 	DBInsert.db_insert_eateries(eatery_modified)
 		
@@ -498,7 +510,7 @@ def eatery_specific(eatery_dict):
 		review_append = ["" for i in range(0, 22)]
 		review_append.extend([value for key, value in review.iteritems()])
 		#print review_append
-		writer.writerow(review_append)
+		#writer.writerow(review_append)
 		
 		users = dict([(key, value) for key, value in review.iteritems()])
 		users_list.append(users)
@@ -510,8 +522,18 @@ def eatery_specific(eatery_dict):
 	return
 """
 if __name__ == "__main__":
-
+	url = "https://www.zomato.com/ncr/south-delhi-restaurants"
+	number_of_restaurants = 30
+	skip = 30
+	instance = EateriesList(url, int(number_of_restaurants), int(skip))
+	eateries_list = instance.eateries_list()
+	print eateries_list	
 #	scrape("http://www.zomato.com/ncr/malviya-nagar-delhi-restaurants?category=1", 30, 18) 
-	scrape_links("https://www.zomato.com/ncr/south-delhi-restaurants", 2, 26) 
-#	scrape("http://www.zomato.com/ncr/khan-market-delhi-restaurants?category=1", 28, 1) 
-"""
+	###This is the right one for element in scrape_links("https://www.zomato.com/ncr/south-delhi-restaurants", 30, 30):
+		print element.get("eatery_name")
+		
+		#	scrape("http://www.zomato.com/ncr/khan-market-delhi-restaurants?category=1", 28, 1)
+
+	"""
+runn.apply_async(["https://www.zomato.com/ncr/south-delhi-restaurants", 30, 270])
+Sun Sep  7 13:31:10 IST 2014
