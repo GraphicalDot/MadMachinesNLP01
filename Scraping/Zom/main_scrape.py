@@ -517,7 +517,7 @@ def eatery_specific(eatery_dict):
 		
 	DBInsert.db_insert_users(users_list)
 
-	csvfile.close()
+	#csvfile.close()
 
 	return
 """
