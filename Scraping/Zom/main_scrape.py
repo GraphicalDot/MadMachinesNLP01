@@ -535,5 +535,6 @@ if __name__ == "__main__":
 		#	scrape("http://www.zomato.com/ncr/khan-market-delhi-restaurants?category=1", 28, 1)
 
 	"""
-#runn.apply_async(["https://www.zomato.com/ncr/south-delhi-restaurants", 30, 270])
+#runn.apply_async(["https://www.zomato.com/ncr/south-delhi-restaurants", 30, 520]), this has been done for south delhi
+
 #Sun Sep  7 13:31:10 IST 2014

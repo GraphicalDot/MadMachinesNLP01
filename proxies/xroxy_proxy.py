@@ -7,10 +7,10 @@ import lxml.html
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import Select
+from redis_storage import RedisProxy
 
 parent = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(parent)
-from CloudStorage import RedisProxy
 
 class XRoxyProxies:
 	"""
@@ -72,7 +72,10 @@ class XRoxyProxies:
 		self.country = self.arguments(country)
 		self.latency = self.arguments(latency)
 		self.reliability = self.arguments(reliability)
-
+		self.proxy_list = list()
+		self.xroxy_in_browser()
+	
+		self.redis()
 
 	def __xroxy_parse(self, html):
 		"""
@@ -88,8 +91,10 @@ class XRoxyProxies:
 		Returns:
 			proxy_list: Whose length is equal to or greater than number_of_proxies param of this class
 
+		"/proxylist.php?port=&;type={proxy_type}&ssl=&country={country}&latency={latency}&reliability={reliability}&
+		sort=reliability&desc=true&amp&pnum={page_number}#table".format(proxy_type=self.type_of_proxy, page_number=page 
+		country=self.country, latency=self.latency, reliability=self.reliability) for page in 
 		"""
-
 		#this when provided with html of a page returns a lxml tree
 		html_tree = lambda html: lxml.html.fromstring(html)
 
@@ -108,28 +113,70 @@ class XRoxyProxies:
 			r = requests.get(url)
 			if r.status_code == 200:
 				tree = html_tree(r.text)
-				proxy_list.extend(proxies(tree))
+				self.proxy_list.extend(proxies(tree))
 				return True
 			return False
 
-		tree = html_tree(html)
-		proxy_list = proxies(tree)
-		pages_list = ["http://www.xroxy.com/%s"%element for element in 
-					tree.xpath("//table[@class='tbl']/tbody/tr/td[1]/table/tbody/tr/td/small/a/@href")[1:]]
+		tree = html_tree(html) #Making lxml tree from the html source provided to this method as an argument
+		
+		self.proxy_list.extend(proxies(tree)) #adding proxies from the first page to the self.proxy_list
+
+		
 		
 
+
+		pages = self.pages(tree, html_tree)	
+
 		page_number = 0
-		while len(proxy_list) <= self.number_of_proxies: 
+		while len(self.proxy_list) <= self.number_of_proxies: 
 			try:
-				if scrape(pages_list[page_number]):
+				if scrape(pages[page_number]):
 					page_number += 1			
 				else:
 					raise StandardError("The page %s cannot be fetched"%pages_list[page_number])
-			except IndexError:
-				return proxy_list
+			except IndexError as e:
+				raise StandardError(e)
+				return 
+		return 
 
-		return proxy_list
+	def pages(self, tree, html_tree):
+		"""
+		This method populaf the pagte the pages list for the query.
+		How it works:
+			The problem is if the total number of queries is around 126, The xroxy will display only 4 pages as the pagination.
+			The rest of the pages will only be shown, when you go to page 4, So from the html of the main page, we will get
+			the 4 pages, then get the 4th page to get the next set of pages, till the pagination ends.
 
+			Pages upto 4 will be appended to a list, then the html for the last element of the list will be fetched, appended to the 
+			list, till pagination ends.
+			This will also have duplicacy of the links, so the list will be converted to the set, then converted back to a list
+			to eliminate duplicacy of the links
+		"""
+		pages_list = ["http://www.xroxy.com/%s"%element for element in 
+					tree.xpath("//table[@class='tbl']/tbody/tr/td[1]/table/tbody/tr/td/small/a/@href")[1:]]
+		
+		is_pages = True
+		last_link = str()
+
+		while is_pages:
+			if last_link == pages_list[-1]:
+				is_pages = False
+			
+			try:
+				driver = webdriver.Firefox()
+				driver.get(pages_list[-1])
+				last_link = pages_list[-1]
+			
+			except Exception as a:
+				raise StandardError(e)
+			
+			html = driver.page_source
+			driver.close()
+			child_tree = html_tree(html)
+			pages_list.extend(["http://www.xroxy.com/%s"%element for element in 
+					child_tree.xpath("//table[@class='tbl']/tbody/tr/td[1]/table/tbody/tr/td/small/a/@href")])
+			
+		return list(set(pages_list))
 
 
 	def xroxy_in_browser(self):
@@ -141,6 +188,7 @@ class XRoxyProxies:
 			A proxy_list 
 		"""
 
+		print "this is the number of proxies recuired %s"%self.number_of_proxies
 		driver = webdriver.Firefox()
 		driver.get("http://www.xroxy.com/proxylist.htm")
 		
@@ -158,8 +206,8 @@ class XRoxyProxies:
 		
 		html = driver.page_source
 		driver.close()
-		proxy_list = self.__xroxy_parse(html) #here we have the whole proxy list
-		self.redis(proxy_list)
+		self.__xroxy_parse(html) #here we have the whole proxy list
+		#self.redis(proxy_list)
 		return True
 
 
@@ -178,7 +226,7 @@ class XRoxyProxies:
 		return
 	
 
-	def redis(self, proxy_list):
+	def redis(self):
 		"""
 		This method will take a proxy_list and then store it in the redis.
 		In case, Unable to store in redis, A standard error will be raised with the exception messege from the class RDS
@@ -190,13 +238,15 @@ class XRoxyProxies:
 		"""
 		redis_instance = RedisProxy()
 		try:
-			redis_instance.store_proxy_list(proxy_list, "unhealthy")
+			redis_instance.store_proxy_list(self.proxy_list, "unhealthy")
 		except StandardError as e:
 			print e
 
 
 
 if __name__ == "__main__":
-	instance = XRoxyProxies(number_of_proxies=100, type_of_proxy="Socks4", country="CN")
+	#instance = XRoxyProxies(number_of_proxies=100, type_of_proxy="Socks4", country="CN")
+	instance = XRoxyProxies(number_of_proxies=100, type_of_proxy="Socks4")
+	print instance.proxy_list
+	
 	#instance = XRoxyProxies(number_of_proxies=10)
-	print instance.xroxy_in_browser()
