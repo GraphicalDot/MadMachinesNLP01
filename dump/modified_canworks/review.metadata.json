@@ -1,0 +1,1 @@
+{ "options" : { "create" : "review" }, "indexes" : [ { "v" : 1, "key" : { "_id" : 1 }, "ns" : "modified_canworks.review", "name" : "_id_" }, { "v" : 1, "key" : { "review_id" : 1 }, "unique" : true, "ns" : "modified_canworks.review", "name" : "review_id_1", "safe" : true, "dropDups" : true } ] }
