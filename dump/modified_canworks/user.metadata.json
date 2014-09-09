@@ -1,1 +1,1 @@
-{ "options" : { "create" : "user" }, "indexes" : [ { "v" : 1, "key" : { "_id" : 1 }, "ns" : "modified_canworks.user", "name" : "_id_" }, { "v" : 1, "key" : { "user_id" : 1 }, "unique" : true, "ns" : "modified_canworks.user", "name" : "user_id_1", "safe" : true, "dropDups" : true } ] }
+{ "options" : { "create" : "user" }, "indexes" : [ { "v" : 1, "name" : "_id_", "key" : { "_id" : 1 }, "ns" : "modified_canworks.user" }, { "v" : 1, "name" : "user_id_1", "key" : { "user_id" : 1 }, "unique" : true, "ns" : "modified_canworks.user", "safe" : true, "dropDups" : true } ] }
