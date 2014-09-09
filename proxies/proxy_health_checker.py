@@ -5,6 +5,7 @@
 import sys
 import os
 import urllib2
+import urllib
 import socket
 from redis_storage import RedisProxy
 
@@ -15,10 +16,9 @@ class ProxyHealthCheck:
 	The proxies which arent healthy will then have their status changed as unhealthy
 	"""
 	def __init__(self):
-		instance = RedisProxy()	
-		self.healthy_proxies = instance.healthy_proxies()
-		self.unhealthy_proxies = instance.unhealthy_proxies()
-		print self.healthy_proxies
+		self.instance = RedisProxy()	
+		self.healthy_proxies = self.instance.healthy_proxies()
+		self.unhealthy_proxies = self.instance.unhealthy_proxies()
 
 	def is_bad_proxy(self, proxy_dict):
 		ip = "{ip}:{port_number}".format(ip=proxy_dict.get("ip"), port_number=proxy_dict.get("port"))
@@ -40,16 +40,31 @@ class ProxyHealthCheck:
 			return True
 		return False
 
-	def check_proxy(self):
+	def a_check_proxy(self):
 		socket.setdefaulttimeout(120)
 		
 		# two sample proxy IPs
 		for currentProxy in self.unhealthy_proxies:
 			if self.is_bad_proxy(currentProxy):
-				print "Bad Proxy %s" % (currentProxy)
+				print "Bad Proxy %s" % (currentProxy.get("ip"))
+				self.instance.update_status(currentProxy.get("ip"), "unhealthy")
 			else:
-				print "%s is working" % (currentProxy)
+				print "%s is working" % (currentProxy.get("ip"))
+				self.instance.update_status(currentProxy.get("ip"), "healthy")
 
+	def b_check_proxy(self):
+		for proxy_dict in self.unhealthy_proxies:
+			ip = "http://{ip}:{port_number}".format(ip=proxy_dict.get("ip"), port_number=proxy_dict.get("port"))
+			print ip
+			
+			try:
+				urllib.urlopen("http://www.google.com", proxies={"http": ip})
+			
+			except IOError:
+				print "Connection error! (Check proxy)"
+			
+			else:
+				print "All was fine"
 if __name__ == '__main__':
 	instance = ProxyHealthCheck()
-	instance.check_proxy()
+	instance.b_check_proxy()

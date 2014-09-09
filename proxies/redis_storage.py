@@ -99,7 +99,7 @@ class RedisProxy:
 			raise StandardError("Status that has been provided is not a valid one")
 
 		try:
-			redis_connection.hset(ip, "status", status)
+			self.redis_connection.hset(ip, "status", status)
 
 		except Exception as e:
 			raise StandardError(e)
