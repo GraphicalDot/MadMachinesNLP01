@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 #-*- coding: utf-8 -*-
 from __future__ import absolute_import
+import celery
 from celery import states
 from celery.task import Task, TaskSet
 from celery.result import TaskSetResult
@@ -13,33 +14,21 @@ import pymongo
 import random
 from celery_app.App import app
 from main_scrape import scrape_links, eatery_specific
-
-
+from celery.registry import tasks
+import logging
 from celery import task, subtask, group
 connection = pymongo.Connection()
 db = connection.intermediate
 collection = db.intermediate_collection
 
+
+logger = logging.getLogger(__name__)
 """
 To run tasks for scraping one restaurant 
 runn.apply_async(["https://www.zomato.com/ncr/pita-pit-lounge-greater-kailash-gk-1-delhi", None, None, True])
 
 TO scrape a list of restaurant use this
 runn.apply_async(args=["https://www.zomato.com/ncr/south-delhi-restaurants", 30, 270, False])
-"""
-
-
-@app.task(ignore_result=True, max_retries=3, retry=True)
-def eateries_list(url, number_of_restaurants, skip, is_eatery):
-	print "got into eateries list"
-	eateries_list = scrape_links(url, number_of_restaurants, skip, is_eatery)
-	return eateries_list
-
-
-
-@app.task(ignore_result=True, max_retries=3, retry=True, acks_late=True)
-def process_eatery(eatery_dict):
-	"""
 	 Task.acks_late
 	     If set to True messages for this task will be acknowledged after the task has been executed, 
 	     not just before, which is the default behavior.
@@ -67,18 +56,37 @@ def process_eatery(eatery_dict):
 	     to the value. Tasks will be evenly distributed over the specified time frame.
 	     Example: “100/m” (hundred tasks a minute). This will enforce a minimum delay of 600ms between 
 	     starting two tasks on the same worker instance.
-	"""
-	print "got into process_eatery"
-	try:
+"""
+
+
+@app.task(ignore_result=True, max_retries=3, retry=True)
+def eateries_list(url, number_of_restaurants, skip, is_eatery):
+	print "got into eateries list"
+	eateries_list = scrape_links(url, number_of_restaurants, skip, is_eatery)
+	return eateries_list
+
+
+
+@app.task()
+class process_eatery(celery.Task):
+	ignore_result=True, 
+	max_retries=3, 
+	acks_late=True
+	default_retry_delay = 5
+	def run(self, eatery_dict):
+		print "got into process_eatery"
 		eatery_specific(eatery_dict)
-	
-	except Exception as e:
-		print e
-		#def on_failure(self, eatery_dict):
+		return
+
+	def after_return(self, status, retval, task_id, args, kwargs, einfo):
+		#exit point of the task whatever is the state
+		logger.info("Ending run")
+		pass
+
+	def on_failure(self, exc, task_id, args, kwargs, einfo):
 		print "fucking faliure occured"
-		eatery_specific(eatery_dict)
-		        
-	return
+		self.retry(exc=exc)
+
 
 @app.task(ignore_result=True, max_retries=3, retry=True, acks_late= True)
 def dmap(it, callback):
