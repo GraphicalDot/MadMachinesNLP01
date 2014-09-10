@@ -18,7 +18,10 @@ from bson.json_util import dumps
 from Text_Processing import ProcessingWithBlob, PosTags, Classifier
 import time
 from datetime import timedelta
-
+import pymongo
+connection = pymongo.Connection()
+db = connection.modified_canworks
+eateries = db.eatery
 
 
 app = Flask(__name__)
@@ -81,7 +84,7 @@ def return_processed_text():
 				})
 
 
-		text_classfication = Classifier(text)	
+		text_classfication = Classifier(text.decode("utf-8"))	
 		noun_phrase = list()
 		result = list() 
 
@@ -133,6 +136,33 @@ def update_model():
 		})
 
 
+
+@app.route('/eateries_list', methods=['GET', 'OPTIONS'])
+@crossdomain(origin='*', headers='Content-Type')
+def eateries_list():
+	result = list(eateries.find(fields= {"eatery_id": True, "_id": False, "eatery_name": True}))
+
+	return jsonify({"success": False,
+				"error": True,
+				"result": result,
+		})
+
+	
+	
+@app.route('/eateries_details', methods=['POST', 'OPTIONS'])
+@crossdomain(origin='*', headers='Content-Type')
+def eateries_details():
+	id = request.form["eatery_id"]
+	result = eateries.find_one({"eatery_id": id}, fields= {"_id": False})
+	false_classified = len(list(reviews.find({"eatery_id": "2738"}, fields= {"_id": False})))	
+
+	return jsonify({"success": False,
+				"error": True,
+				"result": result,
+		})
+
+
+	#reviews.update({"review_id": id}, {"$set": {"classified": True}})
 
 class cd:
         """Context manager for changing the current working directory"""

@@ -2,10 +2,10 @@
 $(document).ready(function(){
    	App = {} ;
 	window.App = App ;
-	window.process_text_url = "http://ec2-50-112-147-199.us-west-2.compute.amazonaws.com:8080/process_text";
-	window.update_model_url = "http://ec2-50-112-147-199.us-west-2.compute.amazonaws.com:8080/update_model";
-	//window.process_text_url = "http://localhost:8000/process_text";
-	//window.update_model_url = "http://localhost:8000/update_model";
+	//window.process_text_url = "http://ec2-50-112-147-199.us-west-2.compute.amazonaws.com:8080/process_text";
+	//window.update_model_url = "http://ec2-50-112-147-199.us-west-2.compute.amazonaws.com:8080/update_model";
+	window.process_text_url = "http://localhost:8000/process_text";
+	window.update_model_url = "http://localhost:8000/update_model";
 
 function make_request(data){
 	url =  window.process_text_url ;
