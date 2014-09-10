@@ -19,12 +19,22 @@ from db_insertion import DBInsert
 
 class EateriesList(object):
 
-	def __init__(self, url, number_of_restaurants, skip, stop_at=None):
-		self.url = url
-		self.soup = self.prepare_soup(self.url)
-		self.stop_at = stop_at
-		self.number_of_restaurants = number_of_restaurants
-		self.skip = skip
+	def __init__(self, url, number_of_restaurants, skip, is_eatery):
+		if is_eatery:
+			#This implies that the url that has been given to initiate this class is the restaurant url not a url on which 
+			#lots of restaurant urls are present
+			self.url = url
+			print "yo yo hohoney singh"
+			self.get_eateries_list = list()
+			self.get_eateries_list.append({"eatery_url": self.url})
+		
+		else:	
+			self.url = url
+			self.number_of_restaurants = number_of_restaurants
+			self.skip = skip
+			self.soup = self.prepare_soup(self.url)
+			self.get_eateries_list = self.eateries_list()
+	
 
 
         def prepare_soup(self, url):
@@ -426,7 +436,7 @@ def csv_writer(name):
 	return (writer, csvfile)
 
 
-def scrape_links(url, number_of_restaurants, skip=0):
+def scrape_links(url, number_of_restaurants, skip, is_eatery):
 	"""
 	Args:
 		url: 
@@ -449,9 +459,15 @@ def scrape_links(url, number_of_restaurants, skip=0):
 		The keys included in one restaurant doictionary are as follows
 		
 	"""
-	instance = EateriesList(url, int(number_of_restaurants), int(skip))
+	if not skip:
+		skip = 0
+	
+	if not number_of_restaurants:
+		number_of_restaurants = 0
 
-	eateries_list = instance.eateries_list()
+	instance = EateriesList(url, int(number_of_restaurants), int(skip), is_eatery)
+
+	eateries_list = instance.get_eateries_list
 	print eateries_list
 	return eateries_list	
 	
