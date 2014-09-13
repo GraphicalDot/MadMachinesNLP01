@@ -10,6 +10,9 @@ $(document).ready(function(){
 	window.eateries_details = "http://localhost:8000/eateries_details";
 	window.update_review_classification = "http://localhost:8000/update_review_classification";
 
+window.optimizely = window.optimizely || [];
+window.optimizely.push(["activate"]);
+
 function make_request(data){
 	url =  window.process_text_url ;
 	console.log(window.url)
@@ -64,8 +67,13 @@ App.RootView = Backbone.View.extend({
 			})	
 			
 		}})
+		var str = new App.RootView()
+		str.render();
 		}
-		},
+			
+		
+
+	},
 
 	loadReview: function(event){
 		event.preventDefault();

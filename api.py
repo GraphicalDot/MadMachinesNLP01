@@ -114,7 +114,7 @@ def update_model():
 	text = request.form["text"]
 	tag = request.form["tag"]
 
-	path = (os.path.join(os.path.dirname(os.path.abspath(__file__)) + "/trainers/%s.txt"%tag))
+	path = (os.path.join(os.path.dirname(os.path.abspath(__file__)) + "/trainers/valid_%s.txt"%tag))
 	
 	print "Ihis is the path that is being opened%s"%path
 
@@ -178,7 +178,15 @@ def update_review_classification():
 				"messege": "The review doesnt exists",
 		})
 		return 
-	
+
+	if reviews.find_one({'review_id': id}).get("is_classified"):
+		return jsonify({"success": False,
+				"error": True,
+				"messege": "The reviews has already been marked classified, Please refresh the page",
+		})
+
+
+
 	reviews.update({'review_id': id}, {"$set":{ "is_classified": True}}, upsert=False)
 	return jsonify({"success": True,
 				"error": False,
