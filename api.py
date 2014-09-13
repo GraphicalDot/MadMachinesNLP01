@@ -22,7 +22,7 @@ import pymongo
 connection = pymongo.Connection()
 db = connection.modified_canworks
 eateries = db.eatery
-
+reviews = db.review
 
 app = Flask(__name__)
 
@@ -154,15 +154,56 @@ def eateries_list():
 def eateries_details():
 	id = request.form["eatery_id"]
 	result = eateries.find_one({"eatery_id": id}, fields= {"_id": False})
-	false_classified = len(list(reviews.find({"eatery_id": "2738"}, fields= {"_id": False})))	
+	is_classified_reviews = list(reviews.find({"eatery_id": id, "is_classified": True}, fields= {"_id": False}))
+	not_classified_reviews = list(reviews.find({"eatery_id": id, "is_classified": False}, fields= {"_id": False}))
 
 	return jsonify({"success": False,
 				"error": True,
 				"result": result,
+				"classified_reviews": is_classified_reviews,
+				"unclassified_reviews": not_classified_reviews,
+				})
+
+
+
+
+
+@app.route('/update_review_classification', methods=['POST', 'OPTIONS'])
+@crossdomain(origin='*', headers='Content-Type')
+def update_review_classification():
+	id = request.form["review_id"]
+	if not reviews.find_one({'review_id': id}):
+		return jsonify({"success": False,
+				"error": True,
+				"messege": "The review doesnt exists",
+		})
+		return 
+	
+	reviews.update({'review_id': id}, {"$set":{ "is_classified": True}}, upsert=False)
+	return jsonify({"success": True,
+				"error": False,
+				"messege": "The reviews has been marked classified",
 		})
 
+	
+	
+@app.route('/get_review_details', methods=['POST', 'OPTIONS'])
+@crossdomain(origin='*', headers='Content-Type')
+def get_review_details():
+	id = request.form["review_id"]
+	if not reviews.find_one({'review_id': id}):
+		return jsonify({"success": False,
+				"error": True,
+				"messege": "The review doesnt exists",
+		})
+		return 
+	
+	result = reviews.find_one({'review_id': id}, fields={"_id": False})
+	return jsonify({"success": True,
+				"error": False,
+				"result": result,
+		})
 
-	#reviews.update({"review_id": id}, {"$set": {"classified": True}})
 
 class cd:
         """Context manager for changing the current working directory"""

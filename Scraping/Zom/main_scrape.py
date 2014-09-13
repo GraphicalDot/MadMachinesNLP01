@@ -277,7 +277,7 @@ class EateryData(object):
 		return
 
 	def with_selenium(self):
-#		driver = webdriver.PhantomJS()
+		#driver = webdriver.PhantomJS()
 		driver = webdriver.Firefox()
 		driver.get(self.eatery.get("eatery_url"))
 

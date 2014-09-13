@@ -30,7 +30,33 @@
 	</head>
 	<body>
 
+
+
 	<script type="text/x-mustache-template" id="root-template">
+            <div class="control-group">
+                    <div class="controls">
+				<div class="btn-group">
+					<select id="eateriesList">
+						<ul id="eateriesList" class="dropdown-menu">
+		
+					</select>		
+
+				</div>	
+
+				<div class="btn-group">
+				<select id="unclassified_reviews">
+					</select>		
+
+				</div>	
+				<div class="btn-group">
+					<select id="classified_reviews">
+					</select>		
+			   	</div> 
+			    
+			    <button id="loadReview" class="btn btn-primary" style="width: 15%">Load Review</button>
+			    <button id="updateReview" class="btn btn-primary" style="width: 15%">update Review</button>
+	    </div>
+
             <div class="control-group">
                     <div class="controls">
 			    <textarea type="text" id="searchQuery" class="input-xlarge span10" rows="3" required="required" placeholder="enter the review to be processed" ></textarea>
@@ -38,7 +64,21 @@
 		    </div>
             </div>
 
+    </script>
+
+
+	<script type="text/x-mustache-template" id="each-eatery-template">
+			{{eatery_name}}
 	</script>
+	
+	<script type="text/x-mustache-template" id="classified-reviews-template">
+			{{review_text}}
+	</script>
+	
+	<script type="text/x-mustache-template" id="unclassified-reviews-template">
+			{{review_text}}
+	</script>
+
 	<script type="text/x-mustache-template" id="root-top-template">
 		<div class="span3">
 			<p style="text-align: center">overall sentiment   {{sentiment}}</p>
@@ -60,6 +100,9 @@
 		<div class="span1">
 			<p style="text-align: center">{{polarity_value}}</p>
 		</div>
+		
+		
+		
 		<div class="span2">
 			<div class="btn-group">
 				<select id="ddpFilter" class="btn btn-success dropdown-toggle btn-xs" data-toggle="dropdown" style="width: 98%">

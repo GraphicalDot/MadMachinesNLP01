@@ -155,3 +155,9 @@ margin-top: 10em;
  margin-bottom: 40px;
 }
 
+.scrollable-menu {
+	    height: auto;
+	        max-height: 200px;
+		    overflow-x: hidden;
+	    }
+
