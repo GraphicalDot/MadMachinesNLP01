@@ -35,7 +35,8 @@ class Reviews(object):
 			reviews["eatery_id"] = self.eatery_id(review)
 			reviews["scraped_epoch"] = int(time.time())			
 			reviews["converted_epoch"] = self.converted_to_epoch(review)
-
+			reviews["error"] = list()
+			reviews["repeated_customers"] = list()
 			self.reviews_data.append(reviews)
 		return
 

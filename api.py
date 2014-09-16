@@ -116,8 +116,6 @@ def update_model():
 
 	path = (os.path.join(os.path.dirname(os.path.abspath(__file__)) + "/trainers/valid_%s.txt"%tag))
 	
-	print "Ihis is the path that is being opened%s"%path
-
 	if not os.path.exists(path):
 		return jsonify({"success": False,
 				"error": True,
@@ -131,6 +129,78 @@ def update_model():
 		myfile.write(text)
 		myfile.write("\n")
 
+	return jsonify({"success":  True,
+		"error": False,
+		})
+
+
+@app.route('/update_review_error', methods=['POST', 'OPTIONS'])
+@crossdomain(origin='*', headers='Content-Type')
+def update_review_error():
+	text = request.form["text"]
+	error = request.form["is_error"]
+	review_id = request.form["review_id"]
+	
+	if int(error) != 2:
+		return jsonify({"success": False,
+				"error": True,
+				"messege": "Only error sentences can be tagged, 'void' is an invalid tag",
+				"error_code": 207,
+			})
+
+	path = (os.path.join(os.path.dirname(os.path.abspath(__file__)) + "/trainers/valid_%s.txt"%'error'))
+	if not os.path.exists(path):
+		return jsonify({"success": False,
+				"error": True,
+				"messege": "some error occurred",
+				"error_code": 210,
+			})
+
+
+
+	reviews.update({"review_id": review_id}, {"$push": {"error": text}})
+	with open(path, "a") as myfile:
+		myfile.write(text)
+		myfile.write("\n")
+
+	return jsonify({"success":  True,
+		"error": False,
+		})
+
+
+@app.route('/update_customer', methods=['POST', 'OPTIONS'])
+@crossdomain(origin='*', headers='Content-Type')
+def update_customer():
+	text = request.form["text"]
+	repeated = request.form["is_repeated"]
+	review_id = request.form["review_id"]
+
+	if int(repeated) != 2:
+		return jsonify({"success": False,
+				"error": True,
+				"messege": "Only repeated customer sentences can be tagged, 'void' is an invalid tag",
+				"error_code": 206,
+			})
+
+
+	path = (os.path.join(os.path.dirname(os.path.abspath(__file__)) + "/trainers/valid_%s.txt"%'repeated_customer'))
+
+	if not os.path.exists(path):
+		return jsonify({"success": False,
+				"error": True,
+				"messege": "Some error occurred",
+				"error_code": 205,
+			})
+
+
+
+	with open(path, "a") as myfile:
+		myfile.write(text)
+		myfile.write("\n")
+
+
+
+	reviews.update({"review_id": review_id}, {"$push": {"repeated_customers": text}})
 	return jsonify({"success":  True,
 		"error": False,
 		})

@@ -35,7 +35,7 @@
 	<script type="text/x-mustache-template" id="root-template">
             <div class="control-group">
                     <div class="controls">
-				<div class="btn-group">
+				<div class="btn-group"  style="margin-right: 5%">
 					<select id="eateriesList">
 						<ul id="eateriesList" class="dropdown-menu">
 		
@@ -43,27 +43,31 @@
 
 				</div>	
 
-				<div class="btn-group">
+				<div class="btn-group"  style="margin-right: 5%">
 				<select id="unclassified_reviews">
 					</select>		
 
 				</div>	
-				<div class="btn-group">
+				<div class="btn-group" style="margin-right: 5%">
 					<select id="classified_reviews">
 					</select>		
-			   	</div> 
 			    
-			    <button id="loadReview" class="btn btn-primary" style="width: 15%">Load Review</button>
-			    <button id="updateReview" class="btn btn-primary" style="width: 15%">update Review</button>
-	    </div>
+			   	</div> 
+				<div class="btn-group"  style="margin-right: 5%">
+					<button id="loadReview" class="btn">Load Review</button>
+				</div> 
 
+				<div class="btn-group"  style="margin-right: 5%">
+					<button id="updateReview" class="btn">update Review</button>
+			   	</div> 
+			
+		</div>
             <div class="control-group">
                     <div class="controls">
 			    <textarea type="text" id="searchQuery" class="input-xlarge span10" rows="3" required="required" placeholder="enter the review to be processed" ></textarea>
 			    <button type="submit" id="submitQuery" class="btn btn-primary" rows="3" style="width: 15%">Submit</button>
 		    </div>
             </div>
-
     </script>
 
 
@@ -103,7 +107,7 @@
 		
 		
 		
-		<div class="span2">
+		<div class="span1">
 			<div class="btn-group">
 				<select id="ddpFilter" class="btn btn-success dropdown-toggle btn-xs" data-toggle="dropdown" style="width: 98%">
 					<option value="1">food</option>
@@ -115,11 +119,27 @@
 				</select>
 			</div>
 			</div>
-		<div class="span2">
+		<div class="span1">
 			<div class="btn-group">
 				<select id="ddpFiltersentiment" class="btn btn-success dropdown-toggle btn-xs" data-toggle="dropdown" style="width: 98%">
 					<option value="1">positive</option>
 					<option value="2">negative</option>
+				</select>
+			</div>
+			</div>
+		<div class="span1">
+			<div class="btn-group">
+				<select id="ddpFilterCustomer" class="btn btn-success dropdown-toggle btn-xs" data-toggle="dropdown" style="width: 98%">
+					<option value="1">void</option>
+					<option value="2">repeated customer</option>
+				</select>
+			</div>
+			</div>
+		<div class="span1">
+			<div class="btn-group">
+				<select id="ddpFilterError" class="btn btn-success dropdown-toggle btn-xs" data-toggle="dropdown" style="width: 98%">
+					<option value="1">void</option>
+					<option value="2">error</option>
 				</select>
 			</div>
 			</div>

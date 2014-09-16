@@ -63,6 +63,18 @@ class GetReviews:
 		
 		return list(reviews.find({"eatery_id": restaurant_id}).skip(self.review_skip).limit(self.review_limit))
 
+	
+	def update_error_on_review(self, review_id):
+		"""
+		This method will be used to update review with the error it has.
+		The error will be pushed onto a list undet the name error
+
+		"""
+		pass
+
+
+
+
 
 
 

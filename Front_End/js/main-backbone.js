@@ -2,10 +2,10 @@
 $(document).ready(function(){
    	App = {} ;
 	window.App = App ;
-	//window.process_text_url = "http://ec2-50-112-147-199.us-west-2.compute.amazonaws.com:8080/process_text";
-	//window.update_model_url = "http://ec2-50-112-147-199.us-west-2.compute.amazonaws.com:8080/update_model";
 	//window.process_text_url = "http://localhost:8000/process_text";
 	//window.update_model_url = "http://localhost:8000/update_model";
+	//window.update_review_error = "http://localhost:8000/update_review_error";
+	//window.update_customer = "http://localhost:8000/update_customer";
 	//window.eateries_list = "http://localhost:8000/eateries_list";
 	//window.eateries_details = "http://localhost:8000/eateries_details";
 	//window.update_review_classification = "http://localhost:8000/update_review_classification";
@@ -14,6 +14,8 @@ $(document).ready(function(){
 	window.eateries_list = "http://ec2-50-112-147-199.us-west-2.compute.amazonaws.com:8080/eateries_list";
 	window.eateries_details = "http://ec2-50-112-147-199.us-west-2.compute.amazonaws.com:8080/eateries_details";
 	window.update_review_classification = "http://ec2-50-112-147-199.us-west-2.compute.amazonaws.com:8080/update_review_classification";
+	window.update_review_error = "http://ec2-50-112-147-199.us-west-2.compute.amazonaws.com:8080/update_review_error";
+	window.update_customer = "http://ec2-50-112-147-199.us-west-2.compute.amazonaws.com:8080/update_customer";
 
 
 window.optimizely = window.optimizely || [];
@@ -73,19 +75,16 @@ App.RootView = Backbone.View.extend({
 			})	
 			
 		}})
-		var str = new App.RootView()
-		str.render();
 		}
-			
-		
-
 	},
 
 	loadReview: function(event){
 		event.preventDefault();
 		console.log("load review has been clicked");
 		var review_text = $("#unclassified_reviews").find('option:selected').attr('full_text')
+		var review_id = $("#unclassified_reviews").find('option:selected').attr('id')
 		$("#searchQuery").val(review_text)
+		$("#searchQuery").attr('review_id', review_id); 
 
 	},
 
@@ -132,13 +131,16 @@ App.RootView = Backbone.View.extend({
 	submitQuery: function(event){
 		event.preventDefault();
 		$(".dynamic_display").empty()
+
+		var id = $("#searchQuery").attr("review_id")
 		var jqhr = make_request($("#searchQuery").val())
 		jqhr.done(function(data){
 			if (data.error == false){
 				var subView = new App.RootTopView({model: {"sentiment": data.overall_sentiment, "phrases": data.noun_phrase}})
 				$(".dynamic_display").append(subView.render().el);	
+				$(".dynamic_display").append("<fieldset class='well'><div class='span5'><p style='text-align: center'><b>Sentence</b></p></div><div class='span1'><p style='text-align: center'><b>Polarity</b></p></div><div class='span1'><p style='text-align: center'><b>tag</b></p></div><div class='span1'><p style='text-align: center'><b>Sentiment</b></p></div><div class='span1'><p style='text-align: center'><b>Customer</b></p></div><div class='span1'><p style='text-align: center'><b>Error</b></p></div><div class='span1'><p class='pull-left' style='text-align: center'><b>Noun Pharses</b></p></div></fieldset>")
 				$.each(data.result, function(iter, text){
-					var subView = new App.RootRowView({model: text});
+					var subView = new App.RootRowView({model: {"text": text, "review_id": id}});
 					$(".dynamic_display").append(subView.render().el);	
 				})
 						}
@@ -269,6 +271,7 @@ App.RootTopView = Backbone.View.extend({
 				end: "#FS2",}
 				})
 			},
+
 });
 
 App.NounPhraseView = Backbone.View.extend({
@@ -300,10 +303,11 @@ App.RootRowView = Backbone.View.extend({
 	tagName: "fieldset",
 	className: "well plan",
 	template: template("root-row"),
-	noun_phrases: function(){return this.model.noun_phrases},
-	polarity_name: function(){return this.model.polarity.name},
-	polarity_value: function(){return this.model.polarity.value},
-	sentence: function(){return this.model.sentence},
+	noun_phrases: function(){return this.model.text.noun_phrases},
+	polarity_name: function(){return this.model.text.polarity.name},
+	polarity_value: function(){return this.model.text.polarity.value},
+	sentence: function(){return this.model.text.sentence},
+	review_id: function(){ return this.model.review_id},
 	tag: function(){return this.model.tag},
 	
 	initialize: function(options){
@@ -323,6 +327,8 @@ App.RootRowView = Backbone.View.extend({
 	events: {
 		    "change #ddpFilter" : "changeTag",
 		    "change #ddpFiltersentiment" : "changeSentiment",
+		    "change #ddpFilterError" : "changeError",
+		    "change #ddpFilterCustomer" : "changeCustomer",
 	},
 
 	changeSentiment: function(event){
@@ -332,7 +338,7 @@ App.RootRowView = Backbone.View.extend({
 			if (result == true){
 				sentence = self.sentence();
 				changed_polarity = self.$('#ddpFiltersentiment option:selected').text();
-				var jqhr = $.post(window.update_model_url, {"text": sentence, "tag": changed_polarity})	
+				var jqhr = $.post(window.update_model_url, {"text": sentence, "tag": changed_polarity, "review_id": self.review_id()})	
 				jqhr.done(function(data){
 					console.log(data.success)
 					if (data.success == true){
@@ -349,6 +355,58 @@ App.RootRowView = Backbone.View.extend({
 				}	
 		}); 
 	},
+	
+	changeError: function(event){
+		var self = this;
+		event.preventDefault()
+		bootbox.confirm("Are you sure you want to mark thsi sentence as an error sentence", function(result) {
+			if (result == true){
+				sentence = self.sentence();
+				error = self.$('#ddpFilterError option:selected').val();
+				var jqhr = $.post(window.update_review_error, {"text": sentence, "is_error": error, "review_id": self.review_id()})	
+				jqhr.done(function(data){
+					console.log(data.success)
+					if (data.success == true){
+						bootbox.alert("This sentence has been marked as wrongly classified, Yo Yo Honey singh!!")
+						}
+					else {
+						bootbox.alert(data.messege)
+					}	
+				})
+				
+				jqhr.fail(function(){
+					bootbox.alert("Either the api or internet connection is not working, Try again later")
+				})
+				}	
+		}); 
+	},
+	
+	
+	changeCustomer: function(event){
+		var self = this;
+		event.preventDefault()
+		bootbox.confirm("Are you sure you want to mark this sentece as repeated customer sentence", function(result) {
+			if (result == true){
+				sentence = self.sentence();
+				customer = self.$('#ddpFilterCustomer option:selected').val();
+				var jqhr = $.post(window.update_customer, {"text": sentence, "is_repeated": customer, "review_id": self.review_id()})	
+				jqhr.done(function(data){
+					console.log(data.success)
+					if (data.success == true){
+						bootbox.alert("This sentence has been marked as repeated customer review, Yo Yo honey singh!!")
+						}
+					else {
+						bootbox.alert(data.messege)
+					}	
+				})
+				
+				jqhr.fail(function(){
+					bootbox.alert("Either the api or internet connection is not working, Try again later")
+				})
+				}	
+		}); 
+	},
+
 	changeTag: function(event){
 		var self = this;
 		event.preventDefault()
@@ -357,7 +415,7 @@ App.RootRowView = Backbone.View.extend({
 				changed_tag = self.$('#ddpFilter option:selected').text();
 				sentence = self.sentence();
 
-				var jqhr = $.post(window.update_model_url, {"text": sentence, "tag": changed_tag})	
+				var jqhr = $.post(window.update_model_url, {"text": sentence, "tag": changed_tag, "review_id": self.review_id()})	
 				jqhr.done(function(data){
 					console.log(data.success)
 					if (data.success == true){
