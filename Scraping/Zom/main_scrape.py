@@ -411,7 +411,8 @@ class EateryData(object):
 
 
 	def eatery_reviews(self):
-		instance = Reviews(self.soup)
+		area_or_city = self.eatery.get("eatery_url").split("/")[3]
+		instance = Reviews(self.soup, area_or_city)
 		self.eatery["reviews"] = instance.reviews_data
 		return
 

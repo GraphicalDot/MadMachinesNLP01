@@ -7,8 +7,9 @@ import time
 
 class Reviews(object):
 
-	def __init__(self, soup):
+	def __init__(self, soup, area_or_city):
 		self.soup = soup
+		self.area_or_city = area_or_city
 		print len(self.soup)
 		try:
 			self.reviews_list = self.soup.findAll("div" ,{"class": "res-review clearfix mbot2   item-to-hide-parent stupendousact"})
@@ -37,6 +38,7 @@ class Reviews(object):
 			reviews["converted_epoch"] = self.converted_to_epoch(review)
 			reviews["error"] = list()
 			reviews["repeated_customers"] = list()
+			reviews["area_or_city"] = self.area_or_city
 			self.reviews_data.append(reviews)
 		return
 
