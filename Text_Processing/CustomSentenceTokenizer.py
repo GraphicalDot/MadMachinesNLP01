@@ -33,7 +33,11 @@ class SentenceTokenizer():
 			
 		# Create training features
 		featuresets = [(self.punct_features(tokens,i), (i in boundaries)) for i in range(1, len(tokens)-1) if tokens[i] in '.?!']
-		
+	
+		for element in featuresets:
+			print element 
+
+		print "This is the length of the feature set {len}".format(len=len(featuresets))
 		train_set = featuresets
 		self.classifier = nltk.NaiveBayesClassifier.train(train_set)
 
@@ -155,7 +159,6 @@ class SentenceTokenizer():
 		return sentences
 
 
-"""
 if __name__ == "__main__":
 	myTokenizer = SentenceTokenizer()
 	text2 = "Food: GoodThe menu selection is excellent and reminiscent of a British lunch experience.Very good selection of shakes, iced teas, and comfort foods just right for a relaxed daytime mealFood taste was consistently good, though none of the items were mind-blowing.Peach Iced Tea: Great blend, all natural ingredients and freshly made, if a tad too sweetShepherd's pie: Tasty but a variation on the originalEspresso Crumble Cake: Great match of cake and coffee flavors, went wonderfully with the whipped creamAmbiance: ExcellentPerfectly coordinated interiors, look-and-feel is very consistent and provides character to the cafeWell chosen music, goes with the tone and tenor of the placeService: Prompt and courteous, although admittedly the cafe was fairly sparsely populated at the time"
@@ -163,6 +166,5 @@ if __name__ == "__main__":
 	text1= "This place is a perfect option for a nice day out with your gal friends or with your sister or mother...where you can order their much recommended pasta or the cheese toast and off-course the iced coffee (order only if you like strong buzz in your coffee)."
 	
 	for element in myTokenizer.segment_text(text2):
-		print '\n-----\n'.join(element)
+		print ' '.join(element)
 
-"""

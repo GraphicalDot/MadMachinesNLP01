@@ -128,6 +128,7 @@ class Classifier:
 
 	def with_svm(self):
 
+		final_data = list()
 		classifier = self.svm_classifier()
 		#new_data = self.sent_tokenizer.tokenize(self.text, realign_boundaries= True)
 		
@@ -135,9 +136,14 @@ class Classifier:
 		tokenizer = SentenceTokenizer()
 		new_data = [" ".join(word_tokenized_sentence) for word_tokenized_sentence in tokenizer.segment_text(self.text)]
 
+
+		#Still the new data cannot classify sentences like ( ).
+		#So that only be classified as punk tokenizer with realliagn boundaries= True
 		print new_data
-		predicted = classifier.predict(new_data)
+		for element in new_data:
+			final_data.extend(self.sent_tokenizer.tokenize(element.strip(), realign_boundaries=True))
+		predicted = classifier.predict(final_data)
 	
-		return zip(new_data, predicted)
+		return zip(final_data, predicted)
 
 
