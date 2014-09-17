@@ -84,7 +84,7 @@ def return_processed_text():
 				})
 
 
-		text_classfication = Classifier(text.decode("utf-8"))	
+		text_classfication = Classifier(text.encode("utf-8"))	
 		noun_phrase = list()
 		result = list() 
 
