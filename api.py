@@ -100,6 +100,7 @@ def return_processed_text():
 			result.append(element)
 			noun_phrase.extend(list(instance.noun_phrase()))
 
+		print result
 		return jsonify({
 				"result": result,
 				"success": True,

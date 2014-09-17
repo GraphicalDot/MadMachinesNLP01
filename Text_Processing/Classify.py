@@ -143,7 +143,8 @@ class Classifier:
 		for element in new_data:
 			final_data.extend(self.sent_tokenizer.tokenize(element.strip(), realign_boundaries=True))
 		predicted = classifier.predict(final_data)
-	
+
+		print predicted
 		return zip(final_data, predicted)
 
 
