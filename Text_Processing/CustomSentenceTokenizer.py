@@ -1,7 +1,43 @@
 #!/usr/bin/env python
 #-*- coding: utf-8 -*-
+#http://www.monlp.com/2012/03/13/segmenting-words-and-sentences/
+#Code modified from the above mentioned website
+
+
+import nltk
+import string
+
+# Tokenize text into words, punctuation, and whitespace tokens
+
+class ModifiedWPTokenizer( nltk.tokenize.RegexpTokenizer):
+	def __init__(self):
+		nltk.tokenize.RegexpTokenizer.__init__(self, r'\w+|[^\w\s]|\s+')
+
+
 
 class SentenceTokenizer():
+	# The constructor builds a classifier using treebank training data
+	# Naive Bayes is used for fast training
+	# The entire dataset is used for training
+	def __init__(self):
+		self.tokenizer = ModifiedWPTokenizer()
+		training_sents = nltk.corpus.treebank_raw.sents()
+		tokens = []
+		boundaries = set()
+		offset = 0
+		for sent in nltk.corpus.treebank_raw.sents():
+			tokens.extend(sent)
+			offset += len(sent)
+			boundaries.add(offset-1)
+			
+			
+		# Create training features
+		featuresets = [(self.punct_features(tokens,i), (i in boundaries)) for i in range(1, len(tokens)-1) if tokens[i] in '.?!']
+		
+		train_set = featuresets
+		self.classifier = nltk.NaiveBayesClassifier.train(train_set)
+
+	
 	# extract punctuation features from word list for position i
 	# Features are: this word; previous word (lower case);
 	# is the next word capitalized?; previous word only one char long?
@@ -25,28 +61,6 @@ class SentenceTokenizer():
 				'prev-word-is-one-char': len(tokens[i-1][0]) == 1}
 		
 		
-	# The constructor builds a classifier using treebank training data
-	# Naive Bayes is used for fast training
-	# The entire dataset is used for training
-	def __init__(self):
-		self.tokenizer = ModifiedWPTokenizer()
-		training_sents = nltk.corpus.treebank_raw.sents()
-		tokens = []
-		boundaries = set()
-		offset = 0
-		for sent in nltk.corpus.treebank_raw.sents():
-			tokens.extend(sent)
-			offset += len(sent)
-			boundaries.add(offset-1)
-			
-			
-		# Create training features
-		featuresets = [(self.punct_features(tokens,i), (i in boundaries)) for i in range(1, len(tokens)-1) if tokens[i] in '.?!']
-		
-		train_set = featuresets
-		self.classifier = nltk.NaiveBayesClassifier.train(train_set)
-
-	
 	# Use the classifier to segment word tokens into sentences
 	# words is a list of (word,bool) tuples
 	
@@ -139,3 +153,16 @@ class SentenceTokenizer():
 			sentences.append(sentence)
 		# return the resulting list of sentences
 		return sentences
+
+
+"""
+if __name__ == "__main__":
+	myTokenizer = SentenceTokenizer()
+	text2 = "Food: GoodThe menu selection is excellent and reminiscent of a British lunch experience.Very good selection of shakes, iced teas, and comfort foods just right for a relaxed daytime mealFood taste was consistently good, though none of the items were mind-blowing.Peach Iced Tea: Great blend, all natural ingredients and freshly made, if a tad too sweetShepherd's pie: Tasty but a variation on the originalEspresso Crumble Cake: Great match of cake and coffee flavors, went wonderfully with the whipped creamAmbiance: ExcellentPerfectly coordinated interiors, look-and-feel is very consistent and provides character to the cafeWell chosen music, goes with the tone and tenor of the placeService: Prompt and courteous, although admittedly the cafe was fairly sparsely populated at the time"
+	
+	text1= "This place is a perfect option for a nice day out with your gal friends or with your sister or mother...where you can order their much recommended pasta or the cheese toast and off-course the iced coffee (order only if you like strong buzz in your coffee)."
+	
+	for element in myTokenizer.segment_text(text2):
+		print '\n-----\n'.join(element)
+
+"""

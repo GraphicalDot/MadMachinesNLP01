@@ -2,6 +2,7 @@
 $(document).ready(function(){
    	App = {} ;
 	window.App = App ;
+	/*
 	window.process_text_url = "http://localhost:8000/process_text";
 	window.update_model_url = "http://localhost:8000/update_model";
 	window.update_review_error = "http://localhost:8000/update_review_error";
@@ -9,7 +10,7 @@ $(document).ready(function(){
 	window.eateries_list = "http://localhost:8000/eateries_list";
 	window.eateries_details = "http://localhost:8000/eateries_details";
 	window.update_review_classification = "http://localhost:8000/update_review_classification";
-	/*
+	*/
 	window.process_text_url = "http://ec2-50-112-147-199.us-west-2.compute.amazonaws.com:8080/process_text";
 	window.update_model_url = "http://ec2-50-112-147-199.us-west-2.compute.amazonaws.com:8080/update_model";
 	window.eateries_list = "http://ec2-50-112-147-199.us-west-2.compute.amazonaws.com:8080/eateries_list";
@@ -17,7 +18,6 @@ $(document).ready(function(){
 	window.update_review_classification = "http://ec2-50-112-147-199.us-west-2.compute.amazonaws.com:8080/update_review_classification";
 	window.update_review_error = "http://ec2-50-112-147-199.us-west-2.compute.amazonaws.com:8080/update_review_error";
 	window.update_customer = "http://ec2-50-112-147-199.us-west-2.compute.amazonaws.com:8080/update_customer";
-	*/
 
 
 window.optimizely = window.optimizely || [];

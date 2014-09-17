@@ -11,6 +11,7 @@ from sklearn.feature_extraction.text import TfidfTransformer
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.linear_model import SGDClassifier
 from sklearn.pipeline import Pipeline
+from CustomSentenceTokenizer import SentenceTokenizer 
 path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
@@ -128,8 +129,12 @@ class Classifier:
 	def with_svm(self):
 
 		classifier = self.svm_classifier()
-		new_data = self.sent_tokenizer.tokenize(self.text, realign_boundaries= True)
+		#new_data = self.sent_tokenizer.tokenize(self.text, realign_boundaries= True)
 		
+		##With the new class created in CustomSentenceTokenizer , the new sentence tokenizer
+		tokenizer = SentenceTokenizer()
+		new_data = [" ".join(word_tokenized_sentence) for word_tokenized_sentence in tokenizer.segment_text(self.text)]
+
 		print new_data
 		predicted = classifier.predict(new_data)
 	
