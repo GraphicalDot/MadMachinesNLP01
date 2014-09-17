@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 #-*- coding: utf-8 -*-
 
+import sys
+import os
 import csv
 import codecs
 import time
@@ -15,6 +17,10 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from db_insertion import DBInsert	
+
+
+
+
 
 
 class EateriesList(object):
@@ -278,7 +284,11 @@ class EateryData(object):
 
 	def with_selenium(self):
 		#driver = webdriver.PhantomJS()
-		driver = webdriver.Firefox()
+		#driver = webdriver.Firefox()
+		
+		chromedriver = "{path}/chromedriver".format(path=os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+		os.environ["webdriver.chrome.driver"] = chromedriver
+		driver = webdriver.Chrome(chromedriver)
 		driver.get(self.eatery.get("eatery_url"))
 
 		try:
