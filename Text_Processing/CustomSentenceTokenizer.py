@@ -34,10 +34,6 @@ class SentenceTokenizer():
 		# Create training features
 		featuresets = [(self.punct_features(tokens,i), (i in boundaries)) for i in range(1, len(tokens)-1) if tokens[i] in '.?!']
 	
-		for element in featuresets:
-			print element 
-
-		print "This is the length of the feature set {len}".format(len=len(featuresets))
 		train_set = featuresets
 		self.classifier = nltk.NaiveBayesClassifier.train(train_set)
 

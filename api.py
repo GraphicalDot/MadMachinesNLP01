@@ -104,7 +104,7 @@ def return_processed_text():
 				"result": result,
 				"success": True,
 				"error": False,
-				"overall_sentiment": '%.2f'%ProcessingWithBlob.new_blob_polarity(text),
+				"overall_sentiment": '%.2f'%ProcessingWithBlob.new_blob_polarity(text.encode("utf-8")),
 				"noun_phrase": noun_phrase,
 				})
 
