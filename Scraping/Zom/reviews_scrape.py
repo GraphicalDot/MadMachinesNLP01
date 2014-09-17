@@ -39,6 +39,7 @@ class Reviews(object):
 			reviews["error"] = list()
 			reviews["repeated_customers"] = list()
 			reviews["area_or_city"] = self.area_or_city
+			reviews["management_response"] = self.review_management_response(review)
 			self.reviews_data.append(reviews)
 		return
 
@@ -117,6 +118,11 @@ class Reviews(object):
 		review_dom = review.find("div", {"class": "rev-text-expand"})
 		review_dom.find("div", {"class": "left"}).extract()#This removes the unimportqant divs from the review text div
 		return review_dom.text
+
+	@exception_handling
+	def review_management_response(self, review):
+		return review.find("div", {"class": "review-reply-text "}).text
+
 
 
 	@exception_handling
