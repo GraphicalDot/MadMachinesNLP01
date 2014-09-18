@@ -17,8 +17,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from db_insertion import DBInsert	
-
-
+from colored_print import bcolors
 
 
 
@@ -284,12 +283,10 @@ class EateryData(object):
 
 	def with_selenium(self):
 		#driver = webdriver.PhantomJS()
-		driver = webdriver.Firefox()
-		"""
+		#driver = webdriver.Firefox()
 		chromedriver = "{path}/chromedriver".format(path=os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 		os.environ["webdriver.chrome.driver"] = chromedriver
 		driver = webdriver.Chrome(chromedriver)
-		"""
 		driver.get(self.eatery.get("eatery_url"))
 
 		try:
@@ -480,7 +477,11 @@ def scrape_links(url, number_of_restaurants, skip, is_eatery):
 	instance = EateriesList(url, int(number_of_restaurants), int(skip), is_eatery)
 
 	eateries_list = instance.get_eateries_list
-	print eateries_list
+	
+	print "\n {color} Printing Eateries list \n".format(color=bcolors.OKBLUE)
+	for eatery in eateries_list:
+		print "\n{color} Eatery--<{eatery}>\n".format(color=bcolors.OKBLUE, eatery=eatery)
+
 	return eateries_list	
 	
 def eatery_specific(eatery_dict):	
@@ -512,7 +513,6 @@ def eatery_specific(eatery_dict):
 			eatery_modified.get('converted_to_epoch'),eatery_modified.get('eatery_id')]
 
 	#writer.writerow(eatery_row)
-	print "\n\n\n", eatery_modified, "\n\n"
 	DBInsert.db_insert_eateries(eatery_modified)
 		
 	reviews = instance.eatery.get("reviews")
