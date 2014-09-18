@@ -15,6 +15,7 @@ import pymongo
 import traceback
 import time
 from pymongo.errors import BulkWriteError
+from colored_print import bcolors
 
 #LOG_FILENAME = 'exceptions_logger.log'
 #:wlogging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
@@ -30,8 +31,8 @@ class DBInsert(object):
 		bulk.insert(eatery)
 		try:
 			bulk.execute()
-		except BulkWriteError as error:
-			print error.details
+		except BulkWriteError as __error:
+			print "{color} FUNCTION--<{function_name}>  ERROR--<{error}>".format(color=bcolors.OKGREEN, function_name=inspect.stack()[0][3], error=__error.details)
 
 		return
 	
@@ -41,14 +42,13 @@ class DBInsert(object):
 		for review in reviews:
 			try:
 				review_collection.insert(review, safe=True)
+				print "{color} FUNCTION--<{function_name}>  SUCCESS--<{success}>".format(color=bcolors.OKBLUE, function_name=inspect.stack()[0][3], success="Review has been inserted successfully")
 			except Exception as e:
-				print e
-			#	print traceback.print_stack()
+				print "{color} FUNCTION--<{function_name}>  ERROR--<{error}>".format(color=bcolors.FAIL, function_name=inspect.stack()[0][3], error=e)
 		return
 	
 	@staticmethod
 	def db_insert_users(users):
-		print "This is the length of the users_list %s"%len(users)
 		user_collection = collection("user")
 	
 		
@@ -56,11 +56,9 @@ class DBInsert(object):
 			try:
 				result = user_collection.update({"user_id": user.get("user_id"), "user_name": user.get("user_name")},{"$set": {"user_url": user.get("user_url"), "user_followers": user.get("user_followers"), "user_reviews" : user.get("user_reviews"), "updated_on": int(time.time())}}, upsert=True)	
 
-				print user.get("user_id"), type(user.get("user_id"))
-				print user_collection.find_one({"user_id": user.get("user_id")})
-				print result.get("updatedExisting"), "\n\n"
+				print "{color} FUNCTION--<{function_name}>  MESSEGE--<Update Existing={messege}>".format(color=bcolors.OKBLUE, function_name=inspect.stack()[0][3], messege=result.get("updatedExisting"))
 			except Exception as e:
-				print "%s occurred while updating %s"%(e, user.get("user_id"))
+				print "{color} FUNCTION--<{function_name}>  ERROR--<{error}>".format(color=bcolors.FAIL, function_name=inspect.stack()[0][3], error=e)
 		return
 
 

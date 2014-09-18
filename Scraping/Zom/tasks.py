@@ -16,7 +16,10 @@ from celery_app.App import app
 from main_scrape import scrape_links, eatery_specific
 from celery.registry import tasks
 import logging
+import inspect
 from celery import task, subtask, group
+from colored_print import bcolors
+
 connection = pymongo.Connection()
 db = connection.intermediate
 collection = db.intermediate_collection
@@ -61,7 +64,7 @@ runn.apply_async(args=["https://www.zomato.com/ncr/south-delhi-restaurants", 30,
 
 @app.task(ignore_result=True, max_retries=3, retry=True)
 def eateries_list(url, number_of_restaurants, skip, is_eatery):
-	print "got into eateries list"
+	print "{color} Execution of the function {function_name} starts".format(color=bcolors.OKBLUE, function_name=inspect.stack()[0][3])
 	eateries_list = scrape_links(url, number_of_restaurants, skip, is_eatery)
 	return eateries_list
 
@@ -74,7 +77,7 @@ class process_eatery(celery.Task):
 	acks_late=True
 	default_retry_delay = 5
 	def run(self, eatery_dict):
-		print "got into process_eatery"
+		print "{color} Execution of the function {function_name} starts".format(color=bcolors.OKBLUE, function_name=inspect.stack()[0][3])
 		eatery_specific(eatery_dict)
 		return
 

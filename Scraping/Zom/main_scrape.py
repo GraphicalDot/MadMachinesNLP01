@@ -284,11 +284,12 @@ class EateryData(object):
 
 	def with_selenium(self):
 		#driver = webdriver.PhantomJS()
-		#driver = webdriver.Firefox()
-		
+		driver = webdriver.Firefox()
+		"""
 		chromedriver = "{path}/chromedriver".format(path=os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 		os.environ["webdriver.chrome.driver"] = chromedriver
 		driver = webdriver.Chrome(chromedriver)
+		"""
 		driver.get(self.eatery.get("eatery_url"))
 
 		try:

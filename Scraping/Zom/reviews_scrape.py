@@ -4,6 +4,9 @@
 import goose
 import BeautifulSoup
 import time
+from colored_print import bcolors 
+
+
 
 class Reviews(object):
 
@@ -40,6 +43,9 @@ class Reviews(object):
 			reviews["repeated_customers"] = list()
 			reviews["area_or_city"] = self.area_or_city
 			reviews["management_response"] = self.review_management_response(review)
+			reviews["readable_review_year"] = self.review_year(review)
+			reviews["readable_review_month"] = self.review_month(review)
+			reviews["readable_review_day"] = self.review_day(review)
 			self.reviews_data.append(reviews)
 		return
 
@@ -49,11 +55,11 @@ class Reviews(object):
 				return func(self, review)
 			
 			except ValueError as e:
-				print func.__name__, e
+				print "{color} ERROR <{error}> in function <{function}>".format(color=bcolors.FAIL, error=e, function=func.__name__)
 				return None
 
 			except Exception as e:
-				print func.__name__, e
+				print "{color} ERROR <{error}> in function <{function}>".format(color=bcolors.FAIL, error=e, function=func.__name__)
 				return None
 		return deco
 
@@ -68,6 +74,23 @@ class Reviews(object):
 		return time.mktime(time.strptime(time_stamp, "%Y-%m-%d %H:%M:%S"))
 
 
+	@exception_handling
+	def review_year(self, review):
+		epoch = self.converted_to_epoch(review)
+		return time.strftime("%Y", time.localtime(int(epoch)))
+
+	@exception_handling
+	def review_month(self, review):
+		epoch = self.converted_to_epoch(review)
+		return time.strftime("%m", time.localtime(int(epoch)))
+	
+		
+	@exception_handling
+	def review_day(self, review):
+		epoch = self.converted_to_epoch(review)
+		return time.strftime("%d", time.localtime(int(epoch)))
+	
+		
 	@exception_handling
 	def eatery_id(self, review):
 		return self.soup.find("div", {"class": "res-review-body clearfix"})["data-res_id"]
