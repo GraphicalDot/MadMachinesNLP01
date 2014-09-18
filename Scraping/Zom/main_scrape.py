@@ -485,11 +485,17 @@ def scrape_links(url, number_of_restaurants, skip, is_eatery):
 	return eateries_list	
 	
 def eatery_specific(eatery_dict):	
+	try:
+		print "\n {color} Opening Eatery--<{eatery}> with url --<{url}>\n".format(color=bcolors.OKBLUE, eatery=eatery_dict.get("eatery_name"), url=eatery_dict.get("eatery_url"))
+	except Exception:
+		print "\n {color} Eatery url --<{url}>\n".format(color=bcolors.OKBLUE, url=eatery_dict.get("eatery_url"))
+
+
 	instance = EateryData(eatery_dict)
 	#eatery_modified_list.append(dict([(key, value) for key, value in instance.eatery.iteritems() if key.startswith("eatery")]))
 	#reviews_list.extend(instance.eatery.get("reviews"))
-	eatery_modified = dict([(key, value) for key, value in instance.eatery.iteritems() if key.startswith("eatery")])
 		
+	eatery_modified = dict([(key, value) for key, value in instance.eatery.iteritems() if key.startswith("eatery")])
 		
 	#Creating csvfile witht he name of extery name
 	#writer = csv_writer(eatery_modified.get("eatery_name"))[0]
