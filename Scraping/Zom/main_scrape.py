@@ -10,6 +10,7 @@ import random
 import goose
 import BeautifulSoup
 import re
+from database import DB, collection, CONNECTION
 from selenium.common.exceptions import NoSuchElementException
 from selenium import webdriver
 from reviews_scrape import Reviews
@@ -283,10 +284,12 @@ class EateryData(object):
 
 	def with_selenium(self):
 		#driver = webdriver.PhantomJS()
-		#driver = webdriver.Firefox()
+		driver = webdriver.Firefox()
+		"""
 		chromedriver = "{path}/chromedriver".format(path=os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 		os.environ["webdriver.chrome.driver"] = chromedriver
 		driver = webdriver.Chrome(chromedriver)
+		"""
 		driver.get(self.eatery.get("eatery_url"))
 
 		try:
@@ -490,6 +493,14 @@ def eatery_specific(eatery_dict):
 	except Exception:
 		print "\n {color} Eatery url --<{url}>\n".format(color=bcolors.OKBLUE, url=eatery_dict.get("eatery_url"))
 
+
+	##If the eatery is already present then there is no need to scrape it again
+	##Here we check on the basis of url because it might be a possibility that we want to scrape eatery on the basis of url and in 
+	#that case eatery id may not be present in the database
+	eatery_collection = collection("eatery")
+	if eatery_collection.find_one({"eatery_url": eatery_dict.get("eatery_url")}):
+		print "\n {color} The Eatery with the url --<{url} has already been scraped>\n".format(color=bcolors.WARNING, url=eatery_dict.get("eatery_url"))
+		return
 
 	instance = EateryData(eatery_dict)
 	#eatery_modified_list.append(dict([(key, value) for key, value in instance.eatery.iteritems() if key.startswith("eatery")]))
