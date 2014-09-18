@@ -132,7 +132,7 @@ class EateriesList(object):
 		eatery["eatery_url"] = eatery_soup.find("a").get("href")
 		eatery["eatery_name"] = eatery_soup.find("a").text
 		try:
-			eatery["eatery_adddress"] = eatery_soup.find("span")["title"]
+			eatery["eatery_adddress"] = eatery_soup.find("span", {"class": "search-result-address"})["title"]
 		except Exception:
 			eatery["eatery_adddress"] = None
 
