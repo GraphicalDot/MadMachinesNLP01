@@ -45,6 +45,10 @@ class Reviews(object):
 			reviews["readable_review_month"] = self.review_month(review)
 			reviews["readable_review_day"] = self.review_day(review)
 			
+			
+			#This is the check whether the review has been classified or not
+			reviews["is_classified"] = False
+			
 			#These are the enteries added to the review which will be modified later
 			#This will be list of ditionaries with keys "sentence" and "messege" sentences which would have error on them.
 			#sentence: On which the error occureed and "messege" the user input about what he thinks about this error
