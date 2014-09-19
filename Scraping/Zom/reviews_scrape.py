@@ -39,13 +39,24 @@ class Reviews(object):
 			reviews["eatery_id"] = self.eatery_id(review)
 			reviews["scraped_epoch"] = int(time.time())			
 			reviews["converted_epoch"] = self.converted_to_epoch(review)
-			reviews["error"] = list()
-			reviews["repeated_customers"] = list()
 			reviews["area_or_city"] = self.area_or_city
 			reviews["management_response"] = self.review_management_response(review)
 			reviews["readable_review_year"] = self.review_year(review)
 			reviews["readable_review_month"] = self.review_month(review)
 			reviews["readable_review_day"] = self.review_day(review)
+			
+			#These are the enteries added to the review which will be modified later
+			#This will be list of ditionaries with keys "sentence" and "messege" sentences which would have error on them.
+			#sentence: On which the error occureed and "messege" the user input about what he thinks about this error
+			reviews["error"] = list() 
+
+			#This will be a list of sentences which will somehow implies that the user who wrote this review, is a retuning one
+			reviews["repeated_customers"] = list()
+
+			#All the following list will have sentences related to each of the tags
+			#service, ambience, cost, food, overall, null
+			reviews.update(dict.fromkeys(["service", "food", "ambience", "cost", "overall", "null", "negative", "postive"], list()))
+
 			self.reviews_data.append(reviews)
 		return
 

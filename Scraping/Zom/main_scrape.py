@@ -38,7 +38,7 @@ class EateriesList(object):
 			self.url = url
 			self.number_of_restaurants = number_of_restaurants
 			self.skip = skip
-
+			self.soup = self.prepare_soup(self.url)
 			self.get_eateries_list = self.eateries_list()
 	
 
@@ -71,10 +71,12 @@ class EateriesList(object):
 		try:
 			pages_number = self.soup.find("div", {"class": "pagination-meta"}).text.split(" ")[-1]
 		except AttributeError:
+			print "{0}Either the dom has been changed or just one page present in pagination".format(bcolors.FAIL)
 			pages_number = 1
 		
-		pages_url = ["%s?page=%s"%(self.url, page_number) for page_number in range(1, int(pages_number)+1)]
-		return pages_url
+		__pages_url = ["%s?page=%s"%(self.url, page_number) for page_number in range(1, int(pages_number)+1)]
+		print __pages_url
+		return __pages_url
 
 
 	def eateries_list(self):
@@ -97,8 +99,6 @@ class EateriesList(object):
 
 		pages = self.pagination_links()
 
-		print pages[self.start_page_number: self.start_page_number + self.end_page_number]
-		
 		for page in pages[self.start_page_number: self.start_page_number + self.end_page_number]:
 			time.sleep(random.choice(range(0, 30)))
 			eateries.extend(self.fetch_eateries(page))
@@ -148,7 +148,7 @@ class EateriesList(object):
 			eatery["eatery_rating"] = None
 
 		try:
-			eatery["eatery_title"] = soup.findNext().get("title")
+			eatery["eatery_title"] = eatery_soup.findNext().get("title")
 		except Exception:
 			eatery["eatery_title"] = None
 		
@@ -159,6 +159,13 @@ class EateriesList(object):
 
 		except Exception:
 			eatery["eatery_trending"] = None
+
+
+		##Finding total number of reviews for each eatery soup
+		try:
+			eatery["popular_reviews"] = eatery_soup.find("a", {"data-result-type": "ResCard_Reviews"}).text
+		except Exception:
+			eatery["popular_reviews"] = None
 
 
 		return eatery
@@ -212,9 +219,9 @@ class EateryData(object):
 		"""
 		if not self.eatery.get("eatery_address"):
 			try:
-				self.eatery["eatery_adddress"] = self.soup.find("h4", {"class": "res-main-address-text left"}).text
+				self.eatery["eatery_adddress"] = self.soup.find("span", {"class": "search-result-address"})["title"]
+			
 			except Exception as e:
-
 				self.eatery["eatery_adddress"] = None
 		return
 
@@ -486,7 +493,9 @@ def scrape_links(url, number_of_restaurants, skip, is_eatery):
 	if not number_of_restaurants:
 		number_of_restaurants = 0
 
+	print "These are the number of restaurants {0} and skip is {1}".format(int(number_of_restaurants), int(skip))
 	instance = EateriesList(url, int(number_of_restaurants), int(skip), is_eatery)
+
 
 	eateries_list = instance.get_eateries_list
 	
