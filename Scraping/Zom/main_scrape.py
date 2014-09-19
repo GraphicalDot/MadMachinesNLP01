@@ -38,7 +38,7 @@ class EateriesList(object):
 			self.url = url
 			self.number_of_restaurants = number_of_restaurants
 			self.skip = skip
-			self.soup = self.prepare_soup(self.url)
+
 			self.get_eateries_list = self.eateries_list()
 	
 
@@ -292,6 +292,7 @@ class EateryData(object):
 		"""
 		driver.get(self.eatery.get("eatery_url"))
 
+
 		try:
 			driver.find_element_by_css_selector("a.everyone.empty").click()
 
@@ -300,10 +301,10 @@ class EateryData(object):
 
 		try:
 			while True:
-			#	time.sleep(random.choice([5, 6, 7, 8, 9, 10]))
-				time.sleep(random.choice([5, 6, 7]))
+				time.sleep(random.choice([2, 3, 1]))
 				driver.find_element_by_class_name("load-more").click()
-		except NoSuchElementException:
+		except NoSuchElementException as e:
+			print "{color} Catching Exception -<{error}>- with messege -<No More Loadmore tag present>-".format(color=bcolors.OKGREEN, error=e)
 			pass
 	
 		except Exception:
@@ -311,17 +312,25 @@ class EateryData(object):
 
 		
 		time.sleep(20)
-		driver.implicitly_wait(30)	
-		read_more_links = driver.find_elements_by_xpath("//div[@class='rev-text-expand']")
-
-		for link in read_more_links:
-			link.click()
-
 		
-		driver.implicitly_wait(30)
-		time.sleep(20)
+		def click_read_more_class():
+			read_more_links = driver.find_elements_by_xpath("//div[@class='rev-text-expand']")
+			for link in read_more_links:
+				time.sleep(random.choice([2, 3]))
+				link.click()
+
+			time.sleep(30)
+		
+		try:
+			while True:
+				time.sleep(random.choice([1, 2, 3]))
+				click_read_more_class()
+		except Exception as e:
+			print "{color} Catching Exception -<{error}>- with messege -<No More Readmore tag present>-".format(color=bcolors.OKGREEN, error=e)
+			pass
+	
+
 		html = driver.page_source
-		driver.implicitly_wait(random.choice(range(5, 11)))
 		driver.close()
 		
 		return BeautifulSoup.BeautifulSoup(html)

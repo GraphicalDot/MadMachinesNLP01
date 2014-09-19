@@ -134,13 +134,15 @@ class Reviews(object):
 		     
 	@exception_handling
 	def review_text(self, review):
-		if review.find("div", {"class": "rev-text"}):
+		try:
+			review_dom = review.find("div", {"class": "rev-text hidden"})
+			review_dom.find("div", {"class": "left"}).extract()#This removes the unimportqant divs from the review text div
+			return review_dom.text
+		except Exception:
 			review_dom = review.find("div", {"class": "rev-text"})
 			review_dom.find("div", {"class": "left"}).extract()#This removes the unimportqant divs from the review text div
 			return review_dom.text
-		review_dom = review.find("div", {"class": "rev-text-expand"})
-		review_dom.find("div", {"class": "left"}).extract()#This removes the unimportqant divs from the review text div
-		return review_dom.text
+
 
 	@exception_handling
 	def review_management_response(self, review):
