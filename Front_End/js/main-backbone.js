@@ -355,7 +355,7 @@ App.RootRowView = Backbone.View.extend({
 		jqhr.done(function(data){
 			if (data.success == true){
 					var subView = new App.NgramsParent({model: {"result": data.result, "sentence": sentence, "grams": grams, parent: self}});
-					self.$el.append(subView.render().el);	
+					self.$el.after(subView.render().el);	
 			}
 			else {
 				bootbox.alert(data.messege)
@@ -500,7 +500,7 @@ App.RootRowView = Backbone.View.extend({
 
 App.NgramsParent = Backbone.View.extend({
 	tagName: "fieldset",
-	className: "well plan",
+	className: "well",
 	template: template("ngrams-parent"),
 	sentence: function(){ return this.model.sentence},
 	block_gram: function(){ return this.model.grams},
