@@ -15,10 +15,13 @@ import shutil
 import json
 import os
 from bson.json_util import dumps
-from Text_Processing import ProcessingWithBlob, PosTags, Classifier
+from Text_Processing import ProcessingWithBlob, PosTags, Classifier, nltk_ngrams
 import time
 from datetime import timedelta
 import pymongo
+
+
+
 connection = pymongo.Connection()
 db = connection.modified_canworks
 eateries = db.eatery
@@ -90,7 +93,11 @@ def return_processed_text():
 
 		polarity=lambda x: "postive" if float(x)>= 0 else "negative"
 
+
+		##with svm returns a list in the following form
+		##[(sentence, tag), (sentence, tag), ................]
 		for chunk in text_classfication.with_svm():
+			print chunk
 			element = dict()
 			instance = ProcessingWithBlob(chunk[0])
 			element["sentence"] = chunk[0]
@@ -100,7 +107,6 @@ def return_processed_text():
 			result.append(element)
 			noun_phrase.extend(list(instance.noun_phrase()))
 
-		print result
 		return jsonify({
 				"result": result,
 				"success": True,
@@ -138,9 +144,10 @@ def update_model():
 @app.route('/update_review_error', methods=['POST', 'OPTIONS'])
 @crossdomain(origin='*', headers='Content-Type')
 def update_review_error():
-	text = request.form["text"]
+	sentence = request.form["sentence"]
 	error = request.form["is_error"]
 	review_id = request.form["review_id"]
+	error_messege = request.form["error_messege"]
 	
 	if int(error) != 2:
 		return jsonify({"success": False,
@@ -159,13 +166,49 @@ def update_review_error():
 
 
 
-	reviews.update({"review_id": review_id}, {"$push": {"error": text}})
+	reviews.update({"review_id": review_id}, {"$push": {"error": {"sentence": sentence, "error_messege": error_messege}}}, upsert=False)
 	with open(path, "a") as myfile:
-		myfile.write(text)
+		myfile.write(sentence)
 		myfile.write("\n")
 
 	return jsonify({"success":  True,
 		"error": False,
+		"messege": "The sentence --{0}-- with the error messege --{1}-- with id --{2} has been uploaded".format(sentence, error_messege, review_id),
+		})
+
+
+@app.route('/upload_interjection_error', methods=['POST', 'OPTIONS'])
+@crossdomain(origin='*', headers='Content-Type')
+def upload_interjection_error():
+	sentence = request.form["sentence"]
+	error = request.form["is_error"]
+	review_id = request.form["review_id"]
+	
+	if int(error) != 3:
+		return jsonify({"success": False,
+				"error": True,
+				"messege": "Only interjection sentences can be tagged, 'void' is an invalid tag",
+				"error_code": 207,
+			})
+
+	path = (os.path.join(os.path.dirname(os.path.abspath(__file__)) + "/trainers/valid_%s.txt"%'interjection'))
+	if not os.path.exists(path):
+		return jsonify({"success": False,
+				"error": True,
+				"messege": "File doenst exists for interjection",
+				"error_code": 210,
+			})
+
+
+
+	reviews.update({"review_id": review_id}, {"$push": {"interjection": {"sentence": sentence}}}, upsert=False)
+	with open(path, "a") as myfile:
+		myfile.write(sentence)
+		myfile.write("\n")
+
+	return jsonify({"success":  True,
+		"error": False,
+		"messege": "The sentence --{0}-- with id --{1} has been uploaded for interjection erros".format(sentence, review_id),
 		})
 
 
@@ -275,12 +318,65 @@ def get_review_details():
 				"error": True,
 				"messege": "The review doesnt exists",
 		})
-		return 
 	
 	result = reviews.find_one({'review_id': id}, fields={"_id": False})
 	return jsonify({"success": True,
 				"error": False,
 				"result": result,
+		})
+
+@app.route('/get_ngrams', methods=['POST', 'OPTIONS'])
+@crossdomain(origin='*', headers='Content-Type')
+def get_ngrams():
+	text = request.form["text"]
+	grams = request.form["grams"]
+	if not text:
+		return jsonify({"success": False,
+				"error": True,
+				"messege": "The text field cannot be left empty",
+		})
+	
+	if not grams:
+		return jsonify({"success": False,
+				"error": True,
+				"messege": "The grams field cannot be left empty",
+		})
+
+	if grams == "void":
+		return jsonify({"success": False,
+				"error": True,
+				"messege": "The grams field cannot be equals to void",
+		})
+
+
+	return jsonify({"success": True,
+				"error": False,
+				"result": nltk_ngrams(text, grams),
+		})
+
+
+@app.route('/upload_noun_phrases', methods=['POST', 'OPTIONS'])
+@crossdomain(origin='*', headers='Content-Type')
+def upload_noun_phrases():
+	noun_phrase = request.form["noun_phrase"]
+	review_id = request.form["review_id"]
+	sentence = request.form["sentence"]
+	if not reviews.find_one({'review_id': review_id}):
+		return jsonify({"success": False,
+				"error": True,
+				"messege": "The review doesnt exists",
+		})
+
+	if not noun_phrase:
+		return jsonify({"success": False,
+				"error": True,
+				"messege": "The Noun phrase field cannot be left empty",
+		})
+	
+	reviews.update({"review_id": review_id}, {"$push": {"noun_phrases": {"sentence": sentence, "phrase": noun_phrase}}}, upsert=False)
+	return jsonify({"success": True,
+				"error": False,
+				"messege": "noun phrase --{0}-- for sentence --{1}-- with review id --<{2}>--has been uploaded".format(noun_phrase, sentence, review_id),
 		})
 
 

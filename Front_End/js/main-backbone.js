@@ -2,16 +2,21 @@
 $(document).ready(function(){
    	App = {} ;
 	window.App = App ;
-	/*
-	window.process_text_url = "http://localhost:8000/process_text";
-	window.update_model_url = "http://localhost:8000/update_model";
-	window.update_review_error = "http://localhost:8000/update_review_error";
-	window.update_customer = "http://localhost:8000/update_customer";
-	window.eateries_list = "http://localhost:8000/eateries_list";
-	window.eateries_details = "http://localhost:8000/eateries_details";
-	window.update_review_classification = "http://localhost:8000/update_review_classification";
+	window.URL = "http://localhost:8000/"
+	//window.URL = "http://ec2-50-112-147-199.us-west-2.compute.amazonaws.com:8080/"
 	
-	*/
+	window.process_text_url = window.URL + "process_text";
+	window.update_model_url = window.URL + "update_model";
+	window.update_review_error = window.URL + "update_review_error";
+	window.update_customer = window.URL + "update_customer";
+	window.eateries_list = window.URL + "eateries_list";
+	window.eateries_details = window.URL + "eateries_details";
+	window.update_review_classification = window.URL + "update_review_classification";
+	window.get_ngrams = window.URL + "get_ngrams";
+	window.upload_noun_phrases = window.URL + "upload_noun_phrases";
+	window.upload_interjection_error = window.URL + "upload_interjection_error";
+	
+	/*
 	window.process_text_url = "http://ec2-50-112-147-199.us-west-2.compute.amazonaws.com:8080/process_text";
 	window.update_model_url = "http://ec2-50-112-147-199.us-west-2.compute.amazonaws.com:8080/update_model";
 	window.eateries_list = "http://ec2-50-112-147-199.us-west-2.compute.amazonaws.com:8080/eateries_list";
@@ -19,6 +24,9 @@ $(document).ready(function(){
 	window.update_review_classification = "http://ec2-50-112-147-199.us-west-2.compute.amazonaws.com:8080/update_review_classification";
 	window.update_review_error = "http://ec2-50-112-147-199.us-west-2.compute.amazonaws.com:8080/update_review_error";
 	window.update_customer = "http://ec2-50-112-147-199.us-west-2.compute.amazonaws.com:8080/update_customer";
+	window.get_ngrams = "http://ec2-50-112-147-199.us-west-2.compute.amazonaws.com:8080/get_ngrams";
+	window.upload_noun_phrases = "http://ec2-50-112-147-199.us-west-2.compute.amazonaws.com:8080/upload_noun_phrases";
+	*/
 
 
 window.optimizely = window.optimizely || [];
@@ -243,7 +251,7 @@ App.EateriesListView = Backbone.View.extend({
 
 App.RootTopView = Backbone.View.extend({
 	tagName: "fieldset",
-	className: "well plan",
+	className: "well",
 	template: template("root-top"),
 
 	phrases: function(){return this.model.phrases},
@@ -334,6 +342,29 @@ App.RootRowView = Backbone.View.extend({
 		    "change #ddpFiltersentiment" : "changeSentiment",
 		    "change #ddpFilterError" : "changeError",
 		    "change #ddpFilterCustomer" : "changeCustomer",
+		    "change #ddpFilterWordCloud" : "uploadWordCloud",
+	},
+
+
+	uploadWordCloud: function(event){
+		var self = this;
+		event.preventDefault()
+		sentence = self.sentence();
+		grams = self.$('#ddpFilterWordCloud option:selected').text();
+		var jqhr = $.post(window.get_ngrams, {"text": sentence, "grams": grams})	
+		jqhr.done(function(data){
+			if (data.success == true){
+					var subView = new App.NgramsParent({model: {"result": data.result, "sentence": sentence, "grams": grams, parent: self}});
+					self.$el.append(subView.render().el);	
+			}
+			else {
+				bootbox.alert(data.messege)
+			}	
+		})
+				
+		jqhr.fail(function(){
+			bootbox.alert("Either the api or internet connection is not working, Try again later")
+			})
 	},
 
 	changeSentiment: function(event){
@@ -362,17 +393,25 @@ App.RootRowView = Backbone.View.extend({
 	},
 	
 	changeError: function(event){
+		/**********/
+		//Take care of the interjection tag present in the database, add it to the backend
+		/*********/
 		var self = this;
 		event.preventDefault()
-		bootbox.confirm("Are you sure you want to mark thsi sentence as an error sentence", function(result) {
-			if (result == true){
+				
+		error = self.$('#ddpFilterError option:selected').val();
+		
+		if (error == 2){
+		bootbox.prompt("Please enter error messege", function(error_messege) {                
+			if (error_messege != null) {                                             
+				
 				sentence = self.sentence();
 				error = self.$('#ddpFilterError option:selected').val();
-				var jqhr = $.post(window.update_review_error, {"text": sentence, "is_error": error, "review_id": self.review_id()})	
+				var jqhr = $.post(window.update_review_error, {"sentence": sentence, "is_error": error, "review_id": self.review_id(),"error_messege": error_messege})	
 				jqhr.done(function(data){
 					console.log(data.success)
 					if (data.success == true){
-						bootbox.alert("This sentence has been marked as wrongly classified, Yo Yo Honey singh!!")
+						bootbox.alert(data.messege)
 						}
 					else {
 						bootbox.alert(data.messege)
@@ -383,7 +422,26 @@ App.RootRowView = Backbone.View.extend({
 					bootbox.alert("Either the api or internet connection is not working, Try again later")
 				})
 				}	
-		}); 
+				  
+			});
+		}
+		else {
+			sentence = self.sentence();
+			interjection = self.$('#ddpFilterError option:selected').val();
+			var jqhr = $.post(window.upload_interjection_error, {"sentence": sentence, "is_error": error, "review_id": self.review_id(),})	
+			jqhr.done(function(data){
+				console.log(data.success)
+				if (data.success == true){
+					bootbox.alert(data.messege)
+					}
+				else {
+					bootbox.alert(data.messege)}	
+				})
+				
+			jqhr.fail(function(){
+				bootbox.alert("Either the api or internet connection is not working, Try again later")})
+				
+		}	
 	},
 	
 	
@@ -439,6 +497,83 @@ App.RootRowView = Backbone.View.extend({
 		}); 
 	},
 });
+
+App.NgramsParent = Backbone.View.extend({
+	tagName: "fieldset",
+	className: "well plan",
+	template: template("ngrams-parent"),
+	sentence: function(){ return this.model.sentence},
+	block_gram: function(){ return this.model.grams},
+	review_id: function(){ return this.model.parent.review_id()},
+	initialize: function(options){
+		this.model = options.model;
+	},
+
+	render: function(){
+		var self = this;
+		$.each(this.model.result, function(iter, text){ 
+			var subView = new App.Ngrams({model: {"text": text, "sentence": sentence, parent: self}});
+			self.$el.append(subView.render().el);
+		})
+		this.$el.append(this.template(this));
+		return this;
+	},
+
+	events: {
+		"click #hide": "hide",
+		},
+	hide: function(event){
+		event.preventDefault();
+		console.log("hide has been clicked" + this.sentence());
+		this.$el.hide();
+	},
+
+
+
+});
+
+
+App.Ngrams = Backbone.View.extend({
+	
+	template: template("ngram"),
+	noun_phrase: function(){return this.model.text},
+	sentence: function(){ return this.model.sentence},
+	initialize: function(options){
+		this.model = options.model;
+
+	},
+	render: function(){
+		this.$el.append(this.template(this));
+		return this;
+	},
+	
+	events: {
+		"click #submitCloud": "submitCloud",
+
+	},
+
+	submitCloud: function(event){
+		console.log(this.model.parent.review_id());
+		event.preventDefault();
+		var self = this;
+		console.log(this.noun_phrase(), this.sentence());
+		var jqhr = $.post(window.upload_noun_phrases, {"noun_phrase": self.noun_phrase(), "review_id": self.model.parent.review_id(), "sentence": self.model.parent.sentence()})	
+		jqhr.done(function(data){
+			if (data.success == true){
+				bootbox.alert(data.messege)
+			}
+			else {
+				bootbox.alert(data.messege)
+			}	
+			})
+				
+		jqhr.fail(function(){
+				bootbox.alert("Either the api or internet connection is not working, Try again later")
+			})	
+	},
+});
+
+
 
 
 

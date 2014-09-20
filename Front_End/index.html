@@ -71,15 +71,21 @@
     </script>
 
 
+	<script type="text/x-mustache-template" id="ngram-template">
+		<div class="span2">
+			<button type="submit" id="submitCloud" class="btn btn-primary blocks" >{{noun_phrase}}</button>
+		</div>
+		</div>		
+	</script>
 	<script type="text/x-mustache-template" id="each-eatery-template">
 			{{eatery_name}}
 	</script>
 	
-	<script type="text/x-mustache-template" id="classified-reviews-template">
+	<script type="text/x-mustache-template" id="classified-reviews-template" class="scrollable-menu">
 			{{review_text}}
 	</script>
 	
-	<script type="text/x-mustache-template" id="unclassified-reviews-template">
+	<script type="text/x-mustache-template" id="unclassified-reviews-template" class="scrollable-menu">
 			{{review_text}}
 	</script>
 
@@ -93,12 +99,17 @@
 		</div>
 
 	</script>
+	<script type="text/x-mustache-template" id="ngrams-parent-template">
+		<div class="clouds">
+		</div>
+		<button class="btn btn-block btn-primary" type="button" id="hide"> hide {{block_gram}}</button>
+	</script>
 	<script type="text/x-mustache-template" id="noun-phrase-template">
 		<a href="#" rel="{{size}}">{{nounPhrase}}</a>
 
 	</script>
 	<script type="text/x-mustache-template" id="root-row-template">
-		<div class="span5">
+		<div class="span4">
 			<p style="text-align: center">{{sentence}}</p>
 		</div>
 		<div class="span1">
@@ -140,6 +151,19 @@
 				<select id="ddpFilterError" class="btn btn-success dropdown-toggle btn-xs" data-toggle="dropdown" style="width: 98%">
 					<option value="1">void</option>
 					<option value="2">error</option>
+					<option value="3">Interjection</option>
+				</select>
+			</div>
+			</div>
+			
+		<div class="span1">
+			<div class="btn-group">
+				<select id="ddpFilterWordCloud" class="btn btn-success dropdown-toggle btn-xs" data-toggle="dropdown" style="width: 98%">
+					<option value="0">void</option>
+					<option value="1">Unigram</option>
+					<option value="2">Bigram</option>
+					<option value="3">Trigram</option>
+					<option value="4">Quadgram</option>
 				</select>
 			</div>
 			</div>

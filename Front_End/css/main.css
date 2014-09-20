@@ -16,12 +16,20 @@ body{
   -webkit-box-shadow: 0 0 6px 2px #b0b2ab;
   box-shadow: 0 0 50px 2px #b0b2ab;
 }
- 
+
+.blocks 
+{
+	    padding: 10px 10px 10px 10px ;
+	    margin: 5px 5px 5px 5px;  
+	    border-radius: 20;
+		    }
+
+/*
  .plan:hover {
   background-color: initial;
-	/*color: #FFFFFF ;*/ 
+	color: #FFFFFF ; 
 	font-size: 150% ;
-	/*text-decoration: line-through ;*/
+	text-decoration: line-through ;
 	text-align: auto ;
 	font-weight: bold ;
   -moz-box-shadow: 0 0 12px 3px #b0b2ab ;
@@ -33,6 +41,7 @@ body{
 .plan:hover .btn-group #ddpFilter{
 
 }
+*/
 
  .plan {
   padding: 20px;
@@ -157,7 +166,7 @@ margin-top: 10em;
 
 .scrollable-menu {
 	    height: auto;
-	        max-height: 200px;
-		    overflow-x: hidden;
+	    max-height: 20px;
+	    overflow-x: hidden;
 	    }
 
