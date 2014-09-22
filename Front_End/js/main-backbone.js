@@ -372,11 +372,11 @@ App.RootRowView = Backbone.View.extend({
 		event.preventDefault()
 		sentence = self.sentence();
 		changed_polarity = self.$('#ddpFiltersentiment option:selected').text();
-		var jqhr = $.post(window.update_model_url, {"text": sentence, "tag": changed_polarity, "review_id": self.review_id()})	
+		var jqhr = $.post(window.update_model_url, {"sentence": sentence, "tag": changed_polarity, "review_id": self.review_id()})	
 		jqhr.done(function(data){
 			console.log(data.success)
 			if (data.success == true){
-				bootbox.alert("Polarity has been changed")
+				bootbox.alert(data.messege)
 				}
 			else {
 				bootbox.alert(data.messege)
@@ -450,7 +450,7 @@ App.RootRowView = Backbone.View.extend({
 				jqhr.done(function(data){
 					console.log(data.success)
 					if (data.success == true){
-						bootbox.alert("This sentence has been marked as repeated customer review, Yo Yo honey singh!!")
+						bootbox.alert(data.messege)
 						}
 					else {
 						bootbox.alert(data.messege)
@@ -465,23 +465,22 @@ App.RootRowView = Backbone.View.extend({
 	changeTag: function(event){
 		var self = this;
 		event.preventDefault()
-				changed_tag = self.$('#ddpFilter option:selected').text();
-				sentence = self.sentence();
+		changed_tag = self.$('#ddpFilter option:selected').text();
+		sentence = self.sentence();
 
-				var jqhr = $.post(window.update_model_url, {"text": sentence, "tag": changed_tag, "review_id": self.review_id()})	
-				jqhr.done(function(data){
-					console.log(data.success)
-					if (data.success == true){
-						bootbox.alert("Tag has been changed")
-						}
-					else {
-						bootbox.alert(data.messege)
-					}	
-				})
+		var jqhr = $.post(window.update_model_url, {"sentence": sentence, "tag": changed_tag, "review_id": self.review_id()})	
+		jqhr.done(function(data){
+			if (data.success == true){
+				bootbox.alert(data.messege)
+			}
+			else {
+				bootbox.alert(data.messege)
+				}	
+			})
 				
-				jqhr.fail(function(){
-					bootbox.alert("Either the api or internet connection is not working, Try again later")
-				})
+		jqhr.fail(function(){
+				bootbox.alert("Either the api or internet connection is not working, Try again later")
+			})
 			
 	},
 });

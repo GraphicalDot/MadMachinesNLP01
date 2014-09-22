@@ -118,8 +118,9 @@ def return_processed_text():
 @app.route('/update_model', methods=['POST', 'OPTIONS'])
 @crossdomain(origin='*', headers='Content-Type')
 def update_model():
-	text = request.form["text"]
+	sentence = request.form["sentence"]
 	tag = request.form["tag"]
+	review_id = request.form["review_id"]
 
 	path = (os.path.join(os.path.dirname(os.path.abspath(__file__)) + "/trainers/valid_%s.txt"%tag))
 	
@@ -132,12 +133,14 @@ def update_model():
 
 
 
+	reviews.update({"review_id": review_id}, {"$push": {tag: sentence}}, upsert=False)
 	with open(path, "a") as myfile:
-		myfile.write(text)
+		myfile.write(sentence)
 		myfile.write("\n")
 
 	return jsonify({"success":  True,
 		"error": False,
+		"messege": "The sentence --{0}-- with the changed tag --{1}-- with id --{2} has been uploaded".format(sentence, tag, review_id),
 		})
 
 
@@ -247,6 +250,7 @@ def update_customer():
 	reviews.update({"review_id": review_id}, {"$push": {"repeated_customers": text}})
 	return jsonify({"success":  True,
 		"error": False,
+		"messege": "The sentence --{0}-- with id --{1} has been uploaded for repeated customers".format(text, review_id),
 		})
 
 
