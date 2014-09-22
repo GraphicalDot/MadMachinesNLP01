@@ -320,15 +320,10 @@ class EateryData(object):
 		
 
 		
-		try:
-			while True:
-				read_more_links = driver.find_elements_by_xpath("//div[@class='rev-text-expand']")
-				for link in read_more_links:
-					time.sleep(random.choice([2, 3]))
-					link.click()
-		except Exception as e:
-			print "{color} Catching Exception -<{error}>- with messege -<No More Readmore tag present>-".format(color=bcolors.OKGREEN, error=e)
-			pass
+		read_more_links = driver.find_elements_by_xpath("//div[@class='rev-text-expand']")
+		for link in read_more_links:
+			time.sleep(random.choice([2, 3]))
+			link.click()
 
 		html = driver.page_source
 		driver.close()
