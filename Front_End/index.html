@@ -33,47 +33,82 @@
 
 
 	<script type="text/x-mustache-template" id="root-template">
-            <div class="control-group">
-                    <div class="controls">
-				<div class="btn-group"  style="margin-right: 5%">
+		 <tbody>
+			 <tr>
+				<th colspan="3">Cities</th>
+
+				<th colspan="3">Restaurant name</th>
+
+				<th colspan="3">Unclassfied Reviews</th>
+			 
+				<th colspan="3">Classfied reviews</th>
+				       
+			</tr>
+			 <tr>
+				<td colspan="3">
+					<select>
+						<ul id="citiesList" class="dropdown-menu">
+					</select>
+				</td>
+
+				<td colspan="3">
 					<select id="eateriesList">
 						<ul id="eateriesList" class="dropdown-menu">
-		
 					</select>		
+				</td>
 
-				</div>	
-
-				<div class="btn-group"  style="margin-right: 5%">
-				<select id="unclassified_reviews">
-					</select>		
-
-				</div>	
-				<div class="btn-group" style="margin-right: 5%">
+				<td colspan="3">
+					<select id="unclassified_reviews">
+						</select>		
+				</td>
+			 
+				<td colspan="3">
 					<select id="classified_reviews">
 					</select>		
-			    
-			   	</div> 
-				<div class="btn-group"  style="margin-right: 5%">
+				</td>
+				       
+			</tr>
+		
+			<tr>
+				<td colspan="4">
 					<button id="loadReview" class="btn">Load Review</button>
-				</div> 
-
-				<div class="btn-group"  style="margin-right: 5%">
-					<button id="updateReview" class="btn">update Review</button>
-			   	</div> 
+				</td>
+				
+				<td colspan="4">
+					<button id="updateReview" class="btn">Update Review</button>
+				</td>
+				
+				<td colspan="4">
+					<button id="countReviews" class="btn">Count Review</button>
+				</td>
+			</tr>
 			
-		</div>
-            <div class="control-group">
-                    <div class="controls">
-			    <textarea type="text" id="searchQuery" class="input-xlarge span10" rows="3" required="required" placeholder="enter the review to be processed" ></textarea>
-			    <button type="submit" id="submitQuery" class="btn btn-primary" rows="3" style="width: 15%">Submit</button>
-		    </div>
-            </div>
+			<tr>
+				
+				<td colspan="9">	
+					<textarea type="text" id="searchQuery" class="input-xlarge span10" rows="3" required="required" placeholder="enter the review to be processed" ></textarea>
+				</td>
+				
+				<td colspan="3">
+					<button type="submit" id="submitQuery" class="btn btn-primary">Submit</button>
+				</td>
+			</tr>
+		</tbody>
     </script>
 
+	<script type="text/x-mustache-template" id="reviews-count-template">
+		 <tbody id="reviewsCount">
+			 <tr>
+				<th colspan="4">Cities</th>
+				<th colspan="4">Number of Classified Reviews</th>
+				<th colspan="4">Number of Unclassfied Reviews</th>
+			</tr>
+		</tbody>
+	</script>
 
 	<script type="text/x-mustache-template" id="ngram-template">
 		<div class="span2">
-			<button type="submit" id="submitCloud" class="btn btn-primary blocks" >{{noun_phrase}}</button>
+			<button type="submit" id="submitCloud" class="btn btn-info blocks" >{{noun_phrase}}</button>
 		</div>
 		</div>		
 	</script>
@@ -102,7 +137,7 @@
 	<script type="text/x-mustache-template" id="ngrams-parent-template">
 		<div class="clouds">
 		</div>
-		<button class="btn btn-block" type="button" id="hide"> hide {{block_gram}}</button>
+		<button class="btn btn-block btn-success" type="button" id="hide"> hide {{block_gram}}</button>
 	</script>
 	<script type="text/x-mustache-template" id="noun-phrase-template">
 		<a href="#" rel="{{size}}">{{nounPhrase}}</a>

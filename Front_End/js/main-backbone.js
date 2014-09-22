@@ -15,7 +15,7 @@ $(document).ready(function(){
 	window.get_ngrams = window.URL + "get_ngrams";
 	window.upload_noun_phrases = window.URL + "upload_noun_phrases";
 	window.upload_interjection_error = window.URL + "upload_interjection_error";
-	
+	window.get_reviews_count = window.URL + "get_reviews_count";	
 	/*
 	window.process_text_url = "http://ec2-50-112-147-199.us-west-2.compute.amazonaws.com:8080/process_text";
 	window.update_model_url = "http://ec2-50-112-147-199.us-west-2.compute.amazonaws.com:8080/update_model";
@@ -47,8 +47,10 @@ var template = function(name){
 
 
 App.RootView = Backbone.View.extend({
-	tagName: "fieldset",
-	className: "well-lg plan",
+	//tagName: "fieldset",
+	//className: "well-lg plan",
+	tagName: "table",
+	className: "table table-striped",
 	template: template("root"),
 	
 	initialize: function(){
@@ -67,7 +69,26 @@ App.RootView = Backbone.View.extend({
 		"click #eateriesList": "changeEateryList",
 		"click #loadReview": "loadReview",
 		"click #updateReview": "updateReview",
+		"click #countReviews": "countReviews",
 		},
+
+	countReviews: function(event){
+		event.preventDefault();
+		var self = this;
+		var jqhr = $.get(window.get_reviews_count)	
+		jqhr.done(function(data){
+			$.each(data.result, function(iter, eatery_dict){
+				var subView = new App.EateriesListView({model: {"eatery_name": eatery_dict.eatery_name, "eatery_id": eatery_dict.eatery_id}});
+
+				$("#eateriesList").append(subView.render().el);	
+			});
+		
+		})
+		jqhr.fail(function(){
+				bootbox.alert("Either the api or internet connection is not working, Try again later")
+			})
+
+	},
 
 	updateReview: function(event){
 		event.preventDefault();

@@ -384,6 +384,34 @@ def upload_noun_phrases():
 		})
 
 
+
+
+
+
+
+
+
+
+@app.route('/get_reviews_count', methods=['GET', 'OPTIONS'])
+@crossdomain(origin='*', headers='Content-Type')
+def get_reviews_count():
+	result = []
+	return jsonify({"success": True,
+			"error": True,
+			"result": "The review doesnt exists",
+	})
+
+
+
+
+
+
+
+
+
+
+
+
 class cd:
         """Context manager for changing the current working directory"""
         def __init__(self, newPath):
