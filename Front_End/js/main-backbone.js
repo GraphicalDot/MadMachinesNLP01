@@ -370,26 +370,22 @@ App.RootRowView = Backbone.View.extend({
 	changeSentiment: function(event){
 		var self = this;
 		event.preventDefault()
-		bootbox.confirm("Are you sure you want to change the polarity of this sentence?", function(result) {
-			if (result == true){
-				sentence = self.sentence();
-				changed_polarity = self.$('#ddpFiltersentiment option:selected').text();
-				var jqhr = $.post(window.update_model_url, {"text": sentence, "tag": changed_polarity, "review_id": self.review_id()})	
-				jqhr.done(function(data){
-					console.log(data.success)
-					if (data.success == true){
-						bootbox.alert("Polarity has been changed")
-						}
-					else {
-						bootbox.alert(data.messege)
-					}	
-				})
-				
-				jqhr.fail(function(){
-					bootbox.alert("Either the api or internet connection is not working, Try again later")
-				})
+		sentence = self.sentence();
+		changed_polarity = self.$('#ddpFiltersentiment option:selected').text();
+		var jqhr = $.post(window.update_model_url, {"text": sentence, "tag": changed_polarity, "review_id": self.review_id()})	
+		jqhr.done(function(data){
+			console.log(data.success)
+			if (data.success == true){
+				bootbox.alert("Polarity has been changed")
+				}
+			else {
+				bootbox.alert(data.messege)
 				}	
-		}); 
+			})
+				
+		jqhr.fail(function(){
+			bootbox.alert("Either the api or internet connection is not working, Try again later")
+				})
 	},
 	
 	changeError: function(event){
@@ -448,8 +444,6 @@ App.RootRowView = Backbone.View.extend({
 	changeCustomer: function(event){
 		var self = this;
 		event.preventDefault()
-		bootbox.confirm("Are you sure you want to mark this sentece as repeated customer sentence", function(result) {
-			if (result == true){
 				sentence = self.sentence();
 				customer = self.$('#ddpFilterCustomer option:selected').val();
 				var jqhr = $.post(window.update_customer, {"text": sentence, "is_repeated": customer, "review_id": self.review_id()})	
@@ -466,15 +460,11 @@ App.RootRowView = Backbone.View.extend({
 				jqhr.fail(function(){
 					bootbox.alert("Either the api or internet connection is not working, Try again later")
 				})
-				}	
-		}); 
 	},
 
 	changeTag: function(event){
 		var self = this;
 		event.preventDefault()
-		bootbox.confirm("Are you sure you want to change the tag of this sentence?", function(result) {
-			if (result == true){
 				changed_tag = self.$('#ddpFilter option:selected').text();
 				sentence = self.sentence();
 
@@ -493,14 +483,12 @@ App.RootRowView = Backbone.View.extend({
 					bootbox.alert("Either the api or internet connection is not working, Try again later")
 				})
 			
-				}	
-		}); 
 	},
 });
 
 App.NgramsParent = Backbone.View.extend({
 	tagName: "fieldset",
-	className: "well",
+	className: "well plan-name",
 	template: template("ngrams-parent"),
 	sentence: function(){ return this.model.sentence},
 	block_gram: function(){ return this.model.grams},

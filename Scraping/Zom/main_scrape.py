@@ -291,12 +291,12 @@ class EateryData(object):
 
 	def with_selenium(self):
 		#driver = webdriver.PhantomJS()
+		"""
 		driver = webdriver.Firefox()
 		"""
 		chromedriver = "{path}/chromedriver".format(path=os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 		os.environ["webdriver.chrome.driver"] = chromedriver
 		driver = webdriver.Chrome(chromedriver)
-		"""
 		driver.get(self.eatery.get("eatery_url"))
 
 
@@ -318,24 +318,17 @@ class EateryData(object):
 			raise StandardError("Coould not make the request")
 
 		
-		time.sleep(20)
-		
-		def click_read_more_class():
-			read_more_links = driver.find_elements_by_xpath("//div[@class='rev-text-expand']")
-			for link in read_more_links:
-				time.sleep(random.choice([2, 3]))
-				link.click()
 
-			time.sleep(30)
 		
 		try:
 			while True:
-				time.sleep(random.choice([1, 2, 3]))
-				click_read_more_class()
+				read_more_links = driver.find_elements_by_xpath("//div[@class='rev-text-expand']")
+				for link in read_more_links:
+					time.sleep(random.choice([2, 3]))
+					link.click()
 		except Exception as e:
 			print "{color} Catching Exception -<{error}>- with messege -<No More Readmore tag present>-".format(color=bcolors.OKGREEN, error=e)
 			pass
-	
 
 		html = driver.page_source
 		driver.close()
