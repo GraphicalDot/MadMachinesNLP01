@@ -199,6 +199,10 @@ class EateryData(object):
 		self.eatery_longitude_latitude()
 		self.eatery_reviews()
 		self.eatery_wishlists()
+		self.area_or_city()
+
+	def area_or_city(self):
+		self.eatery["area_or_city"] = self.eatery.get("eatery_url").split("/")[3]
 
 	def retry_eatery_name(self):
 		"""

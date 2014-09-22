@@ -2,8 +2,8 @@
 $(document).ready(function(){
    	App = {} ;
 	window.App = App ;
-	window.URL = "http://localhost:8000/"
-	//window.URL = "http://ec2-50-112-147-199.us-west-2.compute.amazonaws.com:8080/"
+	//window.URL = "http://localhost:8000/"
+	window.URL = "http://ec2-50-112-147-199.us-west-2.compute.amazonaws.com:8080/"
 	
 	window.process_text_url = window.URL + "process_text";
 	window.update_model_url = window.URL + "update_model";
@@ -16,17 +16,6 @@ $(document).ready(function(){
 	window.upload_noun_phrases = window.URL + "upload_noun_phrases";
 	window.upload_interjection_error = window.URL + "upload_interjection_error";
 	window.get_reviews_count = window.URL + "get_reviews_count";	
-	/*
-	window.process_text_url = "http://ec2-50-112-147-199.us-west-2.compute.amazonaws.com:8080/process_text";
-	window.update_model_url = "http://ec2-50-112-147-199.us-west-2.compute.amazonaws.com:8080/update_model";
-	window.eateries_list = "http://ec2-50-112-147-199.us-west-2.compute.amazonaws.com:8080/eateries_list";
-	window.eateries_details = "http://ec2-50-112-147-199.us-west-2.compute.amazonaws.com:8080/eateries_details";
-	window.update_review_classification = "http://ec2-50-112-147-199.us-west-2.compute.amazonaws.com:8080/update_review_classification";
-	window.update_review_error = "http://ec2-50-112-147-199.us-west-2.compute.amazonaws.com:8080/update_review_error";
-	window.update_customer = "http://ec2-50-112-147-199.us-west-2.compute.amazonaws.com:8080/update_customer";
-	window.get_ngrams = "http://ec2-50-112-147-199.us-west-2.compute.amazonaws.com:8080/get_ngrams";
-	window.upload_noun_phrases = "http://ec2-50-112-147-199.us-west-2.compute.amazonaws.com:8080/upload_noun_phrases";
-	*/
 
 
 window.optimizely = window.optimizely || [];
@@ -50,7 +39,7 @@ App.RootView = Backbone.View.extend({
 	//tagName: "fieldset",
 	//className: "well-lg plan",
 	tagName: "table",
-	className: "table table-striped",
+	className: "table table-striped root-table",
 	template: template("root"),
 	
 	initialize: function(){
@@ -60,7 +49,6 @@ App.RootView = Backbone.View.extend({
 
 	render: function(){
 		this.$el.append(this.template(this));
-		this.loadEateries();
 		return this;
 	},
 	
@@ -70,6 +58,7 @@ App.RootView = Backbone.View.extend({
 		"click #loadReview": "loadReview",
 		"click #updateReview": "updateReview",
 		"click #countReviews": "countReviews",
+		"click #citiesList": "loadEateriesForCity",
 		},
 
 	countReviews: function(event){
@@ -77,13 +66,21 @@ App.RootView = Backbone.View.extend({
 		var self = this;
 		var jqhr = $.get(window.get_reviews_count)	
 		jqhr.done(function(data){
-			$.each(data.result, function(iter, eatery_dict){
-				var subView = new App.EateriesListView({model: {"eatery_name": eatery_dict.eatery_name, "eatery_id": eatery_dict.eatery_id}});
-
-				$("#eateriesList").append(subView.render().el);	
-			});
+				var subView = new App.ReviewsCountParentView({model: {"data": data.result} });
+				$(".root-table").after(subView.render().el);	
+		$("table").tablecloth({
+			  theme: "default",
+		  bordered: true,
+		  condensed: true,
+		  striped: true,
+		  sortable: true,
+		  clean: true,
+		  cleanElements: "th td",
+		  customClass: "root-table"
+		});
+		$(".root-table").tablesorter(); 	
+		});
 		
-		})
 		jqhr.fail(function(){
 				bootbox.alert("Either the api or internet connection is not working, Try again later")
 			})
@@ -122,9 +119,11 @@ App.RootView = Backbone.View.extend({
 
 	},
 
-	loadEateries: function(){
+	loadEateriesForCity: function(){
 		var self = this;
-		var jqhr = $.get(window.eateries_list)	
+		var city = $("#citiesList").find('option:selected').text()
+		console.log(city)
+		var jqhr = $.post(window.eateries_list, {"city": city})	
 		jqhr.done(function(data){
 			$.each(data.result, function(iter, eatery_dict){
 				var subView = new App.EateriesListView({model: {"eatery_name": eatery_dict.eatery_name, "eatery_id": eatery_dict.eatery_id}});
@@ -190,6 +189,53 @@ App.RootView = Backbone.View.extend({
 });
 
 
+App.ReviewsCountParentView = Backbone.View.extend({
+	template: template("reviews-count-parent"),
+	tagName: "table",
+	className: "table",
+	initialize: function(options){
+		this.model = options.model;
+		this.data = this.model.data;
+	},
+
+	render: function(){
+		var self = this;
+		this.$el.append(this.template(this));
+		$.each(self.data, function(iter, city_dict){
+			var subView = new App.ReviewsCountChildView({model: {"city": city_dict.city, "classified": city_dict.classified, "unclassified": city_dict.unclassified}});
+
+			self.$("#reviewsCount").append(subView.render().el);	
+		});
+		this.afterRender();
+		return this;
+	},
+
+	afterRender: function(){
+		},
+
+
+})	
+
+App.ReviewsCountChildView = Backbone.View.extend({
+	template: template("reviews-count-child"),
+	tagName: "tr",
+	city: function(){return this.model.city}, 
+	classified: function(){return this.model.classified}, 
+	unclassified: function(){return this.model.unclassified}, 
+
+	initialize: function(options){
+		this.model = options.model;
+	},
+
+	render: function(){
+		this.$el.append(this.template(this));
+		return this;
+	},
+	
+});
+
+
+
 App.ClassfiedReviewsView = Backbone.View.extend({
 	template: template("classified-reviews"),
 	tagName: "option",
@@ -217,7 +263,6 @@ App.ClassfiedReviewsView = Backbone.View.extend({
 		bootbox.alert("This review has already been classified")
 	},	
 });
-
 
 
 App.UnClassfiedReviewsView = Backbone.View.extend({

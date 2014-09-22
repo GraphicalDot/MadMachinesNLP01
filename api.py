@@ -19,7 +19,7 @@ from Text_Processing import ProcessingWithBlob, PosTags, Classifier, nltk_ngrams
 import time
 from datetime import timedelta
 import pymongo
-
+from collections import Counter
 
 
 connection = pymongo.Connection()
@@ -255,17 +255,18 @@ def update_customer():
 
 
 
-@app.route('/eateries_list', methods=['GET', 'OPTIONS'])
+@app.route('/eateries_list', methods=['POST', 'OPTIONS'])
 @crossdomain(origin='*', headers='Content-Type')
 def eateries_list():
-	result = list(eateries.find(fields= {"eatery_id": True, "_id": False, "eatery_name": True}))
-
+	city = request.form["city"]
+	result = list(eateries.find({"area_or_city": city }, fields= {"eatery_id": True, "_id": False, "eatery_name": True}))
 	return jsonify({"success": False,
 				"error": True,
 				"result": result,
 		})
 
-	
+
+
 	
 @app.route('/eateries_details', methods=['POST', 'OPTIONS'])
 @crossdomain(origin='*', headers='Content-Type')
@@ -385,20 +386,28 @@ def upload_noun_phrases():
 
 
 
-
-
-
-
-
-
-
 @app.route('/get_reviews_count', methods=['GET', 'OPTIONS'])
 @crossdomain(origin='*', headers='Content-Type')
 def get_reviews_count():
-	result = []
+	"""
+	({(u'ncr', False): 20607, (u'mumbai', False): 14770, (u'bangalore', False): 12534, (u'kolkata', False): 10160, (u'chennai', False): 8283, (u'pune', False): 7107, (u'hyderabad', False): 6525, (u'ahmedabad', False): 5936, (u'chandigarh', False): 3446, (u'jaipur', False): 3269, (u'guwahati', False): 1244, (u'ncr', True): 1})
+	
+	
+	[{'city': 'ncr', 'classfied': 1, 'unclassfied': 20607}, {'city': 'mumbai', 'classfied': 0, 'unclassfied': 14770},
+	{'city': 'bangalore', 'classfied': 0, 'unclassfied': 12534}, {'city': 'kolkata', 'classfied': 0, 'unclassfied': 10160},
+	{'city': 'chennai', 'classfied': 0, 'unclassfied': 8283}, {'city': 'pune', 'classfied': 0, 'unclassfied': 7107},
+	{'city': 'hyderabad', 'classfied': 0, 'unclassfied': 6525}, {'city': 'ahmedabad', 'classfied': 0, 'unclassfied': 5936},
+	{'city': 'chandigarh', 'classfied': 0, 'unclassfied': 3446}, {'city': 'jaipur', 'classfied': 0, 'unclassfied': 3269},
+	{'city': 'guwahati', 'classfied': 0, 'unclassfied': 1244}]
+	
+	"""
+	dictionary = Counter([(post.get("area_or_city"), post.get("is_classified")) for post in reviews.find()])
+	cities = ['ncr', 'mumbai', 'bangalore', 'kolkata', 'chennai', 'pune', 'hyderabad', 'ahmedabad', 'chandigarh', 'jaipur', 'guwahati']	
+	result = [{"city": city, "classified": dictionary[(city, True)], "unclassified": dictionary[(city, False)]} for city in cities]
+
 	return jsonify({"success": True,
 			"error": True,
-			"result": "The review doesnt exists",
+			"result": result,
 	})
 
 

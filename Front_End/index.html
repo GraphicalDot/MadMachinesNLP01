@@ -46,8 +46,19 @@
 			</tr>
 			 <tr>
 				<td colspan="3">
-					<select>
+					<select id="citiesList">
 						<ul id="citiesList" class="dropdown-menu">
+							<option>ncr</option>
+							<option>mumbai</option>
+							<option>bangalore</option>
+							<option>kolkata</option>
+							<option>chennai</option>
+							<option>pune</option> 
+							<option>hyderabad</option>
+							<option>ahmedabad</option>
+							<option>chandigarh</option>
+							<option>jaipur</option>
+							<option>guwahati</option>
 					</select>
 				</td>
 
@@ -85,18 +96,20 @@
 			
 			<tr>
 				
-				<td colspan="9">	
+				<td colspan="11">	
 					<textarea type="text" id="searchQuery" class="input-xlarge span10" rows="3" required="required" placeholder="enter the review to be processed" ></textarea>
 				</td>
 				
-				<td colspan="3">
+				<td colspan="1">
 					<button type="submit" id="submitQuery" class="btn btn-primary">Submit</button>
 				</td>
+			</tr>
+			<tr >
 			</tr>
 		</tbody>
     </script>
 
-	<script type="text/x-mustache-template" id="reviews-count-template">
+	<script type="text/x-mustache-template" id="reviews-count-parent-template">
 		 <tbody id="reviewsCount">
 			 <tr>
 				<th colspan="4">Cities</th>
@@ -105,6 +118,14 @@
 			</tr>
 		</tbody>
 	</script>
+	<script type="text/x-mustache-template" id="reviews-count-child-template">
+			<td colspan="4">{{city}}</td>
+			<td colspan="4">{{classified}}</td>
+			<td colspan="4">{{unclassified}}</td>
+	</script>
+
+
+
 
 	<script type="text/x-mustache-template" id="ngram-template">
 		<div class="span2">
@@ -215,7 +236,7 @@
                 
 		    <div class="navbar">
 			    <div class="page-header panel panel-default">
-			<h3>Canworks<span class="label label-default">version 1.10</span></h3>       
+			<h3>Canworks<span class="label label-default">version 1.12</span></h3>       
 			</div>
 				<!--  <div class="navbar-inner">
         
