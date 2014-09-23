@@ -120,6 +120,7 @@ App.RootView = Backbone.View.extend({
 	},
 
 	loadEateriesForCity: function(){
+		$("#eateriesList").empty();	
 		var self = this;
 		var city = $("#citiesList").find('option:selected').text()
 		console.log(city)
