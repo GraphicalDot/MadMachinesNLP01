@@ -63,11 +63,21 @@ App.RootView = Backbone.View.extend({
 
 	countReviews: function(event){
 		event.preventDefault();
+		$(".reviewsCount").empty();
+		if ($('.count-table').is(':empty')){
+			console.log("yo yo honey singh");	  
+		}
 		var self = this;
 		var jqhr = $.get(window.get_reviews_count)	
 		jqhr.done(function(data){
 				var subView = new App.ReviewsCountParentView({model: {"data": data.result} });
-				$(".root-table").after(subView.render().el);	
+				bootbox.dialog({
+					"title": "Total number of reviews",
+					"message": subView.render().el,
+					"show": true,	
+					"animate": true,
+					"closeButton": true,
+					});
 		$("table").tablecloth({
 			  theme: "default",
 		  bordered: true,
@@ -172,7 +182,7 @@ App.RootView = Backbone.View.extend({
 			if (data.error == false){
 				var subView = new App.RootTopView({model: {"sentiment": data.overall_sentiment, "phrases": data.noun_phrase}})
 				$(".dynamic_display").append(subView.render().el);	
-				$(".dynamic_display").append("<fieldset class='well'><div class='span5'><p style='text-align: center'><b>Sentence</b></p></div><div class='span1'><p style='text-align: center'><b>Polarity</b></p></div><div class='span1'><p style='text-align: center'><b>tag</b></p></div><div class='span1'><p style='text-align: center'><b>Sentiment</b></p></div><div class='span1'><p style='text-align: center'><b>Customer</b></p></div><div class='span1'><p style='text-align: center'><b>Error</b></p></div><div class='span1'><p class='pull-left' style='text-align: center'><b>Noun Pharses</b></p></div></fieldset>")
+				$(".dynamic_display").append("<fieldset class='well'><div class='span5'><p style='text-align: center'><b>Sentence</b></p></div><div class='span1'><p style='text-align: center'><b>Tag</b></p></div><div class='span1'><p style='text-align: center'><b>Polarity</b></p></div><div class='span1'><p style='text-align: center'><b>Customer</b></p></div><div class='span1'><p style='text-align: center'><b>Error</b></p></div><div class='span1'><p style='text-align: center'><b>Ngrams</b></p></div><div class='span1'><p class='pull-left' style='text-align: center'><b>Noun Pharses</b></p></div></fieldset>")
 				$.each(data.result, function(iter, text){
 					var subView = new App.RootRowView({model: {"text": text, "review_id": id}});
 					$(".dynamic_display").append(subView.render().el);	
@@ -193,7 +203,7 @@ App.RootView = Backbone.View.extend({
 App.ReviewsCountParentView = Backbone.View.extend({
 	template: template("reviews-count-parent"),
 	tagName: "table",
-	className: "table",
+	className: "table count-table",
 	initialize: function(options){
 		this.model = options.model;
 		this.data = this.model.data;
@@ -391,9 +401,11 @@ App.RootRowView = Backbone.View.extend({
 	tag: function(){return this.model.text.tag},
 	
 	initialize: function(options){
+		var self = this;
 		this.values = {"food": 1, "service": 2, "ambience": 3, "cost": 4, "null": 5, "overall": 6};
-		this.polarity_tag = {"positive": 1, "negative": 2,};
-		console.log(this.sentence() + this.polarity_tag[this.polarity_name()] + this.polarity_value() + this.polarity_name());
+		this.polarity_tag = {"super-positive": 1, "positive": 2, "neutral": 3, "negative": 4, "super-negative": 5};
+		console.log(this.polarity_tag[this.polarity_name()]+ "     " + self.polarity_value() + self.polarity_name());
+		console.log(this.values[this.tag()]+ "     " + self.tag());
 		this.model = options.model;
 	},
 	

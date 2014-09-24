@@ -91,7 +91,7 @@ def return_processed_text():
 		noun_phrase = list()
 		result = list() 
 
-		polarity=lambda x: "postive" if float(x)>= 0 else "negative"
+		polarity=lambda x: "positive" if float(x)>= 0 else "negative"
 
 
 		##with svm returns a list in the following form
@@ -102,6 +102,7 @@ def return_processed_text():
 			instance = ProcessingWithBlob(chunk[0])
 			element["sentence"] = chunk[0]
 			element["polarity"] = {"name": polarity('%.1f'%instance.sentiment_polarity()), "value": '%.1f'%instance.sentiment_polarity()}
+			print {"name": polarity('%.1f'%instance.sentiment_polarity()), "value": '%.1f'%instance.sentiment_polarity()}, "\n\n"
 			element["noun_phrases"] = list(instance.noun_phrase())
 			element["tag"] = chunk[1]
 			result.append(element)
@@ -127,7 +128,7 @@ def update_model():
 	if not os.path.exists(path):
 		return jsonify({"success": False,
 				"error": True,
-				"messege": "The tag you mentioned doesnt exist in the learning model",
+				"messege": "The tag {0} you mentioned doesnt exist in the learning model, ask admin to create this file".format(tag),
 				"error_code": 201,
 			})
 

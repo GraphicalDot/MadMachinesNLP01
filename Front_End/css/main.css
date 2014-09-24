@@ -172,8 +172,10 @@ margin-top: 10em;
 }
 
 .scrollable-menu {
-	    height: auto;
-	    max-height: 20px;
-	    overflow-x: hidden;
+	    height: 150px;
+	    max-height: 150px;
+	   overflow-x: hidden;
 	    }
+
+
 
