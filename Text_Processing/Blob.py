@@ -4,6 +4,7 @@ import sys
 import inspect
 import nltk
 from nltk.tag.hunpos import HunposTagger
+from textblob.np_extractors import ConllExtractor
 db_script_path = os.path.dirname(os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe()))))
 sys.path.insert(0, db_script_path)
 from DB_Scripts import GetReviews
@@ -26,7 +27,13 @@ class ProcessingWithBlob:
 
 	
 	def noun_phrase(self):
-		return self.blob.noun_phrases
+
+		native_noun_phrases = self.blob.noun_phrases
+		#extractor = ConllExtractor()
+		#blob = TextBlob(self.text, np_extractor=extractor)
+		#conll_noun_phrases = blob.noun_phrases
+		#return list(set(conll_noun_phrases.extend(native_noun_phrases)))
+		return native_noun_phrases
 
 	def pos_tags(self):
 		return self.blob.pos_tags

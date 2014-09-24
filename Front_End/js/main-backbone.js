@@ -1,46 +1,12 @@
 
 $(document).ready(function(){
-   	App = {} ;
-	window.App = App ;
-	//window.URL = "http://localhost:8000/"
-	window.URL = "http://ec2-50-112-147-199.us-west-2.compute.amazonaws.com:8080/"
-	
-	window.process_text_url = window.URL + "process_text";
-	window.update_model_url = window.URL + "update_model";
-	window.update_review_error = window.URL + "update_review_error";
-	window.update_customer = window.URL + "update_customer";
-	window.eateries_list = window.URL + "eateries_list";
-	window.eateries_details = window.URL + "eateries_details";
-	window.update_review_classification = window.URL + "update_review_classification";
-	window.get_ngrams = window.URL + "get_ngrams";
-	window.upload_noun_phrases = window.URL + "upload_noun_phrases";
-	window.upload_interjection_error = window.URL + "upload_interjection_error";
-	window.get_reviews_count = window.URL + "get_reviews_count";	
-
-
-window.optimizely = window.optimizely || [];
-window.optimizely.push(["activate"]);
-
-function make_request(data){
-	url =  window.process_text_url ;
-	console.log(window.url)
-	return 	$.post(url, {"text": data})
-		}
-
-/*This is the template object which uses name as an argument to return handlebar compiled template from the the html
- */
-var template = function(name){
-    return Mustache.compile($("#"+name+"-template").html());
-};
-
-
 
 App.RootView = Backbone.View.extend({
 	//tagName: "fieldset",
 	//className: "well-lg plan",
 	tagName: "table",
 	className: "table table-striped root-table",
-	template: template("root"),
+	template: window.template("root"),
 	
 	initialize: function(){
 		console.log("Root view called")
@@ -177,7 +143,7 @@ App.RootView = Backbone.View.extend({
 		$(".dynamic_display").empty()
 
 		var id = $("#searchQuery").attr("review_id")
-		var jqhr = make_request($("#searchQuery").val())
+		var jqhr = window.make_request($("#searchQuery").val())
 		jqhr.done(function(data){
 			if (data.error == false){
 				var subView = new App.RootTopView({model: {"sentiment": data.overall_sentiment, "phrases": data.noun_phrase}})
@@ -201,7 +167,7 @@ App.RootView = Backbone.View.extend({
 
 
 App.ReviewsCountParentView = Backbone.View.extend({
-	template: template("reviews-count-parent"),
+	template: window.template("reviews-count-parent"),
 	tagName: "table",
 	className: "table count-table",
 	initialize: function(options){
@@ -228,7 +194,7 @@ App.ReviewsCountParentView = Backbone.View.extend({
 })	
 
 App.ReviewsCountChildView = Backbone.View.extend({
-	template: template("reviews-count-child"),
+	template: window.template("reviews-count-child"),
 	tagName: "tr",
 	city: function(){return this.model.city}, 
 	classified: function(){return this.model.classified}, 
@@ -248,7 +214,7 @@ App.ReviewsCountChildView = Backbone.View.extend({
 
 
 App.ClassfiedReviewsView = Backbone.View.extend({
-	template: template("classified-reviews"),
+	template: window.template("classified-reviews"),
 	tagName: "option",
 	review_text: function(){return this.model.review_text.split(" ", 10).join(" ")}, 
 	review_id: function(){return this.model.review_id}, 
@@ -277,7 +243,7 @@ App.ClassfiedReviewsView = Backbone.View.extend({
 
 
 App.UnClassfiedReviewsView = Backbone.View.extend({
-	template: template("unclassified-reviews"),
+	template: window.template("unclassified-reviews"),
 	tagName: "option",
 	full_text: function(){return this.model.review_text}, 
 	review_text: function(){return this.model.review_text.split(" ", 10).join(" ")}, 
@@ -308,7 +274,7 @@ App.UnClassfiedReviewsView = Backbone.View.extend({
 
 
 App.EateriesListView = Backbone.View.extend({
-	template: template("each-eatery"),
+	template: window.template("each-eatery"),
 	tagName: "option",
 	eatery_name: function(){return this.model.eatery_name}, 
 	eatery_id: function(){return this.model.eatery_id}, 
@@ -329,7 +295,7 @@ App.EateriesListView = Backbone.View.extend({
 App.RootTopView = Backbone.View.extend({
 	tagName: "fieldset",
 	className: "well",
-	template: template("root-top"),
+	template: window.template("root-top"),
 
 	phrases: function(){return this.model.phrases},
 	sentiment: function(){return this.model.sentiment},
@@ -389,185 +355,11 @@ App.NounPhraseView = Backbone.View.extend({
 });
 
 
-App.RootRowView = Backbone.View.extend({
-	tagName: "fieldset",
-	className: "well plan",
-	template: template("root-row"),
-	noun_phrases: function(){return this.model.text.noun_phrases},
-	polarity_name: function(){return this.model.text.polarity.name},
-	polarity_value: function(){return this.model.text.polarity.value},
-	sentence: function(){return this.model.text.sentence},
-	review_id: function(){ return this.model.review_id},
-	tag: function(){return this.model.text.tag},
-	
-	initialize: function(options){
-		var self = this;
-		this.values = {"food": 1, "service": 2, "ambience": 3, "cost": 4, "null": 5, "overall": 6};
-		this.polarity_tag = {"super-positive": 1, "positive": 2, "neutral": 3, "negative": 4, "super-negative": 5};
-		console.log(this.polarity_tag[this.polarity_name()]+ "     " + self.polarity_value() + self.polarity_name());
-		console.log(this.values[this.tag()]+ "     " + self.tag());
-		this.model = options.model;
-	},
-	
-	render: function(){
-		this.$el.append(this.template(this));
-		this.$("#ddpFilter option[value='" + this.values[this.tag()] + "']").attr("selected", "selected")
-		this.$("#ddpFiltersentiment option[value='" + this.polarity_tag[this.polarity_name()] + "']").attr("selected", "selected")
-		return this;
-	},
-
-	events: {
-		    "change #ddpFilter" : "changeTag",
-		    "change #ddpFiltersentiment" : "changeSentiment",
-		    "change #ddpFilterError" : "changeError",
-		    "change #ddpFilterCustomer" : "changeCustomer",
-		    "change #ddpFilterWordCloud" : "uploadWordCloud",
-	},
-
-
-	uploadWordCloud: function(event){
-		var self = this;
-		event.preventDefault()
-		sentence = self.sentence();
-		grams = self.$('#ddpFilterWordCloud option:selected').text();
-		var jqhr = $.post(window.get_ngrams, {"text": sentence, "grams": grams})	
-		jqhr.done(function(data){
-			if (data.success == true){
-					var subView = new App.NgramsParent({model: {"result": data.result, "sentence": sentence, "grams": grams, parent: self}});
-					self.$el.after(subView.render().el);	
-			}
-			else {
-				bootbox.alert(data.messege)
-			}	
-		})
-				
-		jqhr.fail(function(){
-			bootbox.alert("Either the api or internet connection is not working, Try again later")
-			})
-	},
-
-	changeSentiment: function(event){
-		var self = this;
-		event.preventDefault()
-		sentence = self.sentence();
-		changed_polarity = self.$('#ddpFiltersentiment option:selected').text();
-		var jqhr = $.post(window.update_model_url, {"sentence": sentence, "tag": changed_polarity, "review_id": self.review_id()})	
-		jqhr.done(function(data){
-			console.log(data.success)
-			if (data.success == true){
-				bootbox.alert(data.messege)
-				}
-			else {
-				bootbox.alert(data.messege)
-				}	
-			})
-				
-		jqhr.fail(function(){
-			bootbox.alert("Either the api or internet connection is not working, Try again later")
-				})
-	},
-	
-	changeError: function(event){
-		/**********/
-		//Take care of the interjection tag present in the database, add it to the backend
-		/*********/
-		var self = this;
-		event.preventDefault()
-				
-		error = self.$('#ddpFilterError option:selected').val();
-		
-		if (error == 2){
-		bootbox.prompt("Please enter error messege", function(error_messege) {                
-			if (error_messege != null) {                                             
-				
-				sentence = self.sentence();
-				error = self.$('#ddpFilterError option:selected').val();
-				var jqhr = $.post(window.update_review_error, {"sentence": sentence, "is_error": error, "review_id": self.review_id(),"error_messege": error_messege})	
-				jqhr.done(function(data){
-					console.log(data.success)
-					if (data.success == true){
-						bootbox.alert(data.messege)
-						}
-					else {
-						bootbox.alert(data.messege)
-					}	
-				})
-				
-				jqhr.fail(function(){
-					bootbox.alert("Either the api or internet connection is not working, Try again later")
-				})
-				}	
-				  
-			});
-		}
-		else {
-			sentence = self.sentence();
-			interjection = self.$('#ddpFilterError option:selected').val();
-			var jqhr = $.post(window.upload_interjection_error, {"sentence": sentence, "is_error": error, "review_id": self.review_id(),})	
-			jqhr.done(function(data){
-				console.log(data.success)
-				if (data.success == true){
-					bootbox.alert(data.messege)
-					}
-				else {
-					bootbox.alert(data.messege)}	
-				})
-				
-			jqhr.fail(function(){
-				bootbox.alert("Either the api or internet connection is not working, Try again later")})
-				
-		}	
-	},
-	
-	
-	changeCustomer: function(event){
-		var self = this;
-		event.preventDefault()
-				sentence = self.sentence();
-				customer = self.$('#ddpFilterCustomer option:selected').val();
-				var jqhr = $.post(window.update_customer, {"text": sentence, "is_repeated": customer, "review_id": self.review_id()})	
-				jqhr.done(function(data){
-					console.log(data.success)
-					if (data.success == true){
-						bootbox.alert(data.messege)
-						}
-					else {
-						bootbox.alert(data.messege)
-					}	
-				})
-				
-				jqhr.fail(function(){
-					bootbox.alert("Either the api or internet connection is not working, Try again later")
-				})
-	},
-
-	changeTag: function(event){
-		var self = this;
-		event.preventDefault()
-		changed_tag = self.$('#ddpFilter option:selected').text();
-		sentence = self.sentence();
-
-		var jqhr = $.post(window.update_model_url, {"sentence": sentence, "tag": changed_tag, "review_id": self.review_id()})	
-		jqhr.done(function(data){
-			if (data.success == true){
-				bootbox.alert(data.messege)
-			}
-			else {
-				bootbox.alert(data.messege)
-				}	
-			})
-				
-		jqhr.fail(function(){
-				bootbox.alert("Either the api or internet connection is not working, Try again later")
-			})
-			
-	},
-});
 
 App.NgramsParent = Backbone.View.extend({
 	tagName: "fieldset",
 	className: "well plan-name",
-	template: template("ngrams-parent"),
+	template: window.template("ngrams-parent"),
 	sentence: function(){ return this.model.sentence},
 	block_gram: function(){ return this.model.grams},
 	review_id: function(){ return this.model.parent.review_id()},
@@ -601,7 +393,7 @@ App.NgramsParent = Backbone.View.extend({
 
 App.Ngrams = Backbone.View.extend({
 	
-	template: template("ngram"),
+	template: window.template("ngram"),
 	noun_phrase: function(){return this.model.text},
 	sentence: function(){ return this.model.sentence},
 	initialize: function(options){
@@ -641,28 +433,6 @@ App.Ngrams = Backbone.View.extend({
 
 
 
-
-
-App.Router = Backbone.Router.extend({
-	initialize: function(options){
-		this.el =  options.el ;
-	},
-
-	routes: {
-		"":  "welcome",
-	},
-	
-	welcome: function(){
-		var str = new App.RootView()
-		this.el.html(str.render().el);
-	},
-});
-
-App.boot = function(container){
-	container = $(container);
-	var router = new App.Router({el: container});
-	Backbone.history.start();
-}
 });
 
 
