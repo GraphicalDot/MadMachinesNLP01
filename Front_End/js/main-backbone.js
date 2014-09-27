@@ -228,6 +228,7 @@ App.SeeWordCloudDateSelectionView = Backbone.View.extend({
 
 	submit: function(event){
 		var self = this;
+		$(".dynamic_display_word_cloud").empty();	
 		event.preventDefault();
 		this.$el.addClass("dvLoading");
 		if ($('#startDate').val() > $('#selectStartDate').val()){
