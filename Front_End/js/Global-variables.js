@@ -18,7 +18,8 @@ $(document).ready(function(){
 	window.upload_noun_phrases = window.URL + "upload_noun_phrases";
 	window.upload_interjection_error = window.URL + "upload_interjection_error";
 	window.get_reviews_count = window.URL + "get_reviews_count";	
-
+	window.get_start_date_for_restaurant = window.URL + "get_start_date_for_restaurant";	
+	window.get_word_cloud = window.URL + "get_word_cloud";
 
 
 });

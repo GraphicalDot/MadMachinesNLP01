@@ -24,8 +24,33 @@ App.RootView = Backbone.View.extend({
 		"click #loadReview": "loadReview",
 		"click #updateReview": "updateReview",
 		"click #countReviews": "countReviews",
+		"click #seeWordCloud": "seeWordCloud",
 		"click #citiesList": "loadEateriesForCity",
 		},
+
+
+	seeWordCloud: function(event){
+		event.preventDefault();
+		console.log("The button see world cloud has been clicked");
+		
+		selected_eatery_id = $("#eateriesList").find('option:selected').attr("id")
+		
+		if (selected_eatery_id == undefined){
+			bootbox.alert("Get some brains Dude!!, Select a restaurant to see its world Cloud").find('.modal-content').addClass("bootbox-modal-custom-class");
+			return
+		}
+
+			
+		var subView = new App.SeeWordCloudDateSelectionView();
+		bootbox.dialog({
+			"title": "Date Format 'month/date/year' Please select date range for " + $("#eateriesList").find('option:selected').val() ,
+			"message": subView.render().el,
+			"animate": true,
+			"closeButton": true,
+			}).find('.modal-content').addClass("bootbox-modal-custom-class");    
+	},
+
+
 
 	countReviews: function(event){
 		event.preventDefault();
@@ -90,6 +115,9 @@ App.RootView = Backbone.View.extend({
 		console.log("load review has been clicked");
 		var review_text = $("#unclassified_reviews").find('option:selected').attr('full_text')
 		var review_id = $("#unclassified_reviews").find('option:selected').attr('id')
+		if (review_text == undefined){
+				bootbox.alert("Dont be a smart ass!!!, A review has to be present in Unclassified reviews")
+		};
 		$("#searchQuery").val(review_text)
 		$("#searchQuery").attr('review_id', review_id); 
 
@@ -164,6 +192,115 @@ App.RootView = Backbone.View.extend({
 		
 	},
 });
+
+App.SeeWordCloudDateSelectionView = Backbone.View.extend({
+	template: window.template("see-word-cloud-date-selection"),
+	tag: "form",
+	className: "form-horizontal",
+	initialize: function(options){
+	},
+
+	render: function(){
+		this.beforeRender();	
+		this.$el.append(this.template(this));
+		return this;	
+	},
+
+	beforeRender: function(){
+		var self = this;
+		var jqhr = $.post(window.get_start_date_for_restaurant, {"eatery_id": $("#eateriesList").find('option:selected').attr("id")})	
+		jqhr.done(function(data){
+			console.log(data.result)
+			self.$("#startDate").val(data.result.start)
+			self.$("#selectStartDate").val(data.result.start)
+			self.$("#endDate").val(data.result.end)
+			self.$("#selectEndDate").val(data.result.end)
+		});
+
+
+	}, 
+
+	events: {
+		"click #idSubmit": "submit",
+		"click #idCancel": "cancel",
+
+	},
+
+	submit: function(event){
+		var self = this;
+		event.preventDefault();
+		this.$el.addClass("dvLoading");
+		if ($('#startDate').val() > $('#selectStartDate').val()){
+			bootbox.alert("Genius the start date selected should be greater then start date").find('.modal-content').addClass("bootbox-modal-custom-class");
+			return
+
+		}
+		if ($('#endDate').val() < $('#selectEndDate').val()){
+
+			bootbox.alert("Genius the end date selected should be less then end date").find('.modal-content').addClass("bootbox-modal-custom-class");
+			return
+		}
+	
+	
+		var jqhr = $.post(window.get_word_cloud, {"eatery_id": $("#eateriesList").find('option:selected').attr("id"),
+							"start_date": $('#selectStartDate').val(),
+							"end_date": $('#selectEndDate').val(),
+		    					"category": $("#wordCloudCategory").find("option:selected").val(),
+						})	
+		jqhr.done(function(data){
+			$.each(data.result, function(iter, noun_phrase_dict){
+				var subView = new App.ClassfiedReviewsView({model: review_dict});
+				$(".dynamic_display_word_cloud").append(subView.render().el);	
+				$(".dynamic_display_word_cloud").append('&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;');	
+			});
+			self.$el.removeClass("dvLoading");
+		
+			});
+		jqhr.fail(function(){
+				bootbox.alert("Either the api or internet connection is not working, Try again later")
+				self.$el.removeClass("dvLoading");
+				event.stopPropagation();
+		});
+
+	
+	},
+
+
+
+
+
+	cancel: function(event){
+		event.preventDefault();
+		this.remove();
+	},
+
+});
+
+App.SeeWordCloudDateMainView = Backbone.View.extend({
+	template: Mustache.compile('{{nounPhrase}}'),
+	tagName: "a",
+	items: Array(5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20),
+	size: function(){return this.items[Math.floor(Math.random()*this.items.length)] },
+	nounPhrase: function(){return this.model},
+
+	initialize: function(options){
+		this.model = options.model;
+		console.log(this.size())
+	},
+
+	render: function(){
+		this.$el.append(this.template(this));
+		this.afterRender();
+		return this;
+	},
+
+	afterRender: function(){
+		this.$el.attr({href: "#", rel: this.size()});
+	},
+
+});
+
+
 
 
 App.ReviewsCountParentView = Backbone.View.extend({

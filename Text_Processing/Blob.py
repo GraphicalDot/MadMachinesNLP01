@@ -22,7 +22,7 @@ class ProcessingWithBlob:
 		depending upon the requirements
 
 		"""
-		self.text = text.decode("utf-8")
+		self.text = text
 		self.blob = TextBlob(self.text)
 
 	

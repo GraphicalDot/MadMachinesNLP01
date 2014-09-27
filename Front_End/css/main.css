@@ -1,5 +1,6 @@
            
-
+@import url(http://fonts.googleapis.com/css?family=Lobster);
+<link href='http://fonts.googleapis.com/css?family=Shadows+Into+Light' rel='stylesheet' type='text/css'>
 body{
     padding-top: 10px;
     padding-bottom: 10px;
@@ -176,6 +177,16 @@ margin-top: 10em;
 	    max-height: 150px;
 	   overflow-x: hidden;
 	    }
+.bootbox-modal-custom-class{
+	font-family: 'Lobster', cursive;
+	font-weight: 400;
+        margin-left: 0px;
+        margin-right: 0px;
+        padding: 2%;
+		}
 
-
+.dvLoading
+{	background:#000 url(images/loading.gif) no-repeat center center;
+	z-index: 1000;
+}
 

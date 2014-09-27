@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #-*- coding: utf-8 -*-
 
-
+from textblob import TextBlob 
 from flask import Flask
 from flask import request, jsonify
 from flask.ext import restful
@@ -20,7 +20,6 @@ import time
 from datetime import timedelta
 import pymongo
 from collections import Counter
-
 
 connection = pymongo.Connection()
 db = connection.modified_canworks
@@ -412,11 +411,69 @@ def get_reviews_count():
 	})
 
 
+@app.route('/get_start_date_for_restaurant', methods=['POST', 'OPTIONS'])
+@crossdomain(origin='*', headers='Content-Type')
+def get_start_date_for_restaurant():
+	eatery_id = request.form["eatery_id"]
+	sorted_list_by_epoch = list(reviews.find({"eatery_id" :eatery_id}).sort("converted_epoch", 1))
+	start_date = sorted_list_by_epoch[0].get('readable_review_day')
+	start_month = sorted_list_by_epoch[0].get('readable_review_month')
+	start_year = sorted_list_by_epoch[0].get('readable_review_year')
+	
+	end_date = sorted_list_by_epoch[-1].get('readable_review_day')
+	end_month = sorted_list_by_epoch[-1].get('readable_review_month')
+	end_year = sorted_list_by_epoch[-1].get('readable_review_year')
+	
+	
+	
+	
+	return jsonify({"success": True,
+			"error": True,
+			"result": {"start": "{0}-{1}-{2}".format(start_year, start_month, start_date), 
+				"end": "{0}-{1}-{2}".format(end_year, end_month, end_date)},
+	})
+	
 
 
+@app.route('/get_word_cloud', methods=['POST', 'OPTIONS'])
+@crossdomain(origin='*', headers='Content-Type')
+def get_word_cloud():
+	__format = '%Y-%m-%d'
+	eatery_id = request.form["eatery_id"]
+	category = request.form["category"].split("__")[1].lower()
+	start_epoch = time.mktime(time.strptime(request.form["start_date"], __format))
+	end_epoch = time.mktime(time.strptime(request.form["end_date"], __format))
 
 
+	print category
+	
+	polarity=lambda x: "positive" if float(x)>= 0 else "negative"
+	
+	noun_phrases_list = list()
 
+	review_result = reviews.find({"eatery_id" :eatery_id, "converted_epoch": {"$gt":  start_epoch, "$lt" : end_epoch}})
+
+	def to_unicode_or_bust(obj, encoding='utf-8'):
+		if isinstance(obj, basestring):
+			if not isinstance(obj, unicode):
+				obj = unicode(obj, encoding)
+		return obj
+
+
+	for review in review_result:
+
+		text_classfication = Classifier(to_unicode_or_bust(review.get("review_text")))
+		filtered_tag_text = [text[0] for text in text_classfication.with_svm() if text[1] == category]
+		for text in filtered_tag_text:
+			instance = ProcessingWithBlob(to_unicode_or_bust(text))
+			noun_phrases_list.extend([(noun.lower(),  polarity(instance.sentiment_polarity())) for noun in instance.noun_phrase()])
+
+
+	print Counter(noun_phrases_list)
+	return jsonify({"success": True,
+			"error": True,
+			#"result": Counter(noun_phrases_list),
+	})
 
 
 

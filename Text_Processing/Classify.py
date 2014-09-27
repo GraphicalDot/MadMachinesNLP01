@@ -139,12 +139,10 @@ class Classifier:
 
 		#Still the new data cannot classify sentences like ( ).
 		#So that only be classified as punk tokenizer with realliagn boundaries= True
-		print new_data
 		for element in new_data:
 			final_data.extend(self.sent_tokenizer.tokenize(element.strip(), realign_boundaries=True))
 		predicted = classifier.predict(final_data)
 
-		print predicted
 		return zip(final_data, predicted)
 
 

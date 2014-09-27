@@ -29,9 +29,60 @@
 
 	</head>
 	<body>
+		
 
 
 
+	<script type="text/x-mustache-template" id="see-word-cloud-date-selection-template">
+		<div class="control-group">
+					<label disabled class="control-label">Start Date</label>
+					<div class="controls">
+						<input type="date" id="startDate" disabled>
+					</div>
+			</div>
+		<div class="control-group">
+			
+					<label for="selectStartDate" class="control-label">Select Start Date</label>
+					<div class="controls">
+						<input type="date" id="selectStartDate">
+					</div>
+			</div>
+
+		<div class="control-group">
+					<label disabled class="control-label">End Date</label>
+					<div class="controls">
+						<input type="date" id="endDate" disabled>
+					</div>
+					
+		</div>
+		<div class="control-group">
+				<label  for="selectEndDate"  class="control-label">Select End Date</label>
+					<div class="controls">
+						<input type="date" id="selectEndDate">
+					</div>
+		</div>
+		
+		<div class="control-group">
+				<label  class="control-label">Word Cloud Category</label>
+					<div class="controls">
+						<select id="wordCloudCategory">
+							<ul id="wordCloudCategory" class="dropdown-menu">
+								<option>__Food__</option>
+								<option>__Service__</option>
+								<option>__Ambience__</option>
+								<option>__Cost__</option>
+								<option>__Null__</option>
+								<option>__Overall__</option>
+							</ul>	
+						</select>
+					</div>
+		</div>
+			
+		<button id="idSubmit" class="btn btn-primary" style="text-align: center">Submit</button>
+		<button id="idCancel" class="btn btn-primary" style="text-align: center">Cancel</button>
+	
+		
+	</script>	
 	<script type="text/x-mustache-template" id="root-template">
 		 <tbody>
 			 <tr>
@@ -81,16 +132,20 @@
 			</tr>
 		
 			<tr>
-				<td colspan="4">
+				<td colspan="3">
 					<button id="loadReview" class="btn">Load Review</button>
 				</td>
 				
-				<td colspan="4">
+				<td colspan="3">
 					<button id="updateReview" class="btn">Update Review</button>
 				</td>
 				
-				<td colspan="4">
+				<td colspan="3">
 					<button id="countReviews" class="btn">Count Review</button>
+				</td>
+				
+				<td colspan="3">
+					<button id="seeWordCloud" class="btn">See word Cloud</button>
 				</td>
 			</tr>
 			
@@ -256,6 +311,8 @@
         <div class="row-fluid" >
                     <div class="span12">
                         <div class="dynamic_display_header">
+			</div>
+                        <div class="dynamic_display_word_cloud">
 			</div>
                         <div class="dynamic_display">
 			</div>
