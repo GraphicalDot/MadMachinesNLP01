@@ -249,7 +249,7 @@ App.SeeWordCloudDateSelectionView = Backbone.View.extend({
 						})	
 		jqhr.done(function(data){
 			$.each(data.result, function(iter, noun_phrase_dict){
-				var subView = new App.ClassfiedReviewsView({model: review_dict});
+				var subView = new App.SeeWordCloudDateMainView({model: noun_phrase_dict});
 				$(".dynamic_display_word_cloud").append(subView.render().el);	
 				$(".dynamic_display_word_cloud").append('&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;');	
 			});
@@ -279,13 +279,16 @@ App.SeeWordCloudDateSelectionView = Backbone.View.extend({
 App.SeeWordCloudDateMainView = Backbone.View.extend({
 	template: Mustache.compile('{{nounPhrase}}'),
 	tagName: "a",
-	items: Array(5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20),
-	size: function(){return this.items[Math.floor(Math.random()*this.items.length)] },
-	nounPhrase: function(){return this.model},
+	size: function(){return this.model.frequency*40},
+	nounPhrase: function(){return this.model.name},
+	polarity: function(){return this.model.polarity},
+	
 
 	initialize: function(options){
 		this.model = options.model;
 		console.log(this.size())
+		console.log(this.polarity())
+		
 	},
 
 	render: function(){
@@ -295,7 +298,13 @@ App.SeeWordCloudDateMainView = Backbone.View.extend({
 	},
 
 	afterRender: function(){
+		var self = this;
 		this.$el.attr({href: "#", rel: this.size()});
+		this.$el.css({"font-size": this.size()})
+		if(self.polarity() == "negative"){
+			console.log(" Negative polkrariy aaying");	
+			self.$el.css({"color": "red"})
+		}
 	},
 
 });

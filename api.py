@@ -469,10 +469,16 @@ def get_word_cloud():
 			noun_phrases_list.extend([(noun.lower(),  polarity(instance.sentiment_polarity())) for noun in instance.noun_phrase()])
 
 
+
 	print Counter(noun_phrases_list)
+	result = list()
+	for key, value in Counter(noun_phrases_list).iteritems():
+		result.append({"name": key[0], "polarity": key[1], "frequency": value}) 
+	
+	print result
 	return jsonify({"success": True,
 			"error": True,
-			#"result": Counter(noun_phrases_list),
+			"result": result,
 	})
 
 

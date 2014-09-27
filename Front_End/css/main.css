@@ -187,6 +187,6 @@ margin-top: 10em;
 
 .dvLoading
 {	background:#000 url(images/loading.gif) no-repeat center center;
-	z-index: 1000;
+	z-index: 100000;
 }
 
