@@ -2,6 +2,7 @@ $(document).ready(function(){
 App.Router = Backbone.Router.extend({
 	initialize: function(options){
 		this.el =  options.el ;
+		console.log(this.el)
 	},
 
 	routes: {
@@ -9,7 +10,7 @@ App.Router = Backbone.Router.extend({
 	},
 	
 	welcome: function(){
-		var str = new App.RootView()
+		var str = new App.RootView({model: {"el": this.el}})
 		this.el.html(str.render().el);
 	},
 });
