@@ -156,6 +156,12 @@ App.ButtonView = Backbone.View.extend({
 		.attr("r", function(d, i){
 			return d.frequency*100
 		})
+		d3.selectAll("text").transition().duration(10250).delay(function(d, i){
+			return i*100	
+		})
+		.attr("font-size", function(d, i){
+			return d.frequency*10
+		})
 	},  
 
 });
@@ -168,17 +174,10 @@ App.RootView = Backbone.View.extend({
 		console.log("Root view called")
 		console.log(this.model.el)
 		var subView = new App.ButtonView({model: {"__parent": this.el} }); 
-		this.$el.append(subView.render().el);
-		//this.__d3_histogram_with_text();
-		//this.__d3_circle_with_text();
-		//this.__d3_simple_cloud();
-		this.__d3_circular_word_cloud();
-		d3.selectAll("circle").transition().duration(10250).delay(function(d, i){
-			return i*100	
-		})
-		.attr("r", function(d, i){
-			return d.frequency*100
-		})
+		//this.$el.append(subView.render().el);
+		//this.__d3_circular_word_cloud();
+		//this.__d3_update();
+		this.__d3_update_and_transition();
 	},
 
 	render: function(){
@@ -188,41 +187,53 @@ App.RootView = Backbone.View.extend({
 	events: {
 	},
 
-	__d3_simple_cloud: function(){
-		d3.select(this.el).selectAll("p")
-				.data(window.data)
-				.enter()
-				.append("b")
-				.text(function(d){ return d.name;})
-				.style("color", function(d) {
-					if(d.polarity == "negative"){   //Threshold of 15
-						return "red";
-					}
-					else{
-						return "black";
-					}
-				})
-				.style("font-size", function(d){
-					return d.frequency*30
-				})
-				.style("width", "400px")
-				.style("margin-top",  function(d){
-					return 1000*d.frequency + "px"})
-				.style("margin-right",  function(d){
-					return 50*d.frequency + "px"})
-				.style("margin-bottom",  function(d){
-					return 1000*d.frequency + "px"})
-				.style("margin-left",  function(d){
-					return 50*d.frequency + "px"})
-
-	},
 	__d3_circular_word_cloud: function(){
+		var margin = {top: 19.5, right: 19.5, bottom: 19.5, left: 39.5},
+		width = 1200 - margin.right,
+		height = 500 - margin.top - margin.bottom;
+
+		var xScale = d3.scale.log().domain([300, 1e5]).range([0, width]);
+		var yScale = d3.scale.linear().domain([1, 10]).range([height, 0]);
+		var xAxis = d3.svg.axis().orient("bottom").scale(xScale).ticks(12, d3.format(",d"));
+		var yAxis = d3.svg.axis().scale(yScale).orient("left");
+
+
+		
 		var self = this;
 		var w = 1200;
 		var h = 700;
-		this.svg = d3.select(this.el).append("svg")
-				.attr("width", w)
-				.attr("height", h)
+		this.__svg = d3.select(this.el).append("svg")
+				.attr("width", width + margin.left + margin.right)
+				.attr("height", height + margin.top + margin.bottom)
+				.style("border", "3px solid yellow")
+		this.svg = this.__svg.append("g")
+				.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+		
+		this.svg.append("g")
+			.attr("class", "x axis")
+			.attr("transform", "translate(0," + height + ")")
+			.call(xAxis);
+
+		this.svg.append("g")
+			.attr("class", "y axis")
+			.call(yAxis);
+
+
+		this.svg.selectAll("circle")
+				.data(window.data_with_coordinates)
+				.enter()
+				.append("circle")
+				.attr("cx", function(d) {
+					        return d.coordinates[0];
+						   })
+				.attr("cy", function(d){
+						return d.coordinates[1];
+				      })
+				.attr("r", 0)
+				.transition()
+				.attr("r", function(d, i){
+					return d.frequency	
+				})
 
 		this.svg.selectAll("circle")
 				.data(window.data_with_coordinates)
@@ -240,24 +251,22 @@ App.RootView = Backbone.View.extend({
 				.attr("fill", "rgba(, 0, 128, d.frequency*4)" )
 				.attr("stroke", "orange")
 				.attr("stroke-width", function(d) {
-					return d.frequency/2;
+					return d.frequency*10;
 				})
 				.attr("opacity", "0.5")
-
-			   .attr("x", function(d) {
-			   		return d.coordinates[0];
-			   })
-			   .attr("y", function(d) {
-			   		return d.coordinates[1];
-			   })
 			   .attr("font-family", "sans-serif")
 			   .attr("font-size", function(d, i){
 			   	return d.frequency*10
 			   })
-			   .attr("fill", "yellow");
-	
-	/*	   
-	this.svg.selectAll("text")
+			   .attr("fill", function(d, i){
+			   	if(d.polarity == "negative"){
+					return "red"
+				}
+				else{
+					return "yellow"
+				}
+				})	
+		this.svg.selectAll("text")
 			   .data(window.data_with_coordinates)
 			   .enter()
 			   .append("text")
@@ -272,105 +281,131 @@ App.RootView = Backbone.View.extend({
 			   })
 			   .attr("font-family", "sans-serif")
 			   .attr("font-size", function(d, i){
-				   return d.frequency*100
+				   return d.frequency
 				   
 			   })
-			   .attr("fill", "red");
-	*/	
+			   .attr("fill", function(d, i){
+			   	if(d.polarity == "negative"){
+					return "green"
+				}
+				else{
+					return "black"
+				}
+				})	
+			.attr("text-anchor", "middle")
 		},
 
+	__d3_update_and_transition: function(){
+		var self = this;
+		var alphabet = "abcdefghijklmnopqrstuvwxyz".split("");
 
+		var width = 960;
+		var height = 500;
+		this.svg = d3.select("body").append("svg")
+			.attr("width", width)
+			.attr("height", height)
+			.append("g")
+			.attr("transform", "translate(32," + (height / 2) + ")");
 
-	__d3_histogram_with_text: function(){
+		
+		function update(data) {
+			var text = self.svg.selectAll("text")
+				.data(data, function(d) { return d; });
+			
+			text.attr("class", "update")
+				.transition()
+				.duration(750)
+				.attr("x", function(d, i){ return i*32;});
+				
+			text.enter().append("text")
+					.attr("class", "enter")
+					.attr("x", function(d, i){return i*32;})
+					.attr("dy", ".35em")
+					.attr("y", -60)	
+					.style("fill-opacity", 1e-6)	
+					.text(function(d){return d;})
+					.transition()
+					.duration(750)
+					.attr("y", 0)
+					.style("fill-opacity", 1);
 
-		var dataset = [5, 10, 15, 60, 70, 30, 20, 25, 30, 35, 40, 10]
-		var w = 1200;
-		var h = 300;
-		var svg_element = d3.select(this.el).append("svg")
-				.attr("width", w)
-				.attr("height", h)
+				text.exit()
+					.attr("class", "exit")
+					.transition()
+					.duration(1200)
+					.attr("y", 120)
+					.style("fill-opacity", 1e-6)
+					.remove();
+					}
+		
+		update(alphabet);
+		
+		setInterval(function() {
+			update(shuffle(alphabet)
+				.slice(0, Math.floor(Math.random() * 26))
+				.sort()
+				);
+		
+			}, 1500);
+		
+		function shuffle(array) {
+			var m = array.length, t, i;
+			while (m) {
+				i = Math.floor(Math.random() * m--);
+				t = array[m], array[m] = array[i], array[i] = t;
+			}
+			return array;
+		}
 
-		svg_element.selectAll("rect")
-				.data(dataset)
-				.enter()
-				.append("rect")
-				.attr("x", function(d, i){
-					return i * (w /dataset.length);
-					})
-				.attr("y", function(d){
-					return h - (d*4);
-				})
-				.attr("width", w/dataset.length - 1)
-					.attr("height", function(d) {
-					return d*4;
-																						   });
-
-
-		svg_element.selectAll("text")
-				.data(dataset)
-				.enter()
-				.append("text")
-				.text(function(d, i){
-					return d
-				})
-				.style("text-anchor", "end")
-				.attr("x", function(d, i){
-					return i*(w/dataset.length) +35//Bar width of 20 plus 1 for padding
-				})
-				.attr("y", function(d, i){
-					return h - (d*4)+30
-				})
-				.attr("width", w/dataset.length-2)
-				.attr("height", function(d, i){
-					return d*100
-				})
-				.attr("font-family", "sans-serif")
-				.attr("fill", "white")	
 	},
+	__d3_update: function(){
+		var self = this;
+		var alphabet = "abcdefghijklmnopqrstuvwxyz".split("");
 
-	__d3_circle_with_text: function(){
-		
-		var dataset = [
-		                [5, 20], [480, 90], [250, 50], [100, 33], [330, 95],
-		                [410, 12], [475, 44], [25, 67], [85, 21], [220, 88]
-					              ];
-		
-		var w = 1200;
-		var h = 300;
-		var svg = d3.select(this.el).append("svg")
-				.attr("width", w)
-				.attr("height", h)
+		var width = 960;
+		var height = 500;
+		this.svg = d3.select("body").append("svg")
+			.attr("width", width)
+			.attr("height", height)
+			.append("g")
+			.attr("transform", "translate(32," + (height / 2) + ")");
 
-		svg.selectAll("circle")
-				.data(dataset)
-				.enter()
-				.append("circle")
-				.attr("cx", function(d) {
-					        return d[0];
-						   })
-				.attr("cy", function(d){
-						return d[1];
-				      })
-				.attr("r", 5);
-		svg.selectAll("text")
-			   .data(dataset)
-			   .enter()
-			   .append("text")
-			   .text(function(d) {
-			   		return d[0] + "," + d[1];
-			   })
-			   .attr("x", function(d) {
-			   		return d[0];
-			   })
-			   .attr("y", function(d) {
-			   		return d[1];
-			   })
-			   .attr("font-family", "sans-serif")
-			   .attr("font-size", "11px")
-			   .attr("fill", "red");
 		
-		},
+		function update(data) {
+			var text = self.svg.selectAll("text")
+				.data(data);
+			
+			text.attr("class", "update");
+				
+			text.enter().append("text")
+					.attr("class", "enter")
+					.attr("x", function(d, i) {return i*35; })
+					.attr("dy", ".35em");
+				
+				text.text(function(d) { return d; });
+				text.exit().remove();
+				}
+		
+		update(alphabet);
+		
+		setInterval(function() {
+			update(shuffle(alphabet)
+				//.slice(0, Math.floor(Math.random() * 26))
+				//.sort()
+				);
+		
+			}, 1500);
+		
+		function shuffle(array) {
+			var m = array.length, t, i;
+			while (m) {
+				i = Math.floor(Math.random() * m--);
+				t = array[m], array[m] = array[i], array[i] = t;
+			}
+			return array;
+		}
 
+	},
 });
 });
 

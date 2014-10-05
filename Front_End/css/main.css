@@ -200,3 +200,15 @@ margin-top: 10em;
 				margin-right: 2px;
 				background-color: teal;
 			}
+
+text {
+	  font: bold 48px monospace;
+  }
+
+.enter {
+	    fill: green;
+    }
+.update {
+	      fill: #333;
+      }
+

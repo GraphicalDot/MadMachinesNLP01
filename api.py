@@ -435,6 +435,53 @@ def get_start_date_for_restaurant():
 	
 
 
+@app.route('/get_word_cloud_with_dates', methods=['POST', 'OPTIONS'])
+@crossdomain(origin='*', headers='Content-Type')
+def get_word_cloud_with_dates():
+	__format = '%Y-%m-%d'
+	eatery_id = request.form["eatery_id"]
+	category = request.form["category"].split("__")[1].lower()
+	start_epoch = time.mktime(time.strptime(request.form["start_date"], __format))
+	end_epoch = time.mktime(time.strptime(request.form["end_date"], __format))
+
+
+	print category, eatery_id, request.form["start_date"], request.form["end_date"], start_epoch, end_epoch
+	
+	polarity=lambda x: "positive" if float(x)>= 0 else "negative"
+	
+
+	review_result = list(reviews.find({"eatery_id" :eatery_id, "converted_epoch": {"$gt":  start_epoch, "$lt" : end_epoch}}))
+
+	noun_phrases_dictionary = dict.fromkeys([review.get("review_time").split(" ")[0] for review in review_result], list())
+
+	def to_unicode_or_bust(obj, encoding='utf-8'):
+		if isinstance(obj, basestring):
+			if not isinstance(obj, unicode):
+				obj = unicode(obj, encoding)
+		return obj
+	
+	for review in review_result:
+		date = review.get("review_time").split(" ")[0]
+		text_classfication = Classifier(to_unicode_or_bust(review.get("review_text")))
+		filtered_tag_text = [text[0] for text in text_classfication.with_svm() if text[1] == category]
+		for text in filtered_tag_text:
+			instance = ProcessingWithBlob(to_unicode_or_bust(text))
+			#per_review.extend([(noun.lower(),  polarity(instance.sentiment_polarity())) for noun in instance.noun_phrase()])
+			noun_phrases_dictionary[date] = noun_phrases_dictionary[date] + [(noun.lower(),  polarity(instance.sentiment_polarity())) for noun in instance.noun_phrase()]
+
+
+
+	#The abobve noun phrase dictionary is in the form of {"2014-9-10": ["phrases", "phrases", ....], ..., ... }
+	#This should be converted into the form of list of dictionaries with "Date" key corresponds to date and "[hrase" key corresponds to the 
+	#phrases asccociated with this date
+
+	result = [{"date": key, "phrases": noun_phrases_dictionary[key]} for key in noun_phrases_dictionary.keys()]
+
+	return jsonify({"success": True,
+			"error": True,
+			"result": result
+	})
+
 @app.route('/get_word_cloud', methods=['POST', 'OPTIONS'])
 @crossdomain(origin='*', headers='Content-Type')
 def get_word_cloud():
@@ -445,7 +492,7 @@ def get_word_cloud():
 	end_epoch = time.mktime(time.strptime(request.form["end_date"], __format))
 
 
-	print category
+	print category, eatery_id, request.form["start_date"], request.form["end_date"], start_epoch, end_epoch
 	
 	polarity=lambda x: "positive" if float(x)>= 0 else "negative"
 	
@@ -480,6 +527,27 @@ def get_word_cloud():
 			"error": True,
 			"result": result,
 	})
+
+@app.route('/get_valid_files_count', methods=['GET', 'OPTIONS'])
+@crossdomain(origin='*', headers='Content-Type')
+def get_valid_files_count():
+	"""
+	This function counts the number of lines present in the valid files
+	It checks how much updation has been done to the valid fieles by the canworks guys
+	"""
+	
+	result = list()
+	path = os.path.dirname(os.path.abspath(__file__))	
+	file_path = os.path.join(path + "/trainers")
+	file_list =  [os.path.join(file_path + "/" + file) for file in os.listdir(file_path)]
+	
+	for file in file_list:
+		result.append((file, subprocess.check_output(["wc", "-l", file]).split(" ")[0]))
+	return jsonify({"success": True,
+			"error": True,
+			"result": result,
+	})
+
 
 
 
