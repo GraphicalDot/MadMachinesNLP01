@@ -223,39 +223,39 @@ def upload_interjection_error():
 @app.route('/update_customer', methods=['POST', 'OPTIONS'])
 @crossdomain(origin='*', headers='Content-Type')
 def update_customer():
-	text = request.form["text"]
-	repeated = request.form["is_repeated"]
+	sentence = request.form["sentence"]
+	option_value = request.form["option_value"]
+	option_text = "_".join(request.form["option_text"].split())
 	review_id = request.form["review_id"]
 
-	if int(repeated) != 2:
+	if int(option_value) != 2 and int(option_value) != 3:
 		return jsonify({"success": False,
 				"error": True,
-				"messege": "Only repeated customer sentences can be tagged, 'void' is an invalid tag",
+				"messege": "Only repeated customer or recommended customer sentences can be tagged, 'void' is an invalid tag",
 				"error_code": 206,
 			})
-
-
-	path = (os.path.join(os.path.dirname(os.path.abspath(__file__)) + "/trainers/valid_%s.txt"%'repeated_customer'))
+	
+	path = (os.path.join(os.path.dirname(os.path.abspath(__file__)) + "/trainers/valid_%s.txt"%option_text))
 
 	if not os.path.exists(path):
 		return jsonify({"success": False,
 				"error": True,
-				"messege": "Some error occurred",
+				"messege": "File for {0} doesnt exists in the backend, Please contact your asshole admin".format(option_text),
 				"error_code": 205,
 			})
 
 
 
 	with open(path, "a") as myfile:
-		myfile.write(text)
+		myfile.write(sentence)
 		myfile.write("\n")
 
 
 
-	reviews.update({"review_id": review_id}, {"$push": {"repeated_customers": text}})
+	reviews.update({"review_id": review_id}, {"$push": {"{0}s".format(option_text): sentence}})
 	return jsonify({"success":  True,
 		"error": False,
-		"messege": "The sentence --{0}-- with id --{1} has been uploaded for repeated customers".format(text, review_id),
+		"messege": "The sentence --{0}-- with review id --{1} has been uploaded for {2}".format(sentence, review_id, option_text),
 		})
 
 
@@ -338,9 +338,9 @@ def get_review_details():
 @app.route('/get_ngrams', methods=['POST', 'OPTIONS'])
 @crossdomain(origin='*', headers='Content-Type')
 def get_ngrams():
-	text = request.form["text"]
+	sentence = request.form["sentence"]
 	grams = request.form["grams"]
-	if not text:
+	if not sentence:
 		return jsonify({"success": False,
 				"error": True,
 				"messege": "The text field cannot be left empty",
@@ -361,7 +361,7 @@ def get_ngrams():
 
 	return jsonify({"success": True,
 				"error": False,
-				"result": nltk_ngrams(text, grams),
+				"result": nltk_ngrams(sentence, grams),
 		})
 
 

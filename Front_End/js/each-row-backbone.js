@@ -32,16 +32,17 @@ App.RootRowView = Backbone.View.extend({
 		    "change #ddpFiltersentiment" : "changeSentiment",
 		    "change #ddpFilterError" : "changeError",
 		    "change #ddpFilterCustomer" : "changeCustomer",
-		    "change #ddpFilterWordCloud" : "uploadWordCloud",
+		    "change #ddpFilterGetNGrams" : "GetNGrams",
 	},
 
 
-	uploadWordCloud: function(event){
-		var self = this;
+	GetNGrams: function(event){
 		event.preventDefault()
+		console.log("Get ngrams has been clicked")
+		var self = this;
 		sentence = self.sentence();
-		grams = self.$('#ddpFilterWordCloud option:selected').text();
-		var jqhr = $.post(window.get_ngrams, {"text": sentence, "grams": grams})	
+		grams = self.$('#ddpFilterGetNGrams option:selected').text();
+		var jqhr = $.post(window.get_ngrams, {"sentence": sentence, "grams": grams})	
 		jqhr.done(function(data){
 			if (data.success == true){
 					var subView = new App.NgramsParent({model: {"result": data.result, "sentence": sentence, "grams": grams, parent: self}});
@@ -135,8 +136,10 @@ App.RootRowView = Backbone.View.extend({
 		var self = this;
 		event.preventDefault()
 				sentence = self.sentence();
-				customer = self.$('#ddpFilterCustomer option:selected').val();
-				var jqhr = $.post(window.update_customer, {"text": sentence, "is_repeated": customer, "review_id": self.review_id()})	
+				option_text = self.$('#ddpFilterCustomer option:selected').text();
+				option_value = self.$('#ddpFilterCustomer option:selected').val();
+				console.log(option_text+ "    " + option_value)
+				var jqhr = $.post(window.update_customer, {"sentence": sentence, "option_value": option_value, "option_text": option_text ,"review_id": self.review_id()})	
 				jqhr.done(function(data){
 					console.log(data.success)
 					if (data.success == true){
