@@ -29,6 +29,11 @@ reviews = db.review
 app = Flask(__name__)
 
 
+def to_unicode_or_bust(obj, encoding='utf-8'):
+	if isinstance(obj, basestring):
+		if not isinstance(obj, unicode):
+			obj = unicode(obj, encoding)
+	return obj
 
 def crossdomain(origin=None, methods=None, headers=None, max_age=21600, attach_to_all=True, automatic_options=True):
 	if methods is not None:
@@ -86,7 +91,7 @@ def return_processed_text():
 				})
 
 
-		text_classfication = Classifier(text.encode("utf-8"))	
+		text_classfication = Classifier(to_unicode_or_bust(text))	
 		noun_phrase = list()
 		result = list() 
 
@@ -111,7 +116,7 @@ def return_processed_text():
 				"result": result,
 				"success": True,
 				"error": False,
-				"overall_sentiment": '%.2f'%ProcessingWithBlob.new_blob_polarity(text.encode("utf-8")),
+				"overall_sentiment": '%.2f'%ProcessingWithBlob.new_blob_polarity(to_unicode_or_bust(text)),
 				"noun_phrase": noun_phrase,
 				})
 
@@ -454,12 +459,6 @@ def get_word_cloud_with_dates():
 
 	noun_phrases_dictionary = dict.fromkeys([review.get("review_time").split(" ")[0] for review in review_result], list())
 
-	def to_unicode_or_bust(obj, encoding='utf-8'):
-		if isinstance(obj, basestring):
-			if not isinstance(obj, unicode):
-				obj = unicode(obj, encoding)
-		return obj
-	
 	for review in review_result:
 		date = review.get("review_time").split(" ")[0]
 		text_classfication = Classifier(to_unicode_or_bust(review.get("review_text")))
@@ -500,11 +499,6 @@ def get_word_cloud():
 
 	review_result = reviews.find({"eatery_id" :eatery_id, "converted_epoch": {"$gt":  start_epoch, "$lt" : end_epoch}})
 
-	def to_unicode_or_bust(obj, encoding='utf-8'):
-		if isinstance(obj, basestring):
-			if not isinstance(obj, unicode):
-				obj = unicode(obj, encoding)
-		return obj
 
 
 	for review in review_result:

@@ -50,7 +50,7 @@ class ProcessingWithBlob:
 
 	@staticmethod
 	def new_blob_polarity(text):
-		blob = TextBlob(text.decode("utf-8"))
+		blob = TextBlob(text)
 		return blob.sentiment.polarity
 
 	def polarity(self):
