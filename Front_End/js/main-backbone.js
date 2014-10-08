@@ -1,6 +1,6 @@
 
 $(document).ready(function(){
-
+window.make_request = function make_request(data){ url =  window.process_text_url ; return $.post(url, {"text": data}) }
 App.RootView = Backbone.View.extend({
 	//tagName: "fieldset",
 	//className: "well-lg plan",

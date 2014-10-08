@@ -491,14 +491,14 @@ class GetReviewCount(restful.Resource):
 		{'city': 'chandigarh', 'classfied': 0, 'unclassfied': 3446}, {'city': 'jaipur', 'classfied': 0, 'unclassfied': 3269},
 		{'city': 'guwahati', 'classfied': 0, 'unclassfied': 1244}]
 		
-		dictionary = Counter([(post.get("area_or_city"), post.get("is_classified")) for post in reviews.find()])
+		dictionary = Counter([(post.get("area_or_city"), post.get("is_classified")) for post in reviews.find(fields={"_id": False})])
 		cities = ['ncr', 'mumbai', 'bangalore', 'kolkata', 'chennai', 'pune', 'hyderabad', 'ahmedabad', 'chandigarh', 'jaipur', 'guwahati']	
 		result = [{"city": city, "classified": dictionary[(city, True)], "unclassified": dictionary[(city, False)]} for city in cities]
 	
-		return jsonify({"success": True,
+		return {"success": True,
 				"error": True,
 				"result": result,
-		})
+		}
 
 
 
