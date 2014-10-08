@@ -1,0 +1,431 @@
+# coding=utf-8
+# # doctest: +NORMALIZE_WHITESPACE
+
+
+>>> from text_sentence import *
+
+>>> t = Tokenizer()
+
+TODO: isn't it?
+>>> print list(t.tokenize("This isn't first sentence. This?")) # doctest: +NORMALIZE_WHITESPACE
+[T('this'/sent_start), T("isn't"/contr), T('first'), T('sentence'), T('.'/sent_end), 
+ T('this'/sent_start), T('?'/sent_end)]
+
+>>> print list(t.tokenize("This is first sentence. This is second one!And this is third, is it?")) # doctest: +NORMALIZE_WHITESPACE
+[T('this'/sent_start), T('is'), T('first'), T('sentence'), T('.'/sent_end), 
+ T('this'/sent_start), T('is'), T('second'), T('one'), T('!'/sent_end), 
+ T('and'/sent_start), T('this'), T('is'), T('third'), T(','/inner_sep), 
+ T('is'), T('it'), T('?'/sent_end)]
+
+>>> print list(t.tokenize('br.%%')) # doctest: +NORMALIZE_WHITESPACE
+[T('br.'/abbr+sent_start), T('%%'/fuzzy_type+sent_end)]
+
+>>> print list(t.tokenize('br…… brrr… brinuti… brže…')) # doctest: +NORMALIZE_WHITESPACE
+[T('br'/sent_start), T('...'/sent_end), T('brrr'/sent_start), T('...'/sent_end), 
+ T('brinuti'/sent_start), T('...'/sent_end), T('br\u017ee'/sent_start), 
+ T('...'/sent_end)]
+
+>>> print list(t.tokenize(' brojevi” brzine’ brojeviť ')) # doctest: +NORMALIZE_WHITESPACE
+[T('brojevi'/sent_start), T('\u201d'/sent_sub1), 
+ T('brzine'), T('\u2019'/sent_sub1), 
+ T('brojevi'), T('\u0165'/sent_end+sent_sub1)]
+
+TODO: each new line is new sentence, what can be good, but must be checked
+"""Vlada Republike Hrvatske i Vlada Talijanske Republike (u daljnjem tekstu: ugovorne stranke)
+– sukladno članku III. Preambule Bečkog dokumenta iz 1999. godine o mjerama za gradnju uzajamnog povjerenja i sigurnosti
+– izražavajući želju za uspostavljanjem trajne bilateralne suradnje
+sporazumjele su se o sljedećem...
+"""
+
+TODO: also this - each row should be one sentence
+"""Vlada Republike Hrvatske i Vlada Talijanske Republike (u daljnjem tekstu: ugovorne stranke)
+1. Sukladno članku III. Preambule Bečkog dokumenta iz 1999. godine o mjerama za gradnju uzajamnog povjerenja i sigurnosti
+2. izražavajući želju za uspostavljanjem trajne bilateralne suradnje
+sporazumjele su se o sljedećem...
+"""
+
+Testing TokenizerParams object:
+>>> params = TokenizerParams()
+
+>>> params.abbr_list = ItemList(Abbr, [Abbr("mr.", a_bef_name=True), Abbr("ing.", a_bef_name=True), Abbr("prof.", a_bef_name=True), Abbr("dr.", a_bef_name=True)])
+>>> params.name_list = ItemList(Name, [Name("Pero"), ("Mato",)])
+>>> params.text = "This is Matko and he is mr., so call him mr.Matko, and so on. Test impl. and so on and impl. end."
+>>> str(params)
+'abbr_list=4, name_list=2, lines=0, word_list=0, text=97, fun_abbr_name=callback_abbr_all'
+
+>>> print list(t.tokenize(params)) # doctest: +NORMALIZE_WHITESPACE
+    [T('this'/sent_start), T('is'), T('Matko'/name), T('and'), T('he'),
+     T('is'), T('mr.'/abbr+known), T(','/inner_sep), T('so'), T('call'),
+     T('him'), T('mr.'/abbr+known), T('Matko'/name), T(','/inner_sep),
+     T('and'), T('so'), T('on'), T('.'/sent_end), T('test'/sent_start),
+     T('impl.'/abbr), T('and'), T('so'), T('on'), T('and'), T('impl.'/abbr),
+     T('end'), T('.'/sent_end)]
+
+Testing denying all abbrs. option:
+>>> params.fun_abbr_name = params.callback_abbr_none
+>>> params.text = "This is Matko and he is mr., so call him mr.Matko, and so on. Test impl. and I. Maro and impl. end."
+
+Matko is collected as name but not applied at the start of the sentence, because new Names have can_start_sent=False:
+>>> print list(t.tokenize(params)) # doctest: +NORMALIZE_WHITESPACE
+[T('this'/sent_start), T('is'), T('Matko'/name), T('and'), T('he'), T('is'),
+ T('mr'), T('.'/sent_end), T(','/inner_sep+sent_start), T('so'), T('call'),
+ T('him'), T('mr'), T('.'/sent_end), T('matko'/sent_start),
+ T(','/inner_sep), T('and'), T('so'), T('on'), T('.'/sent_end),
+ T('test'/sent_start), T('impl'), T('.'/sent_end), T('and'/sent_start),
+ T('i'/upper), T('.'/sent_end), T('maro'/sent_start), T('and'), T('impl'),
+ T('.'/sent_end), T('end'/sent_start), T('.'/sent_end)]
+
+# TODO: new names to apply or not? yes
+>>> params.fun_abbr_name = params.callback_abbr_all
+>>> params.text = unicode('Nije radilo bez njega."\n\n\n#Josip tumaci sne.', "utf-8")
+>>> print list(t.tokenize(params)) # doctest: +NORMALIZE_WHITESPACE
+[T('nije'/sent_start), T('radilo'), T('bez'), T('njega'), T('.'/sent_end),
+ T('NLx3'/par_start=2nl), T('#'/fuzzy_type+sent_start), T('josip'), T('tumaci'),
+ T('sne'), T('.'/sent_end)]
+
+Njega. shouldn't be applied on the end of paragraph:
+>>> params = TokenizerParams()
+>>> params.abbr_list = ItemList(Abbr, [Abbr("njega.", a_bef_name=False)])
+>>> params.text = unicode('Nije radilo bez njega.\n\n\nJosip tumaci sne.', "utf-8")
+>>> print list(t.tokenize(params)) # doctest: +NORMALIZE_WHITESPACE
+[T('nije'/sent_start), T('radilo'), T('bez'), T('njega'), T('.'/sent_end),
+ T('NLx3'/par_start=2nl), T('josip'/sent_start), T('tumaci'), T('sne'),
+ T('.'/sent_end)]
+
+also at the end of sentence:
+>>> params.text = unicode('Nije radilo bez njega. / Josip tumaci sne.', "utf-8")
+>>> print list(t.tokenize(params)) # doctest: +NORMALIZE_WHITESPACE
+[T('nije'/sent_start), T('radilo'), T('bez'), T('njega'), T('.'/sent_end),
+ T('/'/inner_sep+sent_start), T('josip'), T('tumaci'), T('sne'),
+ T('.'/sent_end)]
+
+also at the end of sentence:
+>>> params.text = unicode('Nije radilo bez njega. . Josip tumaci sne.', "utf-8")
+>>> print list(t.tokenize(params)) # doctest: +NORMALIZE_WHITESPACE
+[T('nije'/sent_start), T('radilo'), T('bez'), T('njega'), T('..'/sent_end),
+ T('josip'/sent_start), T('tumaci'), T('sne'), T('.'/sent_end)] 
+
+sirok.) Title - not abbr.:
+>>> params.text = unicode('Obicnih lakata - dug, a cetiri lakta sirok.) To je, dakle, bila zemlja koju smo zauzeli.', "utf-8")
+>>> print list(t.tokenize(params)) # doctest: +NORMALIZE_WHITESPACE
+[T('obicnih'/sent_start), T('lakata'), T('-'/inner_sep), T('dug'),
+ T(','/inner_sep), T('a'), T('cetiri'), T('lakta'), T('sirok'),
+ T('.'/sent_end), T(')'/sent_start+sent_sub2_e), T('to'), T('je'),
+ T(','/inner_sep), T('dakle'), T(','/inner_sep), T('bila'), T('zemlja'),
+ T('koju'), T('smo'), T('zauzeli'), T('.'/sent_end)]
+
+njega. is False abbr. - not recognized but shouldn't be applied in abbr.Name context:
+Nikada shouldn't be name, njega. is word+sent_end:
+>>> print list(t.tokenize(unicode('Ruka filistejska dići će se na njega." [Šaul je po drugi put rekao Davidu. To je pogodilo njega. Nikada on nije.', "utf-8"))) # doctest: +NORMALIZE_WHITESPACE
+   [T('ruka'/sent_start), T('filistejska'), T('di\u0107i'), T('\u0107e'),
+    T('se'), T('na'), T('njega.'/abbr), T('['/sent_sub2_s),
+    T('\u0160aul'/name), T('je'), T('po'), T('drugi'), T('put'), T('rekao'),
+    T('Davidu'/name), T('.'/sent_end), T('to'/sent_start), T('je'),
+    T('pogodilo'), T('njega'), T('.'/sent_end), T('nikada'/sent_start),
+    T('on'), T('nije'), T('.'/sent_end)]
+
+Soaru. is false example:
+>>> print list(t.tokenize(unicode("Kao zemlja egipatska prema Soaru. - Bilo je to prije nego što je Jahve uništio Sodomu i Gomoru.", "utf-8"))) # doctest: +NORMALIZE_WHITESPACE
+[T('kao'/sent_start), T('zemlja'), T('egipatska'), T('prema'), T('Soaru'/name),
+ T('.'/sent_end), T('bilo'/sent_start), T('je'), T('to'), T('prije'), T('nego'),
+ T('\u0161to'), T('je'), T('Jahve'/name), T('uni\u0161tio'), T('Sodomu'/name),
+ T('i'), T('Gomoru'/name), T('.'/sent_end)]
+
+# Soaru. - Bilo
+# ->
+# Soaru. - Bilo
+
+# krova. " "    Odstupi
+# -> 
+# krova. ! odstupi   
+# 
+# reče. " Zbilja 
+# -> 
+# reče. ! zbilja 
+
+Problem of false abbr. dalje. when next word is not alpha:
+>>> print list(t.tokenize(unicode("Donijet ću kruha da se okrijepite prije nego pođete dalje. T1k k svome ste sluzi navratili.", "utf-8"))) # doctest: +NORMALIZE_WHITESPACE
+[T('donijet'/sent_start), T('\u0107u'), T('kruha'), T('da'), T('se'),
+ T('okrijepite'), T('prije'), T('nego'), T('po\u0111ete'), T('dalje'),
+ T('.'/sent_end), T('t1k'/fuzzy_type+sent_start), T('k'), T('svome'), T('ste'),
+ T('sluzi'), T('navratili'), T('.'/sent_end)]
+
+# Ako is name? because dalje. is abbr.?
+# >>> print list(t.tokenize(unicode("Nastavi dalje. Ako ih se slučajno ondje nađe samo dvadeset.", "utf-8"))) # doctest: +NORMALIZE_WHITESPACE
+
+Solving abbr recognized in "Bog. Ona" and "Ona" became name??
+now is ok
+>>> print list(t.tokenize(unicode("Zmija bijaše lukavija od sve zvjeradi što je stvori Jahve, Bog. Ona reče ženi!", "utf-8"))) # doctest: +NORMALIZE_WHITESPACE
+[T('zmija'/sent_start), T('bija\u0161e'), T('lukavija'), T('od'), T('sve'), 
+ T('zvjeradi'), T('\u0161to'), T('je'), T('stvori'), T('Jahve'/name), 
+ T(','/inner_sep), T('Bog'/name), T('.'/sent_end), T('ona'/sent_start), 
+ T('re\u010de'), T('\u017eeni'), T('!'/sent_end)]
+
+It is hard to distinguish what is roman and what is short name abbr. short name is default ...
+>>> print list(t.tokenize("I. Počeci svijeta i čovječanstva")) # doctest: +NORMALIZE_WHITESPACE
+[T('I.'/romnr+sent_start), T('po\u010deci'), T('svijeta'), T('i'),
+ T('\u010dovje\u010danstva'/sent_end)]
+
+>>> print list(t.tokenize("Jr. Magoo is good fella.")) # doctest: +NORMALIZE_WHITESPACE
+[T('jr.'/abbr+sent_start), T('Magoo'/name), T('is'), T('good'), T('fella'), T('.'/sent_end)]
+
+# TODO: et-cetera -> et-cetera - and not separated
+>>> print list(t.tokenize("Etc. is shortcut for et-cetera.")) # doctest: +NORMALIZE_WHITESPACE
+[T('etc.'/abbr+sent_start), T('is'), T('shortcut'), T('for'), 
+ T('et'), T('-'/inner_sep), T('cetera'), T('.'/sent_end)]
+
+TODO: 'I' will be problem for english
+>>> print list(t.tokenize("Knjiga Prava I tako"))
+[T('knjiga'/sent_start), T('Prava'/name), T('i'/upper), T('tako'/sent_end)]
+
+>>> print list(t.tokenize("Knjiga Prava Z tako"))
+[T('knjiga'/sent_start), T('Prava'/name), T('z'/upper), T('tako'/sent_end)]
+
+>>> print list(t.tokenize("Knjiga Prava Zi tako"))
+[T('knjiga'/sent_start), T('Prava'/name), T('Zi'/name), T('tako'/sent_end)]
+
+Testing removing UPPER CASE in preprocessing:
+This one is too short:
+>>> print list(t.tokenize("THIS UPPER. This is not."))
+[T('this'/sent_start+upper), T('upper'/upper), T('.'/sent_end), T('this'/sent_start), T('is'), T('not'), T('.'/sent_end)]
+
+
+This one is ok - 4 words:
+>>> print list(t.tokenize("THIS IS UPPER CASE. This is not.")) # doctest: +NORMALIZE_WHITESPACE
+[T('this'/sent_start), T('is'), T('upper'), T('case'), T('.'/sent_end), 
+ T('this'/sent_start), T('is'), T('not'), T('.'/sent_end)]
+
+If more or equal than 75% are upper then everything is lowered:
+>>> print list(t.tokenize("THIS IS UPPER CASE and ALL ARE considered UPPER TOO. This is not.")) # doctest: +NORMALIZE_WHITESPACE
+[T('this'/sent_start), T('is'), T('upper'), T('case'), T('and'), T('all'), 
+ T('are'), T('considered'), T('upper'), T('too'), T('.'/sent_end), 
+ T('this'/sent_start), T('is'), T('not'), T('.'/sent_end)]
+
+Testing roman numbers:
+>>> print list(t.tokenize("This is I. and MCMVIII, and VII, and VIII.")) # doctest: +NORMALIZE_WHITESPACE
+[T('this'/sent_start), T('is'), T('I.'/abbr), T('and'),
+ T('MCMVIII'/romnr), T(','/inner_sep), T('and'), T('VII'/romnr),
+ T(','/inner_sep), T('and'), T('VIII'/romnr), T('.'/sent_end)] 
+
+Testing numbers
+>>> print list(t.tokenize("This is +123.00 and 123,00 and he +2032 and 123,which 1321, must 12. be solved.")) # doctest: +NORMALIZE_WHITESPACE
+[T('this'/sent_start), T('is'), T('+123.00'/number), T('and'),
+ T('123,00'/number), T('and'), T('he'), T('+2032'/number), T('and'),
+ T('123'/number), T(','/inner_sep), T('which'), T('1321'/number),
+ T(','/inner_sep), T('must'), T('12.'/number), T('be'), T('solved'),
+ T('.'/sent_end)] 
+
+When number is not sentence end:
+>>> print list(t.tokenize("Za konkurentnost i inovacije (2007. do 2013.), sklopljen u Bruxellesu 17. listopada 2007. i u Zagrebu 25. listopada 2007, objavljen u »Narodnim novinama – Međunarodni ugovori« br. 3/2008, stupio na snagu 26. svibnja 2008. Dalje je nova rečenica.")) # doctest: +NORMALIZE_WHITESPACE
+[T('za'/sent_start), T('konkurentnost'), T('i'), T('inovacije'),
+ T('('/sent_sub2_s), T('2007.'/number), T('do'), T('2013.'/number),
+ T(')'/sent_sub2_e), T(','/inner_sep), T('sklopljen'), T('u'),
+ T('Bruxellesu'/name), T('17.'/number), T('listopada'), T('2007.'/number),
+ T('i'), T('u'), T('Zagrebu'/name), T('25.'/number), T('listopada'),
+ T('2007'/number), T(','/inner_sep), T('objavljen'), T('u'),
+ T('\xbb'/sent_sub1), T('Narodnim'/name), T('novinama'),
+ T('\u2013'/fuzzy_type), T('Me\u0111unarodni'/name), T('ugovori'),
+ T('\xab'/sent_sub1), T('br.'/abbr), T('3'/number), T('/'/inner_sep),
+ T('2008'/number), T(','/inner_sep), T('stupio'), T('na'), T('snagu'),
+ T('26.'/number), T('svibnja'), T('2008'/number), T('.'/sent_end),
+ T('dalje'/sent_start), T('je'), T('nova'), T('re\u010denica'),
+ T('.'/sent_end)]
+
+
+
+>>> abbr_list2 = ItemList(Abbr, [Abbr("mr.", a_bef_name=True), Abbr("ing.", a_bef_name=True), Abbr("prof.", a_bef_name=True), Abbr("dr.", a_bef_name=True)])
+>>> name_list2 = ItemList(Name, [Name("Pero"), ("Mato",)])
+
+Check here - if name and abbr stand one after other - then this is not end of sentence:
+new abbr. are not bef_name by default.
+Before mr. was not in the list and now it is. Otherwise mr. is recognized in single mode, but not applied before name. 
+For impl. it is applied again because not in front of name:
+>>> print list(t.tokenize("This is Matko and he is mr., so call him mr.Matko, and so on. Test impl. and so on and impl. end.", # doctest: +NORMALIZE_WHITESPACE
+...                       in_name_list=name_list2, in_abbr_list=abbr_list2))
+    [T('this'/sent_start), T('is'), T('Matko'/name), T('and'), T('he'),
+     T('is'), T('mr.'/abbr+known), T(','/inner_sep), T('so'), T('call'),
+     T('him'), T('mr.'/abbr+known), T('Matko'/name), T(','/inner_sep),
+     T('and'), T('so'), T('on'), T('.'/sent_end), T('test'/sent_start),
+     T('impl.'/abbr), T('and'), T('so'), T('on'), T('and'), T('impl.'/abbr),
+     T('end'), T('.'/sent_end)]
+
+>>> list(name_list2.iter_only_new())
+[N('Matko'/3/new/conf/0), N('Test'/1/new), N('This'/1/new)]
+
+>>> list(abbr_list2.iter_only_new())
+[A('end.'/1/new), A('impl.'/2/new/conf/0), A('on.'/1/new)]
+
+Testing čćššđž:
+>>> list(t.tokenize("""
+... Tata je jeo sladoled. Pa nije bacio u smeće. 
+... 
+... Ne znam. Moja mama se zove Nekako, a brat se zove Neko. 
+... """)) # doctest: +NORMALIZE_WHITESPACE
+[T('tata'/sent_start), T('je'), T('jeo'), T('sladoled'), T('.'/sent_end), 
+ T('pa'/sent_start), T('nije'), T('bacio'), T('u'), T('sme\u0107e'), T('.'/sent_end), 
+ T('NLx2'/par_start=2nl), 
+ T('ne'/sent_start), T('znam'), T('.'/sent_end), 
+ T('moja'/sent_start), T('mama'), T('se'), T('zove'), T('Nekako'/name), T(','/inner_sep), 
+ T('a'), T('brat'), T('se'), T('zove'), T('Neko'/name), T('.'/sent_end)]
+
+Paragraph marker takes first 5 chars 
+>>> print list(t.tokenize("""
+... This ends.
+... =---*----------------=
+... This is new paragraph.
+...
+... This is new too
+... """)) # doctest: +NORMALIZE_WHITESPACE
+[T('this'/sent_start), T('ends'), T('.'/sent_end), 
+ T('=---*'/par_start=dash), 
+ T('this'/sent_start), T('is'), T('new'), T('paragraph'), T('.'/sent_end), 
+ T('NLx2'/par_start=2nl), 
+ T('this'/sent_start), T('is'), T('new'), T('too'/sent_end)]
+
+
+>>> abbr_list = ItemList(Abbr, [Abbr("Mr.", a_bef_name=True), Abbr("ing.", a_bef_name=True), Abbr("prof.", a_bef_name=True), Abbr("dr.", a_bef_name=True)])
+>>> name_list = ItemList(Name, [Name("Pero"), Name("Mato",can_start_sent=True)])
+
+First mr. will register it and second will be used. Otherwise mr. Miro will be interpreted as
+end/start of sentence.
+Mato is known abbr that can start sentence, thus recognized. Miro is new, new can't start sentence, so not recognized:
+>>> print list(t.tokenize("This is Mr. Miro , Mato , ing.Pero. Mato je jeo danas. Miro nije jeo danas", # doctest: +NORMALIZE_WHITESPACE
+...                       in_name_list=name_list, in_abbr_list=abbr_list))
+    [T('this'/sent_start), T('is'), T('Mr.'/abbr+known), T('Miro'/name),
+     T(','/inner_sep), T('Mato'/name+known), T(','/inner_sep),
+     T('ing.'/abbr+known), T('Pero'/name+known), T('.'/sent_end),
+     T('Mato'/name+sent_start+known), T('je'), T('jeo'), T('danas'), T('.'/sent_end),
+     T('miro'/sent_start), T('nije'), T('jeo'), T('danas'/sent_end)]
+
+>>> list(name_list.iter_only_new())
+[N('Miro'/2/new/conf/0), N('This'/1/new)]
+ 
+>>> list(abbr_list.iter_only_new())
+[A('Pero.'/1/new), A('danas.'/1/new)]
+
+>>> print list(t.tokenize("This is prof.ing. Malkovich and his is very important!", # doctest: +NORMALIZE_WHITESPACE
+...                       in_abbr_list=abbr_list))
+[T('this'/sent_start), T('is'), T('prof.'/abbr+known), T('ing.'/abbr+known), 
+ T('Malkovich'/name), T('and'), T('his'), 
+ T('is'), T('very'), T('important'), T('!'/sent_end)]
+ 
+>>> list(abbr_list.iter_only_new())
+[A('Pero.'/1/new), A('danas.'/1/new)]
+
+>>> abbr_list_empty = ItemList(Abbr)
+
+Abbr. ing. is recognized and not applied after since new doesn't apply before name:
+>>> print list(t.tokenize("This is ing. ing. Malkovich and his is very important!", 
+...                       in_abbr_list=abbr_list_empty)) # doctest: +NORMALIZE_WHITESPACE
+[T('this'/sent_start), T('is'), T('ing.'/abbr), T('ing'), T('.'/sent_end),
+ T('malkovich'/sent_start), T('and'), T('his'), T('is'), T('very'),
+ T('important'), T('!'/sent_end)]
+
+NOTE: that since ing. is recognized and applied only once, and second try didn't, nevertheless 
+      freq includes both occurences. TODO: maybe change this.
+>>> list(abbr_list_empty.iter_only_new())
+[A('ing.'/2/new/conf/0)]
+
+TODO: par_start probably should finish all fmt_* started tags. Maybe to do this in usage.
+>>> print list(t.tokenize(""" 
+... This $fmt_start%1%test$this is strong$par_start%1%$
+... and this is normal
+... """)) # doctest: +NORMALIZE_WHITESPACE
+[T('this'/sent_start), T('test'/fmt_start=1), T('this'), T('is'), T('strong'), 
+ T(''/par_start=1), 
+ T('and'/sent_start), T('this'), T('is'), T('normal'/sent_end)]
+
+>>> print list(t.tokenize(""" 
+... This $fmt_start%1%$this is strong$fmt_end%1%$
+... and this is normal
+... """)) # doctest: +NORMALIZE_WHITESPACE
+[T('this'/sent_start), 
+ T(''/fmt_start=1), T('this'), T('is'), T('strong'), T(''/fmt_end=1), 
+ T('and'), T('this'), T('is'), T('normal'/sent_end)]
+
+>>> print list(t.tokenize(""" 
+... This ends.  
+... $par_start%1%test$
+... This is new paragraph.
+... $par_start%2%test$
+... This is new paragraph.
+... $par_start%3%test$
+... This is new paragraph.
+... """)) # doctest: +NORMALIZE_WHITESPACE
+[T('this'/sent_start), T('ends'), T('.'/sent_end), 
+ T('test'/par_start=1), T('this'/sent_start), T('is'), T('new'), T('paragraph'), T('.'/sent_end), 
+ T('test'/par_start=2), T('this'/sent_start), T('is'), T('new'), T('paragraph'), T('.'/sent_end), 
+ T('test'/par_start=3), T('this'/sent_start), T('is'), T('new'), T('paragraph'), T('.'/sent_end)]
+
+>>> print list(t.tokenize('This ends (btw. this is not end), and {what do you think}, "about anything", not!!?')) # doctest: +NORMALIZE_WHITESPACE
+[T('this'/sent_start), T('ends'), T('('/sent_sub2_s), T('btw.'/abbr),
+ T('this'), T('is'), T('not'), T('end'), T(')'/sent_sub2_e), T(','/inner_sep),
+ T('and'), T('{'/sent_sub2_s), T('what'), T('do'), T('you'), T('think'),
+ T('}'/sent_sub2_e), T(','/inner_sep), T('"'/sent_sub1), T('about'),
+ T('anything'), T('"'/sent_sub1), T(','/inner_sep), T('not'), T('!!?'/sent_end)]
+
+# before 'about anything' -> 
+# [T('this'/sent_start), T('ends'), T('('/sent_sub2_s), T('btw.'/abbr), 
+#  T('this'), T('is'), T('not'), T('end'), T(')'/sent_sub2_e), T(','/inner_sep), 
+#  T('and'), T('{'/sent_sub2_s), T('what'), T('do'), T('you'), T('think'), 
+#  T('}'/sent_sub2_e), T(','/inner_sep), 
+#  T("'"/sent_sub1), T('about'), T('anything'), T("'"/sent_sub1), 
+#  T(','/inner_sep), T('not'), T('!!?'/sent_end)]
+
+
+>>> print list(t.tokenize("This ends, and what, this: why not # , not÷×¤ not!!?")) # doctest: +NORMALIZE_WHITESPACE
+[T('this'/sent_start), T('ends'), T(','/inner_sep), T('and'), 
+ T('what'), T(','/inner_sep), T('this'), T(':'/inner_sep), 
+ T('why'), T('not'), T('#'/fuzzy_type), T(','/inner_sep), 
+ T('not'), T('\xf7\xd7\xa4'/fuzzy_type), T('not'), T('!!?'/sent_end)]
+
+>>> print list(t.tokenize("This is the end... ! ? And maybe not.")) # doctest: +NORMALIZE_WHITESPACE
+[T('this'/sent_start), T('is'), T('the'), T('end'), T('...!?'/sent_end), 
+ T('and'/sent_start), T('maybe'), T('not'), T('.'/sent_end)]
+
+>>> print list(t.tokenize("This is Mr. and Mr. malkovich and his is very important!")) # doctest: +NORMALIZE_WHITESPACE
+[T('this'/sent_start), T('is'), T('Mr.'/abbr), T('and'), T('Mr.'/abbr), T('malkovich'), 
+ T('and'), T('his'), T('is'), T('very'), T('important'), T('!'/sent_end)]
+
+>>> print list(t.tokenize("This is J.Malkovich and his is very important!")) # doctest: +NORMALIZE_WHITESPACE
+[T('this'/sent_start), T('is'), T('J.'/abbr), T('Malkovich'/name), 
+ T('and'), T('his'), T('is'), T('very'), T('important'), T('!'/sent_end)]
+
+>>> print list(t.tokenize('Testing. Testing second!')) # doctest: +NORMALIZE_WHITESPACE
+[T('testing'/sent_start), T('.'/sent_end), 
+ T('testing'/sent_start), T('second'), T('!'/sent_end)]
+
+>>> print list(t.tokenize('So far this is the same www.test.com with abbr.should be separated!?a.')) # doctest: +NORMALIZE_WHITESPACE
+ [T('so'/sent_start), T('far'), T('this'), T('is'), T('the'), T('same'),
+ T('www.test.com'/fuzzy_abbr), T('with'), T('abbr.should'/fuzzy_abbr), T('be'),
+ T('separated'), T('!?'/sent_end), T('a.'/abbr+sent_end+sent_start)] 
+
+# TODO: in this case abbr. is not recognized - currently this is good.
+>>> print list(t.tokenize('This is abbr.?change and this is not. this is Name!')) # doctest: +NORMALIZE_WHITESPACE
+[T('this'/sent_start), T('is'), T('abbr.'/abbr), T('?'/sent_end),
+ T('change'/sent_start), T('and'), T('this'), T('is'), T('not.'/abbr),
+ T('this'), T('is'), T('Name'/name), T('!'/sent_end)]
+
+>>> print list(t.tokenize('This is abbr.change and this is not.')) # doctest: +NORMALIZE_WHITESPACE
+[T('this'/sent_start), T('is'), T('abbr.change'/fuzzy_abbr), 
+ T('and'), T('this'), T('is'), T('not'), T('.'/sent_end)]
+
+>>> print list(t.tokenize('This is not abbr!Change and this is not.')) # doctest: +NORMALIZE_WHITESPACE
+[T('this'/sent_start), T('is'), T('not'), T('abbr'), T('!'/sent_end), 
+ T('change'/sent_start), T('and'), T('this'), T('is'), T('not'), T('.'/sent_end)]
+
+>>> print list(t.tokenize("this.   this !   this   ?  this . ")) # doctest: +NORMALIZE_WHITESPACE
+[T('this.'/abbr+sent_start), T('this'), T('!'/sent_end), 
+ T('this'/sent_start), T('?'/sent_end), T('this'/sent_start), T('.'/sent_end)]
+
+>>> print list(t.tokenize('This is abbr., and this is not.')) # doctest: +NORMALIZE_WHITESPACE
+[T('this'/sent_start), T('is'), T('abbr.'/abbr), T(','/inner_sep), T('and'),
+ T('this'), T('is'), T('not'), T('.'/sent_end)]
+
+>>> print list(t.tokenize('This is abbr. , and this is not.')) # doctest: +NORMALIZE_WHITESPACE
+[T('this'/sent_start), T('is'), T('abbr.'/abbr), 
+ T(','/inner_sep), T('and'), T('this'), T('is'), T('not'), T('.'/sent_end)]
+
+>>> print list(t.tokenize("this.!"))
+[T('this.'/abbr+sent_start), T('!'/sent_end)]
+

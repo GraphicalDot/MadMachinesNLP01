@@ -1,0 +1,162 @@
+Text tokenizer and sentence splitter 
+====================================
+Library "text-sentence" is text tokenizer and sentence splitter. 
+
+Input is for main function is text, list of known names and abbreviations. 
+Result is list of tokens. Each token has type and other attributes i.e.:
+
+    - is word, 
+    - is number, 
+    - is roman number, 
+    - is sentence end, 
+    - is abbreviation, 
+    - is name, 
+    - is contraction,
+    - is end of chapter 
+    - etc. 
+    
+**Determining end of sentence** needs special logic and care what is the main
+reason for naming package with "text-sentence".
+
+TAGS 
+----
+    tokenization, sentence splitter, sentencer, chapter, names, abbreviation
+
+AUTHOR
+======
+Robert Lujo, Zagreb, Croatia, find mail address in LICENCE
+
+
+FEATURES
+========
+To name the most important:
+ - TODO: ...
+
+System is based on unicode strings.
+
+Check `Getting started`_.
+
+INSTALLATION
+============
+Installation instructions - if you have installed pip package 
+http://pypi.python.org/pypi/pip::
+
+    pip install text-sentence
+
+If not, then do it old-fashioned way:
+    - download zip from http://pypi.python.org/pypi/text-sentence/
+    - unzip
+    - open shell
+    - go to distribution directory
+    - python setup.py install
+
+Development version you can see at http://bitbucket.org/trebor74hr/text-sentence.
+
+or Mercurial clone with::
+
+    hg clone https://bitbucket.org/trebor74hr/text-sentence
+
+GETTING STARTED
+===============
+Usage example - start python shell::
+
+    >>> from text_sentence import Tokenizer
+    >>> t = Tokenizer()
+    >>> list(t.tokenize("This is first sentence. This is second one!And this is third, is it?"))
+    [T('this'/sent_start), T('is'), T('first'), T('sentence'), T('.'/sent_end), 
+     T('this'/sent_start), T('is'), T('second'), T('one'), T('!'/sent_end), 
+     T('and'/sent_start), T('this'), T('is'), T('third'), T(','/inner_sep), 
+     T('is'), T('it'), T('?'/sent_end)]
+
+More samples can be found in tests:
+
+    http://bitbucket.org/trebor74hr/text-sentence/src/tip/text_sentence/test_sentence.txt
+
+Further
+-------
+Since there is currently no good documentation, the best source of 
+further information is by reading tests inside of module and
+tests test_sentence. More information in `Running tests`_.
+You can allways read a source.
+
+
+DOCUMENTATION
+=============
+Currently there is no documentation. In progress ...
+
+
+SUPPORT
+=======
+Since this project is limited by my free time, support is limited. 
+
+
+REPORT BUG OR REQUEST FEATURE
+-----------------------------
+If you encounter bug, the best is to report it to the bitbucket web page
+http://bitbucket.org/trebor74hr/text-sentence.
+
+The best way to contact me is by mail (find in LICENCE).
+
+TODO list is in readme.txt (dev version).
+
+
+CONTRIBUTION
+============
+Since this project is not currently in the stable API phase, contribution
+should wait for a while.
+
+
+RUNNING TESTS
+=============
+All tests are doctests (not unittests). There are two type of tests in the
+package: 
+
+    1. doctests in module i.e. in __init__.py
+    2. doctests in test_sentence.txt 
+
+Running module directly will run 1. and 2. 
+
+To run tests:
+    - goto text_sentence directory
+    - run tests by running module, e.g.::
+
+        > python __init__.py
+        __main__: running doctests
+        test_sentence.txt: running doctests
+
+    - other with::
+
+        > python -m"text_sentence"
+
+TODO
+====
+various things, see readme.txt in dev version for details.
+
+CHANGES
+=======
+0.14
+----
+ulr1 100621: 
+    - is_contraction token attribute - e.g. isn't or osh'
+
+0.13
+----
+ulr1 100619:
+    - sample in getting started
+
+0.12
+----
+ulr1 100619:
+    - test_sentence.txt installation
+    - readme fix main title
+
+0.11
+----
+ulr1 100618:
+    - adapted tests
+    - __init__.py and sentence.py
+
+0.10
+----
+ulr1 100617:
+    - first installable release

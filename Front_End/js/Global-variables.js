@@ -3,9 +3,9 @@ $(document).ready(function(){
 	App = {} ;
 	window.App = App ;
 	window.template = function(name){ return Mustache.compile($("#"+name+"-template").html()); };
-	window.make_request = function make_request(data){ url =  window.process_text_url ; return $.post(url, {"text": data}) }
+	//window.make_request = function make_request(data){ url =  window.process_text_url ; return $.post(url, {"text": data}) }
 	window.URL = "http://localhost:8000/"
-	//window.URL = "http://ec2-50-112-147-199.us-west-2.compute.amazonaws.com:8080/"
+	window.URL = "http://ec2-50-112-147-199.us-west-2.compute.amazonaws.com:8080/"
 	
 	window.process_text_url = window.URL + "process_text";
 	window.update_model_url = window.URL + "update_model";

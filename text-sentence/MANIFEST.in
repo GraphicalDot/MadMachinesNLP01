@@ -1,0 +1,3 @@
+include README LICENCE 
+include text_sentence/test_sentence.txt
+# recursive-include package/things *

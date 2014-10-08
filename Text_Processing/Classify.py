@@ -12,6 +12,7 @@ from sklearn.naive_bayes import MultinomialNB
 from sklearn.linear_model import SGDClassifier
 from sklearn.pipeline import Pipeline
 from CustomSentenceTokenizer import SentenceTokenizer 
+from  trained_punkt_sentences_tokenizer import 	with_text_sentence
 path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
@@ -133,9 +134,11 @@ class Classifier:
 		#new_data = self.sent_tokenizer.tokenize(self.text, realign_boundaries= True)
 		
 		##With the new class created in CustomSentenceTokenizer , the new sentence tokenizer
-		tokenizer = SentenceTokenizer()
-		new_data = [" ".join(word_tokenized_sentence) for word_tokenized_sentence in tokenizer.segment_text(self.text)]
+		#tokenizer = SentenceTokenizer()
+		#new_data = [" ".join(word_tokenized_sentence) for word_tokenized_sentence in tokenizer.segment_text(self.text)]
 
+		#With the new class made from text-sentence library
+		new_data = with_text_sentence(self.text)
 
 		#Still the new data cannot classify sentences like ( ).
 		#So that only be classified as punk tokenizer with realliagn boundaries= True
