@@ -480,7 +480,7 @@ class UploadNounPhrases(restful.Resource):
 class GetReviewCount(restful.Resource):
 	@cors
 	def get(self):
-
+		"""
 		({(u'ncr', False): 20607, (u'mumbai', False): 14770, (u'bangalore', False): 12534, (u'kolkata', False): 10160, (u'chennai', False): 8283, (u'pune', False): 7107, (u'hyderabad', False): 6525, (u'ahmedabad', False): 5936, (u'chandigarh', False): 3446, (u'jaipur', False): 3269, (u'guwahati', False): 1244, (u'ncr', True): 1})
 	
 	
@@ -490,11 +490,15 @@ class GetReviewCount(restful.Resource):
 		{'city': 'hyderabad', 'classfied': 0, 'unclassfied': 6525}, {'city': 'ahmedabad', 'classfied': 0, 'unclassfied': 5936},
 		{'city': 'chandigarh', 'classfied': 0, 'unclassfied': 3446}, {'city': 'jaipur', 'classfied': 0, 'unclassfied': 3269},
 		{'city': 'guwahati', 'classfied': 0, 'unclassfied': 1244}]
-		
+		"""
 		dictionary = Counter([(post.get("area_or_city"), post.get("is_classified")) for post in reviews.find(fields={"_id": False})])
 		cities = ['ncr', 'mumbai', 'bangalore', 'kolkata', 'chennai', 'pune', 'hyderabad', 'ahmedabad', 'chandigarh', 'jaipur', 'guwahati']	
 		result = [{"city": city, "classified": dictionary[(city, True)], "unclassified": dictionary[(city, False)]} for city in cities]
 	
+		total_classified = sum([entry.get("classified") for entry in result])
+		total_unclassified = sum([entry.get("unclassified") for entry in result])
+
+		result.append({"city": "Total", "classified": total_classified, "unclassified": total_unclassified})
 		return {"success": True,
 				"error": True,
 				"result": result,
