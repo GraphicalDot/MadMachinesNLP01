@@ -30,20 +30,28 @@ reviews = db.review
 app = Flask(__name__)
 api = restful.Api(app)
 
+def to_unicode_or_bust(obj, encoding='utf-8'):
+	if isinstance(obj, basestring):
+		if not isinstance(obj, unicode):
+			obj = unicode(obj, encoding)
+	return obj
+
+
+
 
 ##ProcessText
 process_text_parser = reqparse.RequestParser()
-process_text_parser.add_argument('text', type=str, required=True, location="form")
+process_text_parser.add_argument('text', type=to_unicode_or_bust, required=True, location="form")
 
 ##UpdateModel
 update_model_parser = reqparse.RequestParser()
-update_model_parser.add_argument('sentence', type=str, required=True, location="form")
+update_model_parser.add_argument('sentence', type=to_unicode_or_bust, required=True, location="form")
 update_model_parser.add_argument('tag', type=str, required=True, location="form")
 update_model_parser.add_argument('review_id', type=str, required=True, location="form")
 
 ##UpdateReviewError
 update_review_error_parser = reqparse.RequestParser()
-update_review_error_parser.add_argument('sentence', type=str, required=True, location="form")
+update_review_error_parser.add_argument('sentence', type=to_unicode_or_bust, required=True, location="form")
 update_review_error_parser.add_argument('is_error', type=str, required=True, location="form")
 update_review_error_parser.add_argument('review_id', type=str, required=True, location="form")
 update_review_error_parser.add_argument('error_messege', type=str, required=True, location="form")

@@ -171,6 +171,8 @@ App.RootView = Backbone.View.extend({
 		$(".dynamic_display").empty()
 
 		var id = $("#searchQuery").attr("review_id")
+		console.log(id)
+		console.log($("#searchQuery").val())
 		var jqhr = window.make_request($("#searchQuery").val())
 		jqhr.done(function(data){
 			if (data.error == false){
