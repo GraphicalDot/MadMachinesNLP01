@@ -13,28 +13,40 @@ from sklearn.linear_model import SGDClassifier
 from sklearn.pipeline import Pipeline
 from CustomSentenceTokenizer import SentenceTokenizer 
 from  trained_punkt_sentences_tokenizer import 	SentenceTokenization
-path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+directory = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+path = os.path.join(directory + "/trainers")
 
 
-class Classifier:
-	sent_tokenizer = nltk.data.load('tokenizers/punkt/english.pickle')
-	def __init__(self, text):
+class ForTestingClassifier:
+	def __init__(self, text, tokenizer=None):
 		self.text = text
-		self.sent_tokenizer = nltk.data.load('tokenizers/punkt/english.pickle')
-
+		self.tokenizer = tokenizer
+		if not self.tokenizer:
+			self.sent_tokenizer = nltk.data.load('tokenizers/punkt/english.pickle')
 		
-		self.ambience_data = self.sent_tokenizer.tokenize(open("%s/trainers/ambience.txt"%path).read().decode("utf=8"), realign_boundaries=True)
-		self.services_data = self.sent_tokenizer.tokenize(open("%s/trainers/service.txt"%path).read().decode("utf=8"), realign_boundaries=True)
-		self.costing_data = self.sent_tokenizer.tokenize(open("%s/trainers/cost.txt"%path).read().decode("utf=8"), realign_boundaries=True)
-		self.food_data = self.sent_tokenizer.tokenize(open("%s/trainers/food.txt"%path).read().decode("utf=8"), realign_boundaries=True)
-		self.null_data = self.sent_tokenizer.tokenize(open("%s/trainers/null.txt"%path).read().decode("utf=8"), realign_boundaries=True)
+			self.ambience_data = self.sent_tokenizer.tokenize(open("{0}/valid_{1}.txt".format(path, "ambience"), "rb").read(), realign_boundaries=True)
+			self.services_data = self.sent_tokenizer.tokenize(open("{0}/valid_{1}.txt".format(path, "service"), "rb").read(), realign_boundaries=True)
+			self.costing_data = self.sent_tokenizer.tokenize(open("{0}/valid_{1}.txt".format(path, "cost"), "rb").read(), realign_boundaries=True)
+			self.food_data = self.sent_tokenizer.tokenize(open("{0}/valid_{1}.txt".format(path, "food"), "rb").read(), realign_boundaries=True)
+			self.null_data = self.sent_tokenizer.tokenize(open("{0}/valid_{1}.txt".format(path, "null"), "rb").read(), realign_boundaries=True)
+			self.overall_data = self.sent_tokenizer.tokenize(open("{0}/valid_{1}.txt".format(path, "overall"), "rb").read(), realign_boundaries=True)
+		if self.tokenizer == "text-sentence":
+			self.sent_tokenizer = SentenceTokenization()
+			self.ambience_data = self.sent_tokenizer.tokenize(open("{0}/valid_{1}.txt".format(path, "ambience"), "rb").read())
+			self.services_data = self.sent_tokenizer.tokenize(open("{0}/valid_{1}.txt".format(path, "service"), "rb").read())
+			self.costing_data = self.sent_tokenizer.tokenize(open("{0}/valid_{1}.txt".format(path, "cost"), "rb").read())
+			self.food_data = self.sent_tokenizer.tokenize(open("{0}/valid_{1}.txt".format(path, "food"), "rb").read())
+			self.null_data = self.sent_tokenizer.tokenize(open("{0}/valid_{1}.txt".format(path, "null"), "rb").read())
+			self.overall_data = self.sent_tokenizer.tokenize(open("{0}/valid_{1}.txt".format(path, "overall"), "rb").read())
+		
 		#self.ambience_documents = [(nltk.wordpunct_tokenize(sent), "ambience") for sent in self.ambience_data if sent != ""]
 		self.ambience_documents = [(sent, "ambience") for sent in self.ambience_data if sent != ""]
 		self.services_documents = [(sent, "service") for sent in self.services_data if sent != ""]
 		self.costing_documents = [(sent, "cost") for sent in self.costing_data if sent != ""]
 		self.food_documents = [(sent, "food") for sent in self.food_data if sent != ""]
 		self.null_documents = [(sent, "null") for sent in self.null_data if sent != ""]
-		self.whole_set = self.ambience_documents + self.services_documents + self.costing_documents + self.food_documents + self.null_documents
+		self.overall_documents = [(sent, "overall") for sent in self.overall_data if sent != ""]
+		self.whole_set = self.ambience_documents + self.services_documents + self.costing_documents + self.food_documents + self.null_documents + self.overall_documents
 		random.shuffle(self.whole_set)
 
 	def document_features(document):
@@ -129,7 +141,6 @@ class Classifier:
 
 	def with_svm(self):
 
-		final_data = list()
 		classifier = self.svm_classifier()
 		#new_data = self.sent_tokenizer.tokenize(self.text, realign_boundaries= True)
 		
@@ -138,15 +149,12 @@ class Classifier:
 		#new_data = [" ".join(word_tokenized_sentence) for word_tokenized_sentence in tokenizer.segment_text(self.text)]
 
 		#With the new class made from text-sentence library
-		sentence_tokenizer = SentenceTokenization()
-		new_data = sentence_tokenizer.tokenize(self.text)
+	
+		tokenizer = SentenceTokenization()
+		new_data = tokenizer.tokenize(self.text)
+		print new_data		
+		predicted = classifier.predict(new_data)
 
-		#Still the new data cannot classify sentences like ( ).
-		#So that only be classified as punk tokenizer with realliagn boundaries= True
-		for element in new_data:
-			final_data.extend(self.sent_tokenizer.tokenize(element.strip(), realign_boundaries=True))
-		predicted = classifier.predict(final_data)
-
-		return zip(final_data, predicted)
+		return zip(new_data, predicted)
 
 

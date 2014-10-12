@@ -152,14 +152,34 @@
 			<tr>
 				
 				<td colspan="11">	
-					<textarea type="text" id="searchQuery" class="input-xlarge span10" rows="3" required="required" placeholder="enter the review to be processed" ></textarea>
+					<textarea type="text" id="searchQuery" class="input-xlarge span10" rows="6" required="required" placeholder="enter the review to be processed" style="width: 100%; margin-top: .5%; margin-bottom: .5%; margin-right: 0; margin-left: 0" ></textarea>
 				</td>
 				
 				<td colspan="1">
-					<button type="submit" id="submitQuery" class="btn btn-primary">Submit</button>
+					<form class="form-horizontal">
+						<div class="control-group" style="width: 100%; margin-top: .5%; margin-bottom: .5%; margin-right: 0; margin-left: 0">
+							<div class="controls">
+								<button type="submit" id="submitMaxEnt" class="btn btn-primary" style="text-align: center; width: 100%; margin-top: .5%; margin-bottom: 0; margin-right: 0">MaxEnt Model</button>
+							</div>
+						</div>
+						<div class="control-group" style="width: 100%; margin-top: .5%; margin-bottom: .5%; margin-right: 0">
+							<div class="controls">
+								<button type="submit" id="submitMultiNB" class="btn btn-primary" style="width: 100%; margin-top: .5%; margin-bottom: 0; margin-right: 0">MultiNB Model</button>
+							</div>
+						</div>
+						<div class="control-group" style="width: 100%; margin-top: .5%; margin-bottom: .5%; margin-right: 0">
+							<div class="controls">
+								<button type="submit" id="submitLogisticRegression" class="btn btn-primary" style="width: 100%; margin-top: .5%; margin-bottom: 0; margin-right: 0">Logistic Regression Model</button>
+							</div>
+						</div>
+						<div class="control-group" style="width: 100%; margin-top: .5%; margin-bottom: .5%; margin-right: 0">
+							<div class="controls">
+								<button type="submit" id="submitSVM" class="btn btn-primary" style="width: 100%; margin-top: .5%; margin-bottom: 0; margin-right: 0">SVM Model</button>
+							</div>
+						</div>
+					</form>
+					
 				</td>
-			</tr>
-			<tr >
 			</tr>
 		</tbody>
     </script>

@@ -19,7 +19,10 @@ App.RootView = Backbone.View.extend({
 	},
 	
 	events: {
-		"click #submitQuery": "submitQuery",
+		"click #submitLogisticRegression": "submitLogisticRegression",
+		"click #submitSVM": "submitSVM",
+		"click #submitMaxEnt": "submitMaxEnt",
+		"click #submitMultiNB": "submitMultiNB",
 		"click #eateriesList": "changeEateryList",
 		"click #loadReview": "loadReview",
 		"click #updateReview": "updateReview",
@@ -166,7 +169,7 @@ App.RootView = Backbone.View.extend({
 		});
 	},
 
-	submitQuery: function(event){
+	submitSVM: function(event){
 		event.preventDefault();
 		$(".dynamic_display").empty()
 
@@ -193,6 +196,28 @@ App.RootView = Backbone.View.extend({
 			})
 		
 	},
+
+	submitMaxEnt: function(event){
+		event.preventDefault();
+		$(".dynamic_display").empty()
+		bootbox.alert("This has not been implemented yet, When implemented it will use Maximum entropy algorithm to classify text")
+	},		
+			
+	submitMultiNB: function(event){
+		event.preventDefault();
+		$(".dynamic_display").empty()
+		bootbox.alert("This has not been implemented yet, When implemented it will use Multinomial naives bayes algorithm to classify text")
+	},
+	
+	submitLogisticRegression: function(event){
+		event.preventDefault();
+		$(".dynamic_display").empty()
+		bootbox.alert("This has not been implemented yet, When implemented it will use Logistic Regression algorithm to classify text")
+	},
+
+
+
+
 });
 
 App.SeeWordCloudDateSelectionView = Backbone.View.extend({

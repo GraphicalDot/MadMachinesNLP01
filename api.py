@@ -15,7 +15,7 @@ import shutil
 import json
 import os
 from bson.json_util import dumps
-from Text_Processing import ProcessingWithBlob, PosTags, Classifier, nltk_ngrams
+from Text_Processing import ProcessingWithBlob, PosTags, Classifier, nltk_ngrams, ForTestingClassifier
 import time
 from datetime import timedelta
 import pymongo
@@ -173,7 +173,9 @@ class ProcessText(restful.Resource):
 				})
 
 
-		text_classfication = Classifier(to_unicode_or_bust(text))	
+		#text_classfication = Classifier(to_unicode_or_bust(text))	
+		#text_classfication = ForTestingClassifier(to_unicode_or_bust(text), tokenizer="text-sentence")	
+		text_classfication = ForTestingClassifier(to_unicode_or_bust(text))	
 		noun_phrase = list()
 		result = list() 
 
@@ -188,7 +190,6 @@ class ProcessText(restful.Resource):
 			instance = ProcessingWithBlob(chunk[0])
 			element["sentence"] = chunk[0]
 			element["polarity"] = {"name": polarity('%.1f'%instance.sentiment_polarity()), "value": '%.1f'%instance.sentiment_polarity()}
-			print {"name": polarity('%.1f'%instance.sentiment_polarity()), "value": '%.1f'%instance.sentiment_polarity()}, "\n\n"
 			element["noun_phrases"] = list(instance.noun_phrase())
 			element["tag"] = chunk[1]
 			result.append(element)
