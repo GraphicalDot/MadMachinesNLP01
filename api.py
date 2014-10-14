@@ -42,6 +42,7 @@ def to_unicode_or_bust(obj, encoding='utf-8'):
 ##ProcessText
 process_text_parser = reqparse.RequestParser()
 process_text_parser.add_argument('text', type=to_unicode_or_bust, required=True, location="form")
+process_text_parser.add_argument('algorithm', type=str, required=True, location="form")
 
 ##UpdateModel
 update_model_parser = reqparse.RequestParser()
@@ -162,8 +163,18 @@ def to_unicode_or_bust(obj, encoding='utf-8'):
 class ProcessText(restful.Resource):
 	@cors
 	def post(self):
+		"""
+		This api end point returns the text after processing or classfying with algorithm syupplied in the arguments.
+		The algorithms which is now implemented are 
+			HMM models
+			Maxent Models
+			Multinomial Naive bayes 
+			Logistic regression models
+			Support vector machines models
+		"""
 		args = process_text_parser.parse_args()
 		text = args["text"]
+		algorithm = args["algorithm"]
 		if not bool(text):
 			return jsonify({
 				"error": True,
@@ -172,20 +183,29 @@ class ProcessText(restful.Resource):
 				"messege": "Text field cannot be left empty"
 				})
 
+		if not bool(algorithm):
+			return jsonify({
+				"error": True,
+				"success": False,
+				"error_code": 302,
+				"messege": "Algorithm field cannot be left empty"
+				})
 
-		#text_classfication = Classifier(to_unicode_or_bust(text))	
-		#text_classfication = ForTestingClassifier(to_unicode_or_bust(text), tokenizer="text-sentence")	
+
 		text_classfication = ForTestingClassifier(to_unicode_or_bust(text))	
 		noun_phrase = list()
 		result = list() 
 
 		polarity=lambda x: "positive" if float(x)>= 0 else "negative"
 
+		classified_sentences = eval("{0}.with_{1}()".format("text_classfication", algorithm.lower()))
 
 		##with svm returns a list in the following form
 		##[(sentence, tag), (sentence, tag), ................]
-		for chunk in text_classfication.with_svm():
-			print chunk
+		#for chunk in text_classfication.with_svm():
+		
+		
+		for chunk in classified_sentences:
 			element = dict()
 			instance = ProcessingWithBlob(chunk[0])
 			element["sentence"] = chunk[0]

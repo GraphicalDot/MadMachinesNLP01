@@ -1,6 +1,6 @@
 
 $(document).ready(function(){
-window.make_request = function make_request(data){ url =  window.process_text_url ; return $.post(url, {"text": data}) }
+window.make_request = function make_request(data, algorithm){ url =  window.process_text_url ; return $.post(url, {"text": data, "algorithm": algorithm}) }
 App.RootView = Backbone.View.extend({
 	//tagName: "fieldset",
 	//className: "well-lg plan",
@@ -19,6 +19,7 @@ App.RootView = Backbone.View.extend({
 	},
 	
 	events: {
+		"click #submitHiddenMarkov": "submitHiddenMarkov",
 		"click #submitLogisticRegression": "submitLogisticRegression",
 		"click #submitSVM": "submitSVM",
 		"click #submitMaxEnt": "submitMaxEnt",
@@ -30,6 +31,13 @@ App.RootView = Backbone.View.extend({
 		"click #seeWordCloud": "seeWordCloud",
 		"click #citiesList": "loadEateriesForCity",
 		},
+
+	submitHiddenMarkov: function(event){
+		event.preventDefault();
+		bootbox.alert("This has not been implemented yet, When implemented it will use Hidden markov models  to classify text")
+
+
+	},
 
 
 	seeWordCloud: function(event){
@@ -174,9 +182,9 @@ App.RootView = Backbone.View.extend({
 		$(".dynamic_display").empty()
 
 		var id = $("#searchQuery").attr("review_id")
-		console.log(id)
-		console.log($("#searchQuery").val())
-		var jqhr = window.make_request($("#searchQuery").val())
+		
+		var jqhr = window.make_request($("#searchQuery").val(), "SVM")
+		
 		jqhr.done(function(data){
 			if (data.error == false){
 				var subView = new App.RootTopView({model: {"sentiment": data.overall_sentiment, "phrases": data.noun_phrase}})
@@ -206,7 +214,29 @@ App.RootView = Backbone.View.extend({
 	submitMultiNB: function(event){
 		event.preventDefault();
 		$(".dynamic_display").empty()
-		bootbox.alert("This has not been implemented yet, When implemented it will use Multinomial naives bayes algorithm to classify text")
+		
+		var id = $("#searchQuery").attr("review_id")
+		
+		var jqhr = window.make_request($("#searchQuery").val(), "MultiNB")
+		
+		jqhr.done(function(data){
+			if (data.error == false){
+				var subView = new App.RootTopView({model: {"sentiment": data.overall_sentiment, "phrases": data.noun_phrase}})
+				$(".dynamic_display").append(subView.render().el);	
+				$(".dynamic_display").append("<fieldset class='well'><div class='span5'><p style='text-align: center'><b>Sentence</b></p></div><div class='span1'><p style='text-align: center'><b>Tag</b></p></div><div class='span1'><p style='text-align: center'><b>Polarity</b></p></div><div class='span1'><p style='text-align: center'><b>Customer</b></p></div><div class='span1'><p style='text-align: center'><b>Error</b></p></div><div class='span1'><p style='text-align: center'><b>Ngrams</b></p></div><div class='span1'><p class='pull-left' style='text-align: center'><b>Noun Pharses</b></p></div></fieldset>")
+				$.each(data.result, function(iter, text){
+					var subView = new App.RootRowView({model: {"text": text, "review_id": id}});
+					$(".dynamic_display").append(subView.render().el);	
+				})
+						}
+			else{
+				bootbox.alert(data.messege)	
+			}
+			})
+		jqhr.fail(function(){
+				bootbox.alert("Either the api or internet connection is not working, Try again later")
+			})
+		
 	},
 	
 	submitLogisticRegression: function(event){
