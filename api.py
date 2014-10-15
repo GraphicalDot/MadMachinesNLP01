@@ -15,7 +15,7 @@ import shutil
 import json
 import os
 from bson.json_util import dumps
-from Text_Processing import ProcessingWithBlob, PosTags, Classifier, nltk_ngrams, ForTestingClassifier
+from Text_Processing import ProcessingWithBlob, PosTags, Classifier, nltk_ngrams, ForTestingClassifier, get_all_algorithms_result
 import time
 from datetime import timedelta
 import pymongo
@@ -35,6 +35,14 @@ def to_unicode_or_bust(obj, encoding='utf-8'):
 		if not isinstance(obj, unicode):
 			obj = unicode(obj, encoding)
 	return obj
+
+
+
+
+##ProcessText
+different_algorithms_parser = reqparse.RequestParser()
+different_algorithms_parser.add_argument('text', type=to_unicode_or_bust, required=True, location="form")
+different_algorithms_parser.add_argument('sentences_with_classification', type=to_unicode_or_bust, required=True, location="form", action="append")
 
 
 
@@ -158,6 +166,15 @@ def to_unicode_or_bust(obj, encoding='utf-8'):
 			obj = unicode(obj, encoding)
 	return obj
 
+
+class AlgorithmsComparison(restful.Resource):
+	@cors
+	def post(self):
+		args = process_text_parser.parse_args()
+		sentences_with_classification = args["sentences_with_classification"]
+		
+		get_all_algorithms_result(text, sentences_with_classification)
+		pass
 
 
 class ProcessText(restful.Resource):

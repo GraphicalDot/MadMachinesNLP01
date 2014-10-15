@@ -6,6 +6,8 @@ import numpy
 import random
 import sys
 import os
+from optparse import OptionParser
+import inspect
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.feature_extraction.text import TfidfTransformer
 from sklearn.naive_bayes import MultinomialNB
@@ -26,13 +28,46 @@ from sklearn.neighbors import NearestCentroid
 
 from Algortihms import Sklearn_RandomForest
 
+
+
 directory = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 path = os.path.join(directory + "/trainers")
 
+def get_all_algorithms_result(text, sentences_with_classification):
+	"""
+	This method will compare and delivers the accuracy of every algorithm computed in every class method which
+	starts with with_
+	To add any new algorithm just add that algortihm name starting with with__
+	Args:
+		sentences_with_classification: a list of dictionaries with sentence and its classfication
+	"""
+
+	print "entered into get all"
+	results = list()
+	
+	
+	tokenizer = SentenceTokenization()
+	new_data = tokenizer.tokenize(text)
+	
+	classifier_cls = ForTestingClassifier(text)
+	
+	cls_methods_for_algortihms = [method[0] for method in inspect.getmembers(classifier_cls, predicate=inspect.ismethod) 
+										if method[0].startswith("with")]
+	
+	target = [element[1] for element in sentences_with_classification]
+
+
+	for cls_method in cls_methods_for_algortihms:
+		classified_sentences = eval("{0}.{1}()".format("classifier_cls", cls_method))
+		predicted = [element[1] for element in classified_sentences]
+
+		correct_classification = float(len([element for element in zip(predicted, target) if element[0] == element[1]]))
+
+		print "{0} gives -- {1}".format(cls_method.replace("with_", ""), correct_classification/len(predicted))
 
 class ForTestingClassifier:
 	def __init__(self, text, tokenizer=None):
-		self.text = text
+		self.text = text #Text which needs classification
 		self.tokenizer = tokenizer
 		if not self.tokenizer:
 			self.sent_tokenizer = nltk.data.load('tokenizers/punkt/english.pickle')
@@ -61,6 +96,9 @@ class ForTestingClassifier:
 		self.overall_documents = [(sent, "overall") for sent in self.overall_data if sent != ""]
 		self.whole_set = self.ambience_documents + self.services_documents + self.costing_documents + self.food_documents + self.null_documents + self.overall_documents
 		random.shuffle(self.whole_set)
+		
+
+
 
 	def document_features(document):
 		document_words = set(document) [3]
@@ -255,4 +293,42 @@ class ForTestingClassifier:
 		return classifier.predict_with_chi_test(new_data)
 
 
-
+if __name__ == "__main__":
+	text = """Oooooffffssssss....again a big name and a flop show..never expected that.. With a so hyped name nothing great about it..Went yesterday to try the restaurant.. But at the first glance while going up the stairs it did not give a good feel..once we entered.. it was a huge place with some low sitting and very dim light..so we decided not to sit here but in there other section...As the restaurant was not full...it took the waiter almost 20 min before we called him and asked if possible plz take the order...it was my mistake that I asked the server what is this" molecular gastronomy drinks"..it took them almost 10 min asking every person from bartender to the manager to know what are those THINGS in there so called menu and even at last they were not able to explain what's it... instead I got an answer"its just written in the menu but does not mean anything"i was quite surprised.. But thought let it go...Then I asked the server about some continental dishes in prawns but they said its not available but he can ask the chef to prepare..but my bad luck still followed and I got Chinese dish Instead of a continental one..and when i told I can't have Chinese dish it was replied its a conti dish with bell pepper and some spices.. I forced to call the chef who was generous enough to change the dish for us..Even we asked for a chicken veloute soup which was again not available.. I mean no prawns and no soup how they are running the damm show..And then we ordered beer which was chilled ..virgin mojito which was flat and Peri Peri chicken PIZZA WHICH WAS OKOK...Just a suggestion training's should be given to the staff..they are good at service and are polite but there knowledge lacks big time .."""
+	
+	
+	sentences_with_classification =	[(u'oooooffffssssss ....', "overall"), 
+			(u'again a big name and a flop show ..', "overall"),
+			(u'never expected that ..', "null"),
+			(u'with a so hyped name nothing great about it ..', "overall"),
+			(u'went yesterday to try the restaurant ..', "null"),
+			(u'but at the first glance while going up the stairs it did not give a good feel ..', "ambience"), 
+			(u'once we entered ..', "null"),
+			(u'it was a huge place with some low sitting and very dim light ..', "ambience"), 
+			(u'so we decided not to sit here', "null"),
+			('but in there other section ...', "null" ),
+			(u'as the restaurant was not full ...', "overall"),
+			(u'it took the waiter almost 20 min before we called him and asked if possible plz take the order ...', "service"),
+			(u'it was my mistake that i asked the server what is this " molecular gastronomy drinks " ..', "service"),
+			(u"it took them almost 10 min asking every person from bartender to the manager to know what are those things in there so called menu and even at last they were not able to explain what's it ...", "service"), 
+			(u'instead i got an answer " its just written in the menu', "service"),
+			('but does not mean anything " i was quite surprised ..', "null"),
+			(u'but thought let it go ...', "null"),
+			(u'then i asked the server about some continental dishes in prawns',"service" ), 
+			('but they said its not available', "overall"),
+			('but he can ask the chef to prepare ..', "service"), 
+			(u'but my bad luck still followed and i got Chinese dish Instead of a continental one ..', "food" ), 
+			(u"and when i told i can't have Chinese dish it was replied its a conti dish with bell pepper and some spices ..", "food"),
+			(u'i forced to call the chef who was generous enough to change the dish for us ..', "service"),
+			(u'even we asked for a chicken veloute soup which was again not available ..', "service"),
+			(u'i mean no prawns and no soup how they are running the damm show ..', "food"),
+			(u'and then we ordered beer which was chilled ..', "food"),
+			(u'virgin mojito which was flat and Peri Peri chicken pizza which was okok ...', "food"), 
+			(u"just a suggestion training's should be given to the staff ..", "service"),
+			(u'they are good at service and are polite', "service"),
+			('but there knowledge lacks big time ..' "service"),]
+	
+	
+	
+	
+	get_all_algorithms_result(text, sentences_with_classification)
