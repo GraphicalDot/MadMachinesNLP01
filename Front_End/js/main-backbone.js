@@ -19,6 +19,12 @@ App.RootView = Backbone.View.extend({
 	},
 	
 	events: {
+		"click #submitRidgeRegression": "submitRidgeRegression",
+		"click #submitPerceptron": "submitPerceptron",
+		"click #submitPassiveAgressive": "submitPassiveAgressive",
+		"click #submitRandomForests": "submitRandomForests",
+		
+		
 		"click #submitHiddenMarkov": "submitHiddenMarkov",
 		"click #submitLogisticRegression": "submitLogisticRegression",
 		"click #submitSVM": "submitSVM",
@@ -32,11 +38,89 @@ App.RootView = Backbone.View.extend({
 		"click #citiesList": "loadEateriesForCity",
 		},
 
+	processText: function(algorithm){
+		$(".dynamic_display").empty()
+
+		if ($("#searchQuery").val() == ""){
+			bootbox.alert("Arghhhh... Dont you get it, This field can not be left empty")
+			return
+		}
+
+
+		var id = $("#searchQuery").attr("review_id")
+		
+		var jqhr = window.make_request($("#searchQuery").val(), algorithm)
+		
+		jqhr.done(function(data){
+			if (data.error == false){
+				var subView = new App.RootTopView({model: {"sentiment": data.overall_sentiment, "phrases": data.noun_phrase}})
+				$(".dynamic_display").append(subView.render().el);	
+				$(".dynamic_display").append("<fieldset class='well'><div class='span5'><p style='text-align: center'><b>Sentence</b></p></div><div class='span1'><p style='text-align: center'><b>Tag</b></p></div><div class='span1'><p style='text-align: center'><b>Polarity</b></p></div><div class='span1'><p style='text-align: center'><b>Customer</b></p></div><div class='span1'><p style='text-align: center'><b>Error</b></p></div><div class='span1'><p style='text-align: center'><b>Ngrams</b></p></div><div class='span1'><p class='pull-left' style='text-align: center'><b>Noun Pharses</b></p></div></fieldset>")
+				$.each(data.result, function(iter, text){
+					var subView = new App.RootRowView({model: {"text": text, "review_id": id}});
+					$(".dynamic_display").append(subView.render().el);	
+				})
+						}
+			else{
+				bootbox.alert(data.messege)	
+			}
+			})
+		jqhr.fail(function(){
+				bootbox.alert("Either the api or internet connection is not working, Try again later")
+			})
+		
+	
+	}, 
+
+
+	submitRandomForests: function(event){
+		event.preventDefault();
+		this.processText("randomforests")	
+	},
+	
+	submitRidgeRegression: function(event){
+		event.preventDefault();
+		this.processText("ridgegression")	
+	},
+		
+	submitPerceptron: function(event){
+		event.preventDefault();
+		this.processText("perceptron")	
+	},
+
+
+	submitPassiveAgressive: function(event){
+		event.preventDefault();
+		this.processText("passiveagressive")	
+	},
+	
+	
 	submitHiddenMarkov: function(event){
 		event.preventDefault();
 		bootbox.alert("This has not been implemented yet, When implemented it will use Hidden markov models  to classify text")
 
 
+	},
+
+	submitSVM: function(event){
+		event.preventDefault();
+		this.processText("SVM")	
+	},
+
+	submitMaxEnt: function(event){
+		event.preventDefault();
+		$(".dynamic_display").empty()
+		bootbox.alert("This has not been implemented yet, When implemented it will use Maximum entropy algorithm to classify text")
+	},		
+			
+	submitMultiNB: function(event){
+		event.preventDefault();
+		this.processText("MultiNB")	
+	},
+	
+	submitLogisticRegression: function(event){
+		event.preventDefault();
+		this.processText("LogisticRegression")	
 	},
 
 
@@ -177,73 +261,6 @@ App.RootView = Backbone.View.extend({
 		});
 	},
 
-	submitSVM: function(event){
-		event.preventDefault();
-		$(".dynamic_display").empty()
-
-		var id = $("#searchQuery").attr("review_id")
-		
-		var jqhr = window.make_request($("#searchQuery").val(), "SVM")
-		
-		jqhr.done(function(data){
-			if (data.error == false){
-				var subView = new App.RootTopView({model: {"sentiment": data.overall_sentiment, "phrases": data.noun_phrase}})
-				$(".dynamic_display").append(subView.render().el);	
-				$(".dynamic_display").append("<fieldset class='well'><div class='span5'><p style='text-align: center'><b>Sentence</b></p></div><div class='span1'><p style='text-align: center'><b>Tag</b></p></div><div class='span1'><p style='text-align: center'><b>Polarity</b></p></div><div class='span1'><p style='text-align: center'><b>Customer</b></p></div><div class='span1'><p style='text-align: center'><b>Error</b></p></div><div class='span1'><p style='text-align: center'><b>Ngrams</b></p></div><div class='span1'><p class='pull-left' style='text-align: center'><b>Noun Pharses</b></p></div></fieldset>")
-				$.each(data.result, function(iter, text){
-					var subView = new App.RootRowView({model: {"text": text, "review_id": id}});
-					$(".dynamic_display").append(subView.render().el);	
-				})
-						}
-			else{
-				bootbox.alert(data.messege)	
-			}
-			})
-		jqhr.fail(function(){
-				bootbox.alert("Either the api or internet connection is not working, Try again later")
-			})
-		
-	},
-
-	submitMaxEnt: function(event){
-		event.preventDefault();
-		$(".dynamic_display").empty()
-		bootbox.alert("This has not been implemented yet, When implemented it will use Maximum entropy algorithm to classify text")
-	},		
-			
-	submitMultiNB: function(event){
-		event.preventDefault();
-		$(".dynamic_display").empty()
-		
-		var id = $("#searchQuery").attr("review_id")
-		
-		var jqhr = window.make_request($("#searchQuery").val(), "MultiNB")
-		
-		jqhr.done(function(data){
-			if (data.error == false){
-				var subView = new App.RootTopView({model: {"sentiment": data.overall_sentiment, "phrases": data.noun_phrase}})
-				$(".dynamic_display").append(subView.render().el);	
-				$(".dynamic_display").append("<fieldset class='well'><div class='span5'><p style='text-align: center'><b>Sentence</b></p></div><div class='span1'><p style='text-align: center'><b>Tag</b></p></div><div class='span1'><p style='text-align: center'><b>Polarity</b></p></div><div class='span1'><p style='text-align: center'><b>Customer</b></p></div><div class='span1'><p style='text-align: center'><b>Error</b></p></div><div class='span1'><p style='text-align: center'><b>Ngrams</b></p></div><div class='span1'><p class='pull-left' style='text-align: center'><b>Noun Pharses</b></p></div></fieldset>")
-				$.each(data.result, function(iter, text){
-					var subView = new App.RootRowView({model: {"text": text, "review_id": id}});
-					$(".dynamic_display").append(subView.render().el);	
-				})
-						}
-			else{
-				bootbox.alert(data.messege)	
-			}
-			})
-		jqhr.fail(function(){
-				bootbox.alert("Either the api or internet connection is not working, Try again later")
-			})
-		
-	},
-	
-	submitLogisticRegression: function(event){
-		event.preventDefault();
-		$(".dynamic_display").empty()
-		bootbox.alert("This has not been implemented yet, When implemented it will use Logistic Regression algorithm to classify text")
-	},
 
 
 

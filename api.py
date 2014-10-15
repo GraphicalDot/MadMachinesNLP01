@@ -175,6 +175,7 @@ class ProcessText(restful.Resource):
 		args = process_text_parser.parse_args()
 		text = args["text"]
 		algorithm = args["algorithm"]
+
 		if not bool(text):
 			return jsonify({
 				"error": True,

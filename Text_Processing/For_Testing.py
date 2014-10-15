@@ -13,6 +13,19 @@ from sklearn.linear_model import SGDClassifier
 from sklearn.pipeline import Pipeline
 from CustomSentenceTokenizer import SentenceTokenizer 
 from  trained_punkt_sentences_tokenizer import 	SentenceTokenization
+
+from sklearn.feature_selection import SelectKBest, chi2
+from sklearn.linear_model import RidgeClassifier
+from sklearn.svm import LinearSVC
+from sklearn.linear_model import SGDClassifier
+from sklearn.linear_model import Perceptron
+from sklearn.linear_model import PassiveAggressiveClassifier
+from sklearn.naive_bayes import BernoulliNB, MultinomialNB
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.neighbors import NearestCentroid
+
+from Algortihms import Sklearn_RandomForest
+
 directory = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 path = os.path.join(directory + "/trainers")
 
@@ -92,7 +105,6 @@ class ForTestingClassifier:
 		return zip(new_data, predicted)
 
 
-
 	def svm_classifier(self):
 		classifier = Pipeline([('vect', CountVectorizer()), ('tfidf', TfidfTransformer()), 
 			('clf', SGDClassifier(loss='hinge', penalty='l2', alpha=1e-3, n_iter=5)),])
@@ -119,5 +131,128 @@ class ForTestingClassifier:
 		predicted = classifier.predict(new_data)
 
 		return zip(new_data, predicted)
+
+
+	def logistic_regression_classifier(self):
+		classifier = Pipeline([('vect', CountVectorizer()), ('tfidf', TfidfTransformer()), 
+			('clf', SGDClassifier(loss='log', penalty='l2', alpha=1e-3, n_iter=5)),])
+
+		data = numpy.array([element[0] for element in self.whole_set])
+		target = numpy.array([element[1] for element in self.whole_set])
+		
+		classifier.fit(data, target)
+		return classifier
+
+	def with_logisticregression(self):
+
+		classifier = self.logistic_regression_classifier()
+		#new_data = self.sent_tokenizer.tokenize(self.text, realign_boundaries= True)
+		
+		##With the new class created in CustomSentenceTokenizer , the new sentence tokenizer
+		#tokenizer = SentenceTokenizer()
+		#new_data = [" ".join(word_tokenized_sentence) for word_tokenized_sentence in tokenizer.segment_text(self.text)]
+
+		#With the new class made from text-sentence library
+	
+		tokenizer = SentenceTokenization()
+		new_data = tokenizer.tokenize(self.text)
+		predicted = classifier.predict(new_data)
+
+		return zip(new_data, predicted)
+
+	def perceptron_classifier(self):
+		classifier = Pipeline([('vect', CountVectorizer()), ('tfidf', TfidfTransformer()), 
+			('clf', Perceptron(n_iter=50)),])
+
+		data = numpy.array([element[0] for element in self.whole_set])
+		target = numpy.array([element[1] for element in self.whole_set])
+		
+		classifier.fit(data, target)
+		return classifier
+
+	def with_perceptron(self):
+
+		classifier = self.perceptron_classifier()
+		#new_data = self.sent_tokenizer.tokenize(self.text, realign_boundaries= True)
+		
+		##With the new class created in CustomSentenceTokenizer , the new sentence tokenizer
+		#tokenizer = SentenceTokenizer()
+		#new_data = [" ".join(word_tokenized_sentence) for word_tokenized_sentence in tokenizer.segment_text(self.text)]
+
+		#With the new class made from text-sentence library
+	
+		tokenizer = SentenceTokenization()
+		new_data = tokenizer.tokenize(self.text)
+		predicted = classifier.predict(new_data)
+
+		return zip(new_data, predicted)
+
+
+	def ridge_regression_classifier(self):
+		classifier = Pipeline([('vect', CountVectorizer()), ('tfidf', TfidfTransformer()), 
+			('clf', RidgeClassifier(tol=1e-2, solver="lsqr")),])
+
+		data = numpy.array([element[0] for element in self.whole_set])
+		target = numpy.array([element[1] for element in self.whole_set])
+		
+		classifier.fit(data, target)
+		return classifier
+
+	def with_ridgegression(self):
+
+		classifier = self.ridge_regression_classifier()
+		#new_data = self.sent_tokenizer.tokenize(self.text, realign_boundaries= True)
+		
+		##With the new class created in CustomSentenceTokenizer , the new sentence tokenizer
+		#tokenizer = SentenceTokenizer()
+		#new_data = [" ".join(word_tokenized_sentence) for word_tokenized_sentence in tokenizer.segment_text(self.text)]
+
+		#With the new class made from text-sentence library
+	
+		tokenizer = SentenceTokenization()
+		new_data = tokenizer.tokenize(self.text)
+		predicted = classifier.predict(new_data)
+
+		return zip(new_data, predicted)
+
+	def passive_agressive_classifier(self):
+		classifier = Pipeline([('vect', CountVectorizer()), ('tfidf', TfidfTransformer()), 
+			('clf', PassiveAggressiveClassifier(n_iter=50)),])
+
+		data = numpy.array([element[0] for element in self.whole_set])
+		target = numpy.array([element[1] for element in self.whole_set])
+		
+		classifier.fit(data, target)
+		return classifier
+
+	def with_passiveagressive(self):
+
+		classifier = self.passive_agressive_classifier()
+		#new_data = self.sent_tokenizer.tokenize(self.text, realign_boundaries= True)
+		
+		##With the new class created in CustomSentenceTokenizer , the new sentence tokenizer
+		#tokenizer = SentenceTokenizer()
+		#new_data = [" ".join(word_tokenized_sentence) for word_tokenized_sentence in tokenizer.segment_text(self.text)]
+
+		#With the new class made from text-sentence library
+	
+		tokenizer = SentenceTokenization()
+		new_data = tokenizer.tokenize(self.text)
+		predicted = classifier.predict(new_data)
+
+		return zip(new_data, predicted)
+
+
+	def with_randomforests(self):
+
+		data = numpy.array([element[0] for element in self.whole_set])
+		target = numpy.array([element[1] for element in self.whole_set])
+		classifier = Sklearn_RandomForest(data, target)
+		
+		tokenizer = SentenceTokenization()
+		new_data = tokenizer.tokenize(self.text)
+
+		return classifier.predict_with_chi_test(new_data)
+
 
 
