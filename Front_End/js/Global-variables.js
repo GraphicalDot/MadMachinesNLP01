@@ -20,6 +20,7 @@ $(document).ready(function(){
 	window.get_reviews_count = window.URL + "get_reviews_count";	
 	window.get_start_date_for_restaurant = window.URL + "get_start_date_for_restaurant";	
 	window.get_word_cloud = window.URL + "get_word_cloud";
+	window.compare_algorithms = window.URL + "compare_algorithms";
 
 
 });

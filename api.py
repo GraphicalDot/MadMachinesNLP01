@@ -170,10 +170,13 @@ def to_unicode_or_bust(obj, encoding='utf-8'):
 class AlgorithmsComparison(restful.Resource):
 	@cors
 	def post(self):
-		args = process_text_parser.parse_args()
+		args = different_algorithms_parser.parse_args()
+		text = args["text"]
 		sentences_with_classification = args["sentences_with_classification"]
 		
-		get_all_algorithms_result(text, sentences_with_classification)
+		#get_all_algorithms_result(text, sentences_with_classification)
+		for element in sentences_with_classification:
+			print eval(element)
 		pass
 
 
@@ -717,6 +720,7 @@ api.add_resource(GetStartDateForRestaurant, '/get_start_date_for_restaurant')
 api.add_resource(WordCloudWithDates, '/get_word_cloud_with_dates')
 api.add_resource(GetWordCloud, '/get_word_cloud')
 api.add_resource(GetValidFilesCount, '/get_valid_files_count')
+api.add_resource(AlgorithmsComparison, '/compare_algorithms')
 
 
 if __name__ == '__main__':

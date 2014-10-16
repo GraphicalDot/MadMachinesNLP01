@@ -15,8 +15,6 @@ App.RootRowView = Backbone.View.extend({
 		var self = this;
 		this.values = {"food": 1, "service": 2, "ambience": 3, "cost": 4, "null": 5, "overall": 6};
 		this.polarity_tag = {"super-positive": 1, "positive": 2, "neutral": 3, "negative": 4, "super-negative": 5};
-		console.log(this.polarity_tag[this.polarity_name()]+ "     " + self.polarity_value() + self.polarity_name());
-		console.log(this.values[this.tag()]+ "     " + self.tag());
 		this.model = options.model;
 	},
 	
@@ -177,4 +175,30 @@ App.RootRowView = Backbone.View.extend({
 			
 	},
 });
+
+
+App.AlgorithmComparisonView = Backbone.View.extend({
+	tagName: "tr",
+	template: window.template("algorithm-comparison"),
+	sentence: function(){return this.model.sentence},
+	//review_id: function(){ return this.model.review_id},
+	polarity_name: function(){return this.model.polarity.name},
+	tag: function(){return this.model.tag},
+	
+	initialize: function(options){
+		var self = this;
+		this.values = {"food": 1, "service": 2, "ambience": 3, "cost": 4, "null": 5, "overall": 6};
+		this.polarity_tag = {"super-positive": 1, "positive": 2, "neutral": 3, "negative": 4, "super-negative": 5};
+		this.model = options.model;
+	},
+	
+	render: function(){
+		this.$el.append(this.template(this));
+		this.$("#ddpFilter option[value='" + this.values[this.tag()] + "']").attr("selected", "selected")
+		this.$("#ddpFiltersentiment option[value='" + this.polarity_tag[this.polarity_name()] + "']").attr("selected", "selected")
+		return this;
+	},
+});
+
+
 });

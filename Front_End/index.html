@@ -152,11 +152,12 @@
 			<tr>
 				
 				<td colspan="11">	
-					<textarea type="text" id="searchQuery" class="input-xlarge span10" rows="14" required="required" placeholder="enter the review to be processed" style="width: 100%; margin-top: .5%; margin-bottom: .5%; margin-right: 0; margin-left: 0" ></textarea>
+					<textarea type="text" id="searchQuery" class="input-xlarge span10" rows="6" required="required" placeholder="enter the review to be processed" style="width: 100%; margin-top: .5%; margin-bottom: .5%; margin-right: 0; margin-left: 0" ></textarea>
 				</td>
 				
 				<td colspan="1">
 					<form class="form-horizontal">
+						<!--
 						<div class="control-group" style="width: 100%; margin-top: .5%; margin-bottom: .5%; margin-right: 0; margin-left: 0">
 							<div class="controls">
 								<button type="submit" id="submitHiddenMarkov" class="btn btn-primary" style="text-align: center; width: 100%; margin-top: .5%; margin-bottom: 0; margin-right: 0">HMM Model</button>
@@ -177,11 +178,14 @@
 								<button type="submit" id="submitLogisticRegression" class="btn btn-primary" style="width: 100%; margin-top: .5%; margin-bottom: 0; margin-right: 0">Logistic Regression Model</button>
 							</div>
 						</div>
+						-->
 						<div class="control-group" style="width: 100%; margin-top: .5%; margin-bottom: .5%; margin-right: 0">
 							<div class="controls">
 								<button type="submit" id="submitSVM" class="btn btn-primary" style="width: 100%; margin-top: .5%; margin-bottom: 0; margin-right: 0">SVM Model</button>
 							</div>
 						</div>
+
+						<!--
 						<div class="control-group" style="width: 100%; margin-top: .5%; margin-bottom: .5%; margin-right: 0">
 							<div class="controls">
 								<button type="submit" id="submitRidgeRegression" class="btn btn-primary" style="width: 100%; margin-top: .5%; margin-bottom: 0; margin-right: 0">Ridge Regression</button>
@@ -197,9 +201,17 @@
 								<button type="submit" id="submitPassiveAgressive" class="btn btn-primary" style="width: 100%; margin-top: .5%; margin-bottom: 0; margin-right: 0">Passive Agressive</button>
 							</div>
 						</div>
+
+						-->
 						<div class="control-group" style="width: 100%; margin-top: .5%; margin-bottom: .5%; margin-right: 0">
 							<div class="controls">
 								<button type="submit" id="submitRandomForests" class="btn btn-primary" style="width: 100%; margin-top: .5%; margin-bottom: 0; margin-right: 0">Random Forests</button>
+							</div>
+						</div>
+						
+						<div class="control-group" style="width: 100%; margin-top: .5%; margin-bottom: .5%; margin-right: 0">
+							<div class="controls">
+								<button type="submit" id="submitCompareAlgorithms" class="btn btn-primary" style="width: 100%; margin-top: .5%; margin-bottom: 0; margin-right: 0">Compare Algorithms</button>
 							</div>
 						</div>
 					</form>
@@ -264,6 +276,8 @@
 		<a href="#" rel="{{size}}">{{nounPhrase}}</a>
 
 	</script>
+
+
 	<script type="text/x-mustache-template" id="root-row-template">
 		<div class="span4">
 			<p style="text-align: center">{{sentence}}</p>
@@ -334,6 +348,58 @@
 		<div class="span2">
 			<p style="text-align: center">{{noun_phrases}}</p>
 		</div>
+			
+</script>
+	<script type="text/x-mustache-template" id="algorithm-comparison-parent-submit-results-template">
+			<td colspan="4">
+			<button type="submit" id="submitCompareAlgorithmsResults" class="btn btn-primary" style="width: 100%; margin-top: .5%; margin-bottom: 0; margin-right: 0">Compare Algorithms</button>
+		</td>
+		<td>
+		</td>
+		<td>
+		</td>
+	</script>
+	
+	<script type="text/x-mustache-template" id="algorithm-comparison-after-post-parent-template">
+		<tbody>
+	</tbody>
+	
+	</script>
+	
+	
+	<script type="text/x-mustache-template" id="algorithm-comparison-after-post-child-template">
+		<td colspan="6">{{algorithm_name}}</td>
+		<td colspan="4">{{accuracy}}</td>		
+		</script>
+
+	<script type="text/x-mustache-template" id="algorithm-comparison-parent-template">
+		<tbody>
+	</tbody>
+	
+	</script>
+	<script type="text/x-mustache-template" id="algorithm-comparison-template">
+			<td colspan="4">
+		<p style="text-align: center">{{sentence}}</p>
+	</td>
+			<td colspan="4">
+				<select id="ddpFilter" class="btn btn-success dropdown-toggle btn-xs" data-toggle="dropdown" style="width: 98%">
+					<option value="1">food</option>
+					<option value="2">service</option>
+					<option value="3">ambience</option>
+					<option value="4">cost</option>
+					<option value="5">null</option>
+					<option value="6">overall</option>
+				</select>
+	</td>
+			<td colspan="4">
+				<select id="ddpFiltersentiment" class="btn btn-success dropdown-toggle btn-xs" data-toggle="dropdown" style="width: 98%">
+					<option value="1">super-positive</option>
+					<option value="2">positive</option>
+					<option value="3">neutral</option>
+					<option value="4">negative</option>
+					<option value="5">super-negative</option>
+				</select>
+	</td>
 			
 </script>
 <div class="container-fluid">                                                                                                              

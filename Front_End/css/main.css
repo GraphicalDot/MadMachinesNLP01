@@ -178,12 +178,11 @@ margin-top: 10em;
 	   overflow-x: hidden;
 	    }
 .bootbox-modal-custom-class{
-	font-family: 'Lobster', cursive;
 	font-weight: 400;
-        margin-left: 0px;
-        margin-right: 0px;
-        padding: 2%;
-		}
+	width: 1200px;	
+	position:fixed;
+	 left:30%; 
+}
 
 .dvLoading
 {	background:#000 url(images/loading.gif) no-repeat center center;

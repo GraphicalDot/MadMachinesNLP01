@@ -23,7 +23,10 @@ App.RootView = Backbone.View.extend({
 		"click #submitPerceptron": "submitPerceptron",
 		"click #submitPassiveAgressive": "submitPassiveAgressive",
 		"click #submitRandomForests": "submitRandomForests",
-		
+	
+
+		"click #submitCompareAlgorithms": "submitCompareAlgorithms",
+
 		
 		"click #submitHiddenMarkov": "submitHiddenMarkov",
 		"click #submitLogisticRegression": "submitLogisticRegression",
@@ -37,6 +40,34 @@ App.RootView = Backbone.View.extend({
 		"click #seeWordCloud": "seeWordCloud",
 		"click #citiesList": "loadEateriesForCity",
 		},
+
+
+	submitCompareAlgorithms: function(event){
+		
+		event.preventDefault();
+		var jqhr = window.make_request($("#searchQuery").val(), "SVM")
+		jqhr.done(function(data){
+			if (data.error == false){
+				var subView = new App.AlgorithmComparisonParentView({model: data.result});
+				bootbox.dialog({
+						"title": "Comparison of algorithms",
+						"message": subView.render().el,
+						"show": true,	
+						"animate": true,
+						"closeButton": true,
+						"className": "bootbox-modal-custom-class"
+				})
+			}
+			else{
+				bootbox.alert(data.messege)	
+			}
+			})
+
+			return this;
+
+	},
+
+
 
 	processText: function(algorithm){
 		$(".dynamic_display").empty()
@@ -266,6 +297,125 @@ App.RootView = Backbone.View.extend({
 
 
 });
+
+App.AlgorithmComparisonParentView = Backbone.View.extend({
+	tagName: "table",
+	className: "table count-table",
+	template: window.template("algorithm-comparison"),
+	initialize: function(options){
+		this.model = options.model;
+		console.log(this.model)
+	},
+
+	render: function(){
+		var self = this;
+		$.each(this.model, function(iter, __object){
+			console.log(__object)
+			var subView = new App.AlgorithmComparisonView({model: __object});
+			self.$el.append(subView.render().el)
+			})
+			
+		var subView = new App.AlgorithmComparisonSubmitResultsView();
+		this.$el.append(subView.render().el);
+		
+		return this;
+	},
+
+})
+
+App.AlgorithmComparisonSubmitResultsView = Backbone.View.extend({
+	template: window.template("algorithm-comparison-parent-submit-results"),
+	tagName: "tr",
+	initialize: function(options){
+	},
+
+	render: function(){
+		this.$el.append(this.template(this));
+		return this;
+	},
+
+	events: {
+		"click #submitCompareAlgorithmsResults": "submitCompareAlgorithmsResults",
+	},
+
+	submitCompareAlgorithmsResults: function(event){
+		event.preventDefault();
+		console.log("A button has been clicked");
+		var table_data = [];
+		$(".bootbox-modal-custom-class tr").each(function(){
+			var row_data = [];
+			$('td', this).each(function(){
+				if ($(this).children("select").attr("id") == "ddpFilter"){
+					row_data.push($(this).children("select").find("option:selected").text())
+				}
+				else if ($(this).children("select").attr("id") == "ddpFiltersentiment"){
+					//For the time being this is not required
+					//row_data.push($(this).children("select").find("option:selected").text())
+
+				}
+				else {
+				row_data.push($(this).text());
+				}
+			}); 
+			table_data.push(row_data);
+		});
+		console.log(table_data.toString())
+
+		var jqhr = $.post(window.compare_algorithms, {"sentences_with_classification": table_data.toString(), "text": $("#searchQuery").val()})	
+		jqhr.done(function(data){
+				var subView = new App.AlgorithmComparisonAfterPostParentView({model: {"data": data.result} });
+				bootbox.dialog({
+					"title": "Algorithms result",
+					"message": subView.render().el,
+					"show": true,	
+					"animate": true,
+					"closeButton": true,
+					});
+		})
+		jqhr.fail(function(){
+				bootbox.alert("Either the api or internet connection is not working, Try again later")
+			})
+	},
+
+})
+
+
+App.AlgorithmComparisonAfterPostParentView = Backbone.View.extend({
+	template: window.template("algorithm-comparison-after-post-parent"),
+	tagName: "table",
+	className: "table count-table",
+	initialize: function(options){
+		this.model = options.model;
+	},
+
+	render: function(){
+		var self = this;
+		$.each(this.model, function(iter, __object){
+			console.log(__object)
+			var subView = new App.AlgorithmComparisonAfterPostChildView({model: __object});
+			self.$el.append(subView.render().el)
+			})
+		return this;
+	},	
+});
+
+
+App.AlgorithmComparisonAfterPostChildView = Backbone.View.extend({
+	template: window.template("algorithm-comparison-after-post-child"),
+	tagName: "tr",
+	algorithm_name: function(){return this.model.algorithm_name},
+	accuracy: function(){return this.model.accuracy},
+	initialize: function(options){
+		this.model = options.model;
+	},
+
+	render: function(){
+		this.$el.append(this.template(this));
+		return this;	
+	},	
+});
+
+
 
 App.SeeWordCloudDateSelectionView = Backbone.View.extend({
 	template: window.template("see-word-cloud-date-selection"),
