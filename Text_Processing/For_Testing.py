@@ -64,6 +64,11 @@ def get_all_algorithms_result(text, sentences_with_classification):
 		correct_classification = float(len([element for element in zip(predicted, target) if element[0] == element[1]]))
 
 		print "{0} gives -- {1}".format(cls_method.replace("with_", ""), correct_classification/len(predicted))
+		results.append({"algorithm_name": cls_method.replace("with_", ""), 
+				"accuracy": "{0:.2f}".format(correct_classification/len(predicted))})
+
+	return results
+
 
 class ForTestingClassifier:
 	def __init__(self, text, tokenizer=None):

@@ -216,6 +216,22 @@ App.RootView = Backbone.View.extend({
 
 	updateReview: function(event){
 		event.preventDefault();
+		/*
+		var table_data = [];
+		$(".each_row").each(function(){
+			var row_data = [];
+			$("div", this).each(function(){
+				row_data.push({"sentence": $(this).find("p:eq(0)").text()})
+				row_data.push({"tag": $(this).find("#ddpFilter option:selected").text()})
+				row_data.push({"sentiment": $(this).find("#ddpFiltersentiment option:selected").text()})
+				row_data.push({"customer": $(this).find("#ddpFilterCustomer option:selected").text()})
+				row_data.push({"error": $(this).find("#ddpFilterError option:selected").text()})
+				row_data.push({"sentiment": $(this).find("#ddpFilterCustomer option:selected").text()})
+			}); 
+			table_data.push(row_data);
+		});	
+		console.log(table_data)
+		*/
 		if ($("#unclassified_reviews").find('option:selected').attr('id') == null){
 				bootbox.alert("Please classify review before updating it or get some common sense")
 			}
@@ -359,11 +375,11 @@ App.AlgorithmComparisonSubmitResultsView = Backbone.View.extend({
 			}); 
 			table_data.push(row_data);
 		});
-		console.log(table_data.toString())
+		
 
-		var jqhr = $.post(window.compare_algorithms, {"sentences_with_classification": table_data.toString(), "text": $("#searchQuery").val()})	
+		var jqhr = $.post(window.compare_algorithms, {"sentences_with_classification": JSON.stringify(table_data), "text": $("#searchQuery").val()})	
 		jqhr.done(function(data){
-				var subView = new App.AlgorithmComparisonAfterPostParentView({model: {"data": data.result} });
+				var subView = new App.AlgorithmComparisonAfterPostParentView({model: data.result} );
 				bootbox.dialog({
 					"title": "Algorithms result",
 					"message": subView.render().el,
@@ -386,6 +402,7 @@ App.AlgorithmComparisonAfterPostParentView = Backbone.View.extend({
 	className: "table count-table",
 	initialize: function(options){
 		this.model = options.model;
+		console.log(this.model)
 	},
 
 	render: function(){
@@ -407,6 +424,7 @@ App.AlgorithmComparisonAfterPostChildView = Backbone.View.extend({
 	accuracy: function(){return this.model.accuracy},
 	initialize: function(options){
 		this.model = options.model;
+		console.log(this.algorithm_name())
 	},
 
 	render: function(){

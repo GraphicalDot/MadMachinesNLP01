@@ -39,6 +39,8 @@ def to_unicode_or_bust(obj, encoding='utf-8'):
 
 
 
+
+
 ##ProcessText
 different_algorithms_parser = reqparse.RequestParser()
 different_algorithms_parser.add_argument('text', type=to_unicode_or_bust, required=True, location="form")
@@ -173,12 +175,21 @@ class AlgorithmsComparison(restful.Resource):
 		args = different_algorithms_parser.parse_args()
 		text = args["text"]
 		sentences_with_classification = args["sentences_with_classification"]
-		
-		#get_all_algorithms_result(text, sentences_with_classification)
-		for element in sentences_with_classification:
-			print eval(element)
-		pass
-
+	
+		print type(sentences_with_classification)
+		print len(sentences_with_classification)
+		sentences_with_classification = json.loads(sentences_with_classification[0])
+		sentences_with_classification = [(element[0].replace("\n", "").replace("\t", ""), element[1]) 
+								for element in sentences_with_classification[0: -1]]
+	
+		print sentences_with_classification
+		result = get_all_algorithms_result(text, sentences_with_classification)
+	
+		return{ 
+				"result": result,
+				"success": True,
+				"error": False,
+				}
 
 class ProcessText(restful.Resource):
 	@cors
@@ -197,20 +208,20 @@ class ProcessText(restful.Resource):
 		algorithm = args["algorithm"]
 
 		if not bool(text):
-			return jsonify({
+			return {
 				"error": True,
 				"success": False,
 				"error_code": 101,
 				"messege": "Text field cannot be left empty"
-				})
+				}
 
 		if not bool(algorithm):
-			return jsonify({
+			return {
 				"error": True,
 				"success": False,
 				"error_code": 302,
 				"messege": "Algorithm field cannot be left empty"
-				})
+				}
 
 
 		text_classfication = ForTestingClassifier(to_unicode_or_bust(text))	

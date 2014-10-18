@@ -2,7 +2,7 @@ $(document).ready(function(){
 
 App.RootRowView = Backbone.View.extend({
 	tagName: "fieldset",
-	className: "well plan",
+	className: "well plan each_row",
 	template: window.template("root-row"),
 	noun_phrases: function(){return this.model.text.noun_phrases},
 	polarity_name: function(){return this.model.text.polarity.name},
