@@ -191,6 +191,19 @@ class AlgorithmsComparison(restful.Resource):
 				"error": False,
 				}
 
+class OnlyAlgortihmsNames(restful.Resource):
+	@cors
+	def get(self):
+		result = get_all_algorithms_result(if_names=True)
+		return{ 
+				"result": result,
+				"success": True,
+				"error": False,
+				}
+
+
+
+
 class ProcessText(restful.Resource):
 	@cors
 	def post(self):
@@ -207,6 +220,7 @@ class ProcessText(restful.Resource):
 		text = args["text"]
 		algorithm = args["algorithm"]
 
+		print "this is the fucking algorithm name %s"%algorithm
 		if not bool(text):
 			return {
 				"error": True,
@@ -230,7 +244,7 @@ class ProcessText(restful.Resource):
 
 		polarity=lambda x: "positive" if float(x)>= 0 else "negative"
 
-		classified_sentences = eval("{0}.with_{1}()".format("text_classfication", algorithm.lower()))
+		classified_sentences = eval("{0}.with_{1}()".format("text_classfication", "_".join(algorithm.split(" "))))
 
 		##with svm returns a list in the following form
 		##[(sentence, tag), (sentence, tag), ................]
@@ -732,6 +746,7 @@ api.add_resource(WordCloudWithDates, '/get_word_cloud_with_dates')
 api.add_resource(GetWordCloud, '/get_word_cloud')
 api.add_resource(GetValidFilesCount, '/get_valid_files_count')
 api.add_resource(AlgorithmsComparison, '/compare_algorithms')
+api.add_resource(OnlyAlgortihmsNames, '/get_all_algorithms_name')
 
 
 if __name__ == '__main__':

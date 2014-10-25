@@ -9,30 +9,42 @@ App.RootView = Backbone.View.extend({
 	template: window.template("root"),
 	
 	initialize: function(){
+		var self = this;
+		var jqhr = $.get(window.get_all_algorithms_name)	
+		
+		jqhr.done(function(data){
+			console.log(data.result)
+			if (data.error == false){
+				$.each(data.result, function(iter, algorithm_name){
+					var subView = new App.AppendAlgorithmView({model: {"algorithm_name": algorithm_name}});
+					self.$("#appendAlgorithms").append(subView.render().el);	
+				})
+						}
+			else{
+				bootbox.alert(data.messege)	
+			}
+		})
+		
+		jqhr.fail(function(){
+				bootbox.alert("Either the api or internet connection is not working, Try again later")
+		});
 		console.log("Root view called")
 
 	},
 
 	render: function(){
+		
 		this.$el.append(this.template(this));
+		
 		return this;
 	},
 	
 	events: {
-		"click #submitRidgeRegression": "submitRidgeRegression",
-		"click #submitPerceptron": "submitPerceptron",
-		"click #submitPassiveAgressive": "submitPassiveAgressive",
-		"click #submitRandomForests": "submitRandomForests",
 	
 
 		"click #submitCompareAlgorithms": "submitCompareAlgorithms",
-
 		
-		"click #submitHiddenMarkov": "submitHiddenMarkov",
-		"click #submitLogisticRegression": "submitLogisticRegression",
-		"click #submitSVM": "submitSVM",
-		"click #submitMaxEnt": "submitMaxEnt",
-		"click #submitMultiNB": "submitMultiNB",
+		"click #submitAlgorithm": "submitAlgorithm",
 		"click #eateriesList": "changeEateryList",
 		"click #loadReview": "loadReview",
 		"click #updateReview": "updateReview",
@@ -42,15 +54,23 @@ App.RootView = Backbone.View.extend({
 		},
 
 
+	submitAlgorithm: function(event){
+		event.preventDefault();
+		var algorithm = $("#appendAlgorithms").find("option:selected").val()
+		this.processText(algorithm)
+	},
+
+
 	submitCompareAlgorithms: function(event){
 		
 		event.preventDefault();
-		var jqhr = window.make_request($("#searchQuery").val(), "SVM")
+		var algorithm = $("#appendAlgorithms").find("option:selected").val()
+		var jqhr = window.make_request($("#searchQuery").val(), algorithm)
 		jqhr.done(function(data){
 			if (data.error == false){
 				var subView = new App.AlgorithmComparisonParentView({model: data.result});
 				bootbox.dialog({
-						"title": "Comparison of algorithms",
+						"title": "Comparison of "+algorithm+" with other algorithms",
 						"message": subView.render().el,
 						"show": true,	
 						"animate": true,
@@ -109,51 +129,7 @@ App.RootView = Backbone.View.extend({
 		this.processText("randomforests")	
 	},
 	
-	submitRidgeRegression: function(event){
-		event.preventDefault();
-		this.processText("ridgegression")	
-	},
-		
-	submitPerceptron: function(event){
-		event.preventDefault();
-		this.processText("perceptron")	
-	},
-
-
-	submitPassiveAgressive: function(event){
-		event.preventDefault();
-		this.processText("passiveagressive")	
-	},
 	
-	
-	submitHiddenMarkov: function(event){
-		event.preventDefault();
-		bootbox.alert("This has not been implemented yet, When implemented it will use Hidden markov models  to classify text")
-
-
-	},
-
-	submitSVM: function(event){
-		event.preventDefault();
-		this.processText("SVM")	
-	},
-
-	submitMaxEnt: function(event){
-		event.preventDefault();
-		$(".dynamic_display").empty()
-		bootbox.alert("This has not been implemented yet, When implemented it will use Maximum entropy algorithm to classify text")
-	},		
-			
-	submitMultiNB: function(event){
-		event.preventDefault();
-		this.processText("MultiNB")	
-	},
-	
-	submitLogisticRegression: function(event){
-		event.preventDefault();
-		this.processText("LogisticRegression")	
-	},
-
 
 	seeWordCloud: function(event){
 		event.preventDefault();
@@ -313,6 +289,30 @@ App.RootView = Backbone.View.extend({
 
 
 });
+
+
+App.AppendAlgorithmView = Backbone.View.extend({
+	template: window.template("append-algorithm"),
+	tagName: "option",
+	algorithm_name: function(){return this.model.model.algorithm_name},
+	initialize: function(options){
+		this.model = this.options;
+		console.log(this.algorithm_name())
+	},
+
+	render: function(){
+		this.$el.append(this.template(this));
+		return this;	
+	},
+
+	events: {
+
+	},
+
+});
+
+
+
 
 App.AlgorithmComparisonParentView = Backbone.View.extend({
 	tagName: "table",

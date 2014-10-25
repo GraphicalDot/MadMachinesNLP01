@@ -157,55 +157,15 @@
 				
 				<td colspan="1">
 					<form class="form-horizontal">
-						<!--
 						<div class="control-group" style="width: 100%; margin-top: .5%; margin-bottom: .5%; margin-right: 0; margin-left: 0">
 							<div class="controls">
-								<button type="submit" id="submitHiddenMarkov" class="btn btn-primary" style="text-align: center; width: 100%; margin-top: .5%; margin-bottom: 0; margin-right: 0">HMM Model</button>
-							</div>
+							 <select id="appendAlgorithms">
+							<select>	
+							</div>	
 						</div>
 						<div class="control-group" style="width: 100%; margin-top: .5%; margin-bottom: .5%; margin-right: 0; margin-left: 0">
 							<div class="controls">
-								<button type="submit" id="submitMaxEnt" class="btn btn-primary" style="text-align: center; width: 100%; margin-top: .5%; margin-bottom: 0; margin-right: 0">MaxEnt Model</button>
-							</div>
-						</div>
-						<div class="control-group" style="width: 100%; margin-top: .5%; margin-bottom: .5%; margin-right: 0">
-							<div class="controls">
-								<button type="submit" id="submitMultiNB" class="btn btn-primary" style="width: 100%; margin-top: .5%; margin-bottom: 0; margin-right: 0">MultiNB Model</button>
-							</div>
-						</div>
-						<div class="control-group" style="width: 100%; margin-top: .5%; margin-bottom: .5%; margin-right: 0">
-							<div class="controls">
-								<button type="submit" id="submitLogisticRegression" class="btn btn-primary" style="width: 100%; margin-top: .5%; margin-bottom: 0; margin-right: 0">Logistic Regression Model</button>
-							</div>
-						</div>
-						-->
-						<div class="control-group" style="width: 100%; margin-top: .5%; margin-bottom: .5%; margin-right: 0">
-							<div class="controls">
-								<button type="submit" id="submitSVM" class="btn btn-primary" style="width: 100%; margin-top: .5%; margin-bottom: 0; margin-right: 0">SVM Model</button>
-							</div>
-						</div>
-
-						<!--
-						<div class="control-group" style="width: 100%; margin-top: .5%; margin-bottom: .5%; margin-right: 0">
-							<div class="controls">
-								<button type="submit" id="submitRidgeRegression" class="btn btn-primary" style="width: 100%; margin-top: .5%; margin-bottom: 0; margin-right: 0">Ridge Regression</button>
-							</div>
-						</div>
-						<div class="control-group" style="width: 100%; margin-top: .5%; margin-bottom: .5%; margin-right: 0">
-							<div class="controls">
-								<button type="submit" id="submitPerceptron" class="btn btn-primary" style="width: 100%; margin-top: .5%; margin-bottom: 0; margin-right: 0">Perceptron</button>
-							</div>
-						</div>
-						<div class="control-group" style="width: 100%; margin-top: .5%; margin-bottom: .5%; margin-right: 0">
-							<div class="controls">
-								<button type="submit" id="submitPassiveAgressive" class="btn btn-primary" style="width: 100%; margin-top: .5%; margin-bottom: 0; margin-right: 0">Passive Agressive</button>
-							</div>
-						</div>
-
-						-->
-						<div class="control-group" style="width: 100%; margin-top: .5%; margin-bottom: .5%; margin-right: 0">
-							<div class="controls">
-								<button type="submit" id="submitRandomForests" class="btn btn-primary" style="width: 100%; margin-top: .5%; margin-bottom: 0; margin-right: 0">Random Forests</button>
+								<button type="submit" id="submitAlgorithm" class="btn btn-primary" style="text-align: center; width: 100%; margin-top: .5%; margin-bottom: 0; margin-right: 0">Submit Algorithm</button>
 							</div>
 						</div>
 						
@@ -221,6 +181,9 @@
 		</tbody>
     </script>
 
+	<script type="text/x-mustache-template" id="append-algorithm-template">
+		{{algorithm_name}}
+	</script>
 	<script type="text/x-mustache-template" id="reviews-count-parent-template">
 		 <tbody id="reviewsCount">
 			 <tr>

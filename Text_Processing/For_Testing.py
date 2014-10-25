@@ -27,13 +27,13 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.neighbors import NearestCentroid
 
 from Algortihms import Sklearn_RandomForest
-
+from Algortihms import SVMWithGridSearch
 
 
 directory = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 path = os.path.join(directory + "/trainers")
 
-def get_all_algorithms_result(text, sentences_with_classification):
+def get_all_algorithms_result(text="If only name of the algorithms are required", sentences_with_classification=True, if_names=False):
 	"""
 	This method will compare and delivers the accuracy of every algorithm computed in every class method which
 	starts with with_
@@ -45,7 +45,7 @@ def get_all_algorithms_result(text, sentences_with_classification):
 	print "entered into get all"
 	results = list()
 	
-	
+
 	tokenizer = SentenceTokenization()
 	new_data = tokenizer.tokenize(text)
 	
@@ -54,6 +54,11 @@ def get_all_algorithms_result(text, sentences_with_classification):
 	cls_methods_for_algortihms = [method[0] for method in inspect.getmembers(classifier_cls, predicate=inspect.ismethod) 
 										if method[0].startswith("with")]
 	
+	if if_names:
+		result = [" ".join(cls_method.replace("with_", "").split("_")) for cls_method in cls_methods_for_algortihms]
+		return result
+		
+		
 	target = [element[1] for element in sentences_with_classification]
 
 
@@ -64,7 +69,7 @@ def get_all_algorithms_result(text, sentences_with_classification):
 		correct_classification = float(len([element for element in zip(predicted, target) if element[0] == element[1]]))
 
 		print "{0} gives -- {1}".format(cls_method.replace("with_", ""), correct_classification/len(predicted))
-		results.append({"algorithm_name": cls_method.replace("with_", ""), 
+		results.append({"algorithm_name": " ".join(cls_method.replace("with_", "").split("_")), 
 				"accuracy": "{0:.2f}".format(correct_classification/len(predicted))})
 
 	return results
@@ -100,8 +105,14 @@ class ForTestingClassifier:
 		self.null_documents = [(sent, "null") for sent in self.null_data if sent != ""]
 		self.overall_documents = [(sent, "overall") for sent in self.overall_data if sent != ""]
 		self.whole_set = self.ambience_documents + self.services_documents + self.costing_documents + self.food_documents + self.null_documents + self.overall_documents
+		
+		
 		random.shuffle(self.whole_set)
 		
+		self.data = numpy.array([element[0] for element in self.whole_set])
+		self.target = numpy.array([element[1] for element in self.whole_set])
+		
+
 
 
 
@@ -115,7 +126,7 @@ class ForTestingClassifier:
 	def naive_bayes_classifier(self):
 		pass
 
-	def multinomial_nb_classifier(self):
+	def __multinomial_nb_classifier(self):
 		"""
 		This method returns a claqssfier trained with multinomial naive bayes using cost, services and ambience as three categories
 		fit_prior : boolean
@@ -123,6 +134,8 @@ class ForTestingClassifier:
 		class_prior : array-like, size (n_classes,)
 			Prior probabilities of the classes. If specified the priors are not adjusted according to the data.
 		"""
+		print "\n Running {0} \n".format(inspect.currentframe())
+		
 		classifier = Pipeline([('vect', CountVectorizer()), ('tfidf', TfidfTransformer()), 
 			('clf', MultinomialNB(class_prior=None, fit_prior=False)),])
 		
@@ -133,22 +146,24 @@ class ForTestingClassifier:
 		return classifier
 
 
-	def with_multinb(self):
+	def with_multinomial_naive_bayes(self):
 		"""
 		This with the help of self.multinomial_nb classify the self.text and returns an numpy array with predicted tags
 		"""
+		
+		print "\n Running {0} \n".format(inspect.stack()[0][3])
 		count_vect = CountVectorizer()
 		tokenizer = SentenceTokenization()
 		new_data = tokenizer.tokenize(self.text)
 		
-		classifier = self.multinomial_nb_classifier()
+		classifier = self.__multinomial_nb_classifier()
 
 		predicted = classifier.predict(new_data)
 
 		return zip(new_data, predicted)
 
 
-	def svm_classifier(self):
+	def __svm_classifier(self):
 		classifier = Pipeline([('vect', CountVectorizer()), ('tfidf', TfidfTransformer()), 
 			('clf', SGDClassifier(loss='hinge', penalty='l2', alpha=1e-3, n_iter=5)),])
 
@@ -158,9 +173,10 @@ class ForTestingClassifier:
 		classifier.fit(data, target)
 		return classifier
 
-	def with_svm(self):
+	def with_support_vector_machines(self):
+		print "\n Running {0} \n".format(inspect.stack()[0][3])
 
-		classifier = self.svm_classifier()
+		classifier = self.__svm_classifier()
 		#new_data = self.sent_tokenizer.tokenize(self.text, realign_boundaries= True)
 		
 		##With the new class created in CustomSentenceTokenizer , the new sentence tokenizer
@@ -176,7 +192,7 @@ class ForTestingClassifier:
 		return zip(new_data, predicted)
 
 
-	def logistic_regression_classifier(self):
+	def __logistic_regression_classifier(self):
 		classifier = Pipeline([('vect', CountVectorizer()), ('tfidf', TfidfTransformer()), 
 			('clf', SGDClassifier(loss='log', penalty='l2', alpha=1e-3, n_iter=5)),])
 
@@ -186,9 +202,10 @@ class ForTestingClassifier:
 		classifier.fit(data, target)
 		return classifier
 
-	def with_logisticregression(self):
+	def with_logistic_regression(self):
+		print "\n Running {0} \n".format(inspect.stack()[0][3])
 
-		classifier = self.logistic_regression_classifier()
+		classifier = self.__logistic_regression_classifier()
 		#new_data = self.sent_tokenizer.tokenize(self.text, realign_boundaries= True)
 		
 		##With the new class created in CustomSentenceTokenizer , the new sentence tokenizer
@@ -203,7 +220,7 @@ class ForTestingClassifier:
 
 		return zip(new_data, predicted)
 
-	def perceptron_classifier(self):
+	def __perceptron_classifier(self):
 		classifier = Pipeline([('vect', CountVectorizer()), ('tfidf', TfidfTransformer()), 
 			('clf', Perceptron(n_iter=50)),])
 
@@ -215,7 +232,8 @@ class ForTestingClassifier:
 
 	def with_perceptron(self):
 
-		classifier = self.perceptron_classifier()
+		print "\n Running {0} \n".format(inspect.stack()[0][3])
+		classifier = self.__perceptron_classifier()
 		#new_data = self.sent_tokenizer.tokenize(self.text, realign_boundaries= True)
 		
 		##With the new class created in CustomSentenceTokenizer , the new sentence tokenizer
@@ -231,7 +249,7 @@ class ForTestingClassifier:
 		return zip(new_data, predicted)
 
 
-	def ridge_regression_classifier(self):
+	def __ridge_regression_classifier(self):
 		classifier = Pipeline([('vect', CountVectorizer()), ('tfidf', TfidfTransformer()), 
 			('clf', RidgeClassifier(tol=1e-2, solver="lsqr")),])
 
@@ -241,9 +259,10 @@ class ForTestingClassifier:
 		classifier.fit(data, target)
 		return classifier
 
-	def with_ridgegression(self):
+	def with_ridge_regression(self):
+		print "\n Running {0} \n".format(inspect.stack()[0][3])
 
-		classifier = self.ridge_regression_classifier()
+		classifier = self.__ridge_regression_classifier()
 		#new_data = self.sent_tokenizer.tokenize(self.text, realign_boundaries= True)
 		
 		##With the new class created in CustomSentenceTokenizer , the new sentence tokenizer
@@ -258,7 +277,7 @@ class ForTestingClassifier:
 
 		return zip(new_data, predicted)
 
-	def passive_agressive_classifier(self):
+	def __passive_agressive_classifier(self):
 		classifier = Pipeline([('vect', CountVectorizer()), ('tfidf', TfidfTransformer()), 
 			('clf', PassiveAggressiveClassifier(n_iter=50)),])
 
@@ -268,9 +287,10 @@ class ForTestingClassifier:
 		classifier.fit(data, target)
 		return classifier
 
-	def with_passiveagressive(self):
+	def with_passive_agressive(self):
+		print "\n Running {0} \n".format(inspect.stack()[0][3])
 
-		classifier = self.passive_agressive_classifier()
+		classifier = self.__passive_agressive_classifier()
 		#new_data = self.sent_tokenizer.tokenize(self.text, realign_boundaries= True)
 		
 		##With the new class created in CustomSentenceTokenizer , the new sentence tokenizer
@@ -286,8 +306,9 @@ class ForTestingClassifier:
 		return zip(new_data, predicted)
 
 
-	def with_randomforests(self):
+	def with_random_forests(self):
 
+		print "\n Running {0} \n".format(inspect.stack()[0][3])
 		data = numpy.array([element[0] for element in self.whole_set])
 		target = numpy.array([element[1] for element in self.whole_set])
 		classifier = Sklearn_RandomForest(data, target)
@@ -296,6 +317,14 @@ class ForTestingClassifier:
 		new_data = tokenizer.tokenize(self.text)
 
 		return classifier.predict_with_chi_test(new_data)
+
+	def with_svm_grid_search(self):
+		print "\n Running {0} \n".format(inspect.stack()[0][3])
+		classifier = SVMWithGridSearch(self.data, self.target)
+		tokenizer = SentenceTokenization()
+		new_data = tokenizer.tokenize(self.text)
+		return classifier.predict(new_data)
+
 
 
 if __name__ == "__main__":
@@ -334,6 +363,6 @@ if __name__ == "__main__":
 			('but there knowledge lacks big time ..' "service"),]
 	
 	
-	
-	
-	get_all_algorithms_result(text, sentences_with_classification)
+	___class = ForTestingClassifier(text, tokenizer="text-sentence")
+	print ___class.with_svmgridsearch()
+
