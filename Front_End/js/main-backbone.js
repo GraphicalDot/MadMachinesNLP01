@@ -93,7 +93,7 @@ App.RootView = Backbone.View.extend({
 		$(".dynamic_display").empty()
 		bootbox.dialog({
 			closeButton: false,
-			message: "<br/><img src='css/images/new_loading.gif'>",
+			message: "<h3>Please wait ...........<h3><br/><img src='css/images/new_loading.gif'>",
 		           });
 			
 		if ($("#searchQuery").val() == ""){
@@ -124,6 +124,7 @@ App.RootView = Backbone.View.extend({
 			})
 		jqhr.fail(function(){
 				bootbox.alert("Either the api or internet connection is not working, Try again later")
+			bootbox.hideAll()
 			})
 		
 	

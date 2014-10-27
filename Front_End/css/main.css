@@ -211,3 +211,7 @@ text {
 	      fill: #333;
       }
 
+.loadingclass {
+	background: #000000;      
+}
+
