@@ -8,13 +8,14 @@ import sys
 import os
 from optparse import OptionParser
 import inspect
+import itertools
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.feature_extraction.text import TfidfTransformer
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.linear_model import SGDClassifier
 from sklearn.pipeline import Pipeline
-from CustomSentenceTokenizer import SentenceTokenizer 
-from  trained_punkt_sentences_tokenizer import 	SentenceTokenization
+from Sentence_Tokenization_Classes import CopiedSentenceTokenizer
+from Sentence_Tokenization_Classes import SentenceTokenization
 
 from sklearn.feature_selection import SelectKBest, chi2
 from sklearn.linear_model import RidgeClassifier
@@ -49,7 +50,7 @@ def get_all_algorithms_result(text="If only name of the algorithms are required"
 	tokenizer = SentenceTokenization()
 	new_data = tokenizer.tokenize(text)
 	
-	classifier_cls = ForTestingClassifier(text)
+	classifier_cls = MainClassifier(text)
 	
 	cls_methods_for_algortihms = [method[0] for method in inspect.getmembers(classifier_cls, predicate=inspect.ismethod) 
 										if method[0].startswith("with")]
@@ -75,39 +76,28 @@ def get_all_algorithms_result(text="If only name of the algorithms are required"
 	return results
 
 
-class ForTestingClassifier:
+class MainClassifier:
 	def __init__(self, text, tokenizer=None):
 		self.text = text #Text which needs classification
 		self.tokenizer = tokenizer
+		self.tag_list = ["food", "ambience", "cost", "service", "overall", "null"]
 		if not self.tokenizer:
 			self.sent_tokenizer = nltk.data.load('tokenizers/punkt/english.pickle')
-		
-			self.ambience_data = self.sent_tokenizer.tokenize(open("{0}/valid_{1}.txt".format(path, "ambience"), "rb").read(), realign_boundaries=True)
-			self.services_data = self.sent_tokenizer.tokenize(open("{0}/valid_{1}.txt".format(path, "service"), "rb").read(), realign_boundaries=True)
-			self.costing_data = self.sent_tokenizer.tokenize(open("{0}/valid_{1}.txt".format(path, "cost"), "rb").read(), realign_boundaries=True)
-			self.food_data = self.sent_tokenizer.tokenize(open("{0}/valid_{1}.txt".format(path, "food"), "rb").read(), realign_boundaries=True)
-			self.null_data = self.sent_tokenizer.tokenize(open("{0}/valid_{1}.txt".format(path, "null"), "rb").read(), realign_boundaries=True)
-			self.overall_data = self.sent_tokenizer.tokenize(open("{0}/valid_{1}.txt".format(path, "overall"), "rb").read(), realign_boundaries=True)
+			self.data_lambda = lambda tag: [(sent, tag) for sent in 
+					self.sent_tokenizer.tokenize(open("{0}/valid_{1}.txt".format(path, tag), "rb").read(), realign_boundaries=True)
+					if sent != ""]
+			
 		if self.tokenizer == "text-sentence":
 			self.sent_tokenizer = SentenceTokenization()
-			self.ambience_data = self.sent_tokenizer.tokenize(open("{0}/valid_{1}.txt".format(path, "ambience"), "rb").read())
-			self.services_data = self.sent_tokenizer.tokenize(open("{0}/valid_{1}.txt".format(path, "service"), "rb").read())
-			self.costing_data = self.sent_tokenizer.tokenize(open("{0}/valid_{1}.txt".format(path, "cost"), "rb").read())
-			self.food_data = self.sent_tokenizer.tokenize(open("{0}/valid_{1}.txt".format(path, "food"), "rb").read())
-			self.null_data = self.sent_tokenizer.tokenize(open("{0}/valid_{1}.txt".format(path, "null"), "rb").read())
-			self.overall_data = self.sent_tokenizer.tokenize(open("{0}/valid_{1}.txt".format(path, "overall"), "rb").read())
+			self.data_lambda = lambda tag: [(sent, tag) for sent in 
+					self.sent_tokenizer.tokenize(open("{0}/valid_{1}.txt".format(path, tag), "rb").read(),) if sent != ""]
+			
 		
-		#self.ambience_documents = [(nltk.wordpunct_tokenize(sent), "ambience") for sent in self.ambience_data if sent != ""]
-		self.ambience_documents = [(sent, "ambience") for sent in self.ambience_data if sent != ""]
-		self.services_documents = [(sent, "service") for sent in self.services_data if sent != ""]
-		self.costing_documents = [(sent, "cost") for sent in self.costing_data if sent != ""]
-		self.food_documents = [(sent, "food") for sent in self.food_data if sent != ""]
-		self.null_documents = [(sent, "null") for sent in self.null_data if sent != ""]
-		self.overall_documents = [(sent, "overall") for sent in self.overall_data if sent != ""]
-		self.whole_set = self.ambience_documents + self.services_documents + self.costing_documents + self.food_documents + self.null_documents + self.overall_documents
+		#joining list of lists returned by self.data, Every tag will have their own list, Itertools will join these lists into a single list	
+		self.whole_set = list(itertools.chain(*[self.data_lambda(tag) for tag in self.tag_list]))
 		
-		
-		random.shuffle(self.whole_set)
+		#Shuffling the list formed ten times to get better results.
+		[random.shuffle(self.whole_set) for i in range(0, 10)]
 		
 		self.data = numpy.array([element[0] for element in self.whole_set])
 		self.target = numpy.array([element[1] for element in self.whole_set])

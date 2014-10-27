@@ -15,7 +15,7 @@ import shutil
 import json
 import os
 from bson.json_util import dumps
-from Text_Processing import ProcessingWithBlob, PosTags, Classifier, nltk_ngrams, ForTestingClassifier, get_all_algorithms_result
+from Text_Processing import ProcessingWithBlob, PosTags, nltk_ngrams, MainClassifier, get_all_algorithms_result
 import time
 from datetime import timedelta
 import pymongo
@@ -238,7 +238,7 @@ class ProcessText(restful.Resource):
 				}
 
 
-		text_classfication = ForTestingClassifier(to_unicode_or_bust(text))	
+		text_classfication = MainClassifier(to_unicode_or_bust(text), tokenizer="text-sentence")	
 		noun_phrase = list()
 		result = list() 
 
