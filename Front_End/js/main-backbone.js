@@ -91,7 +91,11 @@ App.RootView = Backbone.View.extend({
 
 	processText: function(algorithm){
 		$(".dynamic_display").empty()
-
+		bootbox.dialog({
+			closeButton: false,
+			message: "<br/><img src='css/images/new_loading.gif'>",
+		           });
+			
 		if ($("#searchQuery").val() == ""){
 			bootbox.alert("Arghhhh... Dont you get it, This field can not be left empty")
 			return
@@ -115,6 +119,8 @@ App.RootView = Backbone.View.extend({
 			else{
 				bootbox.alert(data.messege)	
 			}
+			bootbox.hideAll()
+			//$(".full_page").removeClass("dvLoadingWhole");
 			})
 		jqhr.fail(function(){
 				bootbox.alert("Either the api or internet connection is not working, Try again later")
