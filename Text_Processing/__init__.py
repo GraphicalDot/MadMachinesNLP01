@@ -6,3 +6,4 @@ from Blob import ProcessingWithBlob, PosTags, CustomParsing
 from helpers import nltk_ngrams
 from Sentence_Tokenization_Classes import SentenceTokenization
 from SentimentAnalysis import SentimentClassifier
+from RepeatedRecommendedAnalysis import RepeatRecommendClassifier

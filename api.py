@@ -15,7 +15,8 @@ import shutil
 import json
 import os
 from bson.json_util import dumps
-from Text_Processing import ProcessingWithBlob, PosTags, nltk_ngrams, MainClassifier, get_all_algorithms_result, SentimentClassifier
+from Text_Processing import ProcessingWithBlob, PosTags, nltk_ngrams, MainClassifier, \
+		get_all_algorithms_result, SentimentClassifier, RepeatRecommendClassifier
 import time
 from datetime import timedelta
 import pymongo
@@ -252,20 +253,30 @@ class ProcessText(restful.Resource):
 		
 		#Getting Sentiment analysis
 		sentiment_class = SentimentClassifier(classified_sentences)
-		__with_tag_n_sentiment_sentences = eval("{0}.with_{1}()".format("sentiment_class", "_".join(algorithm.split(" "))))
+		__predicted_sentiment = eval("{0}.with_{1}()".format("sentiment_class", "_".join(algorithm.split(" "))))
 
 
-		print __with_tag_n_sentiment_sentences
-		for chunk in __with_tag_n_sentiment_sentences:
+		##Getting type of customer, whether a recommended, repeated or null customer
+		customer_class = RepeatRecommendClassifier(classified_sentences)
+		__predicted_customers = eval("{0}.with_{1}()".format("customer_class", "_".join(algorithm.split(" "))))
+		print __predicted_customers
+
+
+		print zip(classified_sentences, __predicted_sentiment, __predicted_customers)
+
+		index = 0
+		for chunk in classified_sentences:
 			element = dict()
 			instance = ProcessingWithBlob(chunk[0])
 			element["sentence"] = chunk[0]
-			element["polarity"] = {"name": chunk[2], "value": '0.0'}
+			element["polarity"] = {"name": __predicted_sentiment[index], "value": '0.0'}
 			element["noun_phrases"] = list(instance.noun_phrase())
 			element["tag"] = chunk[1]
+			element["customer_type"] = __predicted_customers[index]
 			result.append(element)
 			noun_phrase.extend(list(instance.noun_phrase()))
-
+			index += 1
+		
 		return {
 				"result": result,
 				"success": True,

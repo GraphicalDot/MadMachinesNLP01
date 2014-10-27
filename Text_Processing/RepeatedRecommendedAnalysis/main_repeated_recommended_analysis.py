@@ -38,25 +38,25 @@ directory = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fi
 path = os.path.join(directory + "/trainers")
 
 
-class SentimentClassifier:
-	def __init__(self, list_of_tuples_for_text):
+class RepeatRecommendClassifier:
+	def __init__(self, list_for_text_with_tags):
 		"""
 		Args:
-			list_of_tuples_for_text: The text which needs to be classfied
+			list_for_text_with_tags: The text which needs to be classfied
 				This text will be in the form of a list of tuples with first element of every tuple representing the text,
 					and second element representing the tag.
-					[(u"having expectations from this place it didn't quite live up to it ..", 'overall'), 
-					(u"maybe that is why the rating isn't 3 .", 'null'), 
-					(u'i had lunch buffet so i would talk only about that .', 'food'), 
-					(u'beginning with the soup , the bowl had black marks on its rim ..', 'service')]
+					[u"having expectations from this place it didn't quite live up to it ..", 
+					u"maybe that is why the rating isn't 3 .", 
+					u'i had lunch buffet so i would talk only about that .', 
+					u'beginning with the soup , the bowl had black marks on its rim ..']
 
 
 		Class-Variables:
 			whole_set: 
 				returns a list of tuples in the form
-				[(u'top floor makes it more glamours then it could be .', 'super-positive'),
-				(u'ever since the first time i went there , Tropical lounge has become my favorite .', 'super-positive'),
-				(u'there were a good number of free tables , and to this day i wonder why he lied to us .', 'negative'), .............]
+				[(u'top floor makes it more glamours then it could be .', 'repeated_customer'),
+				(u'ever since the first time i went there , Tropical lounge has become my favorite .', 'recommended_customer'),
+				(u'there were a good number of free tables , and to this day i wonder why he lied to us .', 'recommended_customer'), .............]
 			data: 
 				List of sentences from the whole set
 			
@@ -64,8 +64,9 @@ class SentimentClassifier:
 				list of corresponding tag for the sentences present in data
 		"""
 
+		self.test = [element[0] for element in list_for_text_with_tags]
 
-		self.tag_list = ["super-positive", "positive", "negative", "super-negative", "null"]
+		self.tag_list = ["repeated_customer", "recommended_customer", "null"]
 		
 		self.sent_tokenizer = nltk.data.load('tokenizers/punkt/english.pickle')
 		self.data_lambda = lambda tag: [(sent, tag) for sent in 
@@ -83,7 +84,11 @@ class SentimentClassifier:
 		self.target = numpy.array([element[1] for element in self.whole_set])
 		
 
-		self.test = [__tuple[0] for __tuple in list_of_tuples_for_text]
+
+
+	def return_treated_text(self, tags):
+		return [(element[0][0], element[0][1], element[1]) for element in zip(self.list_of_tuples_for_text, tags)]
+
 
 
 
@@ -267,7 +272,7 @@ class SentimentClassifier:
 		
 
 		predicted = classifier.predict_with_chi_test(self.test)
-		return self.return_treated_text([element[1] for element in predicted])
+		return [element[1] for element in predicted]
 
 	def with_svm_grid_search(self):
 		print "\n Running {0} \n".format(inspect.stack()[0][3])
@@ -275,7 +280,8 @@ class SentimentClassifier:
 		#tokenizer = SentenceTokenization()
 		#new_data = tokenizer.tokenize(self.text)
 		predicted = classifier.predict(self.test)
-		return([element[1] for element in predicted])
+		return [element[1] for element in predicted]
+
 
 """
 
@@ -313,10 +319,10 @@ if __name__ == "__main__":
 			('but there knowledge lacks big time ..' "service"),]
 	
 	
-	___class = SentimentClassifier(list_of_tuples_for_text=sentences_with_classification)
+	___class = RepeatRecommendClassifier(list_for_text_with_tags=sentences_with_classification)
+	print ___class.whole_set
 	print ___class.with_logistic_regression()
 	print ___class.with_multinomial_naive_bayes()
 	print ___class.with_support_vector_machines()
-	print ___class.with_svm_grid_search()
 
 """

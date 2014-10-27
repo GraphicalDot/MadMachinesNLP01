@@ -9,12 +9,14 @@ App.RootRowView = Backbone.View.extend({
 	polarity_value: function(){return this.model.text.polarity.value},
 	sentence: function(){return this.model.text.sentence},
 	review_id: function(){ return this.model.review_id},
+	customer_type: function(){return this.model.text.customer_type},
 	tag: function(){return this.model.text.tag},
 	
 	initialize: function(options){
 		var self = this;
 		this.values = {"food": 1, "service": 2, "ambience": 3, "cost": 4, "null": 5, "overall": 6};
 		this.polarity_tag = {"super-positive": 1, "positive": 2, "null": 3, "negative": 4, "super-negative": 5};
+		this.customer_tag = {"null": 1, "repeated_customer": 2, "recommended_customer": 3 };
 		this.model = options.model;
 	},
 	
@@ -22,6 +24,7 @@ App.RootRowView = Backbone.View.extend({
 		this.$el.append(this.template(this));
 		this.$("#ddpFilter option[value='" + this.values[this.tag()] + "']").attr("selected", "selected")
 		this.$("#ddpFiltersentiment option[value='" + this.polarity_tag[this.polarity_name()] + "']").attr("selected", "selected")
+		this.$("#ddpFilterCustomer option[value='" + this.customer_tag[this.customer_type()] + "']").attr("selected", "selected")
 		return this;
 	},
 
