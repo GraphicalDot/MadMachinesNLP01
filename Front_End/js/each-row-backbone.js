@@ -14,7 +14,7 @@ App.RootRowView = Backbone.View.extend({
 	initialize: function(options){
 		var self = this;
 		this.values = {"food": 1, "service": 2, "ambience": 3, "cost": 4, "null": 5, "overall": 6};
-		this.polarity_tag = {"super-positive": 1, "positive": 2, "neutral": 3, "negative": 4, "super-negative": 5};
+		this.polarity_tag = {"super-positive": 1, "positive": 2, "null": 3, "negative": 4, "super-negative": 5};
 		this.model = options.model;
 	},
 	
@@ -188,7 +188,7 @@ App.AlgorithmComparisonView = Backbone.View.extend({
 	initialize: function(options){
 		var self = this;
 		this.values = {"food": 1, "service": 2, "ambience": 3, "cost": 4, "null": 5, "overall": 6};
-		this.polarity_tag = {"super-positive": 1, "positive": 2, "neutral": 3, "negative": 4, "super-negative": 5};
+		this.polarity_tag = {"super-positive": 1, "positive": 2, "null": 3, "negative": 4, "super-negative": 5};
 		this.model = options.model;
 	},
 	

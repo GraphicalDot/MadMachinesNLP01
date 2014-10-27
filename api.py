@@ -15,7 +15,7 @@ import shutil
 import json
 import os
 from bson.json_util import dumps
-from Text_Processing import ProcessingWithBlob, PosTags, nltk_ngrams, MainClassifier, get_all_algorithms_result
+from Text_Processing import ProcessingWithBlob, PosTags, nltk_ngrams, MainClassifier, get_all_algorithms_result, SentimentClassifier
 import time
 from datetime import timedelta
 import pymongo
@@ -250,12 +250,17 @@ class ProcessText(restful.Resource):
 		##[(sentence, tag), (sentence, tag), ................]
 		#for chunk in text_classfication.with_svm():
 		
-		
-		for chunk in classified_sentences:
+		#Getting Sentiment analysis
+		sentiment_class = SentimentClassifier(classified_sentences)
+		__with_tag_n_sentiment_sentences = eval("{0}.with_{1}()".format("sentiment_class", "_".join(algorithm.split(" "))))
+
+
+		print __with_tag_n_sentiment_sentences
+		for chunk in __with_tag_n_sentiment_sentences:
 			element = dict()
 			instance = ProcessingWithBlob(chunk[0])
 			element["sentence"] = chunk[0]
-			element["polarity"] = {"name": polarity('%.1f'%instance.sentiment_polarity()), "value": '%.1f'%instance.sentiment_polarity()}
+			element["polarity"] = {"name": chunk[2], "value": '0.0'}
 			element["noun_phrases"] = list(instance.noun_phrase())
 			element["tag"] = chunk[1]
 			result.append(element)
