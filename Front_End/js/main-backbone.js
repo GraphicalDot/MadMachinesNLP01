@@ -64,6 +64,12 @@ App.RootView = Backbone.View.extend({
 	submitCompareAlgorithms: function(event){
 		
 		event.preventDefault();
+		loading_dialog = bootbox.dialog({
+			closeButton: false,
+			message: "<h4>Wait ....<h4><br/><img src='css/images/gangam.gif'>",
+			backdrop: true,	          
+	       	});
+			
 		var algorithm = $("#appendAlgorithms").find("option:selected").val()
 		var jqhr = window.make_request($("#searchQuery").val(), algorithm)
 		jqhr.done(function(data){
@@ -81,7 +87,8 @@ App.RootView = Backbone.View.extend({
 			else{
 				bootbox.alert(data.messege)	
 			}
-			})
+			loading_dialog.modal('hide')	
+		})
 
 			return this;
 
@@ -363,7 +370,11 @@ App.AlgorithmComparisonSubmitResultsView = Backbone.View.extend({
 
 	submitCompareAlgorithmsResults: function(event){
 		event.preventDefault();
-		console.log("A button has been clicked");
+		loading_dialog = bootbox.dialog({
+			closeButton: false,
+			message: "<h4>Wait ....<h4><br/><img src='css/images/gangam.gif'>",
+			backdrop: true,	          
+	       	});
 		var table_data = [];
 		$(".bootbox-modal-custom-class tr").each(function(){
 			var row_data = [];
@@ -394,9 +405,11 @@ App.AlgorithmComparisonSubmitResultsView = Backbone.View.extend({
 					"animate": true,
 					"closeButton": true,
 					});
+				loading_dialog.modal("hide")
 		})
 		jqhr.fail(function(){
 				bootbox.alert("Either the api or internet connection is not working, Try again later")
+				loading_dialog.modal("hide")
 			})
 	},
 
