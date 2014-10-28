@@ -93,7 +93,7 @@ App.RootView = Backbone.View.extend({
 		$(".dynamic_display").empty()
 		bootbox.dialog({
 			closeButton: false,
-			message: "<h3>Please wait ...........<h3><br/><img src='css/images/new_loading.gif'>",
+			message: "<img src='css/images/gangam.gif'>",
 		           });
 			
 		if ($("#searchQuery").val() == ""){
