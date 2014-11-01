@@ -98,7 +98,7 @@ App.RootView = Backbone.View.extend({
 
 	processText: function(algorithm){
 		$(".dynamic_display").empty()
-		bootbox.dialog({
+		loading_dialog = bootbox.dialog({
 			closeButton: false,
 			message: "<img src='css/images/gangam.gif'>",
 		           });
@@ -126,12 +126,12 @@ App.RootView = Backbone.View.extend({
 			else{
 				bootbox.alert(data.messege)	
 			}
-			bootbox.hideAll()
+			loading_dialog.model("hide")
 			//$(".full_page").removeClass("dvLoadingWhole");
 			})
 		jqhr.fail(function(){
 				bootbox.alert("Either the api or internet connection is not working, Try again later")
-			bootbox.hideAll()
+			loading_dialog.model("hide")
 			})
 		
 	
@@ -163,7 +163,8 @@ App.RootView = Backbone.View.extend({
 			"message": subView.render().el,
 			"animate": true,
 			"closeButton": true,
-			}).find('.modal-content').addClass("bootbox-modal-custom-class");    
+			})
+		//.find('.modal-content').addClass("bootbox-modal-custom-class");    
 	},
 
 

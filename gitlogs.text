@@ -1,0 +1,684 @@
+commit 9a2e18d847b34987444e3d904213ae3574997d9e
+Author: kaali-python <root@kaali.(none)>
+Date:   Tue Oct 28 14:22:14 2014 +0530
+
+    Adding loading gif everywhere
+
+commit ed3af65b9d9999a8be896e090657fc379ea0c805
+Author: kaali-python <root@kaali.(none)>
+Date:   Tue Oct 28 14:05:59 2014 +0530
+
+    Adding new loading gif
+
+commit 6f72a05bda4ba5315bb79fa2f0ee4b665c706db8
+Author: kaali-python <root@kaali.(none)>
+Date:   Mon Oct 27 18:45:32 2014 +0530
+
+    adding new image
+
+commit 7581494fc74d24d90d8f3c3d8dd4a37de08ec87c
+Author: kaali-python <root@kaali.(none)>
+Date:   Mon Oct 27 17:47:49 2014 +0530
+
+    Adding Loading image bar
+
+commit cb4da0e5c227fc647cdba8f7dac82443c44c911e
+Author: kaali-python <root@kaali.(none)>
+Date:   Mon Oct 27 17:00:49 2014 +0530
+
+    adding customers classification
+
+commit bf7faa4a25c911111697d7f9b83143ec3f6c291b
+Author: kaali-python <root@kaali.(none)>
+Date:   Mon Oct 27 15:13:15 2014 +0530
+
+    adding sentiment analysis
+
+commit 75fc7dc064aef96024450e9096ccfc208b194d45
+Author: kaali-python <root@kaali.(none)>
+Date:   Mon Oct 27 12:52:41 2014 +0530
+
+    working code
+
+commit 69879d9caac43d04cbf96551443b65efaada21ac
+Author: kaali-python <root@kaali.(none)>
+Date:   Sat Oct 25 11:56:50 2014 +0530
+
+    halfboiled code
+
+commit 748760ac5dd8f240d2b17bd45abf50847c382da9
+Author: kaali-python <root@kaali.(none)>
+Date:   Sat Oct 18 14:34:43 2014 +0530
+
+    Updating file models
+
+commit b7861799543edfcb499aa53903bf355cd844fc4d
+Author: kaali-python <root@kaali.(none)>
+Date:   Sat Oct 18 14:32:08 2014 +0530
+
+    compare algorithms working good
+
+commit aaa25f851c558e3f49c6dfec7670dc3ce2866393
+Author: kaali-python <root@kaali.(none)>
+Date:   Thu Oct 16 19:36:29 2014 +0530
+
+    not working code for compare algorithms
+
+commit 1b286f2c320cd558a48d3bdd43e4ed1347676b0b
+Author: kaali-python <root@kaali.(none)>
+Date:   Wed Oct 15 16:55:44 2014 +0530
+
+    Version Changed
+
+commit 21fef702de8ea7904927665db8a375ec25d2d5a7
+Author: kaali-python <root@kaali.(none)>
+Date:   Wed Oct 15 15:07:43 2014 +0530
+
+    Implemented random forests algorithm
+
+commit f723014ae24c968376e3309850e2c811e56ce54a
+Author: kaali-python <root@kaali.(none)>
+Date:   Tue Oct 14 16:17:38 2014 +0530
+
+    Adding new algorithms
+
+commit 6b290b42739af7e83bdf59c11c5668246b282edb
+Author: kaali-python <root@kaali.(none)>
+Date:   Sun Oct 12 16:18:43 2014 +0530
+
+    Running svm model on the new files i.e valid_*.txt
+
+commit f0b0bc4f3d1d1e6ee620b7502b9b84f74da651fc
+Author: kaali-python <root@kaali.(none)>
+Date:   Fri Oct 10 13:48:59 2014 +0530
+
+    solving unicode error with the new flask-restful api
+
+commit fbae51d527a7418c1aec0887cf52aeee04d48749
+Author: kaali-python <root@kaali.(none)>
+Date:   Fri Oct 10 12:21:41 2014 +0530
+
+    adding total number to the count reviews
+
+commit d1cc55be5fc78ab93dafbc8460da69ee205d1fb5
+Author: kaali-python <root@kaali.(none)>
+Date:   Fri Oct 10 12:00:48 2014 +0530
+
+    Adding new files in trainers
+
+commit f121d5489ebb5d35623c84115b578fcbb441b935
+Author: kaali-python <root@kaali.(none)>
+Date:   Fri Oct 10 11:53:29 2014 +0530
+
+    Adding trained_punkt_sentences_tokenizer to break sentences on the basis of special characters and interjections
+
+commit d4bafb07b98b34df58b77b59405d9fc009bea08c
+Author: kaali-python <root@kaali.(none)>
+Date:   Wed Oct 8 17:56:16 2014 +0530
+
+    REmoving bugs
+
+commit b18373875515c9016fa63b7d1abf72cd5300acf8
+Author: kaali-python <root@kaali.(none)>
+Date:   Wed Oct 8 17:35:57 2014 +0530
+
+    using library text-sentence
+
+commit 631d9682b994d293500858d01cbc7896e7795511
+Author: kaali-python <root@kaali.(none)>
+Date:   Tue Oct 7 16:58:32 2014 +0530
+
+    with new api in flask restful
+
+commit fab8b31c20e9fe014b0d1e1e4e0ae9dbb05fce93
+Author: kaali-python <root@kaali.(none)>
+Date:   Mon Oct 6 16:56:30 2014 +0530
+
+    Update model files
+
+commit b304eb93920c9e90eaadaed0b32df1803e323184
+Author: kaali-python <root@kaali.(none)>
+Date:   Mon Oct 6 16:15:10 2014 +0530
+
+    Issue: Ngrams pent, hex, hep has been rectified
+
+commit a51ab5129f58b403ac762dc18e811f2b4e457a61
+Author: kaali-python <root@kaali.(none)>
+Date:   Mon Oct 6 15:06:50 2014 +0530
+
+    Api not working issue solved
+
+commit 13b3065887748537ecbc0b157f055e826e8738ee
+Author: kaali-python <root@kaali.(none)>
+Date:   Sun Oct 5 13:29:46 2014 +0530
+
+    Adding new api /get_word_clod_with_dates
+
+commit d63423159dacacc1b6fbb99b585f9beea3a0b911
+Author: kaali-python <root@kaali.(none)>
+Date:   Wed Oct 1 13:01:59 2014 +0530
+
+    something went wrong with cloud
+
+commit 1c1ed9a47b52a5a6b40eb2e0ce79494cad1acae1
+Author: kaali-python <root@kaali.(none)>
+Date:   Tue Sep 30 16:11:24 2014 +0530
+
+    circular word cloud with d3.js
+
+commit f4813f844039e5cfb5a94fe4b0706917139dc369
+Author: kaali-python <root@kaali.(none)>
+Date:   Sun Sep 28 18:13:48 2014 +0530
+
+    adding d3.js code for naive word cloud
+
+commit 782954fd1c6a979c99f7780562f181bc47599da3
+Author: kaali-python <root@kaali.(none)>
+Date:   Sat Sep 27 18:27:44 2014 +0530
+
+    changing apis
+
+commit cc0fb0bcb52545956fba1d1d52ec0d8a00bbe8cc
+Author: kaali-python <root@kaali.(none)>
+Date:   Sat Sep 27 18:26:54 2014 +0530
+
+    solving word clod empty div
+
+commit 612a7e51b253f6afa51c864c9d43814105d8fcdb
+Author: kaali-python <root@kaali.(none)>
+Date:   Sat Sep 27 18:20:06 2014 +0530
+
+    working code for word cloud
+
+commit 03f0579277182db4b5dc04ec4709a15dc158d1e6
+Author: kaali-python <root@kaali.(none)>
+Date:   Sat Sep 27 17:16:33 2014 +0530
+
+    updated code with word cloud api working but json error still persists
+
+commit 6937894e916936b83b1155651c39229bd7ea8112
+Author: kaali-python <root@kaali.(none)>
+Date:   Wed Sep 24 16:53:09 2014 +0530
+
+    NBreaking main backbone into sevreal js
+
+commit 280fff3e316858b178fc1e230e12863964aa30f1
+Author: kaali-python <root@kaali.(none)>
+Date:   Wed Sep 24 15:24:41 2014 +0530
+
+    Changed code with bootbox to show reviews count and adding files for superpositive and super negative
+
+commit b7482a3c2bdb8d2acfd19d578da350e088fca243
+Author: k <k@kaali.(none)>
+Date:   Tue Sep 23 11:51:13 2014 +0530
+
+    Solving bug for eateries list
+
+commit cee36956eff3f14bc9d57dbbbf8bdb93289e912d
+Author: k <k@kaali.(none)>
+Date:   Tue Sep 23 11:07:15 2014 +0530
+
+    updated trainers
+
+commit 8a0f635f5be93cf311eea58052ad7ea842a7a476
+Author: k <k@kaali.(none)>
+Date:   Tue Sep 23 01:23:05 2014 +0530
+
+    changed front end tested
+
+commit 9201bafd59507344ca1e71a250abd65c157fabc3
+Author: root <root@kaali.(none)>
+Date:   Mon Sep 22 18:30:01 2014 +0530
+
+    adding last tags on front end
+
+commit cd0c50f71f8bff1dac6d9e0c01a6ee60e3679416
+Author: root <root@kaali.(none)>
+Date:   Mon Sep 22 15:02:02 2014 +0530
+
+    Tested so far working great
+
+commit fc87dfe16ec019b85a442cb8fd1a9887853c0df3
+Author: k <k@kaali.(none)>
+Date:   Mon Sep 22 14:28:05 2014 +0530
+
+    changing read more links click code
+
+commit 9225bd5425ab25391d56a78ce0caec26d1cf8983
+Author: k <k@kaali.(none)>
+Date:   Mon Sep 22 14:25:00 2014 +0530
+
+    changed code
+
+commit 8e5d802f1c20effab64b3300937e889d752d49ed
+Author: k <k@kaali.(none)>
+Date:   Sat Sep 20 19:49:29 2014 +0530
+
+    adding word cloud after the rootrow view
+
+commit dafcd5b2aa3a5d1f7600adf5060cfab6748329b8
+Author: k <k@kaali.(none)>
+Date:   Sat Sep 20 19:16:26 2014 +0530
+
+    New code
+
+commit 24a7d7dc7924d0a4dff8caa6f86efbddf992be3e
+Author: k <k@kaali.(none)>
+Date:   Fri Sep 19 16:07:21 2014 +0530
+
+    adding one more field to review enteries
+
+commit 1f940f9ec9251305d4d007aed2a7d62e1b457757
+Author: k <k@kaali.(none)>
+Date:   Fri Sep 19 15:31:13 2014 +0530
+
+    solved pagination error, adding more fields to review documents
+
+commit 66de0e15372b6622e11e0743415a18717d33558d
+Author: k <k@kaali.(none)>
+Date:   Fri Sep 19 13:19:10 2014 +0530
+
+    'Read more' bug in the reviews solved, it was due to the different div selection and nothing to do with selenium
+
+commit a2e8a2bfa9be79a1a813ea75dea2b5396ef0cb3d
+Author: k <k@kaali.(none)>
+Date:   Thu Sep 18 17:27:42 2014 +0530
+
+    Now workers check whether the eatery is present in the database or not
+
+commit 137fecc65b7a0dc9e7d6138bc8fa4dec4ce3c05e
+Author: k <k@kaali.(none)>
+Date:   Thu Sep 18 17:01:31 2014 +0530
+
+    adding celery print for workers
+
+commit e102f873ca5af67c3c61dfbcd0bbc9350c49a26a
+Author: k <k@kaali.(none)>
+Date:   Thu Sep 18 16:25:45 2014 +0530
+
+    changed code
+
+commit 1eecdb6de450570c5e301747266b1136dd17c23f
+Author: k <k@kaali.(none)>
+Date:   Thu Sep 18 15:34:47 2014 +0530
+
+    adding colors to celery output and adding date, month, day on review entries
+
+commit 16b2e1d46576ef9e581ab8e38d736a651ba559ef
+Author: k <k@kaali.(none)>
+Date:   Thu Sep 18 12:27:15 2014 +0530
+
+    rectifying eatery address error
+
+commit bd46e1e8db140cccdcfc5ae0fe5dc05ff8319f19
+Author: k <k@kaali.(none)>
+Date:   Wed Sep 17 19:46:50 2014 +0530
+
+    management response added to the db enteries
+
+commit 9edebc641418afca067825132cc0e498e75b541e
+Author: k <k@kaali.(none)>
+Date:   Wed Sep 17 18:13:28 2014 +0530
+
+    api bug solved
+
+commit 91744688074e23f487c01bc5dacd9f140c10af83
+Author: k <k@kaali.(none)>
+Date:   Wed Sep 17 17:38:30 2014 +0530
+
+    solving firefox error with trusty tahr by replacing it with chrome as selenium webdriver
+
+commit f35e32f0834e2a468d2fdab78b9a9d9ab82ed197
+Author: k <k@kaali.(none)>
+Date:   Wed Sep 17 16:06:16 2014 +0530
+
+    solving the bug, Evrything being classified as food which had happened because of the frontend
+
+commit ff514dbecea3cd76937f4f12a7da9e7e4dff0769
+Author: k <k@kaali.(none)>
+Date:   Wed Sep 17 15:41:37 2014 +0530
+
+    Solved ascii encode error
+
+commit 5e900fb41d20e910041f90dc3b0243512adb2237
+Author: k <k@kaali.(none)>
+Date:   Wed Sep 17 15:11:27 2014 +0530
+
+    Almost accurate sentence classifier
+
+commit 213fbb1f7e7ce158412e280088385a89b9e2842d
+Author: k <k@kaali.(none)>
+Date:   Wed Sep 17 14:34:39 2014 +0530
+
+    with some improvement in sentence tokenizer
+
+commit 8b2bb64e03835c01241e90415593601901e4a877
+Author: k <k@kaali.(none)>
+Date:   Wed Sep 17 12:51:14 2014 +0530
+
+    Adding custom sentence tokenizer but not tested
+
+commit 7697fab70c8ce4965d3579c006d70a83fb8360ea
+Author: k <k@kaali.(none)>
+Date:   Tue Sep 16 17:52:33 2014 +0530
+
+    adding area_or_city field to review collection
+
+commit 65dc8c358b802bf036c40848e9a3f59033e90f81
+Author: k <k@kaali.(none)>
+Date:   Tue Sep 16 15:03:22 2014 +0530
+
+    adding new tag classification and changed front end
+
+commit a28353b9a51dede7471f763e8ad5992fdb082043
+Author: k <k@kaali.(none)>
+Date:   Mon Sep 15 16:25:21 2014 +0530
+
+    changed end points
+
+commit 7e8d99aa7ae974c956bf5a477d8c705de79252e4
+Author: k <k@kaali.(none)>
+Date:   Sat Sep 13 18:33:31 2014 +0530
+
+    Adding valid trainers files so that from now on all the new text will go into new files
+
+commit 40f8a90ec2dc52930c732962a8ef49112bf7e837
+Author: k <k@kaali.(none)>
+Date:   Sat Sep 13 17:19:06 2014 +0530
+
+    Front end code aor manual classification has been completed
+
+commit 790a7b6aef74cf8a5dfa90fca508b19f65955d4b
+Author: k <k@kaali.(none)>
+Date:   Wed Sep 10 15:37:38 2014 +0530
+
+    celery tasks reframed
+
+commit c7e25929c2ef0cf466ae5e51d24555970625371a
+Author: k <k@kaali.(none)>
+Date:   Wed Sep 10 14:57:57 2014 +0530
+
+    imporivising for single restaurants also
+
+commit 5faa05900e57b4183a88152b2856a53efb60b838
+Author: k <k@kaali.(none)>
+Date:   Wed Sep 10 13:01:38 2014 +0530
+
+    additional api end points
+
+commit c366f61be437a28612f05a84288beb6fa97d9329
+Author: k <k@kk.(none)>
+Date:   Tue Sep 9 18:03:46 2014 +0530
+
+    with new updated mongodump
+
+commit 79d48da77e8cf1b266c451bdb5a515ca96c275a6
+Author: k <k@kaali.(none)>
+Date:   Tue Sep 9 12:11:36 2014 +0530
+
+    Updated proxy health checker
+
+commit 00e3bc93a1f744b3bfccb847532b8f6f553e0eb8
+Author: k <k@kaali.(none)>
+Date:   Mon Sep 8 20:37:39 2014 +0530
+
+    proxy health checker updated
+
+commit 5c2ccf5b44dd33e93398b4fce3afa77f2adef9dd
+Author: k <k@kaali.(none)>
+Date:   Mon Sep 8 20:03:10 2014 +0530
+
+    Updates read.me
+
+commit 58a78105ad6a06705b37d3d4ad589ddc9d34174b
+Author: k <k@kaali.(none)>
+Date:   Mon Sep 8 20:00:37 2014 +0530
+
+    Proxy list generation code has been completed
+
+commit 968c7dcf03716888965a519f01fdaefdceb74cca
+Author: k <k@kaali.(none)>
+Date:   Mon Sep 8 15:45:11 2014 +0530
+
+    Adding proxies scraping scripts
+
+commit c44f1408b6d1cd8ca9c4b3a7ffbac2ba558f383d
+Author: k <k@kaali.(none)>
+Date:   Mon Sep 8 14:33:28 2014 +0530
+
+    removing csvfile.close() bug
+
+commit 4b90fd6c7ccf8b8e3c53e884e8d79ea10162ba55
+Author: k <k@kaali.(none)>
+Date:   Mon Sep 8 14:13:41 2014 +0530
+
+    removed bugs
+
+commit 33821d5a06a50dc20470981e82b2e3665af6d120
+Author: k <k@kaali.(none)>
+Date:   Mon Sep 8 13:21:20 2014 +0530
+
+    updated requirements.txt
+
+commit b3d850b2417b0deafbe1790debf985a55f0360c9
+Author: k <k@kaali.(none)>
+Date:   Mon Sep 8 13:07:03 2014 +0530
+
+    with updated dump
+
+commit feefbfae99450e35e50276b84a01cc8ca72ba33c
+Author: k <k@kaali.(none)>
+Date:   Mon Sep 8 13:04:02 2014 +0530
+
+    updated code
+
+commit daecb14564956ff0e1f1b80db6c4c8ff3a9198ac
+Author: k <k@kaali.(none)>
+Date:   Tue Sep 2 12:45:56 2014 +0530
+
+    celery workers are now working fine
+
+commit 3952ef5166df11ea69d923035b612e91f0724aa8
+Author: k <k@kaali.(none)>
+Date:   Mon Sep 1 17:13:16 2014 +0530
+
+    with sample celery configuration
+
+commit 047a0baaab1917eb1e6dc8db6069f549ccb587fd
+Merge: 1c33a70 376af7b
+Author: k <k@kaali.(none)>
+Date:   Sun Aug 31 15:56:07 2014 +0530
+
+    intial commits
+
+commit 376af7b08c47f731c2d09a94ccb0e37636473d65
+Author: saurav verma <saurav.verma@outlook.com>
+Date:   Sun Aug 31 15:52:50 2014 +0530
+
+    Initial commit
+
+commit 1c33a70728a19ea67090b2cf16a2e2d2c108250d
+Author: root <root@kaali.(none)>
+Date:   Fri Aug 8 20:23:27 2014 +0530
+
+    updated fabfile to restart gunicorn
+
+commit 2d4112ebbbe5152c790bf6c5c93cbdf9664f17e0
+Author: root <root@kaali.(none)>
+Date:   Fri Aug 8 13:39:35 2014 +0530
+
+    changing ports
+
+commit 09a1eae3c37c4c353f9af7a60dd67c23117696ff
+Author: root <root@kaali.(none)>
+Date:   Thu Aug 7 23:09:18 2014 +0530
+
+    Adding sample word cloud
+
+commit e053c3928947d81eb47dade6689b2d3f191cc4fd
+Author: root <root@kaali.(none)>
+Date:   Thu Aug 7 15:04:12 2014 +0530
+
+    parenthesisthe sentence tokenization has been solved and implemented
+
+commit 2ea2345db17e87e73119f22453462ea4d54848c0
+Author: root <root@kaali.(none)>
+Date:   Wed Aug 6 16:34:02 2014 +0530
+
+    bug free fab file
+
+commit c7182901e767cf2b8a9b4ece8600222a5decbe92
+Author: root <root@kaali.(none)>
+Date:   Wed Aug 6 16:00:13 2014 +0530
+
+    removed bug
+
+commit c76e142fef98d24059902c64d7dd79873d1c001c
+Author: root <root@kaali.(none)>
+Date:   Wed Aug 6 15:56:24 2014 +0530
+
+    bug removed
+
+commit aa951a6c2d7bbe176c69ef7d35c679d556d62787
+Author: root <root@kaali.(none)>
+Date:   Wed Aug 6 15:54:23 2014 +0530
+
+    working code
+
+commit 42d8407567bc28e80b98a8951673e11ea4439ba6
+Author: root <root@kaali.(none)>
+Date:   Wed Aug 6 14:43:21 2014 +0530
+
+    changes supervisord config file
+
+commit 8fe2f04c73da60ff06f38157eb26b03953af6dac
+Author: root <root@kaali.(none)>
+Date:   Wed Aug 6 14:37:54 2014 +0530
+
+    changed supervisord config file
+
+commit ed3e7acbb399c4674bdc82efa4e5364426710b3b
+Author: root <root@kaali.(none)>
+Date:   Wed Aug 6 14:14:32 2014 +0530
+
+    updated requirements.txt and working nginx configuration file
+
+commit ee4a04408e0011fde8b1949c3ede161d3bd1eca3
+Author: root <root@kaali.(none)>
+Date:   Wed Aug 6 14:04:47 2014 +0530
+
+    updated requirements.txt and conffiles
+
+commit 9a858a7d0a3d822dfbd48f7deefc235185ab5d7b
+Author: root <root@kaali.(none)>
+Date:   Wed Aug 6 13:00:11 2014 +0530
+
+    bug related to installtion of scipy removed
+
+commit 7e11a0cb24e4ce3aad3224c06fcb3ba6bed804a2
+Author: root <root@kaali.(none)>
+Date:   Tue Aug 5 16:20:17 2014 +0530
+
+    updated requirements.txt file
+
+commit 3ea0dde0055672dd942099c572107edcd53dcfa0
+Author: root <root@kaali.(none)>
+Date:   Tue Aug 5 14:06:55 2014 +0530
+
+    incomplete fabfile
+
+commit c577adf8a1d9d300906ba577da14a3caf3e77efc
+Author: root <root@kaali.(none)>
+Date:   Tue Aug 5 13:21:36 2014 +0530
+
+    updated requirements.txt
+
+commit f38313fe474fce917a79ef75c3c06ee6c7d5e111
+Author: root <root@kaali.(none)>
+Date:   Sat Jul 26 17:03:19 2014 +0530
+
+    updated requirements.txt
+
+commit 7947674633f1e2002c39e1a11f341365f0a35046
+Author: root <root@kaali.(none)>
+Date:   Sat Jul 26 01:29:01 2014 +0530
+
+    Adding overall category to the tags
+
+commit c8bad94fd45357cf593ebf0822dd2e801c7174f8
+Author: root <root@kaali.(none)>
+Date:   Sat Jul 26 00:24:54 2014 +0530
+
+    change Sentiment functionality added
+
+commit 9ad9410df560f516ba861438dcbe2d7b1c5a672b
+Author: root <root@kaali.(none)>
+Date:   Fri Jul 25 19:16:43 2014 +0530
+
+    changed css
+
+commit aafca17c6e5de2e31b889d875af0efa5d4bdef97
+Author: root <root@kaali.(none)>
+Date:   Fri Jul 25 18:40:24 2014 +0530
+
+    bg image changed
+
+commit 3c62255393cd8de62c8a6b7e3c30f0fe3f5813e9
+Author: root <root@kaali.(none)>
+Date:   Fri Jul 25 17:33:36 2014 +0530
+
+    /update_model api bug removed
+
+commit 4711ba48d5e1ca67ccefdf072f65967b210265d8
+Author: root <root@kaali.(none)>
+Date:   Fri Jul 25 17:18:02 2014 +0530
+
+    everything is working
+
+commit e79f10a4004fff0d0c696df3c95315c331fcc332
+Author: root <root@kaali.(none)>
+Date:   Fri Jul 25 16:16:36 2014 +0530
+
+    /update_model api not working, some bug :(
+
+commit 340fe320e5b3bf281a5965fd291ddfa2cb484143
+Author: root <root@kaali.(none)>
+Date:   Wed Jul 23 21:31:14 2014 +0530
+
+    css changed for index.html
+
+commit f09718aa2706c01556e5b42506d853210b0689d5
+Author: root <root@kaali.(none)>
+Date:   Wed Jul 23 20:28:32 2014 +0530
+
+    Updating models not working
+
+commit 6855888765028b475c12e330ee310a4dcbdc4d82
+Author: root <root@kaali.(none)>
+Date:   Wed Jul 23 15:39:20 2014 +0530
+
+    frontend ajax request not working
+
+commit 4c953cbfd1cc1cd60ffb1daf842ee4a11c3322c5
+Author: root <root@kaali.(none)>
+Date:   Tue Jul 22 20:17:06 2014 +0530
+
+    changed api
+
+commit 7f4717db5c4b91d8d81153db25b23684cfe0ba8d
+Author: root <root@kaali.(none)>
+Date:   Tue Jul 22 19:37:01 2014 +0530
+
+    api working
+
+commit af5b52954a58178c08c671c355e3831504ee337a
+Author: root <root@kaali.(none)>
+Date:   Tue Jul 22 18:32:56 2014 +0530
+
+    first commit
+
+commit 4b61e505e12e0d20518056526697b66cad094d18
+Author: Aditya Khanna <aditya.khanna@me.com>
+Date:   Mon Jul 21 15:47:12 2014 +0530
+
+    Initial commit

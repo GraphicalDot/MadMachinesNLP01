@@ -682,34 +682,75 @@ class GetWordCloud(restful.Resource):
 	
 		print category, eatery_id, request.form["start_date"], request.form["end_date"], start_epoch, end_epoch
 		
-		polarity=lambda x: "positive" if float(x)>= 0 else "negative"
 		
 		noun_phrases_list = list()
 	
 		review_result = reviews.find({"eatery_id" :eatery_id, "converted_epoch": {"$gt":  start_epoch, "$lt" : end_epoch}})
 	
+		review_text = [to_unicode_or_bust(post.get("review_text")) for post in review_result]
+		review_text = " .".join(review_text)
+
+		
+		text_classfication = MainClassifier(review_text, tokenizer="text-sentence")	
+		noun_phrase = list()
+		result = list() 
+
+		classified_sentences = text_classfication.with_svm_grid_search()
+
+		##with svm returns a list in the following form
+		##[(sentence, tag), (sentence, tag), ................]
+		#for chunk in text_classfication.with_svm():
+		
+		#Getting Sentiment analysis
+		sentiment_class = SentimentClassifier(classified_sentences)
+		__predicted_sentiment = sentiment_class.with_svm_grid_search()
+
+
+
+		index = 0
+
+		for text in zip(classified_sentences, __predicted_sentiment):
+			print text[0], text[1]
+
+		#classified_sentences = [('but in the afternoon , it is usually unoccupied .', 'null'),
+		#(u'the food is fine , hard - to - eat in some cases .', 'food')]
+
+		#__predicted_sentiment = ["null", "negative" ]
+
+		filtered_tag_text = [text for text in zip(classified_sentences, __predicted_sentiment) if text[0][1] == category]
 	
-	
-		for review in review_result:
-	
-			text_classfication = Classifier(to_unicode_or_bust(review.get("review_text")))
-			filtered_tag_text = [text[0] for text in text_classfication.with_svm() if text[1] == category]
-			for text in filtered_tag_text:
-				instance = ProcessingWithBlob(to_unicode_or_bust(text))
-				noun_phrases_list.extend([(noun.lower(),  polarity(instance.sentiment_polarity())) for noun in instance.noun_phrase()])
-	
-	
-	
+		print filtered_tag_text
+
+		for text in filtered_tag_text:
+			instance = ProcessingWithBlob(to_unicode_or_bust(text[0][0]))
+			noun_phrases_list.extend([(noun.lower(),  text[1]) for noun in instance.noun_phrase()])
+
+		##Incresing and decrasing frequency of the noun phrases who are superpositive and supernegative and changing
+		##their tags to positive and negative
+		edited_result = list()
+		for __noun_phrase_dict in noun_phrases_list:
+			if __noun_phrase_dict.get("polarity") == "super-positive" or __noun_phrase_dict.get("polarity") == "super-negative":
+				polarity = __noun_phrase_dict.get("polarity")
+				__noun_phrase_dict.update({"polarity": polarity.split("-")[1]})
+				edited_result.append(__noun_phrase_dict)
+
+			else:
+				edited_result.append(__noun_phrase_dict)
+
 		result = list()
-		for key, value in Counter(noun_phrases_list).iteritems():
+
+		for key, value in Counter(edited_result).iteritems():
 			result.append({"name": key[0], "polarity": key[1], "frequency": value}) 
+		
+
+		
 		
 		return {"success": True,
 				"error": True,
 				"result": result,
 		}
 	
-
+	
 class GetValidFilesCount(restful.Resource):
 	@cors
 	def get(self):

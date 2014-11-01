@@ -1,13 +1,24 @@
 #!/usr/bin/env python
 
 import pymongo
-
+import sys
+import codecs
+import csv
 connection = pymongo.Connection()
 db = connection.modified_canworks
 eatery = db.eatery
 reviews = db.review
 
 
+def to_unicode_or_bust(obj, encoding='utf-8'):
+	if isinstance(obj, basestring):
+		if not isinstance(obj, unicode): 
+			obj = unicode(obj, encoding)
+	return obj                      
+
+
+
+"""
 def return_eateries_list():
 	__a = list()
 	for post in eatery.find():
@@ -48,7 +59,6 @@ def manipulate_review_time(__input_list):
 		__abc.append([eatery_object[0], eatery_object[1], eatery_object[2], eatery_object[3], __p])
 	return __abc
 
-
 def final_output(__input_list):
 	__abcd = list()
 	for eatery_object in __input_list:
@@ -60,6 +70,38 @@ def final_output(__input_list):
 	return __abcd		
 
 
+"""
+def new_file_for_tag_manipulation(file_name):
+	"""
+	This function will prepare a excel file with each row having first column as review id, second is the sentence and third is the
+	tag
+	"""
 
+	tag_list = ["food", "service", "null", "overall", "ambience", "cost", "positive"]
+	__food = __service = __overall = __ambience = __cost = __null = list()
 
+	for element in tag_list:
+		total_length = reviews.count()
+		print "Writing {0} sentences".format(element)
+		index = 0
 
+		for post in reviews.find():
+			if bool(post.get(element)):
+				eval("__{0}".format(element)).extend([[to_unicode_or_bust(sentence), element, post.get("review_id")] for sentence in post.get(element)])
+			index += 1
+
+	csvfile = codecs.open(file_name, 'wb')
+	writer = csv.writer(csvfile, delimiter=" ")
+
+	for tag in tag_list:
+		writer.writerow(" ")
+		for __entry in eval("__{0}".format(tag)):
+			try:
+				writer.writerow(to_unicode_or_bust(__entry))
+			except:
+				print __entry
+
+	csvfile.close()
+
+if __name__ == "__main__":
+	new_file_for_tag_manipulation("/home/k/total_reviews_classification.csv")
