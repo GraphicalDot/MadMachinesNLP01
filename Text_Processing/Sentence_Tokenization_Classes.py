@@ -13,6 +13,13 @@ import string
 #Code modified from the above mentioned website
 
 
+def to_unicode_or_bust(obj, encoding='utf-8'):
+	if isinstance(obj, basestring):
+		if not isinstance(obj, unicode):
+			obj = unicode(obj, encoding)
+	return obj
+
+
 
 # Tokenize text into words, punctuation, and whitespace tokens
 
@@ -216,7 +223,7 @@ class SentenceTokenization:
 				new_list = list()
 				for new_sentence in p:
 					if p.index(new_sentence) != 0:
-						new_list.append("{0} {1}".format(interjection.lower(), new_sentence))
+						new_list.append("{0} {1}".format(interjection.lower(), new_sentence.encode("ascii", "ignore")))
 					else:
 						new_list.append(new_sentence)
 				another.extend(new_list)
@@ -263,7 +270,7 @@ class SentenceTokenization:
 				new_list = list()
 				for new_sentence in p:
 					if p.index(new_sentence) != 0:
-						new_list.append("{0}{1}".format(character["char"], new_sentence))
+						new_list.append("{0}{1}".format(character["char"], new_sentence.encode("ascii", "ignore")))
 					else:
 						new_list.append(new_sentence)
 				another.extend(new_list)

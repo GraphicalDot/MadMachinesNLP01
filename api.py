@@ -725,14 +725,14 @@ class GetWordCloud(restful.Resource):
 			instance = ProcessingWithBlob(to_unicode_or_bust(text[0][0]))
 			noun_phrases_list.extend([(noun.lower(),  text[1]) for noun in instance.noun_phrase()])
 
+		print noun_phrases_list
+		
 		##Incresing and decrasing frequency of the noun phrases who are superpositive and supernegative and changing
 		##their tags to positive and negative
 		edited_result = list()
 		for __noun_phrase_dict in noun_phrases_list:
-			if __noun_phrase_dict.get("polarity") == "super-positive" or __noun_phrase_dict.get("polarity") == "super-negative":
-				polarity = __noun_phrase_dict.get("polarity")
-				__noun_phrase_dict.update({"polarity": polarity.split("-")[1]})
-				edited_result.append(__noun_phrase_dict)
+			if __noun_phrase_dict[1] == "super-positive" or __noun_phrase_dict[1] == "super-negative":
+				edited_result.append((__noun_phrase_dict[0], __noun_phrase_dict[1].split("-")[1]))
 
 			else:
 				edited_result.append(__noun_phrase_dict)

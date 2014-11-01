@@ -126,7 +126,7 @@ App.RootView = Backbone.View.extend({
 			else{
 				bootbox.alert(data.messege)	
 			}
-			loading_dialog.model("hide")
+			loading_dialog.modal("hide")
 			//$(".full_page").removeClass("dvLoadingWhole");
 			})
 		jqhr.fail(function(){
@@ -147,6 +147,7 @@ App.RootView = Backbone.View.extend({
 
 	seeWordCloud: function(event){
 		event.preventDefault();
+		$(".dynamic_display").empty()
 		console.log("The button see world cloud has been clicked");
 		
 		selected_eatery_id = $("#eateriesList").find('option:selected').attr("id")
@@ -543,7 +544,7 @@ App.SeeWordCloudDateSelectionView = Backbone.View.extend({
 App.SeeWordCloudDateMainView = Backbone.View.extend({
 	template: Mustache.compile('{{nounPhrase}}'),
 	tagName: "a",
-	size: function(){return this.model.frequency*40},
+	size: function(){return this.model.frequency*10},
 	nounPhrase: function(){return this.model.name},
 	polarity: function(){return this.model.polarity},
 	
