@@ -70,12 +70,7 @@ def final_output(__input_list):
 	return __abcd		
 
 
-"""
 def new_file_for_tag_manipulation(file_name):
-	"""
-	This function will prepare a excel file with each row having first column as review id, second is the sentence and third is the
-	tag
-	"""
 
 	tag_list = ["food", "service", "null", "overall", "ambience", "cost", "positive"]
 	__food = __service = __overall = __ambience = __cost = __null = list()
@@ -87,7 +82,7 @@ def new_file_for_tag_manipulation(file_name):
 
 		for post in reviews.find():
 			if bool(post.get(element)):
-				eval("__{0}".format(element)).extend([[to_unicode_or_bust(sentence), element, post.get("review_id")] for sentence in post.get(element)])
+		eval("__{0}".format(element)).extend([[to_unicode_or_bust(sentence), element, post.get("review_id")] for sentence in post.get(element)])
 			index += 1
 
 	csvfile = codecs.open(file_name, 'wb')
@@ -102,6 +97,34 @@ def new_file_for_tag_manipulation(file_name):
 				print __entry
 
 	csvfile.close()
+"""
+
+
+def make_new_files_from_csvfile(csv_path, target_path):
+	csvfile = codecs.open(csv_path, 'rb')
+	reader = csv.reader(csvfile, delimiter=',')
+	data, sorted_data = list(), list()
+	for row in reader:
+		data.append(row)
+
+	for row in data:
+		sorted_data.append([row[1], row[5]])
+
+	tag_list = ["food", "service", "null", "overall", "ambience", "cost"]
+	
+	first_name = "manually_classified"
+
+	for element in sorted_data:
+		if element[1] in tag_list:
+			with open("{0}/manually_classified_{1}.txt".format(target_path, element[1]), "a") as myfile:
+				    myfile.write(element[0])
+				    myfile.write("\n")
+
+
+
+
 
 if __name__ == "__main__":
-	new_file_for_tag_manipulation("/home/k/total_reviews_classification.csv")
+	csv_path = "/home/k/Downloads/canworks_file/total_reviews_classification_CT_01112014-NK_2.csv"
+	target_path= "/home/k/Desktop/trainers"
+	make_new_files_from_csvfile(csv_path, target_path)
