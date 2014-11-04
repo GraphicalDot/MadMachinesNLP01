@@ -70,7 +70,7 @@ class RepeatRecommendClassifier:
 		
 		self.sent_tokenizer = nltk.data.load('tokenizers/punkt/english.pickle')
 		self.data_lambda = lambda tag: [(sent, tag) for sent in 
-					self.sent_tokenizer.tokenize(open("{0}/valid_{1}.txt".format(path, tag), "rb").read(), realign_boundaries=True)
+					self.sent_tokenizer.tokenize(open("{0}/manually_classified_{1}.txt".format(path, tag), "rb").read(), realign_boundaries=True)
 					if sent != ""]
 			
 		

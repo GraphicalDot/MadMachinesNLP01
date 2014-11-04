@@ -483,7 +483,7 @@ class UpdateReviewClassification(restful.Resource):
 	
 	
 	
-			reviews.update({'review_id': __id}, {"$set":{ "is_classified": True, "classified_at": time.tinme()}}, upsert=False)
+		reviews.update({'review_id': __id}, {"$set":{ "is_classified": True, "classified_at": time.time()}}, upsert=False)
 		return {"success": True,
 					"error": False,
 					"messege": "The reviews has been marked classified",
