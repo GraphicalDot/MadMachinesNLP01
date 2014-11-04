@@ -67,10 +67,7 @@ class SentimentClassifier:
 
 		self.tag_list = ["super-positive", "positive", "negative", "super-negative", "null"]
 		
-		self.sent_tokenizer = nltk.data.load('tokenizers/punkt/english.pickle')
-		self.data_lambda = lambda tag: [(sent, tag) for sent in 
-					self.sent_tokenizer.tokenize(open("{0}/valid_{1}.txt".format(path, tag), "rb").read(), realign_boundaries=True)
-					if sent != ""]
+		self.data_lambda = lambda tag: [(sent, tag) for sent in open("{0}/manually_classified_{1}.txt".format(path, tag), "rb").read().splitlines() if sent != ""]
 			
 		
 		#joining list of lists returned by self.data, Every tag will have their own list, Itertools will join these lists into a single list	
