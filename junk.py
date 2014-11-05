@@ -97,7 +97,6 @@ def new_file_for_tag_manipulation(file_name):
 				print __entry
 
 	csvfile.close()
-"""
 
 
 def make_new_files_from_csvfile(csv_path, target_path):
@@ -119,6 +118,22 @@ def make_new_files_from_csvfile(csv_path, target_path):
 			with open("{0}/manually_classified_{1}.txt".format(target_path, element[1]), "a") as myfile:
 				    myfile.write(element[0])
 				    myfile.write("\n")
+
+
+"""
+
+
+def writing_reviews_to_csv(target_path, count):
+	reviews_list = list()
+	for post in reviews.find().limit(int(count)):
+		reviews_list.append([post.get("review_text")])
+
+
+	whole_text = " ".join(review_list)
+
+	text_classfication = MainClassifier(to_unicode_or_bust(whole_text), tokenizer="text-sentence")
+	classified_sentences = text_classfication.with_support_vector_machines()
+
 
 
 
