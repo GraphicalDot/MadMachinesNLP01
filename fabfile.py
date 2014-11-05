@@ -9,9 +9,9 @@ import os
 import time
 
 env.use_ssh_config = True
-env.hosts = ["ec2-50-112-147-199.us-west-2.compute.amazonaws.com"]
+env.hosts = ["ec2-54-191-171-237.us-west-2.compute.amazonaws.com"]
 env.user = "ubuntu"
-env.key_filename = "/home/k/Programs/Canworks/canworks.pem"
+env.key_filename = "/home/k/Programs/Canworks/new_canworks.pem"
 env.warn_only = False
 
 """
@@ -25,6 +25,7 @@ def basic_setup():
 
 	"""
 	run("sudo apt-get update")
+	run("sudo apt-get upgrade")
 	run("sudo apt-get install -y python-pip")
 	run("sudo apt-get install -y libevent-dev")
 	run("sudo apt-get install -y python-all-dev")
@@ -87,9 +88,9 @@ def virtual_env():
 					if not exists("applogs", use_sudo=True):
 						run("sudo mkdir applogs")
 						run("sudo chown -R ubuntu:ubuntu applogs")
-					if not exists("canworks", use_sudo=True):	
-						run(" git clone https://github.com/AdityaKhanna/canworks.git")
-					run("pip install -r canworks/requirements.txt")
+					if not exists("Canworks", use_sudo=True):	
+						run(" git clone https://github.com/kaali-python/Canworks.git")
+					run("pip install -r Canworks/requirements.txt")
 
 
 def download_corpora():
@@ -271,9 +272,9 @@ def update():
 def deploy():
 	print(_green("Connecting to EC2 Instance..."))	
 	execute(basic_setup)
-	execute(increase_swap)
+	#execute(increase_swap)
 	execute(virtual_env)
-	execute(hunpos_tagger)
+	#execute(hunpos_tagger)
 	execute(download_corpora)
 	execute(supervisord_conf)
 	execute(nginx)
