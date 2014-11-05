@@ -9,6 +9,16 @@ db = connection.modified_canworks
 eatery = db.eatery
 reviews = db.review
 
+import numpy
+import random
+from Text_Processing import SentenceTokenization
+import itertools
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.feature_extraction.text import TfidfTransformer
+from sklearn.naive_bayes import MultinomialNB
+from sklearn.linear_model import SGDClassifier
+from sklearn.pipeline import Pipeline
+
 
 def to_unicode_or_bust(obj, encoding='utf-8'):
 	if isinstance(obj, basestring):
@@ -119,27 +129,84 @@ def make_new_files_from_csvfile(csv_path, target_path):
 				    myfile.write(element[0])
 				    myfile.write("\n")
 
-
 """
 
-
 def writing_reviews_to_csv(target_path, count):
+	path = "/home/k/Programs/Canworks/Canworks/trainers"
 	reviews_list = list()
-	for post in reviews.find().limit(int(count)):
-		reviews_list.append([post.get("review_text")])
+	for post in reviews.find({"is_classified": False}).limit(int(count)):
+		reviews_list.append([post.get("review_text"), post.get("review_id")])
 
 
-	whole_text = " ".join(review_list)
+	
+	sent_tokenizer = SentenceTokenization() 
+	tag_list = ["food", "ambience", "cost", "service", "overall", "null"]
 
-	text_classfication = MainClassifier(to_unicode_or_bust(whole_text), tokenizer="text-sentence")
-	classified_sentences = text_classfication.with_support_vector_machines()
+	sentiment_list = ["super-positive", "positive", "negative", "super-negative", "null"]
+	
+	data_lambda = lambda tag: [(sent, tag) for sent in sent_tokenizer.tokenize(open("{0}/manually_classified_{1}.txt".format(path, tag), "rb").read(),) 
+			if sent != ""] 
+
+	whole_tag_set = list(itertools.chain(*[data_lambda(tag) for tag in tag_list]))
+	whole_sentiment_set = list(itertools.chain(*[data_lambda(tag) for tag in sentiment_list]))
+
+	[random.shuffle(whole_tag_set) for i in range(0, 10)]
+	[random.shuffle(whole_sentiment_set) for i in range(0, 10)]
 
 
+	tag_data = numpy.array([element[0] for element in whole_tag_set])
+	tag_target = numpy.array([element[1] for element in whole_tag_set])
+	
+	sentiment_data = numpy.array([element[0] for element in whole_sentiment_set])
+	sentiment_target = numpy.array([element[1] for element in whole_sentiment_set])
+	
+	
+	tag_classifier = Pipeline([('vect', CountVectorizer()), ('tfidf', TfidfTransformer()),
+			('clf', SGDClassifier(loss='hinge', penalty='l2', alpha=1e-3, n_iter=5)),])
+	
+	sentiment_classifier = Pipeline([('vect', CountVectorizer()), ('tfidf', TfidfTransformer()),
+			('clf', SGDClassifier(loss='hinge', penalty='l2', alpha=1e-3, n_iter=5)),])
 
+	tag_classifier.fit(tag_data, tag_target)
+	sentiment_classifier.fit(sentiment_data, sentiment_target)
+	
+
+	whole_text = list()
+
+	for text in reviews_list:
+		new_data = sent_tokenizer.tokenize(text[0])
+		for element in new_data:
+			whole_text.append([element, text[1]])
+	
+
+
+	predicted_tags = tag_classifier.predict([element[0] for element in whole_text])
+	predicted_sentiment = sentiment_classifier.predict([element[0] for element in whole_text])
+	
+	
+	result_for_tags = [[element[0][1], element[0][0].encode("utf-8"), element[1]] for element in zip(whole_text, predicted_tags)]
+	result_for_sentiment = [[element[0][1], element[0][0].encode("utf-8"), element[1]] for element in zip(whole_text, predicted_sentiment)]
+	
+	reviews_tags_csvfile = codecs.open("{0}/reviews_tags.csv".format(target_path), 'wb')
+	reviews_sentiment_csvfile = codecs.open("{0}/reviews_sentiment.csv".format(target_path), 'wb')
+	
+	
+	tag_writer = csv.writer(reviews_tags_csvfile, delimiter=",")
+	sentiment_writer = csv.writer(reviews_sentiment_csvfile, delimiter=",")
+
+	for __a in result_for_tags:
+		tag_writer.writerow(__a)
+	
+	for __a in result_for_sentiment:
+		sentiment_writer.writerow(__a)
+		
+	
+
+	reviews_tags_csvfile.close()
+	reviews_sentiment_csvfile.close()
 
 
 
 if __name__ == "__main__":
-	csv_path = "/home/k/Downloads/canworks_file/total_reviews_classification_CT_01112014-NK_2.csv"
-	target_path= "/home/k/Desktop/trainers"
-	make_new_files_from_csvfile(csv_path, target_path)
+	writing_reviews_to_csv("/home/k/", 10000)
+
