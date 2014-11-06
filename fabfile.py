@@ -9,7 +9,8 @@ import os
 import time
 
 env.use_ssh_config = True
-env.hosts = ["ec2-54-68-29-37.us-west-2.compute.amazonaws.com"]
+#env.hosts = ["ec2-54-68-29-37.us-west-2.compute.amazonaws.com"] ##For t2 medium
+env.hosts = ["ec2-54-186-203-98.us-west-2.compute.amazonaws.com"] ##For m3.large
 env.user = "ubuntu"
 env.key_filename = "/home/k/Programs/Canworks/new_canworks.pem"
 env.warn_only = False
@@ -43,6 +44,7 @@ def basic_setup():
 	run("sudo apt-get install -y libatlas-base-dev gfortran build-essential g++ libblas-dev")
 	#Dependicies to install hunpostagger
 	run("sudo apt-get install -y ocaml-nox")
+	run("sudo apt-get install -y mercurial")
 
 
 def increase_swap():
@@ -91,6 +93,21 @@ def virtual_env():
 					if not exists("Canworks", use_sudo=True):	
 						run(" git clone https://github.com/kaali-python/Canworks.git")
 					run("pip install -r Canworks/requirements.txt")
+def update_git_repo():
+	with cd("/home/ubuntu/VirtualEnvironment"):
+		with prefix("source bin/activate"):
+			with cd("Canworks"):
+				run(" git clone https://github.com/kaali-python/Canworks.git")
+
+
+def install_text_sentence():
+	"""
+	If installs by pip shows an error"
+	"""
+	with cd("/home/ubuntu/VirtualEnvironment/"):
+		run ("sudo hg clone https://bitbucket.org/trebor74hr/text-sentence")
+		with prefix("source bin/activate"):
+			run("/home/ubuntu/VirtualEnvironment/bin/python setup.py install")
 
 
 def download_corpora():
@@ -102,7 +119,7 @@ def download_corpora():
 
 	#nltk corpora
 	with cd("/home/ubuntu/VirtualEnvironment/"):
-		run("python -m nltk.downloader all")
+		run("sudo python -m nltk.downloader all")
 
 def update_git():
 	"""
@@ -281,12 +298,15 @@ def update():
 
 def deploy():
 	print(_green("Connecting to EC2 Instance..."))	
-	#execute(basic_setup)
-	#execute(virtual_env)
+	
+	execute(basic_setup)
+	execute(virtual_env)
+	execute(update_git)
+	execute(install_text_sentence)
 	execute(download_corpora)
-	#execute(nginx)
-	#execute(mongo)
-	#execute(health_check)
+	execute(nginx)
+	execute(mongo)
+	execute(health_check)
 	print(_yellow("...Disconnecting EC2 instance..."))
 #	run("sudo reboot")
 	disconnect_all()
