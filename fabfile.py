@@ -9,7 +9,7 @@ import os
 import time
 
 env.use_ssh_config = True
-env.hosts = ["ec2-54-191-171-237.us-west-2.compute.amazonaws.com"]
+env.hosts = ["ec2-54-68-29-37.us-west-2.compute.amazonaws.com"]
 env.user = "ubuntu"
 env.key_filename = "/home/k/Programs/Canworks/new_canworks.pem"
 env.warn_only = False
@@ -100,6 +100,9 @@ def download_corpora():
 			run("python -m textblob.download_corpora")
 
 
+	#nltk corpora
+	with cd("/home/ubuntu/VirtualEnvironment/"):
+		run("python -m nltk.downloader all")
 
 def update_git():
 	"""
@@ -116,7 +119,7 @@ def nginx():
 	git repository.Finally restart the nginx server
 	"""
 	run("sudo apt-get install -y nginx")
-	with prefix("cd /home/ubuntu/VirtualEnvironment/canworks/configs"):
+	with prefix("cd /home/ubuntu/VirtualEnvironment/Canworks/configs"):
 		run("sudo cp nginx.conf /etc/nginx/nginx.conf")
 		run("sudo cp nginx_default.conf /etc/nginx/sites-enabled/default")
 		
@@ -210,11 +213,11 @@ def ram_usage():
 def supervisord_conf():
 	with cd("/home/ubuntu/VirtualEnvironment/"):
 		with prefix("source bin/activate"):
-			run("sudo cp /home/ubuntu/VirtualEnvironment/canworks/configs/supervisord.conf /etc/supervisord.conf")
+			run("sudo cp /home/ubuntu/VirtualEnvironment/Canworks/configs/supervisord.conf /etc/supervisord.conf")
 			run("supervisorctl reload")	
 
 
-def restart_gunicorn():
+def restart_with_new_repo():
 	with cd("/home/ubuntu/VirtualEnvironment/"):
 		with prefix("source bin/activate"):
 			result = run('if ps aux | grep -v grep | grep -i "gunicorn"; then echo 1; else echo ""; fi')
@@ -228,18 +231,25 @@ def restart_gunicorn():
 	    				result = run('if ps aux | grep -v grep | grep -i "gunicorn"; then echo 1; else echo ""; fi')
 					if not result:
 						print ("\n\n%s\n\n"%_red("Gunicorn has been stopped and is starting with new repo"))
-						with cd("canworks"):
-							run("gunicorn -c canworks/configs/gunicorn_config.py api:app")
+						with cd("Canworks"):
+							run("git pull origin master")
+							run("gunicorn -c configs/gunicorn_config.py api:app")
 	    					result = run('if ps aux | grep -v grep | grep -i "gunicorn"; then echo 1; else echo ""; fi')
 						if result:
 							print ("\n\n%s\n\n"%_green("Gunicorn is running"))
+							run("sudo service nginx restart")
 						else:
 							print ("\n\n%s\n\n"%_red("Gunicorn is not running, U need to login to the server"))
+						
 
 					else:
 						print ("\n\n%s\n\n"%_red("Gunicorn has not been stopped"))
 						return
-
+			else:
+						print ("\n\n%s\n\n"%_red("Gunicorn has been started yet"))
+						with cd("Canworks"):
+							run("gunicorn -c Canworks/configs/gunicorn_config.py api:app")
+							restart_with_new_repo()
 
 def reboot():
 	run("sudo reboot")
@@ -271,16 +281,12 @@ def update():
 
 def deploy():
 	print(_green("Connecting to EC2 Instance..."))	
-	execute(basic_setup)
-	#execute(increase_swap)
-	execute(virtual_env)
-	#execute(hunpos_tagger)
+	#execute(basic_setup)
+	#execute(virtual_env)
 	execute(download_corpora)
-	execute(supervisord_conf)
-	execute(nginx)
-	execute(mongo)
-	execute(health_check)
-	execute(status)
+	#execute(nginx)
+	#execute(mongo)
+	#execute(health_check)
 	print(_yellow("...Disconnecting EC2 instance..."))
 #	run("sudo reboot")
 	disconnect_all()

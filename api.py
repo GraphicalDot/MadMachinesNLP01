@@ -29,6 +29,7 @@ eateries = db.eatery
 reviews = db.review
 
 app = Flask(__name__)
+app.config.from_pyfile('configs/flask_config.py')
 api = restful.Api(app)
 
 def to_unicode_or_bust(obj, encoding='utf-8'):
