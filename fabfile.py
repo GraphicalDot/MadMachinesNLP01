@@ -13,7 +13,7 @@ env.use_ssh_config = True
 env.hosts = ["ec2-54-186-203-98.us-west-2.compute.amazonaws.com"] ##For m3.large
 env.user = "ubuntu"
 env.key_filename = "/home/k/Programs/Canworks/new_canworks.pem"
-env.warn_only = False
+env.warn_only = True
 
 """
 This is the file which remotely makes an ec2 instance for the use of this repository
@@ -92,7 +92,11 @@ def virtual_env():
 						run("sudo chown -R ubuntu:ubuntu applogs")
 					if not exists("Canworks", use_sudo=True):	
 						run(" git clone https://github.com/kaali-python/Canworks.git")
-					run("pip install -r Canworks/requirements.txt")
+		with prefix("source bin/activate"):
+			if confirm("Do you want to install requirements.txt again??"):
+				run("pip install -r Canworks/requirements.txt")
+
+
 def update_git_repo():
 	with cd("/home/ubuntu/VirtualEnvironment"):
 		with prefix("source bin/activate"):
@@ -104,10 +108,12 @@ def install_text_sentence():
 	"""
 	If installs by pip shows an error"
 	"""
-	with cd("/home/ubuntu/VirtualEnvironment/"):
-		run ("sudo hg clone https://bitbucket.org/trebor74hr/text-sentence")
+	with cd("/home/ubuntu/VirtualEnvironment"):
+		if not exists("text-sentence", use_sudo=True):	
+			run ("sudo hg clone https://bitbucket.org/trebor74hr/text-sentence")
 		with prefix("source bin/activate"):
-			run("/home/ubuntu/VirtualEnvironment/bin/python setup.py install")
+			with cd("text-sentence"):
+				run("/home/ubuntu/VirtualEnvironment/bin/python setup.py install")
 
 
 def download_corpora():
@@ -126,7 +132,7 @@ def update_git():
 	This method will be run everytime the git repository is updated on the main machine.This clones the pushed updated 
 	repository on the git on the remote server
 	"""
-	with prefix("cd /home/ubuntu/VirtualEnvironment && source bin/activate && cd canworks"):
+	with prefix("cd /home/ubuntu/VirtualEnvironment && source bin/activate && cd Canworks"):
 		run("git pull origin master")
 
 
@@ -263,10 +269,10 @@ def restart_with_new_repo():
 						print ("\n\n%s\n\n"%_red("Gunicorn has not been stopped"))
 						return
 			else:
-						print ("\n\n%s\n\n"%_red("Gunicorn has been started yet"))
-						with cd("Canworks"):
-							run("gunicorn -c Canworks/configs/gunicorn_config.py api:app")
-							restart_with_new_repo()
+				print ("\n\n%s\n\n"%_red("Gunicorn has been started yet"))
+				with cd("Canworks"):
+					run("gunicorn -c configs/gunicorn_config.py api:app")
+					restart_with_new_repo()
 
 def reboot():
 	run("sudo reboot")
@@ -299,13 +305,14 @@ def update():
 def deploy():
 	print(_green("Connecting to EC2 Instance..."))	
 	
-	execute(basic_setup)
+	#execute(basic_setup)
 	execute(virtual_env)
-	execute(update_git)
-	execute(install_text_sentence)
-	execute(download_corpora)
-	execute(nginx)
-	execute(mongo)
+	#execute(update_git)
+	#execute(install_text_sentence)
+	#execute(download_corpora)
+	#execute(nginx)
+	#execute(mongo)
+	execute(restart_with_new_repo)
 	execute(health_check)
 	print(_yellow("...Disconnecting EC2 instance..."))
 #	run("sudo reboot")
