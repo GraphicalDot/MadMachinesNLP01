@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 #-*- coding: utf-8 -*-
 
+import re
+import csv
+import codecs
 from textblob import TextBlob 
 from flask import Flask
 from flask import request, jsonify
@@ -15,13 +18,20 @@ import shutil
 import json
 import os
 from bson.json_util import dumps
-from Text_Processing import ProcessingWithBlob, PosTags, nltk_ngrams, MainClassifier, \
-		get_all_algorithms_result, SentimentClassifier, RepeatRecommendClassifier
+from Text_Processing import ProcessingWithBlob, PosTags, nltk_ngrams,\
+		get_all_algorithms_result, InMemoryRpRcClassifier, bcolors, \
+		SVMWithGridSearch, SentenceTokenization, InMemoryMainClassifier, InMemorySentimentClassifier
 import time
 from datetime import timedelta
 import pymongo
 from collections import Counter
 from functools import wraps
+import itertools
+import random
+from sklearn.externals import joblib
+import numpy
+
+
 
 connection = pymongo.Connection()
 db = connection.modified_canworks
@@ -32,12 +42,38 @@ app = Flask(__name__)
 app.config['DEBUG'] = True
 api = restful.Api(app)
 
+
+
+path = "/home/k/Programs/Canworks/Canworks/trainers"
+path_for_inmemory_classifiers = os.path.join(os.path.dirname(os.path.abspath(__file__)) + "/InMemoryClassifiers")
+
+print path_for_inmemory_classifiers
+"""
+instance = InMemoryRpRcClassifier()
+instance.loading_all_classifiers_in_memory()
+
+#Loading all the classifiers in the memory for tags classification
+instance = InMemoryMainClassifier()
+instance.loading_all_classifiers_in_memory()
+
+instance = InMemorySentimentClassifier()
+instance.loading_all_classifiers_in_memory()
+"""
 def to_unicode_or_bust(obj, encoding='utf-8'):
 	if isinstance(obj, basestring):
 		if not isinstance(obj, unicode):
 			obj = unicode(obj, encoding)
 	return obj
 
+def timeit(method):
+        def timed(*args, **kw):
+                ts = time.time()
+                result = method(*args, **kw)
+                te = time.time()
+
+                print '%s%r (%r, %r) %2.2f sec %s'%(bcolors.OKGREEN, method.__name__, args, kw, te-ts, bcolors.RESET)
+                return result
+        return timed
 
 
 
@@ -208,6 +244,7 @@ class OnlyAlgortihmsNames(restful.Resource):
 
 class ProcessText(restful.Resource):
 	@cors
+	@timeit
 	def post(self):
 		"""
 		This api end point returns the text after processing or classfying with algorithm syupplied in the arguments.
@@ -239,7 +276,43 @@ class ProcessText(restful.Resource):
 				"messege": "Algorithm field cannot be left empty"
 				}
 
+	
+		tokenizer = SentenceTokenization()
+		tokenized_sentences = tokenizer.tokenize(to_unicode_or_bust(text))
+		#predicted = classifier.predict(new_data)
+		
+		with cd(path_for_inmemory_classifiers):
+			tag_classifier = joblib.load('{0}_tag.lib'.format(algorithm))
+			sentiment_classifier = joblib.load('{0}_sentiment.lib'.format(algorithm))
+			rp_rc_classifier = joblib.load('{0}_rprc.lib'.format(algorithm))
+		
+		__predicted_tags = tag_classifier.predict(tokenized_sentences)
+		__predicted_sentiment = sentiment_classifier.predict(tokenized_sentences)
+		__predicted_customers = rp_rc_classifier.predict(tokenized_sentences)
 
+
+
+		noun_phrase = list()
+		result = list() 
+			
+		"""
+
+
+		classified_sentences = zip(new_data, predicted_tags)
+
+		##with svm returns a list in the following form
+		##[(sentence, tag), (sentence, tag), ................]
+		#for chunk in text_classfication.with_svm():
+		
+		#Getting Sentiment analysis
+		__predicted_sentiment = sentiment_classifier.predict(new_data)
+
+
+		##Getting type of customer, whether a recommended, repeated or null customer
+		__predicted_customers = rep_rec_classifier.predict(new_data)
+
+
+		print zip(classified_sentences, __predicted_sentiment, __predicted_customers)
 		text_classfication = MainClassifier(to_unicode_or_bust(text), tokenizer="text-sentence")	
 		noun_phrase = list()
 		result = list() 
@@ -263,21 +336,21 @@ class ProcessText(restful.Resource):
 		print __predicted_customers
 
 
-		print zip(classified_sentences, __predicted_sentiment, __predicted_customers)
-
+		"""
+		print zip(tokenized_sentences, __predicted_tags, __predicted_sentiment, __predicted_customers)
 		index = 0
-		for chunk in classified_sentences:
+		for chunk in zip(tokenized_sentences, __predicted_tags, __predicted_sentiment, __predicted_customers):
 			element = dict()
 			instance = ProcessingWithBlob(chunk[0])
 			element["sentence"] = chunk[0]
-			element["polarity"] = {"name": __predicted_sentiment[index], "value": '0.0'}
+			element["polarity"] = {"name": chunk[2], "value": '0.0'}
 			element["noun_phrases"] = list(instance.noun_phrase())
 			element["tag"] = chunk[1]
-			element["customer_type"] = __predicted_customers[index]
+			element["customer_type"] = chunk[3]
 			result.append(element)
 			noun_phrase.extend(list(instance.noun_phrase()))
 			index += 1
-		
+	
 		return {
 				"result": result,
 				"success": True,
@@ -692,41 +765,49 @@ class GetWordCloud(restful.Resource):
 		review_text = " .".join(review_text)
 
 		
-		text_classfication = MainClassifier(review_text, tokenizer="text-sentence")	
+		with cd(path_for_inmemory_classifiers):
+			tag_classifier = joblib.load('svm_grid_search_classifier_tag.lib')
+			sentiment_classifier = joblib.load('svm_grid_search_classifier_sentiment.lib')
+		
 		noun_phrase = list()
 		result = list() 
 
-		classified_sentences = text_classfication.with_svm_grid_search()
+		sent_tokenizer = SentenceTokenization()
+		
+		
+		test_sentences = sent_tokenizer.tokenize(to_unicode_or_bust(review_text))
 
 		##with svm returns a list in the following form
 		##[(sentence, tag), (sentence, tag), ................]
 		#for chunk in text_classfication.with_svm():
 		
 		#Getting Sentiment analysis
-		sentiment_class = SentimentClassifier(classified_sentences)
-		__predicted_sentiment = sentiment_class.with_svm_grid_search()
+		__predicted_tags = tag_classifier.predict(test_sentences)
+		__predicted_sentiment = sentiment_classifier.predict(test_sentences)
 
 
 
 		index = 0
-
-		for text in zip(classified_sentences, __predicted_sentiment):
-			print text[0], text[1]
 
 		#classified_sentences = [('but in the afternoon , it is usually unoccupied .', 'null'),
 		#(u'the food is fine , hard - to - eat in some cases .', 'food')]
 
 		#__predicted_sentiment = ["null", "negative" ]
 
-		filtered_tag_text = [text for text in zip(classified_sentences, __predicted_sentiment) if text[0][1] == category]
+		filtered_tag_text = [text for text in zip(test_sentences, __predicted_tags, __predicted_sentiment) if text[1] == category]
 	
 		print filtered_tag_text
 
-		for text in filtered_tag_text:
-			instance = ProcessingWithBlob(to_unicode_or_bust(text[0][0]))
-			noun_phrases_list.extend([(noun.lower(),  text[1]) for noun in instance.noun_phrase()])
+		regex = re.compile(r'friend',  flags=re.I)
 
-		print noun_phrases_list
+		presence_for_lunch = list()
+
+		for text in filtered_tag_text:
+			instance = ProcessingWithBlob(to_unicode_or_bust(text[0]))
+			noun_phrases_list.extend([(noun.lower(),  text[2]) for noun in instance.noun_phrase()])
+			if bool(regex.findall(text[0])):
+				presence_for_lunch.append(text[0])
+
 		
 		##Incresing and decrasing frequency of the noun phrases who are superpositive and supernegative and changing
 		##their tags to positive and negative
@@ -744,8 +825,17 @@ class GetWordCloud(restful.Resource):
 			result.append({"name": key[0], "polarity": key[1], "frequency": value}) 
 		
 
-		
-		
+
+		with open("/home/k/word_cloud.csv", "wb") as csv_file:
+			writer = csv.writer(csv_file, delimiter=',')
+			for line in result:
+				writer.writerow([line.get("name").encode("utf-8"), line.get("polarity"), line.get("frequency")])
+
+
+		print presence_for_lunch
+
+		print "\n\n Here is the length %s"%len(presence_for_lunch)
+
 		return {"success": True,
 				"error": True,
 				"result": result,

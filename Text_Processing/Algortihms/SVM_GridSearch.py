@@ -7,20 +7,18 @@ from sklearn.feature_selection import SelectKBest, chi2
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.feature_extraction.text import TfidfTransformer
+from sklearn.feature_extraction.text import HashingVectorizer
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.pipeline import Pipeline
 from sklearn.grid_search import GridSearchCV
 import numpy
 
 class SVMWithGridSearch:
-	"""
-	
-	"""
 	def __init__(self, data, target):
 		self.data = data
 		self.target = target
 
-	def __classifier(self):
+	def classifier(self):
 		#count_vect = CountVectorizer()
 		#X_train_counts = count_vect.fit_transform(self.data)
 		#tfidf_transformer = TfidfTransformer()
@@ -44,22 +42,7 @@ class SVMWithGridSearch:
 				#'clf__n_iter': (10, 50, 80),
 				}
 
-		grid_search = GridSearchCV(pipeline, parameters, n_jobs=-1, verbose=1)
-		grid_search.fit(self.data, self.target)
+		svm_with_grid_search = GridSearchCV(pipeline, parameters, n_jobs=-1, verbose=1)
+		svm_with_grid_search.fit(self.data, self.target)
 
-		return grid_search
-
-
-	def predict(self, data_to_predict):
-		#vectorizer = TfidfVectorizer(sublinear_tf=True, max_df=0.5, stop_words='english')
-		#X_test = vectorizer.transform(data_to_predict)
-		classifier = self.__classifier()
-		
-		#count_vect = CountVectorizer()
-		#tfidf_transformer = TfidfTransformer()
-		#X_new_counts = count_vect.transform(numpy.array(data_to_predict))
-		#X_new_tfidf = tfidf_transformer.transform(X_new_counts)
-
-		prediction = classifier.predict(data_to_predict)
-
-		return zip(data_to_predict, prediction)
+		return svm_with_grid_search

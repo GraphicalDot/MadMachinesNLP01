@@ -1,7 +1,3 @@
-#!/usr/bin/env python
 #-*- coding: utf-8 -*-
 
-
-from main_repeated_recommended_analysis import RepeatRecommendClassifier
-
-
+from In_Memory_Rp_Rc_Classifier import InMemoryRpRcClassifier

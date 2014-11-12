@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 #-*- coding: utf-8 -*-
 
-from main_sentiment_analysis import SentimentClassifier
-
+from In_Memory_Sentiment_Classification import InMemorySentimentClassifier
 

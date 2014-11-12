@@ -72,7 +72,7 @@ class Sklearn_RandomForest:
 		self.data = data
 		self.target = target
 
-	def __classifier(self):
+	def classifier(self):
 		#count_vect = CountVectorizer()
 		#X_train_counts = count_vect.fit_transform(self.data)
 		#tfidf_transformer = TfidfTransformer()
@@ -87,20 +87,6 @@ class Sklearn_RandomForest:
 		return RandomForest_classifier
 
 
-	def predict(self, data_to_predict):
-		vectorizer = TfidfVectorizer(sublinear_tf=True, max_df=0.5, stop_words='english')
-		X_test = vectorizer.transform(data_to_predict)
-		
-		classifier = self.__classifier()
-		
-		#count_vect = CountVectorizer()
-		#tfidf_transformer = TfidfTransformer()
-		#X_new_counts = count_vect.transform(numpy.array(data_to_predict))
-		#X_new_tfidf = tfidf_transformer.transform(X_new_counts)
-
-		prediction = classifier.predict(X_test.toarray())
-
-		return zip(data_to_predict, prediction)
 
 
 	def predict_with_chi_test(self, data_to_predict):
