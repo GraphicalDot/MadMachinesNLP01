@@ -18,9 +18,11 @@ import shutil
 import json
 import os
 from bson.json_util import dumps
-from Text_Processing import ProcessingWithBlob, PosTags, nltk_ngrams,\
-		get_all_algorithms_result, InMemoryRpRcClassifier, bcolors, \
-		SVMWithGridSearch, SentenceTokenization, InMemoryMainClassifier, InMemorySentimentClassifier
+from Text_Processing import ProcessingWithBlob, PosTags, nltk_ngrams, get_all_algorithms_result, RpRcClassifier, \
+		bcolors, CopiedSentenceTokenizer, SentenceTokenizationOnRegexOnInterjections, get_all_algorithms_result, \
+		path_parent_dir, path_trainers_file, path_in_memory_classifiers, timeit, cd, SentimentClassifier, \
+		TagClassifier
+
 import time
 from datetime import timedelta
 import pymongo
@@ -43,39 +45,23 @@ app.config['DEBUG'] = True
 api = restful.Api(app)
 
 
+def load_classifiers_in_memory():
+	instance = RpRcClassifier()
+	instance.loading_all_classifiers_in_memory()
 
-path = "/home/k/Programs/Canworks/Canworks/trainers"
-path_for_inmemory_classifiers = os.path.join(os.path.dirname(os.path.abspath(__file__)) + "/InMemoryClassifiers")
+	#Loading all the classifiers in the memory for tags classification
+	instance = TagClassifier()
+	instance.loading_all_classifiers_in_memory()
 
-print path_for_inmemory_classifiers
-"""
-instance = InMemoryRpRcClassifier()
-instance.loading_all_classifiers_in_memory()
+	instance = SentimentClassifier()
+	instance.loading_all_classifiers_in_memory()
 
-#Loading all the classifiers in the memory for tags classification
-instance = InMemoryMainClassifier()
-instance.loading_all_classifiers_in_memory()
 
-instance = InMemorySentimentClassifier()
-instance.loading_all_classifiers_in_memory()
-"""
 def to_unicode_or_bust(obj, encoding='utf-8'):
 	if isinstance(obj, basestring):
 		if not isinstance(obj, unicode):
 			obj = unicode(obj, encoding)
 	return obj
-
-def timeit(method):
-        def timed(*args, **kw):
-                ts = time.time()
-                result = method(*args, **kw)
-                te = time.time()
-
-                print '%s%r (%r, %r) %2.2f sec %s'%(bcolors.OKGREEN, method.__name__, args, kw, te-ts, bcolors.RESET)
-                return result
-        return timed
-
-
 
 
 
@@ -200,12 +186,6 @@ def cors(func, allow_origin=None, allow_headers=None, max_age=None):
 	return wrapper
 
 
-def to_unicode_or_bust(obj, encoding='utf-8'):
-	if isinstance(obj, basestring):
-		if not isinstance(obj, unicode):
-			obj = unicode(obj, encoding)
-	return obj
-
 
 class AlgorithmsComparison(restful.Resource):
 	@cors
@@ -277,14 +257,14 @@ class ProcessText(restful.Resource):
 				}
 
 	
-		tokenizer = SentenceTokenization()
+		tokenizer = SentenceTokenizationOnRegexOnInterjections()
 		tokenized_sentences = tokenizer.tokenize(to_unicode_or_bust(text))
 		#predicted = classifier.predict(new_data)
 		
-		with cd(path_for_inmemory_classifiers):
+		with cd(path_in_memory_classifiers):
 			tag_classifier = joblib.load('{0}_tag.lib'.format(algorithm))
 			sentiment_classifier = joblib.load('{0}_sentiment.lib'.format(algorithm))
-			rp_rc_classifier = joblib.load('{0}_rprc.lib'.format(algorithm))
+			rp_rc_classifier = joblib.load('{0}_rp_rc.lib'.format(algorithm))
 		
 		__predicted_tags = tag_classifier.predict(tokenized_sentences)
 		__predicted_sentiment = sentiment_classifier.predict(tokenized_sentences)
@@ -292,51 +272,8 @@ class ProcessText(restful.Resource):
 
 
 
-		noun_phrase = list()
-		result = list() 
+		noun_phrase, result = list(), list()
 			
-		"""
-
-
-		classified_sentences = zip(new_data, predicted_tags)
-
-		##with svm returns a list in the following form
-		##[(sentence, tag), (sentence, tag), ................]
-		#for chunk in text_classfication.with_svm():
-		
-		#Getting Sentiment analysis
-		__predicted_sentiment = sentiment_classifier.predict(new_data)
-
-
-		##Getting type of customer, whether a recommended, repeated or null customer
-		__predicted_customers = rep_rec_classifier.predict(new_data)
-
-
-		print zip(classified_sentences, __predicted_sentiment, __predicted_customers)
-		text_classfication = MainClassifier(to_unicode_or_bust(text), tokenizer="text-sentence")	
-		noun_phrase = list()
-		result = list() 
-
-		polarity=lambda x: "positive" if float(x)>= 0 else "negative"
-
-		classified_sentences = eval("{0}.with_{1}()".format("text_classfication", "_".join(algorithm.split(" "))))
-
-		##with svm returns a list in the following form
-		##[(sentence, tag), (sentence, tag), ................]
-		#for chunk in text_classfication.with_svm():
-		
-		#Getting Sentiment analysis
-		sentiment_class = SentimentClassifier(classified_sentences)
-		__predicted_sentiment = eval("{0}.with_{1}()".format("sentiment_class", "_".join(algorithm.split(" "))))
-
-
-		##Getting type of customer, whether a recommended, repeated or null customer
-		customer_class = RepeatRecommendClassifier(classified_sentences)
-		__predicted_customers = eval("{0}.with_{1}()".format("customer_class", "_".join(algorithm.split(" "))))
-		print __predicted_customers
-
-
-		"""
 		print zip(tokenized_sentences, __predicted_tags, __predicted_sentiment, __predicted_customers)
 		index = 0
 		for chunk in zip(tokenized_sentences, __predicted_tags, __predicted_sentiment, __predicted_customers):
@@ -765,14 +702,14 @@ class GetWordCloud(restful.Resource):
 		review_text = " .".join(review_text)
 
 		
-		with cd(path_for_inmemory_classifiers):
+		with cd(path_in_memory_classifiers):
 			tag_classifier = joblib.load('svm_grid_search_classifier_tag.lib')
 			sentiment_classifier = joblib.load('svm_grid_search_classifier_sentiment.lib')
 		
 		noun_phrase = list()
 		result = list() 
 
-		sent_tokenizer = SentenceTokenization()
+		sent_tokenizer = SentenceTokenizationOnRegexOnInterjections()
 		
 		
 		test_sentences = sent_tokenizer.tokenize(to_unicode_or_bust(review_text))
@@ -796,7 +733,6 @@ class GetWordCloud(restful.Resource):
 
 		filtered_tag_text = [text for text in zip(test_sentences, __predicted_tags, __predicted_sentiment) if text[1] == category]
 	
-		print filtered_tag_text
 
 		regex = re.compile(r'friend',  flags=re.I)
 
@@ -825,14 +761,13 @@ class GetWordCloud(restful.Resource):
 			result.append({"name": key[0], "polarity": key[1], "frequency": value}) 
 		
 
-
+		"""
 		with open("/home/k/word_cloud.csv", "wb") as csv_file:
 			writer = csv.writer(csv_file, delimiter=',')
 			for line in result:
 				writer.writerow([line.get("name").encode("utf-8"), line.get("polarity"), line.get("frequency")])
+		"""
 
-
-		print presence_for_lunch
 
 		print "\n\n Here is the length %s"%len(presence_for_lunch)
 
@@ -850,9 +785,7 @@ class GetValidFilesCount(restful.Resource):
 		It checks how much updation has been done to the valid fieles by the canworks guys
 		"""
 		result = list()
-		path = os.path.dirname(os.path.abspath(__file__))	
-		file_path = os.path.join(path + "/trainers")
-		file_list =  [os.path.join(file_path + "/" + file) for file in os.listdir(file_path)]
+		file_list =  [os.path.join(file_path + "/" + file) for file in os.listdir(path_trainers_file)]
 		
 		for file in file_list:
 			result.append((file, subprocess.check_output(["wc", "-l", file]).split(" ")[0]))
@@ -866,16 +799,6 @@ class GetValidFilesCount(restful.Resource):
 
 
 
-class cd:
-        def __init__(self, newPath):
-                self.newPath = newPath
-
-        def __enter__(self):
-                self.savedPath = os.getcwd()
-                os.chdir(self.newPath)
-
-        def __exit__(self, etype, value, traceback):
-                os.chdir(self.savedPath)
 		
 api.add_resource(ProcessText, '/process_text')
 api.add_resource(UpdateModel, '/update_model')

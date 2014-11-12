@@ -170,7 +170,7 @@ class CopiedSentenceTokenizer():
 
 
 
-class SentenceTokenization:
+class SentenceTokenizationOnRegexOnInterjections:
 	"""
 	This class uses https://pypi.python.org/pypi/text-sentence/0.14
 	text-sentence library to break a chunk of text into sentences

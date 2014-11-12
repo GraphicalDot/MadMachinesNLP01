@@ -1,12 +1,11 @@
 #!/usr/bin/env python
 #-*- coding: utf-8 -*-
 
-from Blob import ProcessingWithBlob, PosTags, CustomParsing
+from NounPhrasesAnalysis import ProcessingWithBlob, PosTags
 from helpers import nltk_ngrams
-from Sentence_Tokenization_Classes import SentenceTokenization
-from SentimentAnalysis import InMemorySentimentClassifier
-from RepeatedRecommendedAnalysis import InMemoryRpRcClassifier
+from Sentence_Tokenization import CopiedSentenceTokenizer, SentenceTokenizationOnRegexOnInterjections
+from SentimentAnalysis import SentimentClassifier
+from RepeatedRecommendedAnalysis import RpRcClassifier
 from colored_print import bcolors
-from In_Memory_Main_Classification import InMemoryMainClassifier
-from In_Memory_Main_Classification import get_all_algorithms_result
-from Algortihms import SVMWithGridSearch
+from TagAnalysis import TagClassifier
+from MainAlgorithms import get_all_algorithms_result, path_parent_dir, path_trainers_file, path_in_memory_classifiers, timeit, cd
