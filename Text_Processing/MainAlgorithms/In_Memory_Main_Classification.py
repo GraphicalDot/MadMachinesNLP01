@@ -176,6 +176,7 @@ class InMemoryMainClassifier(object):
 		return classifier
 
 
+	"""
 	@timeit
 	def random_forests_classifier(self):
 
@@ -185,7 +186,8 @@ class InMemoryMainClassifier(object):
 		
 
 		return classifier
-
+	"""
+	
 	@timeit
 	def svm_grid_search_classifier(self):
 		print "\n Running {0} \n".format(inspect.stack()[0][3])

@@ -77,14 +77,19 @@ class Sklearn_RandomForest:
 		#X_train_counts = count_vect.fit_transform(self.data)
 		#tfidf_transformer = TfidfTransformer()
 		#X_train_tfidf = tfidf_transformer.fit_transform(X_train_counts)
-		
+		"""
 		vectorizer = TfidfVectorizer(sublinear_tf=True, max_df=0.5, stop_words='english')
 		X_train = vectorizer.fit_transform(self.data)
 		RandomForest_classifier = RandomForestClassifier(n_estimators=10)
 
 		RandomForest_classifier.fit(X_train.toarray(), self.target)
+		"""
 
-		return RandomForest_classifier
+		classifier = Pipeline([('vect', CountVectorizer()), ('tfidf', TfidfTransformer()), 
+				('clf', RandomForestClassifier(n_estimators=10)),])
+
+		classifier.fit(self.data, self.target)
+		return classifier
 
 
 

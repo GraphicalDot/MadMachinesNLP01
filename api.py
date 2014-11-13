@@ -734,7 +734,7 @@ class GetWordCloud(restful.Resource):
 		filtered_tag_text = [text for text in zip(test_sentences, __predicted_tags, __predicted_sentiment) if text[1] == category]
 	
 
-		regex = re.compile(r'friend',  flags=re.I)
+		regex = re.compile(r'family',  flags=re.I)
 
 		presence_for_lunch = list()
 
