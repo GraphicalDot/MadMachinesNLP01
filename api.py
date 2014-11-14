@@ -769,7 +769,7 @@ class GetWordCloud(restful.Resource):
 
 
 		print "\n\n Here is the length %s"%len(presence_for_lunch)
-		print result
+		print "\n\n\n Length of the data of the word cloud %s \n\n\n"%len(result)
 
 		return {"success": True,
 				"error": True,
