@@ -164,6 +164,7 @@ App.RootView = Backbone.View.extend({
 			"message": subView.render().el,
 			"animate": true,
 			"closeButton": true,
+			"className": "data_selection",
 			})
 		//.find('.modal-content').addClass("bootbox-modal-custom-class");    
 	},

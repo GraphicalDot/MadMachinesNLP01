@@ -55,54 +55,32 @@ def timeit(method):
 
 
 class InMemoryMainClassifier(object):
-	def __init__(self, tokenizer=None):
-		"""
-		BY Default 
-			Sentence tokenizer present in the nltk library is used to tokenize the sentences
+	
+	def __init__(self, tag_list):
 
-		"""
-		
 		start = time.time()
-		self.tokenizer = tokenizer
+		self.tag_list = tag_list
 		
-		self.tag_list = ["food", "ambience", "cost", "service", "overall", "null"]
-			
-		
-		
-		if not self.tokenizer:
-			self.sent_tokenizer = nltk.data.load('tokenizers/punkt/english.pickle')
-			self.data_lambda = lambda tag: np.array([(sent, tag) for sent in 
-					self.sent_tokenizer.tokenize(open("{0}/manually_classified_{1}.txt".format(path_trainers_file, tag), 
-						"rb").read(), realign_boundaries=True) if sent != ""])
-			
-		if self.tokenizer == "text-sentence":
-			self.sent_tokenizer = SentenceTokenization()
-			self.data_lambda = lambda tag: np.array([(sent, tag) for sent in 
-					self.sent_tokenizer.tokenize(open("{0}/manually_classified_{1}.txt".format(path_trainers_file, tag), "rb").read(),) 
-					if sent != ""])
-			
-		
-		#joining list of lists returned by self.data, Every tag will have their own list, Itertools will join these lists into a single list	
-		self.whole_set = list(itertools.chain(*[self.data_lambda(tag) for tag in self.tag_list]))
-		
+		self.sent_tokenizer = SentenceTokenizationOnRegexOnInterjections()
+	
+		self.data_lambda = lambda tag: np.array([(sent, tag) for sent in self.sent_tokenizer.tokenize(open("{0}/manually_classified_{1}.txt".format(path_trainers_file, tag), "rb").read(),) if sent != ""])
+
+		self.whole_set = list(itertools.chain(*map(self.data_lambda, self.tag_list)))
 		#Shuffling the list formed ten times to get better results.
+		
 		[random.shuffle(self.whole_set) for i in range(0, 10)]
 		
 	
 		self.training_sentences, self.training_target_tags = zip(*self.whole_set)
 
+		self.cls_methods_for_algortihms = [method[0] for method in inspect.getmembers(self, predicate=inspect.ismethod) if method[0] not in ['loading_all_classifiers_in_memory', "__init__"]]
 		print "{0} Total time taken to intialize class Main_Classification FUNCTION--<{1}{2}".format(bcolors.OKGREEN, time.time()-start, bcolors.RESET) 	
 
 
 	@timeit
 	def loading_all_classifiers_in_memory(self):
-		instance = InMemoryMainClassifier()
-		
-		cls_methods_for_algortihms = [method[0] for method in inspect.getmembers(self, predicate=inspect.ismethod) if method[0] not in ['loading_all_classifiers_in_memory', "__init__"]]
-
-		print cls_methods_for_algortihms
 		with cd(path_in_memory_classifiers):
-			for class_method in cls_methods_for_algortihms:
+			for class_method in self.cls_methods_for_algortihms:
 				instance = InMemoryMainClassifier()
 				classifier = eval("{0}.{1}()".format("instance", class_method))
 				joblib_name_for_classifier = "{0}_tag.lib".format(class_method)

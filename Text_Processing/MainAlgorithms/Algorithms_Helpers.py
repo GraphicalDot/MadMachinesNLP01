@@ -23,7 +23,7 @@ def get_all_algorithms_result(text="If only name of the algorithms are required"
 	#tokenizer = SentenceTokenization()
 	#new_data = tokenizer.tokenize(text)
 	
-	classifier_cls = InMemoryMainClassifier()
+	classifier_cls = InMemoryMainClassifier(["food", "ambience", "cost", "service", "overall", "null"])
 	
 	cls_methods_for_algortihms = [method[0] for method in inspect.getmembers(classifier_cls, predicate=inspect.ismethod) if method[0] not in ['loading_all_classifiers_in_memory', "__init__"]]
 	

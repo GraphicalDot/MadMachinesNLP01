@@ -723,7 +723,6 @@ class GetWordCloud(restful.Resource):
 		__predicted_sentiment = sentiment_classifier.predict(test_sentences)
 
 
-
 		index = 0
 
 		#classified_sentences = [('but in the afternoon , it is usually unoccupied .', 'null'),
@@ -770,6 +769,7 @@ class GetWordCloud(restful.Resource):
 
 
 		print "\n\n Here is the length %s"%len(presence_for_lunch)
+		print result
 
 		return {"success": True,
 				"error": True,
@@ -821,4 +821,5 @@ api.add_resource(OnlyAlgortihmsNames, '/get_all_algorithms_name')
 
 
 if __name__ == '__main__':
-    app.run(port=8000, debug=True)
+	#load_classifiers_in_memory()
+	app.run(port=8000, debug=True)
