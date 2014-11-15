@@ -771,9 +771,11 @@ class GetWordCloud(restful.Resource):
 		print "\n\n Here is the length %s"%len(presence_for_lunch)
 		print "\n\n\n Length of the data of the word cloud %s \n\n\n"%len(result)
 
+		sorted_result = sorted(result, reverse=True, key=lambda x: x.get("frequency"))
+
 		return {"success": True,
 				"error": True,
-				"result": result,
+				"result": sorted_result[0:100],
 		}
 	
 	
