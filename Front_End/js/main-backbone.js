@@ -21,12 +21,13 @@ App.RootView = Backbone.View.extend({
 				})
 						}
 			else{
-				bootbox.alert(data.messege)	
+				bootbox.alert(data.error)	
 			}
 		})
 		
-		jqhr.fail(function(){
-				bootbox.alert("Either the api or internet connection is not working, Try again later")
+		jqhr.fail(function(data){
+				
+				bootbox.alert(data.error)
 		});
 		console.log("Root view called")
 

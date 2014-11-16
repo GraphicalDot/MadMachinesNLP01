@@ -687,11 +687,15 @@ class GetWordCloud(restful.Resource):
 		__format = '%Y-%m-%d'
 		eatery_id = args["eatery_id"]
 		category = args["category"].split("__")[1].lower()
-		start_epoch = time.mktime(time.strptime(args["start_date"], __format))
-		end_epoch = time.mktime(time.strptime(args["end_date"], __format))
+		
+		try:
+			start_epoch = time.mktime(time.strptime(args["start_date"], __format))
+			end_epoch = time.mktime(time.strptime(args["end_date"], __format))
+		except Exception:
+			return {"success": False,
+				"error": "Dude!!, Please wait for the dates to be updated",
+			}
 	
-	
-		print category, eatery_id, request.form["start_date"], request.form["end_date"], start_epoch, end_epoch
 		
 		
 		noun_phrases_list = list()
@@ -757,7 +761,7 @@ class GetWordCloud(restful.Resource):
 		result = list()
 
 		for key, value in Counter(edited_result).iteritems():
-			result.append({"name": key[0], "polarity": key[1], "frequency": value}) 
+			result.append({"name": key[0], "polarity": 1 if key[1] == 'positive' else 0 , "frequency": value}) 
 		
 
 		"""
@@ -772,6 +776,8 @@ class GetWordCloud(restful.Resource):
 		print "\n\n\n Length of the data of the word cloud %s \n\n\n"%len(result)
 
 		sorted_result = sorted(result, reverse=True, key=lambda x: x.get("frequency"))
+
+		print sorted_result[0: 100]
 
 		return {"success": True,
 				"error": True,

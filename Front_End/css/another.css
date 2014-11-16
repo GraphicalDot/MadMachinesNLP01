@@ -3,6 +3,16 @@ a, a:visited {
   color:#333;
 }
 
+.background_class{
+	/*background-image: url("web-background-wallpapers.jpg");*/ 
+	 background-repeat: no-repeat;
+ }
+
+
+.purpleForegroundStop1 { stop-color: adjust-lightness( $c-cyanBright, 7 ); }
+.purpleForegroundStop2 { stop-color: $c-cyanBright; }
+
+
 
 header {
   padding: 10px;
@@ -43,12 +53,13 @@ header {
 
 .bubble-node {
   /* fill: #d1e0f3; */
-  fill: #DCE9BE;
+  /*fill: #DCE9BE;*/
 }
 
 .bubble-hover {
   /* fill: #b8c7d9; */
-  fill: #E8E9E7;
+	opacity:  0.5,
+	filter: alpha(opacity=40);
 }
 
 .bubble-selected {

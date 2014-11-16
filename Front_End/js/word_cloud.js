@@ -113,7 +113,6 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 	},
 
 
-
 	render: function(){
 		//copied from : https://github.com/vlandham/bubble_cloud/blob/gh-pages/coffee/vis.coffee
 		//explanation at:
@@ -150,21 +149,23 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 	
 			jitter = 0.5
 
-			transformData = function(rawData) {
-				    rawData.forEach(function(d) {
-					          d.count = parseInt(d.count);
-						        return rawData.sort(function() {
-								        return 0.5 - Math.random();
-									      });
-							    });
-				        return rawData;
+			transformData = function(rawData){
+				rawData.forEach(function(d){
+					d.count = parseInt(d.count);
+						return rawData.sort(function(){
+							return 0.5 - Math.random();
+										});
+				})
+					return rawData;
 					  };
 		
 
 			function tick(e){
+			
 				var dampenedAlpha;
 				dampenedAlpha = e.alpha * 0.1
-	
+				console.log
+
 				node.each(gravity(dampenedAlpha))
 				.each(collide(jitter))
 				.attr("transform", function(d){
@@ -173,9 +174,9 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 		
 				return label.style("left", function(d){
 					return ((margin.left + d.x) - d.dx / 2) + "px";
-					          }).style("top", function(d) {
-							        return ((margin.top + d.y) - d.dy / 2) + "px";
-								    });
+						}).style("top", function(d) {
+							return ((margin.top + d.y) - d.dy/2) + "px";
+						});
 					
 			};
 	
@@ -184,6 +185,7 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 			force = d3.layout.force()
 					.gravity(0)
 					.charge(0)
+					.alpha(0.5)
 					.size([width, height])
 					.on("tick", tick)
 
@@ -193,7 +195,10 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 			rawData = this.model
 
 			function chart(selection){
-				return selection.each(function(rawData){
+				return selection
+					.attr("class", "background_class")
+					.each(function(rawData){
+					var maxDomainValue, svg, svgEnter;
 					data = transformData(rawData)
 					maxDomainValue = d3.max(data, function(d){ return rValue(d)})
 					rScale.domain([0, maxDomainValue])
@@ -201,13 +206,51 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 					svg = d3.select(this)
 						.selectAll("svg")
 						.data([data])
-					 svgEnter = svg.enter().append("svg");
+				
+
+
+
+
+
+					svgEnter = svg.enter().append("svg");
 					svg.attr("width", width + margin.left + margin.right);
 					svg.attr("height", height + margin.top + margin.bottom);	      
 	      	
 					node = svgEnter.append("g")
 						.attr("id", "bubble-nodes")
 						.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+
+					defs = svg.append("defs");
+				
+
+					filter = defs.append("filter")
+						    .attr("id", "drop-shadow")
+						    .attr("height", "150%")
+						    .attr("width", "200%")
+					// SourceAlpha refers to opacity of graphic that this filter will be applied to
+					// // convolve that with a Gaussian with standard deviation 3 and store result
+					// // in blur
+					filter.append("feGaussianBlur")
+						.attr("in", "SourceAlpha")
+						.attr("stdDeviation", 5)
+						.attr("result", "blur");
+
+					feOffset = filter.append("feOffset")
+						    .attr("in", "blur")
+						        .attr("dx", 5)
+							    .attr("dy", 5)
+							        .attr("result", "offsetBlur");
+
+					// overlay original SourceGraphic over translated blurred opacity by using
+					// // feMerge filter. Order of specifying inputs is important!
+					feMerge = filter.append("feMerge");
+							feMerge.append("feMergeNode")
+							.attr("in", "offsetBlur")
+					
+					feMerge.append("feMergeNode")
+						.attr("in", "SourceGraphic");
+
 
 					node.append("rect")
 						.attr("id", "bubble-background")
@@ -245,7 +288,10 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 			
 			return node.enter()
 				.append("a")
+				.style("filter", "url(#drop-shadow)")
 				.attr("class", "bubble-node")
+				.attr("fill", function(d){return d.polarity ? "#66CCFF" : "#FF0033" })
+				//.attr("fill", "url(#gradientForegroundPurple)")
 				.attr("xlink:href", function(d) {
 					return "#" + (encodeURIComponent(idValue(d)))})
 				.call(force.drag)
@@ -258,9 +304,15 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 	
 
 		function updateLabels(){
+			var labelEnter;
 			label = label.selectAll(".bubble-label").data(data, function(d){ return idValue(d)})
 			label.exit().remove()
 
+
+			/*Here we can see that each label is an a with two div elements inside it. One to hold the 
+			 * word/phrase name, the other to hold the count. We will look at how these anchors work in 
+			 * the next section.
+			 */
 			labelEnter = label.enter().append("a")
 					.attr("class", "bubble-label")
 					.attr("href", function(d){ return "#" + (encodeURIComponent(idValue(d)))})
@@ -305,6 +357,8 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 		function collide(jitter){
 			return function(d){
 				return data.forEach(function(d2){
+					var distance, minDistance, moveX, moveY, x, y;
+					
 					if (d != d2){
 						x = d.x - d2.x
 						y = d.y - d2.y
@@ -337,11 +391,12 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 				};
 				
 		function click(d){
-			location.replace("#" + encodeURIComponent(idValue(d)))
+			//location.replace("#" + encodeURIComponent(idValue(d)))
 				return d3.event.preventDefault()
 			};
 
 		function hashchange(){
+			var id;
 			id = decodeURIComponent(location.hash.substring(1)).trim()
 			return updateActive(id)
 			};
@@ -358,6 +413,7 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 				  };
 
 		function mouseover(d){
+			console.log(d)
 			return node.classed("bubble-hover", function(p){
 				return p === d;
 			});
@@ -394,7 +450,7 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 						      }
 				        rValue = _;
 					    return chart;
-					      };
+					      }
 
 
 		return chart
