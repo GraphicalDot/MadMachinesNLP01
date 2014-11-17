@@ -3,7 +3,7 @@ a, a:visited {
   color:#333;
 }
 
-.background_class{
+#background_class{
 	/*background-image: url("web-background-wallpapers.jpg");*/ 
 	 background-repeat: no-repeat;
  }
@@ -20,6 +20,11 @@ header {
 
 .clicked_bubble{
 	z-index: 100000000
+}
+
+.non_clicked_bubble{
+	z-index: 1;
+	opacity: 0;
 }
 
 #book-title {
