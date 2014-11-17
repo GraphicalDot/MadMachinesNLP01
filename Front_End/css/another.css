@@ -18,6 +18,10 @@ header {
   padding: 10px;
 }
 
+.clicked_bubble{
+	z-index: 100000000
+}
+
 #book-title {
   font-family: georgia, "times new roman", times, serif;
   color: #555;

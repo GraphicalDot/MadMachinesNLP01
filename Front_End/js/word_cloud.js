@@ -121,13 +121,13 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 		root = typeof exports !== "undefined" && exports !== null ? exports : this;
 		function Bubbles(){
 			var  chart, clear, click, collide, collisionPadding, connectEvents, data, force, gravity, hashchange, height, idValue, jitter, label, margin, maxRadius, minCollisionRadius, mouseout, mouseover, node, rScale, rValue, textValue, tick, transformData, update, updateActive, updateLabels, updateNodes, width
-			width = $(window).width();
-			height = $(window).height();
+			width = $(window).width() - 50;
+			height = $(window).height()*1.5;
 			data = [];
 			node = null;
 			label = null;
 			margin = {top: 5, right: 0, bottom: 0, left: 0};
-			maxRadius = 65;
+			maxRadius = 80;
 	
 			rScale = d3.scale.sqrt().range([0,maxRadius])
 	
@@ -147,7 +147,7 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 			collisionPadding = 4
 			minCollisionRadius = 12
 	
-			jitter = 0.5
+			jitter = 0.5;
 
 			transformData = function(rawData){
 				rawData.forEach(function(d){
@@ -161,31 +161,35 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 		
 
 			function tick(e){
-			
+				
+				node.attr("cx", function(d) { return d.x = Math.max(rScale(rValue(d)), Math.min(width - 50, d.x)); })
+					.attr("cy", function(d) { return d.y = Math.max(rScale(rValue(d)), Math.min(height - 50, d.y)); });
+				
 				var dampenedAlpha;
 				dampenedAlpha = e.alpha * 0.1
-				console.log
 
 				node.each(gravity(dampenedAlpha))
 				.each(collide(jitter))
 				.attr("transform", function(d){
 					return "translate(" + d.x + "," + d.y + ")";
 				})
-		
+	
+				/*	
 				return label.style("left", function(d){
 					return ((margin.left + d.x) - d.dx / 2) + "px";
 						}).style("top", function(d) {
 							return ((margin.top + d.y) - d.dy/2) + "px";
 						});
+					*/
 					
 			};
 	
 	
 	
 			force = d3.layout.force()
-					.gravity(0)
-					.charge(0)
-					.alpha(0.5)
+					.gravity(0.05)
+					.charge(-100)
+				//	.alpha(0.5)
 					.size([width, height])
 					.on("tick", tick)
 
@@ -215,42 +219,17 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 					svgEnter = svg.enter().append("svg");
 					svg.attr("width", width + margin.left + margin.right);
 					svg.attr("height", height + margin.top + margin.bottom);	      
-	      	
+	      
+
+					//This Function will add shadow to the nodes
+					addShadow(svg)	
+					
 					node = svgEnter.append("g")
 						.attr("id", "bubble-nodes")
 						.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
 
-					defs = svg.append("defs");
 				
-
-					filter = defs.append("filter")
-						    .attr("id", "drop-shadow")
-						    .attr("height", "150%")
-						    .attr("width", "200%")
-					// SourceAlpha refers to opacity of graphic that this filter will be applied to
-					// // convolve that with a Gaussian with standard deviation 3 and store result
-					// // in blur
-					filter.append("feGaussianBlur")
-						.attr("in", "SourceAlpha")
-						.attr("stdDeviation", 5)
-						.attr("result", "blur");
-
-					feOffset = filter.append("feOffset")
-						    .attr("in", "blur")
-						        .attr("dx", 5)
-							    .attr("dy", 5)
-							        .attr("result", "offsetBlur");
-
-					// overlay original SourceGraphic over translated blurred opacity by using
-					// // feMerge filter. Order of specifying inputs is important!
-					feMerge = filter.append("feMerge");
-							feMerge.append("feMergeNode")
-							.attr("in", "offsetBlur")
-					
-					feMerge.append("feMergeNode")
-						.attr("in", "SourceGraphic");
-
 
 					node.append("rect")
 						.attr("id", "bubble-background")
@@ -265,13 +244,59 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 						.append("div")
 						.attr("id", "bubble-labels")
 					update()
-					hashchange()
+					//hashchange()
 					
 					
-					return d3.select(window).on("hashchange", hashchange)
+				//	return d3.select(window).on("hashchange", hashchange)
 				})
 			};
 
+
+			function addShadow(svg){
+					defs = svg.append("defs");
+					filter = defs.append("filter")
+						    .attr("id", "drop-shadow")
+						    .attr("height", "150%")
+						    .attr("width", "200%")
+					// SourceAlpha refers to opacity of graphic that this filter will be applied to
+					// // convolve that with a Gaussian with standard deviation 3 and store result
+					// // in blur
+					filter.append("feGaussianBlur")
+						.attr("in", "SourceAlpha")
+						.attr("stdDeviation", 5)
+						.attr("result", "blur");
+
+					feOffset = filter.append("feOffset")
+						    .attr("in", "blur")
+						    .attr("dx", 5)
+						    .attr("dy", 5)
+						    .attr("result", "offsetBlur");
+
+
+					/*
+					feColorMatrix = filter.append("feColorMatrix")
+								.attr("result", "matrixOut")
+								.attr("in", "offOut")
+							       .attr("type", "matrix")
+							       .attr("values", "0.2 0 0 0 0 0 0.2 0 0 0 0 0 0.2 0 0 0 0 0 1 0")
+					
+					feBlend = filter.append("feBlend")
+							.attr("in", "SourceGraphic")
+						       	.attr("in2", "blurOut")
+							.attr("mode", "normal")
+					*/
+
+					// overlay original SourceGraphic over translated blurred opacity by using
+					// // feMerge filter. Order of specifying inputs is important!
+					feMerge = filter.append("feMerge");
+							feMerge.append("feMergeNode")
+							.attr("in", "offsetBlur")
+					
+					feMerge.append("feMergeNode")
+						.attr("in", "SourceGraphic");
+
+				}
+		
 
 		 function update(){
 			data.forEach(function(d, i){
@@ -279,33 +304,60 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 			});
 			force.nodes(data).start()
 			updateNodes()
-			return updateLabels()
+			//return updateLabels()
 				};
+
+		function getSize(d) {
+			var radius ;
+			var bbox = this.getBBox();
+			cbbox = this.parentNode.getBBox();
+			radius = this.parentNode.firstChild.getAttribute("r")	
+			//scale = Math.max(cbbox.width/bbox.width*10, cbbox.height/bbox.height*3);
+			scale = radius/3;
+			d.scale = scale;
+		}
+
 
 		function updateNodes(){
 			node = node.selectAll(".bubble-node").data(data, function(d){ return idValue(d)})
+
 			node.exit().remove()
 			
-			return node.enter()
+			node.enter()
 				.append("a")
 				.style("filter", "url(#drop-shadow)")
 				.attr("class", "bubble-node")
 				.attr("fill", function(d){return d.polarity ? "#66CCFF" : "#FF0033" })
 				//.attr("fill", "url(#gradientForegroundPurple)")
-				.attr("xlink:href", function(d) {
-					return "#" + (encodeURIComponent(idValue(d)))})
+				//.attr("xlink:href", function(d) {
+				//	return "#" + (encodeURIComponent(idValue(d)))})
 				.call(force.drag)
 				.call(connectEvents)
 				.append("circle")
 				.attr("r", function(d){ return rScale(rValue(d))
 				})
 
+
+			node.append("text")
+					      .style("text-anchor", "middle")
+					      .attr("dy", ".3em")
+					      .attr('fill', 'black')
+					      .text(function(d) { return textValue(d)})
+					      .each(getSize)
+					      //.style("font-size", function(d){ return Math.max(1, rScale(rValue(d)/2))+"px"})
+					      .style("font-size", function(d){ return d.scale+"px"})
+					      .style("width", function(d){ return 1.5*rScale(rValue(d))+"px"})
+		
+		
+		
 		}
 	
+	
+
 
 		function updateLabels(){
 			var labelEnter;
-			label = label.selectAll(".bubble-label").data(data, function(d){ return idValue(d)})
+			label = node.selectAll(".bubble-label").data(data, function(d){ return idValue(d)})
 			label.exit().remove()
 
 
@@ -391,9 +443,28 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 				};
 				
 		function click(d){
+			console.log(d.frequency)
 			//location.replace("#" + encodeURIComponent(idValue(d)))
-				return d3.event.preventDefault()
-			};
+			d3.select(this).select("text").transition()
+			        .duration(750)
+			        .attr("x", 22)
+			        .style("fill", "green")
+			        .style("stroke", "lightsteelblue")
+			        .style("stroke-width", ".5px")
+			        .style("font-size", function(d){ return d.scale*3+"px"});
+			
+			d3.select(this).select("circle")
+				.attr("class", "clicked_bubble")
+				.transition()
+				.duration(750)
+				.attr("r", rScale(rValue(d))*3)
+				.style("fill", "green");
+		
+		
+		
+		
+		}		    
+		
 
 		function hashchange(){
 			var id;

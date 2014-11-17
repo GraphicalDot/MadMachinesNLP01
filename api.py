@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 #-*- coding: utf-8 -*-
 
+import copy
 import re
 import csv
 import codecs
@@ -779,9 +780,26 @@ class GetWordCloud(restful.Resource):
 
 		print sorted_result[0: 100]
 
+
+		def merging_similar_elements(original_list):
+			"""
+			This function will calculate the minum distance between two noun phrase and if the distance is 
+			less than 1 and more than .8, delete one of the element and add both their frequencies
+			"""
+			list_with_similarity_ratios = list()
+			for test_element in original_list:
+				for another_element in copy.copy(test):
+					r = difflib.SequenceMatcher(a=test_element.get("name").lower(), b=another_element.get("name").lower()).ratio()
+					list_with_similarity_ratios.append(dict(test_element.items() +  
+						{"similarity_with": another_element.get("name"), "ratio": r}.items()))
+
+
+
+
+
 		return {"success": True,
 				"error": True,
-				"result": sorted_result[0:100],
+				"result": sorted_result[0:125],
 		}
 	
 	
