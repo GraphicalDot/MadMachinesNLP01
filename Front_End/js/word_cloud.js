@@ -337,20 +337,32 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 
 
 		function connectEvents(d){
-			d.on("click", click)
+			d.on("click", onclick)
 			d.on("mouseover", mouseover)
 			return d.on("mouseout", mouseout)
 		};
 
-		function click(d){
+		function onclick(d){
+			console.log("Click on the bubble has been initiated")
+			event.preventDefault();
 			function increaseRadius(selector){
 				d3.select(selector).select("circle")
 					.attr("class", "clicked_bubble")
 					.transition()
 					.duration(7500)
 					.attr("r", rScale(rValue(d))*3)
-					.style("fill", "green");
 			}
+
+
+			function increaseTextSize(selector){
+				d3.select(selector).select("text")
+					.attr("class", "clicked_bubble")
+					.transition()
+					.duration(7500)
+					.style("font-size", function(d){ return d.scale*3+"px"});
+				}
+
+
 
 			console.log(d.frequency)
 			//location.replace("#" + encodeURIComponent(idValue(d)))
@@ -371,12 +383,9 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 						      )
 			        })
 			
-				.transition()
+					.transition()
 					.ease("linear")
 					.call(increaseRadius(this))
-
-
-		console.log("kaali")
 
 		}		    
 		
@@ -435,6 +444,7 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 		plotData(".dynamic_display", this.model, plot);
 
 	},
+		
 })
 
 })
