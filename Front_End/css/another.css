@@ -97,12 +97,12 @@ a.bubble-label {
 
 .bubble-label .bubble-label-value {
   font: 11px sans-serif;
+      background: rgba(0, 0, 0, 0.8);
   white-space: nowrap;
 }
 
-footer p {
-  text-align: center;
-  padding-top:20px;
-  padding-bottom:20px;
-  font: 13px sans-serif;
-}
+   
+
+
+
+

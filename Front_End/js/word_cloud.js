@@ -131,6 +131,14 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 	
 			rScale = d3.scale.sqrt().range([0,maxRadius])
 	
+				
+			var tip = d3.tip()
+				.attr('class', 'd3-tip')
+				.offset([-10, 0])
+				.html(function(d) {
+					return "<strong style='color:black'>Frequency:</strong> <span style='color:red'>" + d.frequency + "</span>";
+			    })
+
 	
 			function rValue(d){
 				return parseInt(d.frequency);
@@ -178,8 +186,8 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 	
 	
 			force = d3.layout.force()
-					.gravity(0.05)
-					.charge(-100)
+					.gravity(0)
+					.charge(0)
 					.size([width, height])
 					.on("tick", tick)
 
@@ -187,7 +195,15 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 	
 	
 			rawData = this.model
-
+			/*
+			var tip = d3.tip()
+			  .attr('class', 'd3-tip')
+			    .offset([-10, 0])
+			      .html(function(d) {
+				          return "<strong>Frequency:</strong> <span style='color:red'>" + d.frequency + "</span>";
+					    })
+			
+			*/
 			function chart(selection){
 				return selection
 					.attr("id", "background_class")
@@ -205,6 +221,9 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 					svg.attr("width", width + margin.left + margin.right);
 					svg.attr("height", height + margin.top + margin.bottom);	      
 
+				svg.call(tip)	
+					
+					
 					//This Function will add shadow to the nodes
 					addShadow(svg)	
 					
@@ -227,6 +246,7 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 				return d.forceR = Math.max(minCollisionRadius, rScale(rValue(d)));
 			});
 			force.nodes(data).start()
+
 			updateNodes()
 				};
 
@@ -255,6 +275,16 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 				.append("circle")
 				.attr("r", function(d){ return rScale(rValue(d))
 				})
+			
+			//Adding tooltip
+			$('svg circle').tipsy({ 
+					        gravity: 'w', 
+					        html: true, 
+					        title: function(){
+							return 'Frequency: ' + '<span>' + this.__data__.frequency + '</span>';
+						}
+				      });
+
 
 
 			texts = node.append("text")
@@ -338,8 +368,6 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 
 		function connectEvents(d){
 			d.on("click", onclick)
-			d.on("mouseover", mouseover)
-			return d.on("mouseout", mouseout)
 		};
 
 		function onclick(d){
@@ -388,12 +416,27 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 					.call(increaseRadius(this))
 
 		}		    
-		
+		 tooltip = d3.select("body")
+			      .append("div")
+			          .style("position", "absolute")
+				      .style("z-index", "10")
+				          .style("visibility", "hidden")
+					      .text("a simple tooltip");
+
+
+
 		function mouseover(d){
 			console.log(d)
+			//.tooltip({ content: "Awesome title!" });
+			tooltip.text(d.name); 
+			  return tooltip.style("visibility", "visible");
+				/*
 			return node.classed("bubble-hover", function(p){
-				return p === d;
+				console.log()
+				return p === d
+				;
 			});
+			*/
 			      };
 		function mouseout(d){
 			return node.classed("bubble-hover", false);

@@ -799,7 +799,7 @@ class GetWordCloud(restful.Resource):
 
 		return {"success": True,
 				"error": True,
-				"result": sorted_result[0:125],
+				"result": sorted_result[0:100],
 		}
 	
 	
