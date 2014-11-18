@@ -122,7 +122,7 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 		function Bubbles(){
 			var  chart, clear, click, collide, collisionPadding, connectEvents, data, force, gravity, hashchange, height, idValue, jitter, label, margin, maxRadius, minCollisionRadius, mouseout, mouseover, node, rScale, rValue, textValue, tick, transformData, update, updateActive, updateLabels, updateNodes, width
 			width = $(window).width() - 50;
-			height = $(window).height()*1.5;
+			height = $(window).height()*1.1;
 			data = [];
 			node = null;
 			label = null;
