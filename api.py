@@ -18,11 +18,12 @@ import subprocess
 import shutil
 import json
 import os
+import StringIO
 from bson.json_util import dumps
 from Text_Processing import ProcessingWithBlob, PosTags, nltk_ngrams, get_all_algorithms_result, RpRcClassifier, \
 		bcolors, CopiedSentenceTokenizer, SentenceTokenizationOnRegexOnInterjections, get_all_algorithms_result, \
 		path_parent_dir, path_trainers_file, path_in_memory_classifiers, timeit, cd, SentimentClassifier, \
-		TagClassifier
+		TagClassifier, ProcessingWithBlobInMemory
 
 import time
 from datetime import timedelta
@@ -41,9 +42,12 @@ db = connection.modified_canworks
 eateries = db.eatery
 reviews = db.review
 
+
 app = Flask(__name__)
 app.config['DEBUG'] = True
-api = restful.Api(app)
+api = restful.Api(app,)
+
+
 
 
 def load_classifiers_in_memory():
@@ -741,10 +745,10 @@ class GetWordCloud(restful.Resource):
 		regex = re.compile(r'family',  flags=re.I)
 
 		presence_for_lunch = list()
-
+			
+		instance = ProcessingWithBlobInMemory()
 		for text in filtered_tag_text:
-			instance = ProcessingWithBlob(to_unicode_or_bust(text[0]))
-			noun_phrases_list.extend([(noun.lower(),  text[2]) for noun in instance.noun_phrase()])
+			noun_phrases_list.extend([(noun.lower(),  text[2]) for noun in instance.noun_phrase(to_unicode_or_bust(text[0]))])
 			if bool(regex.findall(text[0])):
 				presence_for_lunch.append(text[0])
 
@@ -799,7 +803,7 @@ class GetWordCloud(restful.Resource):
 
 		return {"success": True,
 				"error": True,
-				"result": sorted_result[0:100],
+				"result": sorted_result[0:150],
 		}
 	
 	

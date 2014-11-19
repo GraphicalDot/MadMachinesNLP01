@@ -7,11 +7,24 @@ from nltk.tag.hunpos import HunposTagger
 from textblob.np_extractors import ConllExtractor
 db_script_path = os.path.dirname(os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe()))))
 sys.path.insert(0, db_script_path)
-from DB_Scripts import GetReviews
 #from get_reviews import GetReview
 from textblob import TextBlob
 import re
+directory = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(os.path.join(directory))
+from MainAlgorithms import InMemoryMainClassifier, timeit, cd, path_parent_dir, path_trainers_file, path_in_memory_classifiers
 
+
+class ProcessingWithBlobInMemory:
+
+	def __init__(self):
+		self.conll_extractor = ConllExtractor()
+
+
+	def noun_phrase(self, text):
+		blob = TextBlob(text, np_extractor=self.conll_extractor)
+		return blob.noun_phrases
+		
 
 class ProcessingWithBlob:
 
@@ -24,16 +37,16 @@ class ProcessingWithBlob:
 		"""
 		self.text = text
 		self.blob = TextBlob(self.text)
+		self.conll_extractor = ConllExtractor()
 
 	
 	def noun_phrase(self):
 
-		native_noun_phrases = self.blob.noun_phrases
-		#extractor = ConllExtractor()
-		#blob = TextBlob(self.text, np_extractor=extractor)
+		#native_noun_phrases = self.blob.noun_phrases
+		blob = TextBlob(self.text, np_extractor=self.conll_extractor)
 		#conll_noun_phrases = blob.noun_phrases
 		#return list(set(conll_noun_phrases.extend(native_noun_phrases)))
-		return native_noun_phrases
+		return blob.noun_phrases
 
 	def pos_tags(self):
 		return self.blob.pos_tags

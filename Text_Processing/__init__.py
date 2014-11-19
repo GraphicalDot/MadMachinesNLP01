@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #-*- coding: utf-8 -*-
 
-from NounPhrasesAnalysis import ProcessingWithBlob, PosTags
+from NounPhrasesAnalysis import ProcessingWithBlob, PosTags, ProcessingWithBlobInMemory
 from helpers import nltk_ngrams
 from Sentence_Tokenization import CopiedSentenceTokenizer, SentenceTokenizationOnRegexOnInterjections
 from SentimentAnalysis import SentimentClassifier
