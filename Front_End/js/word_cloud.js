@@ -109,6 +109,11 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 	initialize: function(options){
 		this.model = options.model;
 		console.log(this.model)
+		$.each(this.model, function(i, __d){
+			console.log(__d.name, __d.frequency, __d.polarity)
+		
+		})
+	
 		this.render();
 	},
 
