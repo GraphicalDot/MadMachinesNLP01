@@ -759,6 +759,9 @@ class GetWordCloud(restful.Resource):
 		for __noun_phrase_dict in noun_phrases_list:
 			if __noun_phrase_dict[1] == "super-positive" or __noun_phrase_dict[1] == "super-negative":
 				edited_result.append((__noun_phrase_dict[0], __noun_phrase_dict[1].split("-")[1]))
+				#Added twice beacause super postive was given twice as weightage as positive and some goes for supernegative 
+				#and negative
+				edited_result.append((__noun_phrase_dict[0], __noun_phrase_dict[1].split("-")[1]))
 
 			else:
 				edited_result.append(__noun_phrase_dict)
@@ -782,28 +785,33 @@ class GetWordCloud(restful.Resource):
 
 		sorted_result = sorted(result, reverse=True, key=lambda x: x.get("frequency"))
 
-		print sorted_result[0: 100]
+		print sorted_result
 
 
-		def merging_similar_elements(original_list):
+		def merging_similar_elements(sorted_result):
 			"""
 			This function will calculate the minum distance between two noun phrase and if the distance is 
 			less than 1 and more than .8, delete one of the element and add both their frequencies
 			"""
+
+			original_dict = {element.get("name"): {"frequency": element.get("frequency"), "polarity": element.get("polarity")} for element in original_list}
 			list_with_similarity_ratios = list()
 			for test_element in original_list:
-				for another_element in copy.copy(test):
-					r = difflib.SequenceMatcher(a=test_element.get("name").lower(), b=another_element.get("name").lower()).ratio()
-					list_with_similarity_ratios.append(dict(test_element.items() +  
-						{"similarity_with": another_element.get("name"), "ratio": r}.items()))
+				for another_element in copy.copy(original_list):
+					if test_element.get("name").lower() != another_element.get("name").lower():
+						r = difflib.SequenceMatcher(a=test_element.get("name").lower(), b=another_element.get("name").lower()).ratio()
+						list_with_similarity_ratios.append(dict(test_element.items() +  
+							{"similarity_with": another_element.get("name"), "ratio": r}.items()))
 
+			
+			sorted_similarity_test = sorted(list_with_similarity_ratios, reverse=True, key=lambda x: x.get("ratio"))
 
 
 
 
 		return {"success": True,
 				"error": True,
-				"result": sorted_result,
+				"result": sorted_result[0: 100],
 		}
 	
 	
