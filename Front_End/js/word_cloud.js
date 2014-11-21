@@ -45,8 +45,8 @@ App.SeeWordCloudDateSelectionView = Backbone.View.extend({
 		$(".data_selection").modal("hide");
 		bootbox.dialog({ 
 			closeButton: false, 
-			message: "<img src='css/images/gangam.gif'>",
-			className: "loading_dialogue",
+			message: "<img src='css/images/loading_3.gif'>",
+			className: "loadingclass",
 		});
 	},
 
@@ -81,7 +81,7 @@ App.SeeWordCloudDateSelectionView = Backbone.View.extend({
 		//On success of the jquery post request
 		jqhr.done(function(data){
 			var subView = new App.WordCloudWith_D3({model: data.result});
-			$(".loading_dialogue").modal("hide");
+			$(".loadingclass").modal("hide");
 			});
 
 		//In case the jquery post request fails
@@ -158,7 +158,7 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 					};
 
 			collisionPadding = 4
-			minCollisionRadius = 12
+			minCollisionRadius = 20
 	
 			jitter = 0.5;
 
@@ -186,6 +186,9 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 					return "translate(" + d.x + "," + d.y + ")";
 				})
 
+
+				texts.style("left", function(d) { return (margin.left + d.x) - d.dx / 2})
+				.style("top", function(d){(margin.top + d.y) - d.dy / 2})
 			};
 	
 	
@@ -198,17 +201,8 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 
 	
 	
-	
 			rawData = this.model
-			/*
-			var tip = d3.tip()
-			  .attr('class', 'd3-tip')
-			    .offset([-10, 0])
-			      .html(function(d) {
-				          return "<strong>Frequency:</strong> <span style='color:red'>" + d.frequency + "</span>";
-					    })
 			
-			*/
 			function chart(selection){
 				return selection
 					.attr("id", "background_class")
@@ -301,7 +295,7 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 					      .each(getSize)
 					      //.style("font-size", function(d){ return Math.max(1, rScale(rValue(d)/2))+"px"})
 					      .style("font-size", function(d){ return d.scale+"px"})
-					      .style("width", function(d){ return 1.5*rScale(rValue(d))+"px"})
+					      .style("width", function(d){ return rScale(rValue(d))+"px"})
 		}
 
 			function addShadow(svg){
@@ -372,7 +366,7 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 
 
 		function connectEvents(d){
-			d.on("click", onclick)
+		//	d.on("click", onclick)
 		};
 
 		function onclick(d){
