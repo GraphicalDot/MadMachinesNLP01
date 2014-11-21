@@ -241,6 +241,9 @@ class ProcessText(restful.Resource):
 			Logistic regression models
 			Support vector machines models
 		"""
+
+		start = time.time()
+
 		args = process_text_parser.parse_args()
 		text = args["text"]
 		algorithm = args["algorithm"]
@@ -281,17 +284,20 @@ class ProcessText(restful.Resource):
 		noun_phrase, result = list(), list()
 			
 		print zip(tokenized_sentences, __predicted_tags, __predicted_sentiment, __predicted_customers)
+		
+		print "\n\n%s \n\n"%(time.time() - start)
+		instance = ProcessingWithBlobInMemory()
 		index = 0
 		for chunk in zip(tokenized_sentences, __predicted_tags, __predicted_sentiment, __predicted_customers):
+			nouns = instance.noun_phrase(to_unicode_or_bust(chunk[0]))
 			element = dict()
-			instance = ProcessingWithBlob(chunk[0])
 			element["sentence"] = chunk[0]
 			element["polarity"] = {"name": chunk[2], "value": '0.0'}
-			element["noun_phrases"] = list(instance.noun_phrase())
+			element["noun_phrases"] = list(nouns)
 			element["tag"] = chunk[1]
 			element["customer_type"] = chunk[3]
 			result.append(element)
-			noun_phrase.extend(list(instance.noun_phrase()))
+			noun_phrase.extend(list(nouns))
 			index += 1
 	
 		return {
