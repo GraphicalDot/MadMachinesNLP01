@@ -35,7 +35,7 @@ import itertools
 import random
 from sklearn.externals import joblib
 import numpy
-
+from multiprocessing import Pool
 
 
 connection = pymongo.Connection()
@@ -696,6 +696,10 @@ class GetWordCloud(restful.Resource):
 	@cors
 	@timeit
 	def post(self):
+
+		start = time.time()
+
+
 		args = get_word_cloud_parser.parse_args()
 		__format = '%Y-%m-%d'
 		eatery_id = args["eatery_id"]
@@ -747,18 +751,31 @@ class GetWordCloud(restful.Resource):
 
 		#__predicted_sentiment = ["null", "negative" ]
 
+		print "\n\n %s \n\n"%(time.time() - start)
+
+		new_time = time.time()
 		filtered_tag_text = [text for text in zip(test_sentences, __predicted_tags, __predicted_sentiment) if text[1] == category]
 	
 
-		regex = re.compile(r'family',  flags=re.I)
-
-		presence_for_lunch = list()
-			
+		
 		instance = ProcessingWithBlobInMemory()
+		__k = lambda text: noun_phrases_list.extend([(noun.lower(),  text[2]) for noun in instance.noun_phrase(to_unicode_or_bust(text[0]))])	
+		
+		def fool(text):
+			noun_phrases_list.extend([(noun.lower(),  text[2]) for noun in instance.noun_phrase(to_unicode_or_bust(text[0]))])
+
+
+		pool = Pool(processes=4)	
+		result = pool.apply_async(fool, filtered_tag_text)
+		print result
+		print noun_phrases_list
+
+		print "\n\n %s \n\n"%(time.time() - new_time)
+		"""
 		for text in filtered_tag_text:
 			noun_phrases_list.extend([(noun.lower(),  text[2]) for noun in instance.noun_phrase(to_unicode_or_bust(text[0]))])
-			if bool(regex.findall(text[0])):
-				presence_for_lunch.append(text[0])
+
+		"""
 
 		
 		##Incresing and decrasing frequency of the noun phrases who are superpositive and supernegative and changing
@@ -787,10 +804,6 @@ class GetWordCloud(restful.Resource):
 				writer.writerow([line.get("name").encode("utf-8"), line.get("polarity"), line.get("frequency")])
 		"""
 
-
-		print "\n\n Here is the length %s"%len(presence_for_lunch)
-		print "\n\n\n Length of the data of the word cloud %s \n\n\n"%len(result)
-
 		sorted_result = sorted(result, reverse=True, key=lambda x: x.get("frequency"))
 
 
@@ -801,7 +814,8 @@ class GetWordCloud(restful.Resource):
 			less than 1 and more than .8, delete one of the element and add both their frequencies
 			"""
 
-			original_dict = {element.get("name"): {"frequency": element.get("frequency"), "polarity": element.get("polarity")} for element in original_list}
+			original_dict = {element.get("name"): {"frequency": element.get("frequency"), "polarity": element.get("polarity")} \
+					for element in original_list}
 			
 			
 			calc_simililarity = lambda __a, __b: difflib.SequenceMatcher(a=__a.get("name").lower(), b=__b.get("name").lower()).ratio() \
@@ -824,7 +838,9 @@ class GetWordCloud(restful.Resource):
 			
 			for element in filtered_list:
 				try:
-					frequency = original_dict[element.get("name")]["frequency"] + original_dict[element.get("similarity_with")]["frequency"]
+					frequency = original_dict[element.get("name")]["frequency"] + \
+							original_dict[element.get("similarity_with")]["frequency"]
+							
 					del original_dict[element.get("similarity_with")]
 					original_dict[element.get("name")]["frequency"] = frequency
 					
