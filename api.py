@@ -785,7 +785,6 @@ class GetWordCloud(restful.Resource):
 
 		sorted_result = sorted(result, reverse=True, key=lambda x: x.get("frequency"))
 
-		print sorted_result
 
 
 		def merging_similar_elements(sorted_result):

@@ -15,7 +15,7 @@ class Reviews(object):
 		self.area_or_city = area_or_city
 		print len(self.soup)
 		try:
-			self.reviews_list = self.soup.findAll("div" ,{"class": "res-review clearfix mbot2   item-to-hide-parent stupendousact"})
+                        self.reviews_list = self.soup.findAll("div" ,{"class": "res-review clearfix js-activity-root mbot   item-to-hide-parent stupendousact"})
 			print "This is the review list length from Zreview %s"%len(self.reviews_list)
 		except Exception:
 			raise StandardError("Couldnt find the div tag that was specified.")
@@ -130,23 +130,23 @@ class Reviews(object):
 
 	@exception_handling
 	def user_name(self, review):
-		return review.find("div", {"class": "actn-2-e-name left"}).a.text
+                return review.find("div" , {"class": "snippet__name"}).find("a").text
 
 	@exception_handling
-	def user_id(self, review):		
-		return review.find("div", {"class": "actn-2-e-name left"}).a.get("data-entity_id")
+	def user_id(self, review):
+                return review.find("a" , {"class": "snippet__link"})["data-entity_id"]
 
 	@exception_handling
 	def user_url(self, review):
-		return review.find("div", {"class": "actn-im"}).a.get("href")
+                return review.find("div" , {"class": "snippet__head"}).find("a")["href"]
 
 	@exception_handling
 	def user_reviews(self, review):
-		return review.findAll("span" , {"class": "user-snippet-stat"})[0].text
+                return review.findAll("span" , {"class": "snippet__reviews"})[0].text
 
 	@exception_handling
 	def user_followers(self, review):
-			return 	review.findAll("span" , {"class": "user-snippet-stat"})[1].text
+                return review.find("span" , {"class": "snippet__followers"}).text
 
 	@exception_handling
 	def review_url(self, review):

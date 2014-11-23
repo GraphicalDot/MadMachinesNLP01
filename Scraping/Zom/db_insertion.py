@@ -27,13 +27,22 @@ class DBInsert(object):
 	def db_insert_eateries(eatery):
 		eatery_collection = collection("eatery")
 		db = CONNECTION.modified_canworks
-		bulk = db.eatery.initialize_unordered_bulk_op()
+		
+                try:
+                        eatery_collection.update({"eatery_id": eatery.get("eatery_id")}, {"$set": eatery}, upsert=False)
+    
+                except Exception as e:
+		        print "{color} FUNCTION--<{function_name}>  ERROR--<{error}>".format(color=bcolors.FAIL, function_name=inspect.stack()[0][3], error=e)
+
+
+                """
+                bulk = db.eatery.initialize_unordered_bulk_op()
 		bulk.insert(eatery)
 		try:
 			bulk.execute()
 		except BulkWriteError as __error:
 			print "{color} FUNCTION--<{function_name}>  ERROR--<{error}>".format(color=bcolors.OKGREEN, function_name=inspect.stack()[0][3], error=__error.details)
-
+                """
 		return
 	
 	@staticmethod

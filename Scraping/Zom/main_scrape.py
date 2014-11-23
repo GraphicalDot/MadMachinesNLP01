@@ -69,7 +69,7 @@ class EateriesList(object):
 		"""
 		
 		try:
-			pages_number = self.soup.find("div", {"class": "pagination-meta"}).text.split(" ")[-1]
+                        pages_number = self.soup.find("div", {"class": "search-pagination-top bb box-sizing-content"}).text.split("&")[0].split(" ")[-1]
 		except AttributeError:
 			print "{0}Either the dom has been changed or just one page present in pagination".format(bcolors.FAIL)
 			pages_number = 1
@@ -98,6 +98,12 @@ class EateriesList(object):
 		self.end_page_number = self.number_of_restaurants/30 
 
 		pages = self.pagination_links()
+                print pages
+
+
+                print self.start_page_number, self.end_page_number
+                print  pages[self.start_page_number: self.start_page_number + self.end_page_number]
+
 
 		for page in pages[self.start_page_number: self.start_page_number + self.end_page_number]:
 			time.sleep(random.choice(range(0, 30)))
@@ -113,7 +119,7 @@ class EateriesList(object):
 		
 		eateries_list = list()
 		soup = self.prepare_soup(page_url)
-		eatries_soup = soup.findAll("li", {"class": "resZS mb5 pb5 brstd even  status1"})
+		eatries_soup = soup.findAll("li", {"class": "resZS mb5 pb5 bb even  status1"})
 		for eatery_soup in eatries_soup:
 			eateries_list.append(self.each_eatery(eatery_soup))
 		return eateries_list
@@ -128,16 +134,26 @@ class EateriesList(object):
 
 		"""
 		eatery = dict()
-		eatery["eatery_id"] = eatery_soup.get("data-res_id")
+                
+                #Subarea like gk, khan market
+                try:
+                    eatery["sub_area"] = "-".join(self.url.split("/")[-1].split("-")[0: -2])
+                    
+                except :
+                    
+                    eatery["sub_area"] = None
+
+
+                eatery["eatery_id"] = eatery_soup.get("data-res_id")
 		eatery["eatery_url"] = eatery_soup.find("a").get("href")
 		eatery["eatery_name"] = eatery_soup.find("a").text
 		try:
-			eatery["eatery_adddress"] = eatery_soup.find("span", {"class": "search-result-address"})["title"]
+			eatery["eatery_address"] = eatery_soup.find("span", {"class": "search-result-address"})["title"]
 		except Exception:
-			eatery["eatery_adddress"] = None
+			eatery["eatery_address"] = None
 
-		eatery["eatery_cuisine"] = eatery_soup.find("div", {"class": "res-snippet-small-cuisine"}).text
-		eatery["eatery_cost"] = eatery_soup.findAll("div", {"class": "ln24"})[1].text.replace(" ", "")
+		eatery["eatery_cuisine"] = eatery_soup.find("div", {"class": "res-snippet-small-cuisine truncate"}).text
+		eatery["eatery_cost"] = eatery_soup.find("div", {"class": "ln24"}).text
 		
 		soup = eatery_soup.find("div", {"class": "right"})
 		try:
@@ -154,7 +170,7 @@ class EateriesList(object):
 		
 
 		try:
-			collection =  eatery_soup.find("div", {"class": "srp-collections pb5 pt5"}).findAll("a")
+			collection =  eatery_soup.find("div", {"class": "srp-collections"}).findAll("a")
 			eatery["eatery_trending"] = [element.text for element in collection]
 
 		except Exception:
@@ -211,7 +227,7 @@ class EateryData(object):
 		"""
 		if not self.eatery.get("eatery_name"):
 			try:
-				self.eatery["eatery_name"] = self.soup.find("h1", {"class": "res-main-name left"}).find("a").get("title")
+				self.eatery["eatery_name"] = self.soup.find("h1", {"class": "res-name left"}).find("a").text
 			except Exception:
 				self.eatery["eatery_name"] = None
 		return
@@ -223,10 +239,10 @@ class EateryData(object):
 		"""
 		if not self.eatery.get("eatery_address"):
 			try:
-				self.eatery["eatery_adddress"] = self.soup.find("span", {"class": "search-result-address"})["title"]
+                            self.eatery["eatery_address"] = self.soup.find("h2", {"class": "res-main-address-text"}).text
 			
 			except Exception as e:
-				self.eatery["eatery_adddress"] = None
+				self.eatery["eatery_address"] = None
 		return
 
 	def retry_eatery_cuisine(self):
@@ -236,7 +252,7 @@ class EateryData(object):
 		"""
 		if not self.eatery.get("eatery_cuisine"):
 			try:
-				self.eatery["eatery_cuisine"] = self.soup.find("div", {"class": "pb5 res-info-cuisines clearfix"}).text
+				self.eatery["eatery_cuisine"] = self.soup.find("div", {"class": "pb2 res-info-cuisines clearfix"}).text
 			except Exception:
 				self.eatery["eatery_cuisine"] = None
 
@@ -295,13 +311,14 @@ class EateryData(object):
 
 	def with_selenium(self):
 		#driver = webdriver.PhantomJS()
-		"""
 		driver = webdriver.Firefox()
 		"""
 		chromedriver = "{path}/chromedriver".format(path=os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 		os.environ["webdriver.chrome.driver"] = chromedriver
 		driver = webdriver.Chrome(chromedriver)
-		driver.get(self.eatery.get("eatery_url"))
+		"""
+		
+                driver.get(self.eatery.get("eatery_url"))
 
 
 		try:
@@ -310,6 +327,7 @@ class EateryData(object):
 		except NoSuchElementException:
 			pass
 
+                time.sleep(10)
 		try:
 			while True:
 				time.sleep(random.choice([2, 3, 1]))
@@ -318,9 +336,9 @@ class EateryData(object):
 			print "{color} Catching Exception -<{error}>- with messege -<No More Loadmore tag present>-".format(color=bcolors.OKGREEN, error=e)
 			pass
 	
-		except Exception:
+		except Exception as e:
+                        print e
 			raise StandardError("Coould not make the request")
-
 		
 
 		
@@ -343,6 +361,27 @@ class EateryData(object):
 		data = data.raw_html
 		soup = BeautifulSoup.BeautifulSoup(data)
 		return soup
+
+	def eatery_establishment_type(self):
+		try:
+                        variable = self.soup.find("div", {"class": "pb5 res-info-cuisines clearfix"}).text
+			self.eatery["eatery_establishment_type"] = variable
+
+		except Exception:	
+			
+			self.eatery["eatery_establishment_type"] = None
+                return
+	
+        def eatery_known_for(self):
+		try:
+                        variable = self.soup.find("div", {"class": "res-info-known-for-text mr5"}).text
+			self.eatery["eatery_known_for"] = variable
+
+		except Exception:	
+			
+			self.eatery["eatery_known_for"] = None
+                return
+            
 
 	def eatery_wishlists(self):
 		try:
@@ -398,7 +437,7 @@ class EateryData(object):
 
 	def eatery_recommended_order(self):
 		try:
-			self.eatery["eatery_should_order"]= self.soup.find("div", {"class": "res-info-dishes-text"}).text.replace(" ", "").replace("\n", "")
+			self.eatery["eatery_should_order"]= self.soup.find("div", {"class": "res-info-dishes-text"}).text
 		except AttributeError:
 			self.eatery["eatery_should_order"] = None
 		return
@@ -508,9 +547,6 @@ def eatery_specific(eatery_dict):
 	##Here we check on the basis of url because it might be a possibility that we want to scrape eatery on the basis of url and in 
 	#that case eatery id may not be present in the database
 	eatery_collection = collection("eatery")
-	if eatery_collection.find_one({"eatery_url": eatery_dict.get("eatery_url")}):
-		print "\n {color} The Eatery with the url --<{url} has already been scraped>\n".format(color=bcolors.WARNING, url=eatery_dict.get("eatery_url"))
-		return
 
 	instance = EateryData(eatery_dict)
 	#eatery_modified_list.append(dict([(key, value) for key, value in instance.eatery.iteritems() if key.startswith("eatery")]))
@@ -541,6 +577,9 @@ def eatery_specific(eatery_dict):
 
 	#writer.writerow(eatery_row)
 	DBInsert.db_insert_eateries(eatery_modified)
+	if eatery_collection.find_one({"eatery_id": eatery_dict.get("eatery_id")}):
+		print "\n {color} The Eatery with the url --<{url} has already been scraped>\n".format(color=bcolors.WARNING, url=eatery_dict.get("eatery_url"))
+		return
 		
 	reviews = instance.eatery.get("reviews")
 	DBInsert.db_insert_reviews(reviews)
@@ -575,11 +614,19 @@ def eatery_specific(eatery_dict):
 	#csvfile.close()
 
 	return
-"""
 if __name__ == "__main__":
-	url = "https://www.zomato.com/ncr/south-delhi-restaurants"
+        
 	number_of_restaurants = 30
 	skip = 30
+        is_eatery = False
+
+        url = "https://www.zomato.com/ncr/khan-market-delhi-restaurants"
+        eateries_list = scrape_links(url, number_of_restaurants, skip, is_eatery) 
+        
+        print eateries_list
+        for element in eateries_list:
+                eatery_specific(element)
+        """
 	instance = EateriesList(url, int(number_of_restaurants), int(skip))
 	eateries_list = instance.eateries_list()
 	print eateries_list	
