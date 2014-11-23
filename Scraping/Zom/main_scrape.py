@@ -137,11 +137,11 @@ class EateriesList(object):
                 
                 #Subarea like gk, khan market
                 try:
-                    eatery["sub_area"] = "-".join(self.url.split("/")[-1].split("-")[0: -2])
+                    eatery["eatery_sub_area"] = "-".join(self.url.split("/")[-1].split("-")[0: -2])
                     
                 except :
                     
-                    eatery["sub_area"] = None
+                    eatery["eatery_sub_area"] = None
 
 
                 eatery["eatery_id"] = eatery_soup.get("data-res_id")
@@ -179,9 +179,9 @@ class EateriesList(object):
 
 		##Finding total number of reviews for each eatery soup
 		try:
-			eatery["popular_reviews"] = eatery_soup.find("a", {"data-result-type": "ResCard_Reviews"}).text
+			eatery["eatery_popular_reviews"] = eatery_soup.find("a", {"data-result-type": "ResCard_Reviews"}).text
 		except Exception:
-			eatery["popular_reviews"] = None
+			eatery["eatery_popular_reviews"] = None
 
 
 		return eatery
@@ -218,7 +218,7 @@ class EateryData(object):
 		self.area_or_city()
 
 	def area_or_city(self):
-		self.eatery["area_or_city"] = self.eatery.get("eatery_url").split("/")[3]
+		self.eatery["eatery_area_or_city"] = self.eatery.get("eatery_url").split("/")[3]
 
 	def retry_eatery_name(self):
 		"""
@@ -577,12 +577,15 @@ def eatery_specific(eatery_dict):
 
 	#writer.writerow(eatery_row)
 	DBInsert.db_insert_eateries(eatery_modified)
-	if eatery_collection.find_one({"eatery_id": eatery_dict.get("eatery_id")}):
+	"""
+        if eatery_collection.find_one({"eatery_id": eatery_dict.get("eatery_id")}):
 		print "\n {color} The Eatery with the url --<{url} has already been scraped>\n".format(color=bcolors.WARNING, url=eatery_dict.get("eatery_url"))
 		return
-		
+	"""	
 	reviews = instance.eatery.get("reviews")
-	DBInsert.db_insert_reviews(reviews)
+	
+        
+        DBInsert.db_insert_reviews(reviews)
 
 
 	users_list = list()
@@ -617,7 +620,7 @@ def eatery_specific(eatery_dict):
 if __name__ == "__main__":
         
 	number_of_restaurants = 30
-	skip = 30
+	skip = 0
         is_eatery = False
 
         url = "https://www.zomato.com/ncr/khan-market-delhi-restaurants"

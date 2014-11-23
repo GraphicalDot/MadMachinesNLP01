@@ -29,7 +29,7 @@ class DBInsert(object):
 		db = CONNECTION.modified_canworks
 		
                 try:
-                        eatery_collection.update({"eatery_id": eatery.get("eatery_id")}, {"$set": eatery}, upsert=False)
+                        eatery_collection.update({"eatery_id": eatery.get("eatery_id")}, {"$set": eatery}, upsert=True)
     
                 except Exception as e:
 		        print "{color} FUNCTION--<{function_name}>  ERROR--<{error}>".format(color=bcolors.FAIL, function_name=inspect.stack()[0][3], error=e)
