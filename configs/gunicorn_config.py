@@ -17,5 +17,5 @@ debug = True
 daemon = True
 reload = True
 preload = True
-#accesslog = "{0}/gunicorn_access.log".format(path)
-#errorlog = "{0}/gunicorn_error.log".format(path)
+accesslog = "{0}/gunicorn_access.log".format(path)
+errorlog = "{0}/gunicorn_error.log".format(path)

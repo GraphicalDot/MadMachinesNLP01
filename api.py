@@ -19,6 +19,7 @@ import shutil
 import json
 import os
 import StringIO
+import difflib
 from bson.json_util import dumps
 from Text_Processing import ProcessingWithBlob, PosTags, nltk_ngrams, get_all_algorithms_result, RpRcClassifier, \
 		bcolors, CopiedSentenceTokenizer, SentenceTokenizationOnRegexOnInterjections, get_all_algorithms_result, \
@@ -34,7 +35,7 @@ import itertools
 import random
 from sklearn.externals import joblib
 import numpy
-
+from multiprocessing import Pool
 
 
 connection = pymongo.Connection()
@@ -240,6 +241,9 @@ class ProcessText(restful.Resource):
 			Logistic regression models
 			Support vector machines models
 		"""
+
+		start = time.time()
+
 		args = process_text_parser.parse_args()
 		text = args["text"]
 		algorithm = args["algorithm"]
@@ -280,17 +284,20 @@ class ProcessText(restful.Resource):
 		noun_phrase, result = list(), list()
 			
 		print zip(tokenized_sentences, __predicted_tags, __predicted_sentiment, __predicted_customers)
+		
+		print "\n\n%s \n\n"%(time.time() - start)
+		instance = ProcessingWithBlobInMemory()
 		index = 0
 		for chunk in zip(tokenized_sentences, __predicted_tags, __predicted_sentiment, __predicted_customers):
+			nouns = instance.noun_phrase(to_unicode_or_bust(chunk[0]))
 			element = dict()
-			instance = ProcessingWithBlob(chunk[0])
 			element["sentence"] = chunk[0]
 			element["polarity"] = {"name": chunk[2], "value": '0.0'}
-			element["noun_phrases"] = list(instance.noun_phrase())
+			element["noun_phrases"] = list(nouns)
 			element["tag"] = chunk[1]
 			element["customer_type"] = chunk[3]
 			result.append(element)
-			noun_phrase.extend(list(instance.noun_phrase()))
+			noun_phrase.extend(list(nouns))
 			index += 1
 	
 		return {
@@ -687,7 +694,12 @@ class WordCloudWithDates(restful.Resource):
 
 class GetWordCloud(restful.Resource):
 	@cors
+	@timeit
 	def post(self):
+
+		start = time.time()
+
+
 		args = get_word_cloud_parser.parse_args()
 		__format = '%Y-%m-%d'
 		eatery_id = args["eatery_id"]
@@ -739,18 +751,31 @@ class GetWordCloud(restful.Resource):
 
 		#__predicted_sentiment = ["null", "negative" ]
 
+		print "\n\n %s \n\n"%(time.time() - start)
+
+		new_time = time.time()
 		filtered_tag_text = [text for text in zip(test_sentences, __predicted_tags, __predicted_sentiment) if text[1] == category]
 	
 
-		regex = re.compile(r'family',  flags=re.I)
-
-		presence_for_lunch = list()
-			
+		
 		instance = ProcessingWithBlobInMemory()
+		__k = lambda text: noun_phrases_list.extend([(noun.lower(),  text[2]) for noun in instance.noun_phrase(to_unicode_or_bust(text[0]))])	
+		
+		def fool(text):
+			noun_phrases_list.extend([(noun.lower(),  text[2]) for noun in instance.noun_phrase(to_unicode_or_bust(text[0]))])
+
+
+		pool = Pool(processes=4)	
+		result = pool.apply_async(fool, filtered_tag_text)
+		print result
+		print noun_phrases_list
+
+		print "\n\n %s \n\n"%(time.time() - new_time)
+		"""
 		for text in filtered_tag_text:
 			noun_phrases_list.extend([(noun.lower(),  text[2]) for noun in instance.noun_phrase(to_unicode_or_bust(text[0]))])
-			if bool(regex.findall(text[0])):
-				presence_for_lunch.append(text[0])
+
+		"""
 
 		
 		##Incresing and decrasing frequency of the noun phrases who are superpositive and supernegative and changing
@@ -779,42 +804,87 @@ class GetWordCloud(restful.Resource):
 				writer.writerow([line.get("name").encode("utf-8"), line.get("polarity"), line.get("frequency")])
 		"""
 
-
-		print "\n\n Here is the length %s"%len(presence_for_lunch)
-		print "\n\n\n Length of the data of the word cloud %s \n\n\n"%len(result)
-
 		sorted_result = sorted(result, reverse=True, key=lambda x: x.get("frequency"))
 
 
 
-		def merging_similar_elements(sorted_result):
+		def merging_similar_elements(original_list):
 			"""
 			This function will calculate the minum distance between two noun phrase and if the distance is 
 			less than 1 and more than .8, delete one of the element and add both their frequencies
 			"""
 
-			original_dict = {element.get("name"): {"frequency": element.get("frequency"), "polarity": element.get("polarity")} for element in original_list}
+			original_dict = {element.get("name"): {"frequency": element.get("frequency"), "polarity": element.get("polarity")} \
+					for element in original_list}
+			
+			
+			calc_simililarity = lambda __a, __b: difflib.SequenceMatcher(a=__a.get("name").lower(), b=__b.get("name").lower()).ratio() \
+										if __a.get("name").lower() != __b.get("name").lower() else 0
+			
+			
 			list_with_similarity_ratios = list()
 			for test_element in original_list:
 				for another_element in copy.copy(original_list):
-					if test_element.get("name").lower() != another_element.get("name").lower():
-						r = difflib.SequenceMatcher(a=test_element.get("name").lower(), b=another_element.get("name").lower()).ratio()
-						list_with_similarity_ratios.append(dict(test_element.items() +  
+					r = calc_simililarity(test_element, another_element)	
+					list_with_similarity_ratios.append(dict(test_element.items() +  
 							{"similarity_with": another_element.get("name"), "ratio": r}.items()))
 
 			
-			sorted_similarity_test = sorted(list_with_similarity_ratios, reverse=True, key=lambda x: x.get("ratio"))
+
+			filtered_list = [element for element in list_with_similarity_ratios if element.get("ratio") <1 and element.get("ratio") > .8]
 
 
+
+			
+			for element in filtered_list:
+				try:
+					frequency = original_dict[element.get("name")]["frequency"] + \
+							original_dict[element.get("similarity_with")]["frequency"]
+							
+					del original_dict[element.get("similarity_with")]
+					original_dict[element.get("name")]["frequency"] = frequency
+					
+				except Exception as e:
+					pass
+
+			"""
+			##This is when you want to subtract and add frequency based on the polarity
+			for element in filtered_list:
+				try:
+					if original_dict[element.get("similarity_with")]["polarity"] == 0:
+						frequency = original_dict[element.get("name")]["frequency"] - original_dict[element.get("similarity_with")]["frequency"]
+					else:
+						frequency = original_dict[element.get("name")]["frequency"] + original_dict[element.get("similarity_with")]["frequency"]
+
+					del original_dict[element.get("similarity_with")]
+					original_dict[element.get("name")]["frequency"] = frequency
+					
+				except Exception as e:
+					pass
+			"""
+			result = list()
+
+	
+			for k, v in original_dict.iteritems():
+				l = {"name": k.upper()}
+				l.update(v)
+				result.append(l)
+
+			
+			return  result
+
+		
+		final_result = sorted(merging_similar_elements(sorted_result), reverse=True, key=lambda x: x.get("frequency"))
 
 
 		return {"success": True,
 				"error": True,
-				"result": sorted_result[0: 100],
+				"result": final_result[0:100],
 		}
 	
 	
 class GetValidFilesCount(restful.Resource):
+	@timeit
 	@cors
 	def get(self):
 		"""
