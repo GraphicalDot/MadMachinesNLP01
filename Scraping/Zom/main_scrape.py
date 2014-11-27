@@ -120,7 +120,7 @@ class EateriesList(object):
 		eateries_list = list()
 		soup = self.prepare_soup(page_url)
 		eatries_soup = soup.findAll("li", {"class": "resZS mb5 pb5 bb even  status1"})
-		for eatery_soup in eatries_soup:
+                for eatery_soup in eatries_soup:
 			eateries_list.append(self.each_eatery(eatery_soup))
 		return eateries_list
 
@@ -330,7 +330,7 @@ class EateryData(object):
                 time.sleep(10)
 		try:
 			while True:
-				time.sleep(random.choice([2, 3, 1]))
+				time.sleep(random.choice([4, 3]))
 				driver.find_element_by_class_name("load-more").click()
 		except NoSuchElementException as e:
 			print "{color} Catching Exception -<{error}>- with messege -<No More Loadmore tag present>-".format(color=bcolors.OKGREEN, error=e)
@@ -617,10 +617,12 @@ def eatery_specific(eatery_dict):
 	#csvfile.close()
 
 	return
+
+"""
 if __name__ == "__main__":
         
 	number_of_restaurants = 30
-	skip = 0
+	skip = 60
         is_eatery = False
 
         url = "https://www.zomato.com/ncr/khan-market-delhi-restaurants"
@@ -629,7 +631,6 @@ if __name__ == "__main__":
         print eateries_list
         for element in eateries_list:
                 eatery_specific(element)
-        """
 	instance = EateriesList(url, int(number_of_restaurants), int(skip))
 	eateries_list = instance.eateries_list()
 	print eateries_list	
@@ -638,8 +639,10 @@ if __name__ == "__main__":
 		print element.get("eatery_name")
 		
 		#	scrape("http://www.zomato.com/ncr/khan-market-delhi-restaurants?category=1", 28, 1)
-
-	"""
 #runn.apply_async(["https://www.zomato.com/ncr/south-delhi-restaurants", 30, 520]), this has been done for south delhi
 
 #Sun Sep  7 13:31:10 IST 2014
+
+
+"""
+

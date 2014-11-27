@@ -11,14 +11,42 @@ reviews = db.review
 
 import numpy
 import random
-from Text_Processing import SentenceTokenization
 import itertools
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.feature_extraction.text import TfidfTransformer
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.linear_model import SGDClassifier
 from sklearn.pipeline import Pipeline
+import copy
+import re
+from textblob import TextBlob 
+from flask import Flask
+from flask import request, jsonify
+from flask.ext import restful
+from flask.ext.restful import reqparse
+from flask import make_response, request, current_app
+from functools import update_wrapper
+from flask import jsonify
+import hashlib
+import subprocess
+import shutil
+import json
+import os
+import StringIO
+import difflib
+from bson.json_util import dumps
+from Text_Processing import ProcessingWithBlob, PosTags, nltk_ngrams, get_all_algorithms_result, RpRcClassifier, \
+		bcolors, CopiedSentenceTokenizer, SentenceTokenizationOnRegexOnInterjections, get_all_algorithms_result, \
+		path_parent_dir, path_trainers_file, path_in_memory_classifiers, timeit, cd, SentimentClassifier, \
+		TagClassifier, ProcessingWithBlobInMemory
 
+import time
+from datetime import timedelta
+from collections import Counter
+from functools import wraps
+import itertools
+import random
+from sklearn.externals import joblib
 
 def to_unicode_or_bust(obj, encoding='utf-8'):
 	if isinstance(obj, basestring):
@@ -129,7 +157,6 @@ def make_new_files_from_csvfile(csv_path, target_path):
 				    myfile.write(element[0])
 				    myfile.write("\n")
 
-"""
 
 def writing_reviews_to_csv(target_path, count):
 	path = "/home/k/Programs/Canworks/Canworks/trainers"
@@ -193,6 +220,7 @@ def writing_reviews_to_csv(target_path, count):
 	
 	tag_writer = csv.writer(reviews_tags_csvfile, delimiter=",")
 	sentiment_writer = csv.writer(reviews_sentiment_csvfile, delimiter=",")
+iiw
 
 	for __a in result_for_tags:
 		tag_writer.writerow(__a)
@@ -205,8 +233,197 @@ def writing_reviews_to_csv(target_path, count):
 	reviews_tags_csvfile.close()
 	reviews_sentiment_csvfile.close()
 
+	
+       
+"""
+
+class Writinghundereds:
+
+        def __init__(self, find_similarity=True):
+                """
+                This is the class used to write top 100 noun phrases to a csv file corresponding to a particular 
+                eatery.
+
+                find_similarity = True, 
+                    which means club all the nounn phrases together after calculating their similarity distane 
+                    which should be more than .8 and less thn 1.
+
+                """
+                areas = list(set([post.get("eatery_sub_area") for post in eatery.find()]))
+                areas_dict = dict(zip(range(len(areas)), areas))
+                for element in areas_dict.iteritems():
+                        print element
+
+                selected_area = raw_input("Enter th enumber of the area you want to get printed to csv ..." )
+
+                try:
+                    area = areas_dict[selected_area]
+                except Exception:
+                    raise StandardError("you didnt choose valid area, Go fuck yourself")
+
+
+                self.area_name = area
+                self.similarity = find_similarity
+	
+                with cd(path_in_memory_classifiers):
+                    self.tag_classifier = joblib.load('svm_classifier_tag.lib')
+                    self.sentiment_classifier = joblib.load('svm_classifier_sentiment.lib')
+		
+		self.sent_tokenizer = SentenceTokenizationOnRegexOnInterjections()
+		self.np_instance = ProcessingWithBlobInMemory()
+       
+
+
+                for eatery_id in self.eateries_id()[0:1]:
+                        final_result = sorted(self.merging_similar_elements(self.per_review(eatery_id)), reverse=True, key=lambda x: x.get("frequency"))
+                        print final_result
+                    
+
+
+		"""
+		with open("/home/k/word_cloud.csv", "wb") as csv_file:
+			writer = csv.writer(csv_file, delimiter=',')
+			for line in result:
+				writer.writerow([line.get("name").encode("utf-8"), line.get("polarity"), line.get("frequency")])
+		"""
+        def eateries_id(self):
+                """
+                This returns all the all the eateires corresponding to the sub area
+                """
+                
+                return  [post.get("eatery_id") for post in eatery.find() if post.get("eatery_sub_area") == self.area_name]
+
+
+
+        def per_review(self, eatery_id):
+                noun_phrases_list = list()
+	
+	        review_result = reviews.find({"eatery_id" :eatery_id})
+	
+	        review_text = [to_unicode_or_bust(post.get("review_text")) for post in review_result]
+	        review_text = " .".join(review_text)
+
+        	result = list() 
+
+		
+        	tokenized_sentences = self.sent_tokenizer.tokenize(to_unicode_or_bust(review_text))
+
+        	##with svm returns a list in the following form
+        	##[(sentence, tag), (sentence, tag), ................]
+        	#for chunk in text_classfication.with_svm():
+		
+        	#Getting Sentiment analysis
+        	__predicted_tags = self.tag_classifier.predict(test_sentences)
+        	__predicted_sentiment = self.sentiment_classifier.predict(test_sentences)
+
+
+                index = 0
+
+                #classified_sentences = [('but in the afternoon , it is usually unoccupied .', 'null'),
+                #(u'the food is fine , hard - to - eat in some cases .', 'food')]
+
+                #__predicted_sentiment = ["null", "negative" ]
+
+		
+		__k = lambda text: noun_phrases_list.extend([(noun.lower(),  text[2]) for noun in instance.noun_phrase(to_unicode_or_bust(text[0]))])	
+		
+		for text in zip(test_sentences, __predicted_tags, __predicted_sentiment):
+			noun_phrases_list.extend([(noun.lower(),  text[2]) for noun in self.np_instance.noun_phrase(to_unicode_or_bust(text[0]))])
+
+
+		
+		##Incresing and decrasing frequency of the noun phrases who are superpositive and supernegative and changing
+		##their tags to positive and negative
+		edited_result = list()
+		for __noun_phrase_dict in noun_phrases_list:
+			if __noun_phrase_dict[1] == "super-positive" or __noun_phrase_dict[1] == "super-negative":
+				edited_result.append((__noun_phrase_dict[0], __noun_phrase_dict[1].split("-")[1]))
+				#Added twice beacause super postive was given twice as weightage as positive and some goes for supernegative 
+				#and negative
+				edited_result.append((__noun_phrase_dict[0], __noun_phrase_dict[1].split("-")[1]))
+
+			else:
+				edited_result.append(__noun_phrase_dict)
+
+		result = list()
+
+		for key, value in Counter(edited_result).iteritems():
+			result.append({"name": key[0], "polarity": 1 if key[1] == 'positive' else 0 , "frequency": value}) 
+		
+
+
+		sorted_result = sorted(result, reverse=True, key=lambda x: x.get("frequency"))
+
+
+        def merging_similar_elements(original_list):
+                """
+                This function will calculate the minum distance between two noun phrase and if the distance is 
+                less than 1 and more than .8, delete one of the element and add both their frequencies
+                """
+
+                original_dict = {element.get("name"): {"frequency": element.get("frequency"), "polarity": element.get("polarity")} \
+					for element in original_list}
+			
+			
+                calc_simililarity = lambda __a, __b: difflib.SequenceMatcher(a=__a.get("name").lower(), b=__b.get("name").lower()).ratio() \
+										if __a.get("name").lower() != __b.get("name").lower() else 0
+			
+			
+                list_with_similarity_ratios = list()
+                for test_element in original_list:
+                        for another_element in copy.copy(original_list):
+                                r = calc_simililarity(test_element, another_element)	
+                                list_with_similarity_ratios.append(dict(test_element.items() + 
+                                        {"similarity_with": another_element.get("name"), "ratio": r}.items()))
+
+			
+
+		filtered_list = [element for element in list_with_similarity_ratios if element.get("ratio") <1 and element.get("ratio") > .8]
+
+
+
+			
+                for element in filtered_list:
+                        try:
+                                frequency = original_dict[element.get("name")]["frequency"] + \
+							original_dict[element.get("similarity_with")]["frequency"]
+							
+				del original_dict[element.get("similarity_with")]
+				original_dict[element.get("name")]["frequency"] = frequency
+					
+			except Exception as e:
+				pass
+
+			"""
+			##This is when you want to subtract and add frequency based on the polarity
+			for element in filtered_list:
+				try:
+					if original_dict[element.get("similarity_with")]["polarity"] == 0:
+						frequency = original_dict[element.get("name")]["frequency"] - original_dict[element.get("similarity_with")]["frequency"]
+					else:
+						frequency = original_dict[element.get("name")]["frequency"] + original_dict[element.get("similarity_with")]["frequency"]
+
+					del original_dict[element.get("similarity_with")]
+					original_dict[element.get("name")]["frequency"] = frequency
+					
+				except Exception as e:
+					pass
+			"""
+		result = list()
+
+	
+		for k, v in original_dict.iteritems():
+			l = {"name": k.upper()}
+			l.update(v)
+			result.append(l)
+
+			
+		return  result
+
+		
+
 
 
 if __name__ == "__main__":
-	writing_reviews_to_csv("/home/k/", 10000)
+        Writinghundereds()
 
