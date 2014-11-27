@@ -256,8 +256,9 @@ class Writinghundereds:
 
                 selected_area = raw_input("Enter th enumber of the area you want to get printed to csv ..." )
 
+                print selected_area
                 try:
-                    area = areas_dict[selected_area]
+                    area = areas_dict[int(selected_area)]
                 except Exception:
                     raise StandardError("you didnt choose valid area, Go fuck yourself")
 
@@ -275,7 +276,10 @@ class Writinghundereds:
 
 
                 for eatery_id in self.eateries_id()[0:1]:
-                        final_result = sorted(self.merging_similar_elements(self.per_review(eatery_id)), reverse=True, key=lambda x: x.get("frequency"))
+                        result = self.per_review(eatery_id)
+                        print result
+                        print len(result)
+                        final_result = sorted(self.merging_similar_elements(result), reverse=True, key=lambda x: x.get("frequency"))
                         print final_result
                     
 
@@ -313,8 +317,8 @@ class Writinghundereds:
         	#for chunk in text_classfication.with_svm():
 		
         	#Getting Sentiment analysis
-        	__predicted_tags = self.tag_classifier.predict(test_sentences)
-        	__predicted_sentiment = self.sentiment_classifier.predict(test_sentences)
+        	__predicted_tags = self.tag_classifier.predict(tokenized_sentences)
+        	__predicted_sentiment = self.sentiment_classifier.predict(tokenized_sentences)
 
 
                 index = 0
@@ -325,9 +329,9 @@ class Writinghundereds:
                 #__predicted_sentiment = ["null", "negative" ]
 
 		
-		__k = lambda text: noun_phrases_list.extend([(noun.lower(),  text[2]) for noun in instance.noun_phrase(to_unicode_or_bust(text[0]))])	
+		__k = lambda text: noun_phrases_list.extend([(noun.lower(),  text[2]) for noun in self.np_instance.noun_phrase(to_unicode_or_bust(text[0]))])	
 		
-		for text in zip(test_sentences, __predicted_tags, __predicted_sentiment):
+		for text in zip(tokenized_sentences, __predicted_tags, __predicted_sentiment):
 			noun_phrases_list.extend([(noun.lower(),  text[2]) for noun in self.np_instance.noun_phrase(to_unicode_or_bust(text[0]))])
 
 
@@ -353,9 +357,9 @@ class Writinghundereds:
 
 
 		sorted_result = sorted(result, reverse=True, key=lambda x: x.get("frequency"))
+                return sorted_result
 
-
-        def merging_similar_elements(original_list):
+        def merging_similar_elements(self, original_list):
                 """
                 This function will calculate the minum distance between two noun phrase and if the distance is 
                 less than 1 and more than .8, delete one of the element and add both their frequencies
