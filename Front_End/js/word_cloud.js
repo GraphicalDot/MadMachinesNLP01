@@ -165,9 +165,6 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 
 
 	function OnClickBubble(d){
-			console.log(d.name)
-			console.log(DATA(d.name))
-
 			drawBubbles(DATA(d.name))
 	}	
 					
@@ -183,23 +180,11 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 				.attr('transform', function(d) { return 'translate('
 						         + d.x + ',' + d.y + ')'; })
 
-		node.transition()
-			.duration(duration)
-			.delay(function(d, i) {delay = i * 7; return delay;}) 
-			.attr('transform', function(d) { return 'translate(' + d.x + ',' + d.y + ')'; })
-			.style('opacity', 1); 
-			https://www.facebook.com/
 
 		node.append('circle')
-						.attr('transform', function(d) { return 'translate(' + d.x + ',' + d.y + ')'; })
-						.attr('r', 0)
 						.attr('class', function(d) { return d.className; })
 						.attr("fill", function(d){return d.className ? "#66CCFF" : "#FF0033" }) 
 						.on("click", OnClickBubble)
-						.style('opacity', 0) 
-						.transition()
-						.duration(duration * 1.2)
-						.style('opacity', 1)
 						.attr('r', function(d) { return d.r; })
 						
 		node.append("text")
@@ -207,11 +192,8 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 					.style("text-anchor", "middle")
 					.style("font-size", function(d) { return d.size*10 })
 					.text(function(d) { return d.name.substring(0, d.r / 3); })
-					.style('opacity', 0) 
-					.transition()
-					.duration(duration * 1.2)
-					.style('opacity', 1)
 
+		
 		}
 
 		function processData(data) {
