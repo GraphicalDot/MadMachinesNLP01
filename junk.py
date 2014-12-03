@@ -47,6 +47,8 @@ from functools import wraps
 import itertools
 import random
 from sklearn.externals import joblib
+import multiprocessing as mp
+from multiprocessing import Pool
 
 def to_unicode_or_bust(obj, encoding='utf-8'):
 	if isinstance(obj, basestring):
@@ -275,7 +277,7 @@ class Writinghundereds:
        
 
 
-                for eatery_id in self.eateries_id()[0:1]:
+                for eatery_id in self.eateries_id()[5:6]:
                         result = self.per_review(eatery_id)
                         print result
                         print len(result)
@@ -374,13 +376,29 @@ class Writinghundereds:
 			
 			
                 list_with_similarity_ratios = list()
+
+
+                """
                 for test_element in original_list:
                         for another_element in copy.copy(original_list):
                                 r = calc_simililarity(test_element, another_element)	
                                 list_with_similarity_ratios.append(dict(test_element.items() + 
                                         {"similarity_with": another_element.get("name"), "ratio": r}.items()))
+                """
 
-			
+                
+
+                def custom_func(test_element):
+                        for another_element in copy.copy(original_list):
+                                r = calc_simililarity(test_element, another_element)	
+                                list_with_similarity_ratios.append(dict(test_element.items() + 
+                                        {"similarity_with": another_element.get("name"), "ratio": r}.items()))
+
+
+                with Pool(processes=4) as pool:
+                        result = pool.apply_async(custom_func, original_list)
+                        print result.get() 
+                
 
 		filtered_list = [element for element in list_with_similarity_ratios if element.get("ratio") <1 and element.get("ratio") > .8]
 
@@ -398,7 +416,7 @@ class Writinghundereds:
 			except Exception as e:
 				pass
 
-			"""
+			"""0
 			##This is when you want to subtract and add frequency based on the polarity
 			for element in filtered_list:
 				try:
@@ -425,6 +443,13 @@ class Writinghundereds:
 		return  result
 
 		
+
+
+
+
+
+
+
 
 
 

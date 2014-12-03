@@ -37,6 +37,57 @@ from sklearn.externals import joblib
 import numpy
 from multiprocessing import Pool
 
+DATA = [       {"name": "friends", 
+            "children": [{"name": "beer", "polarity": 0, "frequency": 2,}, {"name": "cost effective", "polarity": 1, "frequency": 12,},
+                {"name": "Big Chill", "polarity": 0, "frequency": 8,}, {"name": "outdoor", "polarity": 0, "frequency": 2,},
+                {"name": "pubs", "polarity": 0, "frequency": 5,}, {"name": "rock music", "polarity": 1, "frequency": 6,},
+                {"name": "cocktails", "polarity": 1, "frequency": 7,}, {"name": "mocktails", "polarity": 1, "frequency": 11,},
+                {"name": "7 degree Brahuas", "polarity": 1, "frequency": 9,}, ], 
+                "polarity": 1,
+                "frequency": 5},
+        {"name": "family",
+        "children": [{"name": "live music", "polarity": 1, "frequency": 3,}, {"name": "valet parking", "polarity": 0, "frequency": 4,},
+                {"name": "decor", "polarity": 1, "frequency": 5,}, {"name": "lighting", "polarity": 0, "frequency": 4,},
+                {"name": "vegetarian", "polarity": 1, "frequency": 10,}, {"name": "mughlai", "polarity": 0, "frequency": 2,},
+                {"name": "Haldiram", "polarity": 0, "frequency": 2,}, {"name": "Punjabi by Nature", "polarity": 0, "frequency": 12,},
+                {"name": "service", "polarity": 1, "frequency": 2,}, {"name": "7 degree Brahuas", "polarity": 0, "frequency": 8,},],
+                "polarity": 1,
+                "frequency": 15},
+        {"name": "beer cafes",
+        "children": [{"name": "happy hours", "polarity": 1, "frequency": 13,}, {"name": "rock music", "polarity": 0, "frequency": 4,},
+                {"name": "outdoor", "polarity": 1, "frequency": 5,}, {"name": "smoking zone", "polarity": 0, "frequency": 4,},
+                {"name": "valet for money", "polarity": 1, "frequency": 10,}, {"name": "vapour", "polarity": 0, "frequency": 2,},
+                {"name": "starters", "polarity": 0, "frequency": 2,}, {"name": "brewery", "polarity": 0, "frequency": 12,},
+                {"name": "lemp", "polarity": 1, "frequency": 2,},],
+                "polarity": 1,
+                "frequency": 9},
+        {"name": "italian",
+        "children": [{"name": "Big Chill", "polarity": 1, "frequency": 3,},
+                {"name": "California pizza Kitchen", "polarity": 0, "frequency": 14,},
+                {"name": "clay oven baked pizza", "polarity": 1, "frequency": 5,}, {"name": "cheese", "polarity": 0, "frequency": 14,},
+                {"name": "rissotto", "polarity": 1, "frequency": 10,},
+                {"name": "ravioli", "polarity": 0, "frequency": 6,}, {"name": "fondue", "polarity": 0, "frequency": 4,},
+                {"name": "Home Delivery", "polarity": 0, "frequency": 12,}, {"name": "amici", "polarity": 1, "frequency": 12,},],
+                "polarity": 1,
+                "frequency": 5},
+        {"name": "Amici",
+        "children": [{"name": "Cheese pizza", "polarity": 1, "frequency": 3,}, {"name": "lassagne", "polarity": 0, "frequency": 4,},
+                {"name": "ambience", "polarity": 1, "frequency": 5,}, {"name": "seating arrangement", "polarity": 0, "frequency": 4,},
+                {"name": "painted wall", "polarity": 1, "frequency": 10,}, {"name": "service", "polarity": 0, "frequency": 2,},
+                {"name": "cost", "polarity": 0, "frequency": 2,}, {"name": "Parking", "polarity": 0, "frequency": 12,},
+                {"name": "location", "polarity": 1, "frequency": 2,},],
+                "polarity": 0,
+                "frequency": 6},
+        ]
+
+
+
+
+
+
+
+
+
 
 connection = pymongo.Connection()
 db = connection.modified_canworks
@@ -696,7 +747,10 @@ class GetWordCloud(restful.Resource):
 	@cors
 	@timeit
 	def post(self):
-
+		return {"success": True,
+				"error": True,
+				"result": DATA,
+		}
 		start = time.time()
 
 
@@ -757,25 +811,12 @@ class GetWordCloud(restful.Resource):
 		filtered_tag_text = [text for text in zip(test_sentences, __predicted_tags, __predicted_sentiment) if text[1] == category]
 	
 
-		
 		instance = ProcessingWithBlobInMemory()
 		__k = lambda text: noun_phrases_list.extend([(noun.lower(),  text[2]) for noun in instance.noun_phrase(to_unicode_or_bust(text[0]))])	
 		
-		def fool(text):
-			noun_phrases_list.extend([(noun.lower(),  text[2]) for noun in instance.noun_phrase(to_unicode_or_bust(text[0]))])
-
-
-		pool = Pool(processes=4)	
-		result = pool.apply_async(fool, filtered_tag_text)
-		print result
-		print noun_phrases_list
-
-		print "\n\n %s \n\n"%(time.time() - new_time)
-		"""
 		for text in filtered_tag_text:
 			noun_phrases_list.extend([(noun.lower(),  text[2]) for noun in instance.noun_phrase(to_unicode_or_bust(text[0]))])
 
-		"""
 
 		
 		##Incresing and decrasing frequency of the noun phrases who are superpositive and supernegative and changing
@@ -876,7 +917,7 @@ class GetWordCloud(restful.Resource):
 		
 		final_result = sorted(merging_similar_elements(sorted_result), reverse=True, key=lambda x: x.get("frequency"))
 
-
+                print final_result
 		return {"success": True,
 				"error": True,
 				"result": final_result[0:100],

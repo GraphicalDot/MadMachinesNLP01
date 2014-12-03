@@ -1,8 +1,5 @@
 $(document).ready(function(){
 
-
-
-
 App.SeeWordCloudDateSelectionView = Backbone.View.extend({
 	template: window.template("see-word-cloud-date-selection"),
 	tag: "form",
@@ -17,7 +14,6 @@ App.SeeWordCloudDateSelectionView = Backbone.View.extend({
 		console.log(this)
 		newfunction()
 	},
-
 
 	render: function(){
 		this.beforeRender();	
@@ -113,186 +109,14 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 	initialize: function(options){
 		this.model = options.model;
 		console.log(this.model)
-		//this.render()	
-		this.copiedRender(this.model);
-	},
-
-
-
-	copiedRender: function(_data){
-		var width = $(window).width() - 50;
-		var height = $(window).height()*1.3;
-		format = d3.format(",d"),
-		fill = d3.scale.category10();
-
-		function DATA(value){
-			var newDataSet = [];
-			if (value == null){
-				$.each(_data, function(i, __d){
-					newDataSet.push({"name": __d.name, 
-							"polarity": __d.polarity, 
-							"frequency": __d.frequency,
-							}
-						)
-					})
-				return newDataSet
-			}
-			
-			else{
-
-				$.each(_data, function(i, __d){
-					if (__d.name == value){
-						$.each(__d.children, function(i, _d){
-							newDataSet.push({"name": _d.name, 
-								"polarity": _d.polarity, 
-								"frequency": _d.frequency,
-								})
-						})}})
-					return newDataSet
-			}
-		}
-
-
-		var bubble = d3.layout.pack()
-				.sort(null)
-				.size([width, height])
-				.padding(3)
-				.value(function(d) {return d.size;})
- 
-		var svg = d3.select("body").append("svg")
-					.attr("width", width)
-					.attr("height", height)
-
-
-	function OnClickBubble(d){
-			console.log(d.name)
-			console.log(DATA(d.name))
-
-			drawBubbles(DATA(d.name))
-	}	
-					
-	function drawBubbles(newData){			
-		var nodes = bubble.nodes(processData(newData))
-				.filter(function(d) { return !d.children; });
-		var duration = 200;
-		var delay = 0;
-		var node = svg.selectAll(".node")
-				.data(nodes)
-				.enter().append("g")
-				.attr("class", "node")
-				.attr('transform', function(d) { return 'translate('
-						         + d.x + ',' + d.y + ')'; })
-
-		node.transition()
-			.duration(duration)
-			.delay(function(d, i) {delay = i * 7; return delay;}) 
-			.attr('transform', function(d) { return 'translate(' + d.x + ',' + d.y + ')'; })
-			.style('opacity', 1); 
-			https://www.facebook.com/
-
-		node.append('circle')
-						.attr('transform', function(d) { return 'translate(' + d.x + ',' + d.y + ')'; })
-						.attr('r', 0)
-						.attr('class', function(d) { return d.className; })
-						.attr("fill", function(d){return d.className ? "#66CCFF" : "#FF0033" }) 
-						.on("click", OnClickBubble)
-						.style('opacity', 0) 
-						.transition()
-						.duration(duration * 1.2)
-						.style('opacity', 1)
-						.attr('r', function(d) { return d.r; })
-						
-		node.append("text")
-					.attr("fill", "black")
-					.style("text-anchor", "middle")
-					.style("font-size", function(d) { return d.size*10 })
-					.text(function(d) { return d.name.substring(0, d.r / 3); })
-					.style('opacity', 0) 
-					.transition()
-					.duration(duration * 1.2)
-					.style('opacity', 1)
-
-		}
-
-		function processData(data) {
-			var newDataSet = [];
-			$.each(data, function(i, __d){
-				console.log(__d.name, __d.frequency, __d.polarity)
-				newDataSet.push({"name": __d.name, 
-						"className": __d.polarity, 
-						"size": __d.frequency,
-						}
-					)
-				})
-			return {"children": newDataSet};	
-			}
-
-
-	drawBubbles(DATA(null))
-	},
-
-
+		$.each(this.model, function(i, __d){
+			console.log(__d.name, __d.frequency, __d.polarity)
+		
+		})
 	
-	newrender: function(){
+		this.render();
+	},
 
-		
-		var diameter = 960,
-		format = d3.format(",d"),
-		color = d3.scale.category20c();
-
-		var bubble = d3.layout.pack()
-				.sort(null)
-				.size([diameter, diameter])
-				.padding(1.5);
-		console.log(bubble)
-
-		var svg = d3.select("body").append("svg")
-				.attr("width", diameter)
-				.attr("height", diameter)
-				.attr("class", "bubble");
-
-
-		d3.json("flare.json", function(error, root) {
-			
-			var node = svg.selectAll(".node")
-					.data(bubble.nodes(classes(root)))
-					.filter(function(d) { return !d.children; })
-					.enter().append("g")
-					.attr("class", "node")
-					.attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; })
-
-  
-				node.append("title")
-					.text(function(d) { return d.className + ": " + format(d.value); });
-
-				node.append("circle")
-					.attr("r", function(d) { return d.r; })
-					.style("fill", function(d) { return color(d.packageName); });
-		
-
-				node.append("text")
-					.attr("dy", ".3em")
-					.style("text-anchor", "middle")
-					.text(function(d) { return d.className.substring(0, d.r / 3); });
-				});
-			// Returns a flattened hierarchy containing all leaf nodes under the root.
-		
-
-		function classes(root) {
-			var classes = [];
-			
-			function recurse(name, node) {
-				if (node.children) node.children.forEach(function(child) { recurse(node.name, child); });
-				else classes.push({packageName: name, className: node.name, value: node.size});
-				}
-
-			recurse(null, root);
-			return {children: classes};
-		}
-
-		d3.select(self.frameElement).style("height", diameter + "px");
-
-		},
 
 	render: function(){
 		//copied from : https://github.com/vlandham/bubble_cloud/blob/gh-pages/coffee/vis.coffee
@@ -371,16 +195,11 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 	
 			force = d3.layout.force()
 					.gravity(0)
-					.charge(charge)
+					.charge(0)
 					.size([width, height])
 					.on("tick", tick)
 			
 
-
-			function charge(d){
-				return d.frequency*d.frequency + 1
-
-			}
 	
 	
 			rawData = this.model

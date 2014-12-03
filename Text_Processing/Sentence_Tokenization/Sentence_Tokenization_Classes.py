@@ -289,7 +289,7 @@ class SentenceTokenizationOnRegexOnInterjections:
 				new_list = list()
 				for new_sentence in p:
 					if p.index(new_sentence) != 0:
-						new_list.append("{0}{1}".format(character["char"], new_sentence))
+						new_list.append("{0}{1}".format(character["char"], new_sentence.encode("ascii", "ignore")))
 					else:
 						new_list.append(new_sentence)
 				another.extend(new_list)
