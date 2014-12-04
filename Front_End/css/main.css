@@ -7,9 +7,7 @@
 body{
     padding-top: 10px;
     padding-bottom: 10px;
-    background-color: #b0c4de;
     background-image: url("black-and-white-restaurant-handpainted-mural.jpg");
-/*	background-image: url("bg3.jpg"); */
 	background-size:   cover;                      /* <------ */
 	    background-repeat: no-repeat;
 }
