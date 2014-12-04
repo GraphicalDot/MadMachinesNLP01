@@ -1,14 +1,22 @@
            
 @import url(http://fonts.googleapis.com/css?family=Lobster);
-<link href='http://fonts.googleapis.com/css?family=Shadows+Into+Light' rel='stylesheet' type='text/css'>
+@import url(http://fonts.googleapis.com/css?family=Audiowide);
+@import url(http://fonts.googleapis.com/css?family=Margarine);
+@import url(http://fonts.googleapis.com/css?family=Marko+One);
+
 body{
     padding-top: 10px;
     padding-bottom: 10px;
-    background-image: url("web-background-wallpapers.jpg");
+    background-color: #b0c4de;
+    background-image: url("black-and-white-restaurant-handpainted-mural.jpg");
 /*	background-image: url("bg3.jpg"); */
 	background-size:   cover;                      /* <------ */
 	    background-repeat: no-repeat;
 }
+
+h3{
+	  font: bold 48px monospace;
+  }
 
 .pricing-table .plan {
   border-radius: 5px;
@@ -33,24 +41,6 @@ body{
 	    border-radius: 20;
 		    }
 
-/*
- .plan:hover {
-  background-color: initial;
-	color: #FFFFFF ; 
-	font-size: 150% ;
-	text-decoration: line-through ;
-	text-align: auto ;
-	font-weight: bold ;
-  -moz-box-shadow: 0 0 12px 3px #b0b2ab ;
-  -webkit-box-shadow: 0 0 12px 3px #b0b2ab ;
-  box-shadow: 0 0 12px 3px #b0b2ab ;
-}
-
-
-.plan:hover .btn-group #ddpFilter{
-
-}
-*/
 
  .plan {
   padding: 20px;
@@ -217,4 +207,9 @@ text {
 	background: #000000;      
 	   overflow-x: hidden;
 }
+
+#node-bubble {
+	font-family: 'Marko One', cursive;
+}
+
 

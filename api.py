@@ -37,6 +37,9 @@ from sklearn.externals import joblib
 import numpy
 from multiprocessing import Pool
 
+
+
+"""
 DATA = [       {"name": "friends", 
             "children": [{"name": "beer", "polarity": 0, "frequency": 2,}, {"name": "cost effective", "polarity": 1, "frequency": 12,},
                 {"name": "Big Chill", "polarity": 0, "frequency": 8,}, {"name": "outdoor", "polarity": 0, "frequency": 2,},
@@ -80,7 +83,9 @@ DATA = [       {"name": "friends",
                 "frequency": 6},
         ]
 
+"""
 
+DATA = [{"name": "Hangout" ,"children": [{"name": "Big Chill Café", "polarity": 1, "frequency": 71,}, {"name": "Pizza Hut", "polarity": 1, "frequency": 25,}, {"name": "Haldirams", "polarity": 1, "frequency": 76,}, {"name": "Vapour", "polarity": 1, "frequency": 46,}, {"name": "Rajender Dhaba", "polarity": 1, "frequency": 68,}, {"name": "Mocha", "polarity": 1, "frequency": 96,}, {"name": "Mocha", "polarity": 1, "frequency": 96,}, {"name": "Smoke House Deli", "polarity": 1, "frequency": 60,}, {"name": "Soda Bottle Opener Wala", "polarity": 1, "frequency": 88,}, {"name": "Beer Café", "polarity": 1, "frequency": 68,}, {"name": "Soi7", "polarity": 1, "frequency": 26,},], "polarity": 1, "frequency": 95,},{"name": "Family" ,"children": [{"name": "Gulati", "polarity": 1, "frequency": 55,}, {"name": "Haldiram", "polarity": 1, "frequency": 100,}, {"name": "Punjabi by Nature", "polarity": 1, "frequency": 73,}, {"name": "Sagar Ratna", "polarity": 1, "frequency": 31,}, {"name": "Not Just Paratha", "polarity": 1, "frequency": 55,}, {"name": "Sarvana Bhawan", "polarity": 1, "frequency": 16,}, {"name": "Sarvana Bhawan", "polarity": 1, "frequency": 16,}, {"name": "Dominos", "polarity": 1, "frequency": 63,}, {"name": "Oh Calcutta", "polarity": 1, "frequency": 27,}, {"name": "Golden Dragon", "polarity": 1, "frequency": 35,}, {"name": "Mainland China", "polarity": 1, "frequency": 17,},], "polarity": 1, "frequency": 27,},{"name": "Big Chill" ,"children": [{"name": "Blueberry Cheesecake", "polarity": 1, "frequency": 96,}, {"name": "Peri Peri Pasta", "polarity": 1, "frequency": 87,}, {"name": "Chicken Rissotto", "polarity": 1, "frequency": 65,}, {"name": "Quattro Formaggi", "polarity": 1, "frequency": 24,}, {"name": "Belgium Choclate Shake", "polarity": 1, "frequency": 44,}, {"name": "Choclate Mousse", "polarity": 1, "frequency": 87,}, {"name": "Choclate Mousse", "polarity": 1, "frequency": 87,}, {"name": "Ravioli", "polarity": 1, "frequency": 9,}, {"name": "Ginger Fizz", "polarity": 1, "frequency": 5,}, {"name": "Garlic Bread", "polarity": 1, "frequency": 90,}, {"name": "Fondue", "polarity": 1, "frequency": 57,},], "polarity": 1, "frequency": 46,},{"name": "Chhole Bathure" ,"children": [{"name": "Chacha", "polarity": 1, "frequency": 100,}, {"name": "Sitaram", "polarity": 1, "frequency": 54,}, {"name": "Nagpal", "polarity": 1, "frequency": 22,}, {"name": "Haldiram", "polarity": 1, "frequency": 63,}, {"name": "Om", "polarity": 1, "frequency": 87,}, {"name": "Standard", "polarity": 1, "frequency": 13,}, {"name": "Standard", "polarity": 1, "frequency": 13,}, {"name": "Monika Café", "polarity": 1, "frequency": 30,}, {"name": "Ghante wala", "polarity": 1, "frequency": 23,}, {"name": "Punjab Grill", "polarity": 1, "frequency": 34,}, {"name": "Lalaji", "polarity": 1, "frequency": 97,},], "polarity": 1, "frequency": 53,},{"name": "Cyber Hub" ,"children": [{"name": "SodaBottleOpenerWala", "polarity": 1, "frequency": 27,}, {"name": "Dhaba by Claridges", "polarity": 1, "frequency": 90,}, {"name": "Nandos", "polarity": 1, "frequency": 72,}, {"name": "Soi7", "polarity": 1, "frequency": 12,}, {"name": "Raasta", "polarity": 1, "frequency": 68,}, {"name": "Hard Rock Café", "polarity": 1, "frequency": 93,}, {"name": "Hard Rock Café", "polarity": 1, "frequency": 93,}, {"name": "Imperfecto", "polarity": 1, "frequency": 42,}, {"name": "Farzi Café", "polarity": 1, "frequency": 72,}, {"name": "Olive Bistro", "polarity": 1, "frequency": 76,}, {"name": "Punjabi Rasoi", "polarity": 1, "frequency": 78,},], "polarity": 1, "frequency": 34,},{"name": "Brewery" ,"children": [{"name": "7 Degrees Barhaus", "polarity": 1, "frequency": 73,}, {"name": "Vapour", "polarity": 1, "frequency": 7,}, {"name": "Howzatt", "polarity": 1, "frequency": 78,}, {"name": "Striker", "polarity": 1, "frequency": 11,}, {"name": "Beer Café", "polarity": 1, "frequency": 6,}, {"name": "Downtown", "polarity": 1, "frequency": 28,}, {"name": "Downtown", "polarity": 1, "frequency": 28,}, {"name": "Manhattan", "polarity": 1, "frequency": 72,}, {"name": "Imperfecto", "polarity": 1, "frequency": 90,}, {"name": "Club Rhino", "polarity": 1, "frequency": 84,}, {"name": "Elevate", "polarity": 1, "frequency": 89,},], "polarity": 1, "frequency": 98,},{"name": "Farzi Café" ,"children": [{"name": "Rice Noodle Biryani", "polarity": 1, "frequency": 63,}, {"name": "Ircha Mutton", "polarity": 1, "frequency": 37,}, {"name": "Galouti Sliders", "polarity": 1, "frequency": 22,}, {"name": "Phirni Oxide", "polarity": 1, "frequency": 4,}, {"name": "Chicken 65", "polarity": 1, "frequency": 48,}, {"name": "Parle G Cheesecake", "polarity": 1, "frequency": 12,}, {"name": "Parle G Cheesecake", "polarity": 1, "frequency": 12,}, {"name": "Chiken Tikka Masala", "polarity": 1, "frequency": 4,}, {"name": "Jaggery Chutney", "polarity": 1, "frequency": 38,}, {"name": "Amritsari Fish n Chips", "polarity": 1, "frequency": 24,}, {"name": "Vada Pao Farzi 5", "polarity": 1, "frequency": 91,},], "polarity": 1, "frequency": 86,},{"name": "Romantic" ,"children": [{"name": "Zerzura", "polarity": 1, "frequency": 9,}, {"name": "Threesixtyone", "polarity": 1, "frequency": 90,}, {"name": "Prego", "polarity": 1, "frequency": 86,}, {"name": "Amour", "polarity": 1, "frequency": 73,}, {"name": "Lodi Garden", "polarity": 1, "frequency": 74,}, {"name": "Sevilla", "polarity": 1, "frequency": 11,}, {"name": "Sevilla", "polarity": 1, "frequency": 11,}, {"name": "FIO", "polarity": 1, "frequency": 11,}, {"name": "Ambrosia Bliss", "polarity": 1, "frequency": 61,}, {"name": "Big Yellow Door", "polarity": 1, "frequency": 33,}, {"name": "Mia Bella", "polarity": 1, "frequency": 65,},], "polarity": 1, "frequency": 45,},{"name": "Mutton Burrah" ,"children": [{"name": "Bukhara", "polarity": 1, "frequency": 38,}, {"name": "Gulati", "polarity": 1, "frequency": 76,}, {"name": "Karims", "polarity": 1, "frequency": 44,}, {"name": "Qureshi", "polarity": 1, "frequency": 77,}, {"name": "Rajinder Dhaba", "polarity": 1, "frequency": 77,}, {"name": "Jungle Jamboree", "polarity": 1, "frequency": 18,}, {"name": "Jungle Jamboree", "polarity": 1, "frequency": 18,}, {"name": "Al Kouser", "polarity": 1, "frequency": 46,}, {"name": "Zaffran", "polarity": 1, "frequency": 66,}, {"name": "Punjab Grill", "polarity": 1, "frequency": 98,}, {"name": "Great Kebab Factory", "polarity": 1, "frequency": 91,},], "polarity": 1, "frequency": 34,},{"name": "Hauz Khas Village" ,"children": [{"name": "Olive Bistro", "polarity": 1, "frequency": 62,}, {"name": "Out of the Box", "polarity": 1, "frequency": 26,}, {"name": "Smoke House Deli", "polarity": 1, "frequency": 43,}, {"name": "TLC Café", "polarity": 1, "frequency": 63,}, {"name": "Raasta", "polarity": 1, "frequency": 53,}, {"name": "Pink Room", "polarity": 1, "frequency": 5,}, {"name": "Pink Room", "polarity": 1, "frequency": 5,}, {"name": "Bootlegger", "polarity": 1, "frequency": 88,}, {"name": "Hauz Khas Social", "polarity": 1, "frequency": 97,}, {"name": "Imperfecto", "polarity": 1, "frequency": 62,}, {"name": "Fork U", "polarity": 1, "frequency": 14,},], "polarity": 1, "frequency": 35,}]
 
 
 
@@ -211,6 +216,10 @@ get_word_cloud_parser.add_argument('eatery_id', type=str,  required=True, locati
 get_word_cloud_parser.add_argument('category', type=str,  required=True, location="form")
 get_word_cloud_parser.add_argument('start_date', type=str,  required=True, location="form")
 get_word_cloud_parser.add_argument('end_date', type=str,  required=True, location="form")
+
+
+
+
 
 def cors(func, allow_origin=None, allow_headers=None, max_age=None):
 	if not allow_origin:
@@ -747,10 +756,6 @@ class GetWordCloud(restful.Resource):
 	@cors
 	@timeit
 	def post(self):
-		return {"success": True,
-				"error": True,
-				"result": DATA,
-		}
 		start = time.time()
 
 
@@ -945,6 +950,14 @@ class GetValidFilesCount(restful.Resource):
 
 
 
+class OnePageApi(restful.Resource):
+	@cors
+	@timeit
+	def get(self):
+		return {"success": True,
+				"error": True,
+				"result": DATA,
+		}
 
 
 		
@@ -966,6 +979,7 @@ api.add_resource(GetWordCloud, '/get_word_cloud')
 api.add_resource(GetValidFilesCount, '/get_valid_files_count')
 api.add_resource(AlgorithmsComparison, '/compare_algorithms')
 api.add_resource(OnlyAlgortihmsNames, '/get_all_algorithms_name')
+api.add_resource(OnePageApi, '/one_page_api')
 
 
 if __name__ == '__main__':

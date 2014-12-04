@@ -119,6 +119,7 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 
 
 	copiedRender: function(_data){
+		var color = d3.scale.category10().domain(d3.range(_data));
 		var width = $(window).width() - 50;
 		var height = $(window).height()*1.3;
 		format = d3.format(",d"),
@@ -206,7 +207,8 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 		// enter - only applies to incoming elements (once emptying data)	
 		node.append('circle')
 			.attr('r', function(d) { return d.r; })
-			.attr("fill", function(d){return d.className ? "#66CCFF" : "#FF0033" }) 
+			//.attr("fill", function(d){return d.className ? "#66CCFF" : "#FF0033" }) 
+			.attr("fill", function(d){return color(Math.random())}) 
 			.style("filter", "url(#drop-shadow)")
 			.on("click", OnClickBubble)
 			.attr('class', function(d) { return d.className; })
@@ -214,18 +216,40 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 			.transition()
 			.duration(duration * 1.2)
 			.style('opacity', 1);
+			
+		$('svg circle').tipsy({ 
+					        gravity: 'w', 
+					        html: true, 
+					        title: function(){
+							return 'Name: ' + '<span>' + this.__data__.name + '</span>';
+						}
+				      });
 
 
+		node.append('foreignObject')
+			.attr('width', function(d){ return 2 *d.r * Math.cos(Math.PI / 4)})
+			.attr('height', function(d){ return 2 *d.r * Math.cos(Math.PI / 4)})
+			.attr('color', 'black')
+			.each(getSize)
+			.append('xhtml:text')
+			.text(function(d) { return d.name.substring(0, d.r / 3)})
+			.attr('style', 'text-align:center')
+			.attr('style', function(d) { return "font-size: " + d.r/4 })
+			.transition()
+			.duration(duration * 1.2)
+			.style('opacity', 1);
 
+		/*
 		node.append("text")
-					.attr("fill", "black")
-					.style("text-anchor", "middle")
-					.style("font-size", function(d) { return d.r/4 })
-					.text(function(d) { return d.name.substring(0, d.r / 3); })
-					.style('opacity', 0)
-					.transition()
-					.duration(duration * 1.2)
-					.style('opacity', 1);
+			.attr("fill", "black")
+			.style("text-anchor", "middle")
+			.style("font-size", function(d) { return d.r/4 })
+			.text(function(d) { return d.name.substring(0, d.r / 3); })
+			.style('opacity', 0)
+			.transition()
+			.duration(duration * 1.2)
+			.style('opacity', 1);
+		*/
 		// exit
 		node.exit()
 			.transition()
@@ -234,6 +258,14 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 			.remove();
 
 
+		}
+		
+
+		function getSize(d) {
+			var radius ;
+			var bbox = this.getBBox();
+			cbbox = this.parentNode.getBBox();
+			console.log(bbox, cbbox)
 		}
 
 		function processData(data) {
@@ -248,32 +280,35 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 				})
 			return {"children": newDataSet};	
 			}
-			function addShadow(svg){
-					defs = svg.append("defs");
-					filter = defs.append("filter")
-						    .attr("id", "drop-shadow")
-						    .attr("height", "150%")
-						    .attr("width", "200%")
-					filter.append("feGaussianBlur")
-						.attr("in", "SourceAlpha")
-						.attr("stdDeviation", 5)
-						.attr("result", "blur");
 
-					feOffset = filter.append("feOffset")
-						    .attr("in", "blur")
-						    .attr("dx", 5)
-						    .attr("dy", 5)
-						    .attr("result", "offsetBlur");
-					feMerge = filter.append("feMerge");
-							feMerge.append("feMergeNode")
-							.attr("in", "offsetBlur")
+		function addShadow(svg){
+			defs = svg.append("defs");
+			filter = defs.append("filter")
+					.attr("id", "drop-shadow")
+					.attr("height", "150%")
+					.attr("width", "200%")
+			
+			filter.append("feGaussianBlur")
+				.attr("in", "SourceAlpha")
+				.attr("stdDeviation", 5)
+				.attr("result", "blur");
+
+			feOffset = filter.append("feOffset")
+					.attr("in", "blur")
+					.attr("dx", 5)
+					.attr("dy", 5)
+					.attr("result", "offsetBlur");
 					
-					feMerge.append("feMergeNode")
-						.attr("in", "SourceGraphic");
-
+			feMerge = filter.append("feMerge");
+				feMerge.append("feMergeNode")
+				.attr("in", "offsetBlur")
+					
+			
+			feMerge.append("feMergeNode")
+				.attr("in", "SourceGraphic");
 				}
 
-
+	//This starts the bubble cloud with initial parent data
 	drawBubbles(DATA(null))
 	},
 
@@ -583,11 +618,11 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 
 		}		    
 		 tooltip = d3.select("body")
-			      .append("div")
-			          .style("position", "absolute")
-				      .style("z-index", "10")
-				          .style("visibility", "hidden")
-					      .text("a simple tooltip");
+			.append("div")
+			.style("position", "absolute")
+			.style("z-index", "10")
+			.style("visibility", "hidden")
+			.text("a simple tooltip");
 
 
 

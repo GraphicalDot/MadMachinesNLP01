@@ -22,6 +22,7 @@ $(document).ready(function(){
 	window.get_word_cloud = window.URL + "get_word_cloud";
 	window.compare_algorithms = window.URL + "compare_algorithms";
 	window.get_all_algorithms_name = window.URL + "get_all_algorithms_name";
+	window.one_page_api = window.URL + "one_page_api";
 
 
 });
