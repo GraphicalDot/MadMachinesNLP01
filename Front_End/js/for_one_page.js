@@ -87,7 +87,7 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 		// create the transition on the updating elements before the entering elements 
 		// because enter.append merges entering elements into the update selection
 
-		var duration = 2000;
+		var duration = 200;
 		var delay = 2;
 
 		var node = g.selectAll(".node")
