@@ -43,7 +43,7 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 	copiedRender: function(_data){
 		var color = d3.scale.category10().domain(d3.range(_data));
 		var width = $(window).width() - 50;
-		var height = $(window).height()*1.3;
+		var height = $(window).height();
 		format = d3.format(",d"),
 		fill = d3.scale.category10();
 
