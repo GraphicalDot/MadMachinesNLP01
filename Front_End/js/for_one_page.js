@@ -97,14 +97,14 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 			.duration(duration)
 			.delay(function(d, i) {delay = i * 7; return delay;}) 
 			.style('opacity', 0) 
-			.attr('transform', function(d) { return 'translate(' + d.x + ',' + d.y + ')'; })
+		//	.attr('transform', function(d) { return 'translate(' + d.x + ',' + d.y + ')'; })
 			.attr('r', function(d) { return d.r; })
 			.style('opacity', 1); // force to 1, so they don't get stuck below 1 at enter()
 
 		node.enter().append("g")
 				.attr("class", "node")
 				.attr('transform', function(d) { return 'translate('
-						         + d.x + ',' + d.y + ')'; })
+							         + d.x + ',' + d.y + ')'; })
 		// enter - only applies to incoming elements (once emptying data)	
 		
 		node.append('circle')
@@ -129,13 +129,21 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 
 
 		node.append('foreignObject')
-			.attr('width', function(d){ return 2 *d.r * Math.cos(Math.PI / 4)})
-			.attr('height', function(d){ return 2 *d.r * Math.cos(Math.PI / 4)})
+			.attr('x', function(d){return this.parentNode.getBBox().x/1.5})
+			.attr('y', function(d){return this.parentNode.getBBox().y/2})
+			.attr('width', function(d){ return 2*d.r * Math.cos(Math.PI / 4)})
+			.attr('height', function(d){ return 2*d.r * Math.cos(Math.PI / 4)})
 			.attr('color', 'black')
-			.append('xhtml:text')
+			.each(getSize)
+			.append('xhtml:div')
+			.style("font-size", function(d){return d.r/4.2 + "px"})
+			.append("p")
 			.text(function(d) { return d.name.substring(0, d.r / 3)})
-			.attr('style', function(d) { return "font-size: " + d.r/4 })
 			.attr('id', "node-bubble")
+			.style("text-align", "center")
+			.style("vertical-align", "middle")
+			.style("padding", "10px 5px 15px 20px")
+			.style("line-height", "1")
 			.style('opacity', 0) 
 			.transition()
 			.duration(duration * 1.2)
@@ -165,11 +173,10 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 		function getSize(d){
 			var radius ;
 			var bbox = this.getBBox();
-
-			cbbox = this.parentNode.getBBox();
-			console.log(bbox, cbbox, this.getBoundingClientRect(), d.name )
+			var cbbox = this.parentNode.getBBox(); 
+			radius = this.parentNode.firstChild.getAttribute("r")
+			console.log(bbox, cbbox, radius, this.getBoundingClientRect(), d.name)
 		}
-
 		function processData(data) {
 			var newDataSet = [];
 			$.each(data, function(i, __d){
