@@ -3,7 +3,29 @@ $(document).ready(function(){
 
 App.WordCloudWith_D3 = Backbone.View.extend({
 	initialize: function(options){
+		console.log(this.$el)
 		var self = this;
+		$.vegas('slideshow', {
+			  backgrounds:[
+
+			{src: 'css/black-and-white-restaurant-handpainted-mural.jpg', fade:1000 }, 
+			{src: 'css/chef_service.jpg', fade:1000 }, 
+			{src: 'css/corn.jpg', fade:1000 }, 
+			{src: 'css/Good-Restaurant-Service.jpg', fade:1000 }, 
+			{src: 'css/M9ip55GcE.jpeg', fade:1000 }, 
+			{src: 'css/ordering_food.jpg', fade:1000 }, 
+			{src: 'css/parish-portrait.jpg', fade:1000 }, 
+			{src: 'css/Queen-Vic-Market-Fresh-Food-Black-and-white.jpg', fade:1000 }, 
+			{src: 'css/Rest_Interior2B.jpg', fade:1000 }, 
+			{src: 'css/restaurant_kitchen.png', fade:1000 }, 
+			{src: 'css/service_chef.jpg', fade:1000 }, 
+			{src: 'css/tea_pot.jpg', fade:1000 }, 
+			{src: 'css/The-Frenc-Laundry-Yountville-CA-iPad-Wine-Menu.jpg', fade:1000 }, 
+
+		  ]
+		})
+
+
 		var jqhr = $.get(window.one_page_api)	
 		//On success of the jquery post request
 		jqhr.done(function(data){
@@ -59,7 +81,7 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 				.padding(3)
 				.value(function(d) {return d.size;})
  
-		var svg = d3.select("body").append("svg")
+		var svg = d3.select(".container-fluid").append("svg")
 					.attr("width", width)
 					.attr("height", height)
 
