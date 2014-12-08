@@ -52,6 +52,16 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 		var height = $(window).height();
 		format = d3.format(",d"),
 		fill = d3.scale.category10();
+		
+		
+		function if_data_empty(a_rray){
+			if(a_rray == undefined){
+				LEVEL = LEVEL -1
+				bootbox.alert("There is no after level for this tag")
+			}
+		
+			return true
+		}
 
 		function DATA(value){
 			var newDataSet = [];
@@ -83,6 +93,7 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 					if (__d.name == PARENT_LEVEL_1){
 						$.each(__d.children, function(i, _d){
 							if (_d.name == PARENT_LEVEL_2){
+								if_data_empty(_d.children)
 								$.each(_d.children, function(i, child){
 									newDataSet.push({"name": child.name, 
 										"polarity": child.polarity, 
@@ -102,6 +113,7 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 							if (_d.name == PARENT_LEVEL_2){
 								$.each(_d.children, function(i, child){
 									if (child.name == PARENT_LEVEL_3){
+										if_data_empty(child.children)
 										$.each(child.children, function(i, __child){
 											newDataSet.push({"name": __child.name, 
 											"polarity": __child.polarity, 
@@ -141,10 +153,7 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 	}	
 					
 	
-	function drawBubbles(newData){			
-		if (newData.length == 0){
-			bootbox.alert("Sorry no levels are present for this tag")
-		};
+	function drawBubbles(newData){	
 		var nodes = bubble.nodes(processData(newData))
 			.filter(function(d) { return !d.children; }); // filter out the outer bubble
 

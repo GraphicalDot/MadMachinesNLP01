@@ -1,44 +1,70 @@
 #!/usr/bin/env python
-
+#-*- coding: utf-8 -*-
 
 
 
 static_data = [
-	 {"name": "friends",
-            "children": [{"name": "beer", "polarity": 0, "frequency": 2,}, {"name": "cost effective", "polarity": 1, "frequency": 12,},
-                {"name": "Big Chill", "polarity": 0, "frequency": 8,}, {"name": "outdoor", "polarity": 0, "frequency": 2,},
-                {"name": "pubs", "polarity": 0, "frequency": 5,}, {"name": "rock music", "polarity": 1, "frequency": 6,},
-                {"name": "cocktails", "polarity": 1, "frequency": 7,}, {"name": "mocktails", "polarity": 1, "frequency": 11,},
-                {"name": "7 degree Brahuas", "polarity": 1, "frequency": 9,}, ],
-                "polarity": 1,
-                "frequency": 5},
+            {"name": "Hangout" ,
+                "children": [{"name": "Big Chill Cafe", "polarity": 1, "frequency": 9,}, 
+                    {"name": "Pizza Hut", "polarity": 1, "frequency": 9,}, 
+                    {"name": "Haldirams", "polarity": 1, "frequency": 58,}, 
+                    {"name": "Vapour", "polarity": 1, "frequency": 45,}, 
+                    {"name": "Rajender Dhaba", "polarity": 1, "frequency": 4,}, 
+                    {"name": "Mocha", "polarity": 1, "frequency": 13,}, 
+                    {"name": "Mocha", "polarity": 1, "frequency": 13,}, 
+                    {"name": "Smoke House Deli", "polarity": 1, "frequency": 73,}, 
+                    {"name": "Soda Bottle Opener Wala", "polarity": 1, "frequency": 98,}, 
+                    {"name": "Beer Café", "polarity": 1, "frequency": 27,}, 
+                    {"name": "Soi7", "polarity": 1, "frequency": 2,},
+                    ], 
+                "polarity": 1, 
+                "frequency": 95,},
 
-        {"name": "beer cafes",
-            "children": [{"name": "happy hours", "polarity": 1, "frequency": 13,}, {"name": "rock music", "polarity": 0, "frequency": 4,},
-                {"name": "outdoor", "polarity": 1, "frequency": 5,}, {"name": "smoking zone", "polarity": 0, "frequency": 4,},
-                {"name": "valet for money", "polarity": 1, "frequency": 10,}, {"name": "vapour", "polarity": 0, "frequency": 2,},
-                {"name": "starters", "polarity": 0, "frequency": 2,}, {"name": "brewery", "polarity": 0, "frequency": 12,},
-                {"name": "lemp", "polarity": 1, "frequency": 2,},],
-                "polarity": 1,
-                "frequency": 9},
-        {"name": "italian",
-            "children": [{"name": "Big Chill", "polarity": 1, "frequency": 3,},
-                {"name": "California pizza Kitchen", "polarity": 0, "frequency": 14,},
-                {"name": "clay oven baked pizza", "polarity": 1, "frequency": 5,}, {"name": "cheese", "polarity": 0, "frequency": 14,},
-                {"name": "rissotto", "polarity": 1, "frequency": 10,},
-                {"name": "ravioli", "polarity": 0, "frequency": 6,}, {"name": "fondue", "polarity": 0, "frequency": 4,},
-                {"name": "Home Delivery", "polarity": 0, "frequency": 12,}, {"name": "amici", "polarity": 1, "frequency": 12,},],
-                "polarity": 1,
-                "frequency": 5},
+        {"name": "Big Chill" ,
+            "children": [
+                {"name": "Blueberry Cheesecake", "polarity": 1, "frequency": 22,}, 
+                {"name": "Peri Peri Pasta", "polarity": 1, "frequency": 43,}, 
+                {"name": "Chicken Rissotto", "polarity": 1, "frequency": 79,}, 
+                {"name": "Quattro Formaggi", "polarity": 1, "frequency": 22,}, 
+                {"name": "Belgium Choclate Shake", "polarity": 1, "frequency": 78,}, 
+                {"name": "Choclate Mousse", "polarity": 1, "frequency": 8,}, 
+                {"name": "Choclate Mousse", "polarity": 1, "frequency": 8,}, 
+                {"name": "Ravioli", "polarity": 1, "frequency": 26,}, 
+                {"name": "Ginger Fizz", "polarity": 1, "frequency": 71,}, 
+                {"name": "Garlic Bread", "polarity": 1, "frequency": 63,}, 
+                {"name": "Fondue", "polarity": 1, "frequency": 18,},
+                ], 
+            "polarity": 1, 
+            "frequency": 46,},
 
-        {"name": "Amici",
-            "children": [{"name": "Cheese pizza", "polarity": 1, "frequency": 3,}, {"name": "lassagne", "polarity": 0, "frequency": 4,},
-                {"name": "ambience", "polarity": 1, "frequency": 5,}, {"name": "seating arrangement", "polarity": 0, "frequency": 4,},
-                {"name": "painted wall", "polarity": 1, "frequency": 10,}, {"name": "service", "polarity": 0, "frequency": 2,},
-                {"name": "cost", "polarity": 0, "frequency": 2,}, {"name": "Parking", "polarity": 0, "frequency": 12,},
-                {"name": "location", "polarity": 1, "frequency": 2,},],
-                "polarity": 0,
-                "frequency": 6},
+        {"name": "Chhole Bathure" ,
+            "children": [
+                {"name": "Chacha", "polarity": 1, "frequency": 30,}, 
+                {"name": "Sitaram", "polarity": 1, "frequency": 85,}, 
+                {"name": "Nagpal", "polarity": 1, "frequency": 66,}, 
+                {"name": "Haldiram", "polarity": 1, "frequency": 95,}, 
+                {"name": "Om", "polarity": 1, "frequency": 18,}, 
+                {"name": "Standard", "polarity": 1, "frequency": 46,}, 
+                {"name": "Standard", "polarity": 1, "frequency": 46,}, 
+                {"name": "Monika Café", "polarity": 1, "frequency": 1,}, 
+                {"name": "Ghante wala", "polarity": 1, "frequency": 32,}, 
+                {"name": "Punjab Grill", "polarity": 1, "frequency": 47,}, 
+                {"name": "Lalaji", "polarity": 1, "frequency": 92,},
+                ], 
+            "polarity": 1, 
+            "frequency": 53,},
+
+{"name": "Cyber Hub" ,"children": [{"name": "SodaBottleOpenerWala", "polarity": 1, "frequency": 6,}, {"name": "Dhaba by Claridges", "polarity": 1, "frequency": 90,}, {"name": "Nandos", "polarity": 1, "frequency": 90,}, {"name": "Soi7", "polarity": 1, "frequency": 96,}, {"name": "Raasta", "polarity": 1, "frequency": 37,}, {"name": "Hard Rock Café", "polarity": 1, "frequency": 87,}, {"name": "Hard Rock Café", "polarity": 1, "frequency": 87,}, {"name": "Imperfecto", "polarity": 1, "frequency": 77,}, {"name": "Farzi Café", "polarity": 1, "frequency": 84,}, {"name": "Olive Bistro", "polarity": 1, "frequency": 22,}, {"name": "Punjabi Rasoi", "polarity": 1, "frequency": 32,},], "polarity": 1, "frequency": 34,},
+
+{"name": "Brewery" ,"children": [{"name": "7 Degrees Barhaus", "polarity": 1, "frequency": 70,}, {"name": "Vapour", "polarity": 1, "frequency": 67,}, {"name": "Howzatt", "polarity": 1, "frequency": 14,}, {"name": "Striker", "polarity": 1, "frequency": 2,}, {"name": "Beer Café", "polarity": 1, "frequency": 77,}, {"name": "Downtown", "polarity": 1, "frequency": 77,}, {"name": "Downtown", "polarity": 1, "frequency": 77,}, {"name": "Manhattan", "polarity": 1, "frequency": 10,}, {"name": "Imperfecto", "polarity": 1, "frequency": 24,}, {"name": "Club Rhino", "polarity": 1, "frequency": 15,}, {"name": "Elevate", "polarity": 1, "frequency": 56,},], "polarity": 1, "frequency": 98,},
+
+{"name": "Farzi Café" ,"children": [{"name": "Rice Noodle Biryani", "polarity": 1, "frequency": 69,}, {"name": "Ircha Mutton", "polarity": 1, "frequency": 14,}, {"name": "Galouti Sliders", "polarity": 1, "frequency": 58,}, {"name": "Phirni Oxide", "polarity": 1, "frequency": 10,}, {"name": "Chicken 65", "polarity": 1, "frequency": 15,}, {"name": "Parle G Cheesecake", "polarity": 1, "frequency": 53,}, {"name": "Parle G Cheesecake", "polarity": 1, "frequency": 53,}, {"name": "Chiken Tikka Masala", "polarity": 1, "frequency": 45,}, {"name": "Jaggery Chutney", "polarity": 1, "frequency": 2,}, {"name": "Amritsari Fish n Chips", "polarity": 1, "frequency": 95,}, {"name": "Vada Pao Farzi 5", "polarity": 1, "frequency": 20,},], "polarity": 1, "frequency": 86,},
+
+{"name": "Romantic" ,"children": [{"name": "Zerzura", "polarity": 1, "frequency": 92,}, {"name": "Threesixtyone", "polarity": 1, "frequency": 6,}, {"name": "Prego", "polarity": 1, "frequency": 65,}, {"name": "Amour", "polarity": 1, "frequency": 39,}, {"name": "Lodi Garden", "polarity": 1, "frequency": 60,}, {"name": "Sevilla", "polarity": 1, "frequency": 35,}, {"name": "Sevilla", "polarity": 1, "frequency": 35,}, {"name": "FIO", "polarity": 1, "frequency": 5,}, {"name": "Ambrosia Bliss", "polarity": 1, "frequency": 36,}, {"name": "Big Yellow Door", "polarity": 1, "frequency": 7,}, {"name": "Mia Bella", "polarity": 1, "frequency": 95,},], "polarity": 1, "frequency": 45,},
+
+{"name": "Mutton Burrah" ,"children": [{"name": "Bukhara", "polarity": 1, "frequency": 1,}, {"name": "Gulati", "polarity": 1, "frequency": 82,}, {"name": "Karims", "polarity": 1, "frequency": 90,}, {"name": "Qureshi", "polarity": 1, "frequency": 17,}, {"name": "Rajinder Dhaba", "polarity": 1, "frequency": 68,}, {"name": "Jungle Jamboree", "polarity": 1, "frequency": 6,}, {"name": "Jungle Jamboree", "polarity": 1, "frequency": 6,}, {"name": "Al Kouser", "polarity": 1, "frequency": 17,}, {"name": "Zaffran", "polarity": 1, "frequency": 71,}, {"name": "Punjab Grill", "polarity": 1, "frequency": 41,}, {"name": "Great Kebab Factory", "polarity": 1, "frequency": 73,},], "polarity": 1, "frequency": 34,},
+
+{"name": "Hauz Khas Village" ,"children": [{"name": "Olive Bistro", "polarity": 1, "frequency": 62,}, {"name": "Out of the Box", "polarity": 1, "frequency": 20,}, {"name": "Smoke House Deli", "polarity": 1, "frequency": 91,}, {"name": "TLC Café", "polarity": 1, "frequency": 31,}, {"name": "Raasta", "polarity": 1, "frequency": 26,}, {"name": "Pink Room", "polarity": 1, "frequency": 78,}, {"name": "Pink Room", "polarity": 1, "frequency": 78,}, {"name": "Bootlegger", "polarity": 1, "frequency": 63,}, {"name": "Hauz Khas Social", "polarity": 1, "frequency": 85,}, {"name": "Imperfecto", "polarity": 1, "frequency": 2,}, {"name": "Fork U", "polarity": 1, "frequency": 56,},], "polarity": 1, "frequency": 35,},
 
 
         {"name": "Family" ,"children": 
