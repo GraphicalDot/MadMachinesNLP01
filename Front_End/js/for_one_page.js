@@ -5,7 +5,23 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 	initialize: function(options){
 		console.log(this.$el)
 		var self = this;
-		$.vegas('slideshow', {
+		this.add_slide_show();
+		
+		var jqhr = $.get(window.one_page_api)	
+		//On success of the jquery post request
+		jqhr.done(function(data){
+			console.log(data.result)
+			self.copiedRender(data.result);
+			});
+
+		//In case the jquery post request fails
+		jqhr.fail(function(){
+				bootbox.alert("Either the api or internet connection is not working, Try again later")
+		});
+
+	},
+
+	add_slide_show: function(){$.vegas('slideshow', {
 			  backgrounds:[
 
 			{src: 'css/black-and-white-restaurant-handpainted-mural.jpg', fade:1000 }, 
@@ -25,22 +41,12 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 		  ]
 		})
 
-
-		var jqhr = $.get(window.one_page_api)	
-		//On success of the jquery post request
-		jqhr.done(function(data){
-			self.copiedRender(data.result);
-			});
-
-		//In case the jquery post request fails
-		jqhr.fail(function(){
-				bootbox.alert("Either the api or internet connection is not working, Try again later")
-		});
-	},
+		},
 
 
 
 	copiedRender: function(_data){
+		LEVEL = 0
 		var color = d3.scale.category10().domain(d3.range(_data));
 		var width = $(window).width() - 50;
 		var height = $(window).height();
@@ -49,7 +55,7 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 
 		function DATA(value){
 			var newDataSet = [];
-			if (value == null){
+			if (LEVEL == 0){
 				$.each(_data, function(i, __d){
 					newDataSet.push({"name": __d.name, 
 							"polarity": __d.polarity, 
@@ -60,8 +66,8 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 				return newDataSet
 			}
 			
-			else{
-
+			if(LEVEL == 1){
+				PARENT_LEVEL_1 = value
 				$.each(_data, function(i, __d){
 					if (__d.name == value){
 						$.each(__d.children, function(i, _d){
@@ -70,8 +76,46 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 								"frequency": _d.frequency,
 								})
 						})}})
-					return newDataSet
-			}
+					return newDataSet}
+			if(LEVEL == 2){ 
+				PARENT_LEVEL_2 = value
+				$.each(_data, function(i, __d){
+					if (__d.name == PARENT_LEVEL_1){
+						$.each(__d.children, function(i, _d){
+							if (_d.name == PARENT_LEVEL_2){
+								$.each(_d.children, function(i, child){
+									newDataSet.push({"name": child.name, 
+										"polarity": child.polarity, 
+									"frequency": child.frequency,
+									})
+						})
+					}
+								})
+					}})
+					return newDataSet}
+			
+			if(LEVEL == 3){ 
+				PARENT_LEVEL_3 = value
+				$.each(_data, function(i, __d){
+					if (__d.name == PARENT_LEVEL_1){
+						$.each(__d.children, function(i, _d){
+							if (_d.name == PARENT_LEVEL_2){
+								$.each(_d.children, function(i, child){
+									if (child.name == PARENT_LEVEL_3){
+										$.each(child.children, function(i, __child){
+											newDataSet.push({"name": __child.name, 
+											"polarity": __child.polarity, 
+											"frequency": __child.frequency,
+									})
+						})
+					}
+								
+								})
+						}
+						})
+					}
+								})
+					return newDataSet}
 		}
 
 
@@ -91,35 +135,29 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 		    .attr("transform", "translate(2,2)");
 
 	function OnClickBubble(d){
+			LEVEL = LEVEL +1
+			console.log("Here is the pre4sent level or dept at which we are in " +LEVEL)
 			drawBubbles(DATA(d.name))
 	}	
 					
 	
 	function drawBubbles(newData){			
+		if (newData.length == 0){
+			bootbox.alert("Sorry no levels are present for this tag")
+		};
 		var nodes = bubble.nodes(processData(newData))
 			.filter(function(d) { return !d.children; }); // filter out the outer bubble
 
-		// assign new data to existing DOM 
-		//var node = svg.selectAll('circle')
-		//	.data(nodes, function(d) { return d.name; });
 
-		// enter data -> remove, so non-exist selections for upcoming data won't stay -> enter new data -> ...
-
-		// To chain transitions, 
-		// create the transition on the updating elements before the entering elements 
-		// because enter.append merges entering elements into the update selection
-
-		var duration = 200;
+		var duration = 2000;
 		var delay = 2;
 
 		var node = g.selectAll(".node")
 				.data(nodes,  function(d) { return d.name; })
-		// update - this is created before enter.append. it only applies to updating nodes.
 		node.transition()
 			.duration(duration)
 			.delay(function(d, i) {delay = i * 7; return delay;}) 
 			.style('opacity', 0) 
-		//	.attr('transform', function(d) { return 'translate(' + d.x + ',' + d.y + ')'; })
 			.attr('r', function(d) { return d.r; })
 			.style('opacity', 1); // force to 1, so they don't get stuck below 1 at enter()
 
@@ -127,7 +165,6 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 				.attr("class", "node")
 				.attr('transform', function(d) { return 'translate('
 							         + d.x + ',' + d.y + ')'; })
-		// enter - only applies to incoming elements (once emptying data)	
 		
 		node.append('circle')
 			.attr('r', function(d) { return d.r; })
@@ -138,15 +175,13 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 			.attr('class', function(d) { return d.className; })
 			.style('opacity', 0) 
 			.transition()
-			.duration(duration * 1.2)
+			.duration(duration)
 			.style('opacity', 1);
 			
-		$('svg circle').tipsy({ 
-					        gravity: 'w', 
-					        html: true, 
-					        title: function(){
-							return 'Name: ' + '<span>' + this.__data__.name + '</span>';
-						}
+		$('svg circle').tipsy({ gravity: 'w', 
+					html: true, 
+					title: function(){
+					return 'Name: ' + '<span>' + this.__data__.name + '</span>';}
 				      });
 
 
@@ -168,24 +203,12 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 			.style("line-height", "1")
 			.style('opacity', 0) 
 			.transition()
-			.duration(duration * 1.2)
+			.duration(duration)
 			.style('opacity', 1);
 
-		/*
-		node.append("text")
-			.attr("fill", "black")
-			.style("text-anchor", "middle")
-			.style("font-size", function(d) { return d.r/4 })
-			.text(function(d) { return d.name.substring(0, d.r / 3); })
-			.style('opacity', 0)
-			.transition()
-			.duration(duration * 1.2)
-			.style('opacity', 1);
-		*/
-		// exit
 		node.exit()
 			.transition()
-			.duration(duration + delay)
+			.duration(duration)
 			.style('opacity', 0)
 			.remove();
 
@@ -197,8 +220,8 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 			var bbox = this.getBBox();
 			var cbbox = this.parentNode.getBBox(); 
 			radius = this.parentNode.firstChild.getAttribute("r")
-			console.log(bbox, cbbox, radius, this.getBoundingClientRect(), d.name)
 		}
+
 		function processData(data) {
 			var newDataSet = [];
 			$.each(data, function(i, __d){
