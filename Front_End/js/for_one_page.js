@@ -10,8 +10,9 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 		var jqhr = $.get(window.one_page_api)	
 		//On success of the jquery post request
 		jqhr.done(function(data){
-			console.log(data.result)
-			self.copiedRender(data.result);
+			self._data = data.result
+			console.log(self._data)
+			self.Render(data.result);
 			});
 
 		//In case the jquery post request fails
@@ -44,16 +45,7 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 		},
 
 
-
-	copiedRender: function(_data){
-		LEVEL = 0
-		var color = d3.scale.category10().domain(d3.range(_data));
-		var width = $(window).width() - 50;
-		var height = $(window).height();
-		format = d3.format(",d"),
-		fill = d3.scale.category10();
-		
-		
+	dataFunction: function(value, LEVEL){
 		function if_data_empty(a_rray){
 			if(a_rray == undefined){
 				LEVEL = LEVEL -1
@@ -62,73 +54,65 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 		
 			return true
 		}
-
-		function DATA(value){
-			var newDataSet = [];
-			if (LEVEL == 0){
-				$.each(_data, function(i, __d){
-					newDataSet.push({"name": __d.name, 
-							"polarity": __d.polarity, 
-							"frequency": __d.frequency,
-							}
-						)
-					})
-				return newDataSet
-			}
+		
+		var newDataSet = [];
+		if (LEVEL == 0){
+			$.each(this._data, function(i, __d){
+				newDataSet.push({"name": __d.name, 
+						"polarity": __d.polarity, 
+						"frequency": __d.frequency,
+						}); }); return newDataSet }
 			
-			if(LEVEL == 1){
-				PARENT_LEVEL_1 = value
-				$.each(_data, function(i, __d){
-					if (__d.name == value){
-						$.each(__d.children, function(i, _d){
-							newDataSet.push({"name": _d.name, 
-								"polarity": _d.polarity, 
-								"frequency": _d.frequency,
-								})
-						})}})
-					return newDataSet}
-			if(LEVEL == 2){ 
-				PARENT_LEVEL_2 = value
-				$.each(_data, function(i, __d){
-					if (__d.name == PARENT_LEVEL_1){
-						$.each(__d.children, function(i, _d){
-							if (_d.name == PARENT_LEVEL_2){
-								if_data_empty(_d.children)
-								$.each(_d.children, function(i, child){
-									newDataSet.push({"name": child.name, 
-										"polarity": child.polarity, 
+		if(LEVEL == 1){
+			PARENT_LEVEL_1 = value
+			$.each(this._data, function(i, __d){
+				if (__d.name == value){
+					$.each(__d.children, function(i, _d){
+						newDataSet.push({"name": _d.name, 
+							"polarity": _d.polarity, 
+							"frequency": _d.frequency,
+							}); }); }; }); return newDataSet}
+		if(LEVEL == 2){ 
+			PARENT_LEVEL_2 = value
+			$.each(this._data, function(i, __d){
+				if (__d.name == PARENT_LEVEL_1){
+					$.each(__d.children, function(i, _d){
+						if (_d.name == PARENT_LEVEL_2){
+							if_data_empty(_d.children)
+							$.each(_d.children, function(i, child){
+								newDataSet.push({"name": child.name, 
+									"polarity": child.polarity, 
 									"frequency": child.frequency,
-									})
-						})
-					}
-								})
-					}})
-					return newDataSet}
-			
-			if(LEVEL == 3){ 
-				PARENT_LEVEL_3 = value
-				$.each(_data, function(i, __d){
-					if (__d.name == PARENT_LEVEL_1){
-						$.each(__d.children, function(i, _d){
-							if (_d.name == PARENT_LEVEL_2){
-								$.each(_d.children, function(i, child){
-									if (child.name == PARENT_LEVEL_3){
-										if_data_empty(child.children)
-										$.each(child.children, function(i, __child){
-											newDataSet.push({"name": __child.name, 
-											"polarity": __child.polarity, 
-											"frequency": __child.frequency,
-									})
-						})
-					}
-								
-								})
-						}
-						})
-					}
-								})
-					return newDataSet}
-		}
+									}); }); }; }); }; }); return newDataSet}
+		
+		if(LEVEL == 3){ 
+			PARENT_LEVEL_3 = value
+			$.each(this._data, function(i, __d){
+				if (__d.name == PARENT_LEVEL_1){
+					$.each(__d.children, function(i, _d){
+						if (_d.name == PARENT_LEVEL_2){
+							$.each(_d.children, function(i, child){
+								if (child.name == PARENT_LEVEL_3){
+									if_data_empty(child.children)
+									$.each(child.children, function(i, __child){
+										newDataSet.push({"name": __child.name, 
+										"polarity": __child.polarity, 
+										"frequency": __child.frequency,
+								}); }); }; }); }; }); }; }); return newDataSet}
+		},
+
+
+	Render: function(_data){
+		_this = this;
+		function DATA(value, LEVEL){return  _this.dataFunction(value, LEVEL)}
+		LEVEL = 0
+		var color = d3.scale.category10().domain(d3.range(_data));
+		var width = $(window).width() - 50;
+		var height = $(window).height();
+		format = d3.format(",d"),
+		fill = d3.scale.category10();
+		
+		
 
 
 		var bubble = d3.layout.pack()
@@ -149,7 +133,7 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 	function OnClickBubble(d){
 			LEVEL = LEVEL +1
 			console.log("Here is the pre4sent level or dept at which we are in " +LEVEL)
-			drawBubbles(DATA(d.name))
+			drawBubbles(DATA(d.name, LEVEL))
 	}	
 					
 	
@@ -204,6 +188,7 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 			.append('xhtml:div')
 			.style("font-size", function(d){return d.r/4.2 + "px"})
 			.append("p")
+			.on("click", OnClickBubble)
 			.text(function(d) { return d.name.substring(0, d.r / 3)})
 			.attr('id', "node-bubble")
 			.style("text-align", "center")
@@ -272,7 +257,7 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 				}
 
 	//This starts the bubble cloud with initial parent data
-	drawBubbles(DATA(null))
+	drawBubbles(DATA(null, LEVEL))
 	},
 
 
