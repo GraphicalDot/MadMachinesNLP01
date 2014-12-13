@@ -12,7 +12,8 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 		jqhr.done(function(data){
 			self._data = data.result
 			console.log(self._data)
-			self.Render(data.result);
+			self.ForceLayout();
+			//self.Render(data.result);
 			});
 
 		//In case the jquery post request fails
@@ -100,6 +101,110 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 										"frequency": __child.frequency,
 								}); }); }; }); }; }); }; }); return newDataSet}
 		},
+
+
+	ForceLayout: function(){
+
+		var width = $(window).width() - 50;
+		var height = $(window).height();
+
+		var fill = d3.scale.category10();
+
+
+		var duration = 2000;
+		var delay = 2;
+
+		var force = d3.layout.force()
+			.size([width, height])
+
+		var svg = d3.select("body").append("svg")
+			.attr("width", width)
+			.attr("height", height);
+	
+		function drawNodes(nodes){	
+			function tick(e){
+				// Push different nodes in different directions for clustering.
+				var k = 6 * e.alpha;
+				nodes.forEach(function(o, i) {
+					o.y += i & 1 ? k : -k;
+					o.x += i & 2 ? k : -k;
+				});
+	
+				node.attr("cx", function(d) { return d.x; })
+					.attr("cy", function(d) { return d.y; });
+				}
+			
+			force.nodes(nodes)
+			node = svg.selectAll(".node")
+				.data(nodes)
+				
+				
+		node.transition()
+			.duration(duration)
+			.delay(function(d, i) {delay = i * 7; return delay;}) 
+				
+			node	.enter()
+				.append("circle")
+				.attr("class", "node")
+				.attr("cx", function(d) { return d.x; })
+				.attr("cy", function(d) { return d.y; })
+				.attr("r", 8)
+				.style("fill", function(d, i) { return fill(i & 3); })
+				.style("stroke", function(d, i) { return d3.rgb(fill(i & 3)).darker(2); })
+				.call(force.drag)
+				.on("mousedown", function() { d3.event.stopPropagation(); })
+				.on("click", OnClick);
+
+
+		node.exit()
+			.transition()
+			.duration(duration)
+			.style('opacity', 0)
+			.remove();
+		
+		
+		force.on("tick", tick)
+		force.start()
+		
+		d3.select("body")
+			.on("mousedown", mousedown)
+		
+		function mousedown(){
+			nodes.forEach(function(o, i){
+				o.x += (Math.random() - .5) * 40;
+				o.y += (Math.random() - .5) * 40;
+			});
+			force.resume();
+		}
+		
+		}
+
+
+
+
+
+		function OnClick(d){
+			drawNodes(data())
+			console.log(d)
+
+		
+		};
+
+
+		
+		function data(){
+			number = Math.floor(Math.random()*100)
+			var nodes = d3.range(number).map(function(i) {
+				return {index: i};
+		});
+			return nodes
+		}
+
+		drawNodes(data())
+	},
+
+
+
 
 
 	Render: function(_data){
