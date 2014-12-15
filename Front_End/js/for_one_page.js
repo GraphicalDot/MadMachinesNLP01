@@ -126,6 +126,9 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 			.attr("width", width)
 			.attr("height", height);
 	
+		var g = svg.append("g")
+		    .attr("transform", "translate(0, 1)");
+		
 		function drawNodes(nodes){	
 			function tick(e){
 				var q = d3.geom.quadtree(nodes),
@@ -135,28 +138,28 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 
 				svg.selectAll(".node")
 					.attr("cx", function(d) { return d.x; })
-					.attr("cy", function(d) { return d.y; });
+					.attr("cy", function(d) { return d.y; })
+					.attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; })
 				}
 
-			function collide(node){
-				console.log(node.r)
-				var r = node.r + 16;
+			function collide(_node){
+				var r = _node.r + 16;
 	
-				nx1 = node.x - r,
-				nx2 = node.x + r,
-				ny1 = node.y - r,
-				ny2 = node.y + r;
+				nx1 = _node.x - r,
+				nx2 = _node.x + r,
+				ny1 = _node.y - r,
+				ny2 = _node.y + r;
 	    
 				return function(quad, x1, y1, x2, y2){
-					if (quad.point && (quad.point !== node)){
-						var x = node.x - quad.point.x,
-						y = node.y - quad.point.y,
+					if (quad.point && (quad.point !== _node)){
+						var x = _node.x - quad.point.x,
+						y = _node.y - quad.point.y,
 						l = Math.sqrt(x * x + y * y),
-						r = node.r + quad.point.r;
+						r = _node.r + quad.point.r;
 						if (l < r){
 							l = (l - r)/l*.5;
-							node.x -= x *= l;
-							node.y -= y *= l;
+							_node.x -= x *= l;
+							_node.y -= y *= l;
 							quad.point.x += x;
 							quad.point.y += y;
 							}
@@ -166,28 +169,35 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 					}
 
 
-			force.nodes(nodes)
+		force.nodes(nodes)
+		force.on("tick", tick)
+		force.start()
 
-			node = svg.selectAll(".node")
+		var node = g.selectAll(".node")
 				.data(nodes)
-				
-				
+	
 		node.transition()
 			.duration(duration)
 			.delay(function(d, i) {delay = i * 7; return delay;}) 
-				
-			node	.enter()
-				.append("circle")
-				.attr("class", "node")
-				.attr("cx", function(d) { return d.x; })
-				.attr("cy", function(d) { return d.y; })
-				.attr("r", function(d){return d.r})
-				.attr("fill", function(d){return color(Math.random())}) 
-				.style("stroke", function(d, i) { return d3.rgb(fill(i & 3)).darker(2); })
-				.call(force.drag)
-				.on("mousedown", function() { d3.event.stopPropagation(); })
-				.on("click", OnClick);
+			.style('opacity', 0) 
+			.attr('r', function(d) { return d.r; })
+			.style('opacity', 1); // force to 1, so they don't get stuck below 1 at enter()
 
+		node.enter().append("g")
+				.call(force.drag)
+				.attr("class", "node")
+				.attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; })
+				      
+		node.append("circle")
+			.attr("cx", function(d) { return d.x; })
+			.attr("cy", function(d) { return d.y; })
+			.attr("r", function(d){return d.r})
+			.attr("fill", function(d){return color(Math.random())}) 
+			.style("stroke", function(d, i) { return d3.rgb(fill(i & 3)).darker(2); })
+			.on("mousedown", function() { d3.event.stopPropagation(); })
+			.on("click", OnClick)
+
+		/*
 		node.append('foreignObject')
 			.attr('x', function(d){return this.parentNode.getBBox().x/1.5})
 			.attr('y', function(d){return this.parentNode.getBBox().y/2})
@@ -198,27 +208,21 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 			.append('xhtml:div')
 			.style("font-size", function(d){return d.r/4.2 + "px"})
 			.append("p")
-			.on("click", OnClick)
 			.text(function(d) { return d.name.substring(0, d.r / 3)})
 			.attr('id', "node-bubble")
 			.style("text-align", "center")
 			.style("vertical-align", "middle")
 			.style("padding", "10px 5px 15px 20px")
 			.style("line-height", "1")
-			.style('opacity', 0) 
 			.transition()
 			.duration(duration)
-			.style('opacity', 1);
-
+		*/
 		node.exit()
 			.transition()
 			.duration(duration)
-			.style('opacity', 0)
 			.remove();
 		
 		
-		force.on("tick", tick)
-		force.start()
 		
 		d3.select("body")
 			.on("mousedown", mousedown)
@@ -244,9 +248,10 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 
 
 		function OnClick(d){
+			LEVEL = LEVEL+1
 			drawNodes(DATA(d.name, LEVEL))
 			console.log(d)
-
+			console.log(LEVEL)
 		
 		};
 
