@@ -1,5 +1,6 @@
 $(document).ready(function(){
 
+
 App.SeeWordCloudDateSelectionView = Backbone.View.extend({
 	template: window.template("see-word-cloud-date-selection"),
 	tag: "form",

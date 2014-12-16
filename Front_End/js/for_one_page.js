@@ -1,12 +1,122 @@
 $(document).ready(function(){
 
+App.SeeWordCloudDateSelectionView = Backbone.View.extend({
+	template: window.template("see-word-cloud-date-selection"),
+	tag: "form",
+	className: "form-horizontal",
+	initialize: function(options){
+		function newfunction(){
+			function another(){
+				console.log(this)
+			}
+			another()
+		}
+		console.log(this)
+		newfunction()
+	},
+
+
+	render: function(){
+		this.beforeRender();	
+		this.$el.append(this.template(this));
+		return this;	
+	},
+
+	beforeRender: function(){
+		var self = this;
+		var jqhr = $.post(window.get_start_date_for_restaurant, {"eatery_id": $("#eateriesList").find('option:selected').attr("id")})	
+		jqhr.done(function(data){
+			console.log(data.result)
+			self.$("#startDate").val(data.result.start)
+			self.$("#selectStartDate").val(data.result.start)
+			self.$("#endDate").val(data.result.end)
+			self.$("#selectEndDate").val(data.result.end)
+		});
+
+
+	}, 
+
+	events: {
+		"click #idSubmit": "submit",
+		"click #idCancel": "cancel",
+
+	},
+
+	loading_bootbox: function(){
+		$(".data_selection").modal("hide");
+		bootbox.dialog({ 
+			closeButton: false, 
+			message: "<img src='css/images/loading_3.gif'>",
+			className: "loadingclass",
+		});
+	},
+
+	submit: function(event){
+		var self = this;
+		$(".dynamic_display_word_cloud").empty();	
+		event.preventDefault();
+		this.$el.addClass("dvLoading");
+	
+		this.loading_bootbox()
+
+
+		if ($('#startDate').val() > $('#selectStartDate').val()){
+			bootbox.alert("Genius the start date selected should be greater then start date").find('.modal-content').addClass("bootbox-modal-custom-class");
+			return
+
+		}
+		if ($('#endDate').val() < $('#selectEndDate').val()){
+
+			bootbox.alert("Genius the end date selected should be less then end date").find('.modal-content').addClass("bootbox-modal-custom-class");
+			return
+		}
+	
+	
+		var jqhr = $.post(window.get_word_cloud, {"eatery_id": $("#eateriesList").find('option:selected').attr("id"),
+							"start_date": $('#selectStartDate').val(),
+							"end_date": $('#selectEndDate').val(),
+		    					"category": $("#wordCloudCategory").find("option:selected").val(),
+						})	
+		
+		
+		//On success of the jquery post request
+		jqhr.done(function(data){
+			var subView = new App.WordCloudWith_D3({model: data.result});
+			$(".loadingclass").modal("hide");
+			});
+
+		//In case the jquery post request fails
+		jqhr.fail(function(){
+				bootbox.alert("Either the api or internet connection is not working, Try again later")
+				self.$el.removeClass("dvLoading");
+				event.stopPropagation();
+		});
+
+	
+	},
+
+
+
+
+
+	cancel: function(event){
+		event.preventDefault();
+		$(".data_selection").modal("hide");
+	},
+
+});
+
 
 App.WordCloudWith_D3 = Backbone.View.extend({
 	initialize: function(options){
-		console.log(this.$el)
-		var self = this;
+		/*
+		this.model = options.model
+		this._data = options.model
+		this.ForceLayout(this.model);
+	*/
 		//this.add_slide_show();
 		
+		var self = this;
 		var jqhr = $.get(window.one_page_api)	
 		//On success of the jquery post request
 		jqhr.done(function(data){
@@ -20,7 +130,6 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 		jqhr.fail(function(){
 				bootbox.alert("Either the api or internet connection is not working, Try again later")
 		});
-
 	},
 
 	add_slide_show: function(){$.vegas('slideshow', {
@@ -45,6 +154,33 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 
 		},
 
+	
+	olddataFunction: function  DATA(value){
+			var newDataSet = [];
+			if (value == null){
+				$.each(this._data, function(i, __d){
+					newDataSet.push({"name": __d.name, 
+							"polarity": __d.polarity, 
+							"r": __d.frequency*5,
+							}
+						)
+					})
+				return newDataSet
+			}
+			
+			else{
+
+				$.each(this._data, function(i, __d){
+					if (__d.name == value){
+						$.each(__d.children, function(i, _d){
+							newDataSet.push({"name": _d.name, 
+								"polarity": _d.polarity, 
+								"r": _d.frequency*5,
+								})
+						})}})
+					return newDataSet
+			}
+		},
 
 	dataFunction: function(value, LEVEL){
 		function if_data_empty(a_rray){
@@ -131,7 +267,7 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 
 		var force = d3.layout.force()
 			.size([width, height])
-			.charge(-100)
+			.charge(100)
 		
 		var svg = d3.select("body").append("svg")
 			.attr("width", width)
@@ -143,21 +279,21 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 		function drawNodes(nodes){	
 			function tick(e){
 				/*This prevents the bubbles to be dragged outside the svg element */
-				 node.attr("cx", function(d) { return d.x = Math.max(d.r, Math.min(width - 50, d.x)); })
-					 .attr("cy", function(d) { return d.y = Math.max(d.r, Math.min(height - 50, d.y)); });    
+				 node.attr("cx", function(d) { return d.x = Math.max(d.r, Math.min(width, d.x)); })
+					 .attr("cy", function(d) { return d.y = Math.max(d.r, Math.min(height, d.y)); });    
 				var q = d3.geom.quadtree(nodes),
 				i = 0,
 				n = nodes.length;
 				while (++i < n) q.visit(collide(nodes[i]));
 
 				svg.selectAll(".node")
-//					.attr("cx", function(d) { return d.x; })
-//					.attr("cy", function(d) { return d.y; })
+					.attr("cx", function(d) { return d.x; })
+					.attr("cy", function(d) { return d.y; })
 					.attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; })
 				}
 
 			function collide(_node){
-				var r = _node.r + 16;
+				var r = _node.r + 160;
 	
 				nx1 = _node.x - r,
 				nx2 = _node.x + r,
@@ -184,8 +320,6 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 
 
 		force.nodes(nodes)
-		force.start()
-		force.on("tick", tick)
 
 		var node = g.selectAll(".node")
 				.data(nodes)
@@ -203,10 +337,13 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 			.attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; })
 			.call(force.drag)
 				      
-		node.append("circle")
-			.attr("r", function(d){return d.r})
+		node.append("rect")
+			//.attr("r", function(d){return d.r})
+			.attr("width", function(d){return d.r*2})
+			.attr("height", function(d){return d.r+10})
 			.attr("fill", function(d){return color(Math.random())}) 
-			.style("stroke", function(d, i) { return d3.rgb(fill(i & 3)).darker(2); })
+			//.attr("fill", function(d){return d.polarity ? "#66CCFF" : "#FF0033" }) 
+			.style("stroke", function(d, i) { return d3.rgb(fill(i & 3)).darker(10); })
 			.on("mousedown", function() { d3.event.stopPropagation(); })
 			.on("dblclick", OnDBLClick)
 			.style('opacity', 0) 
@@ -242,6 +379,8 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 			.remove();
 		
 		
+		force.start()
+		force.on("tick", tick)
 		
 		d3.select("body")
 			.on("mousedown", mousedown)
@@ -271,7 +410,7 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 
 		function OnDBLClick(d){
 			LEVEL = LEVEL+1
-			//drawNodes(DATA(d.name, LEVEL))
+			drawNodes(DATA(d.name, LEVEL))
 			console.log(d)
 			console.log(LEVEL)
 		

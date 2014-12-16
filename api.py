@@ -867,12 +867,13 @@ class GetWordCloud(restful.Resource):
 			return  result
 
 		
-		final_result = sorted(merging_similar_elements(sorted_result), reverse=True, key=lambda x: x.get("frequency"))
+		#final_result = sorted(merging_similar_elements(sorted_result), reverse=True, key=lambda x: x.get("frequency"))
+		final_result = sorted(sorted_result, reverse=True, key=lambda x: x.get("frequency"))
 
                 print final_result
 		return {"success": True,
 				"error": True,
-				"result": final_result[0:100],
+				"result": final_result[0:30],
 		}
 	
 	
