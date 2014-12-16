@@ -5,7 +5,7 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 	initialize: function(options){
 		console.log(this.$el)
 		var self = this;
-		this.add_slide_show();
+		//this.add_slide_show();
 		
 		var jqhr = $.get(window.one_page_api)	
 		//On success of the jquery post request
@@ -104,6 +104,17 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 
 
 	ForceLayout: function(_data){
+		/* The function to update svg elements if the window is being resized
+		 * function updateWindow(){
+		 *     x = w.innerWidth || e.clientWidth || g.clientWidth;
+		 *         y = w.innerHeight|| e.clientHeight|| g.clientHeight;
+		 *
+		 *             svg.attr("width", x).attr("height", y);
+		 *             }
+		 *             window.onresize = updateWindow;
+		 */
+
+
 		_this = this;
 		function DATA(value, LEVEL){return  _this.dataFunction(value, LEVEL)}
 		LEVEL = 0
@@ -121,24 +132,27 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 		var force = d3.layout.force()
 			.size([width, height])
 			.charge(-100)
-
+		
 		var svg = d3.select("body").append("svg")
 			.attr("width", width)
 			.attr("height", height);
-	
+
 		var g = svg.append("g")
-		    .attr("transform", "translate(0, 1)");
-		
+				.attr("transform", "translate(" + 0 + "," + 0 + ")")
+
 		function drawNodes(nodes){	
 			function tick(e){
+				/*This prevents the bubbles to be dragged outside the svg element */
+				 node.attr("cx", function(d) { return d.x = Math.max(d.r, Math.min(width - 50, d.x)); })
+					 .attr("cy", function(d) { return d.y = Math.max(d.r, Math.min(height - 50, d.y)); });    
 				var q = d3.geom.quadtree(nodes),
 				i = 0,
 				n = nodes.length;
 				while (++i < n) q.visit(collide(nodes[i]));
 
 				svg.selectAll(".node")
-					.attr("cx", function(d) { return d.x; })
-					.attr("cy", function(d) { return d.y; })
+//					.attr("cx", function(d) { return d.x; })
+//					.attr("cy", function(d) { return d.y; })
 					.attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; })
 				}
 
@@ -170,8 +184,8 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 
 
 		force.nodes(nodes)
-		force.on("tick", tick)
 		force.start()
+		force.on("tick", tick)
 
 		var node = g.selectAll(".node")
 				.data(nodes)
@@ -183,21 +197,24 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 			.attr('r', function(d) { return d.r; })
 			.style('opacity', 1); // force to 1, so they don't get stuck below 1 at enter()
 
-		node.enter().append("g")
-				.call(force.drag)
-				.attr("class", "node")
-				.attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; })
+		node.enter()
+			.append("g")
+			.attr("class", "node")
+			.attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; })
+			.call(force.drag)
 				      
 		node.append("circle")
-			.attr("cx", function(d) { return d.x; })
-			.attr("cy", function(d) { return d.y; })
 			.attr("r", function(d){return d.r})
 			.attr("fill", function(d){return color(Math.random())}) 
 			.style("stroke", function(d, i) { return d3.rgb(fill(i & 3)).darker(2); })
 			.on("mousedown", function() { d3.event.stopPropagation(); })
-			.on("click", OnClick)
+			.on("dblclick", OnDBLClick)
+			.style('opacity', 0) 
+			.transition()
+			.duration(duration)
+			.style('opacity', 1);
 
-		/*
+
 		node.append('foreignObject')
 			.attr('x', function(d){return this.parentNode.getBBox().x/1.5})
 			.attr('y', function(d){return this.parentNode.getBBox().y/2})
@@ -214,9 +231,11 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 			.style("vertical-align", "middle")
 			.style("padding", "10px 5px 15px 20px")
 			.style("line-height", "1")
+			.style('opacity', 0) 
 			.transition()
 			.duration(duration)
-		*/
+			.style('opacity', 1);
+
 		node.exit()
 			.transition()
 			.duration(duration)
@@ -229,8 +248,8 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 		
 		function mousedown(){
 			nodes.forEach(function(o, i){
-				o.x += (Math.random() - .5) * 40;
-				o.y += (Math.random() - .5) * 40;
+				o.x += (Math.random() - .5) * 70;
+				o.y += (Math.random() - .5) * 70;
 			});
 			force.resume();
 		}
@@ -241,15 +260,18 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 			var radius ;
 			var bbox = this.getBBox();
 			var cbbox = this.parentNode.getBBox(); 
+			console.log(bbox)
+			console.log(cbbox)
+			console.log(d.name + " " + d.x + " " + d.y)
 			radius = this.parentNode.firstChild.getAttribute("r")
 		}
 
 
 
 
-		function OnClick(d){
+		function OnDBLClick(d){
 			LEVEL = LEVEL+1
-			drawNodes(DATA(d.name, LEVEL))
+			//drawNodes(DATA(d.name, LEVEL))
 			console.log(d)
 			console.log(LEVEL)
 		
@@ -264,7 +286,7 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 
 
 
-	Render: function(_data){
+	OldRender: function(_data){
 		_this = this;
 		function DATA(value, LEVEL){return  _this.dataFunction(value, LEVEL)}
 		LEVEL = 0

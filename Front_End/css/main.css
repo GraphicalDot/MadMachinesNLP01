@@ -7,7 +7,6 @@
 body{
     padding-top: 10px;
     padding-bottom: 10px;
-    background-image: url("black-and-white-restaurant-handpainted-mural.jpg");
 	background-size:   cover;                      /* <------ */
 	    background-repeat: no-repeat;
 }
