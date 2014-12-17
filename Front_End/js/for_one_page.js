@@ -249,7 +249,10 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 		 *             }
 		 *             window.onresize = updateWindow;
 		 */
-
+		/* To Add scales to radius so that the nodes fit into the window
+		 * http://alignedleft.com/tutorials/d3/scales
+		 * consult the above mentioned tutorials
+		 */
 
 		_this = this;
 		function DATA(value, LEVEL){return  _this.dataFunction(value, LEVEL)}
@@ -275,20 +278,20 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 		var g = svg.append("g")
 				.attr("transform", "translate(" + 0 + "," + 0 + ")")
 
-		function rmax(){
-			var RMAX = 0
-			$.each(DATA(null, LEVEL), function(i, __node){
-				if (RMAX < __node.r){
-					RMAX = __node.r
-				}
-			});
-			return RMAX
-		}
+		//This is the function wchich returns the maximum radius of the bubbles 
 		function drawNodes(nodes){	
+			function rmax(){
+				var RMAX = 0
+				$.each(nodes, function(i, __node){
+					if (RMAX < __node.r){
+						RMAX = __node.r
+					}
+				});
+				return RMAX
+			}
+
 			function tick(e){
 				/*This prevents the bubbles to be dragged outside the svg element */
-				 //node.attr("cx", function(d) { return d.x = Math.max(d.r, Math.min(width, d.x)); })
-				//	 .attr("cy", function(d) { return d.y = Math.max(d.r, Math.min(height, d.y)); });    
 				node.attr("cx", function(d) { return d.x = Math.max(rmax(), Math.min(width - rmax(), d.x)); })
 					        .attr("cy", function(d) { return d.y = Math.max(rmax(), Math.min(height - rmax(), d.y)); });
 				
@@ -298,11 +301,10 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 				n = nodes.length;
 				while (++i < n) q.visit(collide(nodes[i]));
 
-				svg.selectAll(".node")
-					.attr("cx", function(d) { return d.x; })
-					.attr("cy", function(d) { return d.y; })
-					.attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; })
-				}
+					//.attr("cx", function(d) { return d.x; })
+					//.attr("cy", function(d) { return d.y; })
+					node.attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; })
+				};
 
 			function collide(_node){
 				var r = _node.r + 160;
@@ -329,44 +331,46 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 					return x1 > nx2 || x2 < nx1 || y1 > ny2 || y2 < ny1;};
 			
 					}
-
+		function charge(d){return d.frequency*d.frequency + 1 }     
 
 		force.nodes(nodes)
-		force.start()
+			.gravity(.09)
+			.charge(charge)
+			.start()
+		force.on("tick", tick)
 
 		var node = g.selectAll(".node")
-				.data(nodes)
+				.data(nodes, function(d) { return d.name; })
 	
-		node.exit()
-			.transition()
-			.duration(duration)
-			.attr("r", 0)
-			.remove();
-		
+	
 		node.transition()
 			.duration(duration)
 			.delay(function(d, i) {delay = i * 7; return delay;}) 
 			.style('opacity', 0) 
 			.attr('r', function(d) { return d.r; })
 			.style('opacity', 1); // force to 1, so they don't get stuck below 1 at enter()
-
+		
 		node.enter()
 			.append("g")
 			.attr("class", "node")
+			.on("dblclick", OnDBLClick)
 			.attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; })
 			.call(force.drag)
 				      
 		node.append("circle")
 			.attr("r", function(d){return d.r})
 			.attr("fill", function(d){return color(Math.random())}) 
+			.attr("class", "node")
 			//.attr("fill", function(d){return d.polarity ? "#66CCFF" : "#FF0033" }) 
 			.style("stroke", function(d, i) { return d3.rgb(fill(i & 3)).darker(10); })
 			.on("mousedown", function() { d3.event.stopPropagation(); })
-			.on("dblclick", OnDBLClick)
-			.style('opacity', 0) 
-			.transition()
-			.duration(duration)
-			.style('opacity', 1);
+		
+			
+		$('svg g').tipsy({ gravity: 'w', 
+					html: true, 
+					title: function(){
+					return  "<br>" + 'Name: ' +'  ' +'<span>' + this.__data__.name + '</span>';}
+				      });
 
 
 		node.append('foreignObject')
@@ -385,14 +389,10 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 			.style("vertical-align", "middle")
 			.style("padding", "10px 5px 15px 20px")
 			.style("line-height", "1")
-			.style('opacity', 0) 
-			.transition()
-			.duration(duration)
-			.style('opacity', 1);
 
 		
+		node.exit().remove();
 		
-		force.on("tick", tick)
 		
 		d3.select("body")
 			.on("mousedown", mousedown)
@@ -406,6 +406,34 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 		}
 		
 		}
+		
+		function addShadow(svg){
+			defs = svg.append("defs");
+			filter = defs.append("filter")
+					.attr("id", "drop-shadow")
+					.attr("height", "150%")
+					.attr("width", "200%")
+			
+			filter.append("feGaussianBlur")
+				.attr("in", "SourceAlpha")
+				.attr("stdDeviation", 5)
+				.attr("result", "blur");
+
+			feOffset = filter.append("feOffset")
+					.attr("in", "blur")
+					.attr("dx", 5)
+					.attr("dy", 5)
+					.attr("result", "offsetBlur");
+					
+			feMerge = filter.append("feMerge");
+				feMerge.append("feMergeNode")
+				.attr("in", "offsetBlur")
+					
+			
+			feMerge.append("feMergeNode")
+				.attr("in", "SourceGraphic");
+				}
+
 
 		function getSize(d){
 			var radius ;

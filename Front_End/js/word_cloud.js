@@ -468,7 +468,6 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 			
 			node.enter()
 				.append("a")
-				.style("filter", "url(#drop-shadow)")
 				.attr("class", "bubble-node")
 				.attr("fill", function(d){return d.polarity ? "#66CCFF" : "#FF0033" })
 				.call(force.drag)
@@ -500,30 +499,6 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 					      .style("width", function(d){ return rScale(rValue(d))+"px"})
 		}
 
-			function addShadow(svg){
-					defs = svg.append("defs");
-					filter = defs.append("filter")
-						    .attr("id", "drop-shadow")
-						    .attr("height", "150%")
-						    .attr("width", "200%")
-					filter.append("feGaussianBlur")
-						.attr("in", "SourceAlpha")
-						.attr("stdDeviation", 5)
-						.attr("result", "blur");
-
-					feOffset = filter.append("feOffset")
-						    .attr("in", "blur")
-						    .attr("dx", 5)
-						    .attr("dy", 5)
-						    .attr("result", "offsetBlur");
-					feMerge = filter.append("feMerge");
-							feMerge.append("feMergeNode")
-							.attr("in", "offsetBlur")
-					
-					feMerge.append("feMergeNode")
-						.attr("in", "SourceGraphic");
-
-				}
 		
 	
 	
