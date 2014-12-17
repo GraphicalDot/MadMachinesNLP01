@@ -311,7 +311,10 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 
 					//.attr("cx", function(d) { return d.x; })
 					//.attr("cy", function(d) { return d.y; })
-					node.attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; })
+					node
+						.transition()
+						.duration(75)
+						.attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; })
 				};
 
 			function collide(_node){
@@ -351,12 +354,6 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 				.data(nodes, function(d) { return d.name; })
 	
 	
-		node.transition()
-			.duration(duration)
-			.delay(function(d, i) {delay = i * 7; return delay;}) 
-			.style('opacity', 0) 
-			.attr('r', function(d) { return RScale(d.r); })
-			.style('opacity', 1); // force to 1, so they don't get stuck below 1 at enter()
 		
 		node.enter()
 			.append("g")
@@ -364,6 +361,7 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 			.on("dblclick", OnDBLClick)
 			.attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; })
 			.call(force.drag)
+		
 				      
 		node.append("circle")
 			.attr("r", function(d){return RScale(d.r)})
@@ -378,7 +376,7 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 					title: function(){
 					return  "<br>" + 'Name: ' +'  ' +'<span>' + this.__data__.name + '</span>';}
 				      });
-
+		
 		node.append('foreignObject')
 			.attr('x', function(d){return this.parentNode.getBBox().x/1.5})
 			.attr('y', function(d){return this.parentNode.getBBox().y/2})
@@ -395,9 +393,9 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 			.style("vertical-align", "middle")
 			.style("padding", "10px 5px 15px 20px")
 			.style("line-height", "1")
-
+			
 		
-		node.exit().remove();
+		node.exit().transition().attr("r", 0).duration(750).remove();
 		
 		
 		d3.select("body")
