@@ -114,7 +114,7 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 		this._data = options.model
 		this.ForceLayout(this.model);
 	*/
-		//this.add_slide_show();
+		this.add_slide_show();
 		
 		var self = this;
 		var jqhr = $.get(window.one_page_api)	
@@ -241,14 +241,13 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 
 	ForceLayout: function(_data){
 		/* The function to update svg elements if the window is being resized
-		 * function updateWindow(){
+		 function updateWindow(){
 		 *     x = w.innerWidth || e.clientWidth || g.clientWidth;
 		 *         y = w.innerHeight|| e.clientHeight|| g.clientHeight;
 		 *
 		 *             svg.attr("width", x).attr("height", y);
 		 *             }
 		 *             window.onresize = updateWindow;
-		 */
 		/* To Add scales to radius so that the nodes fit into the window
 		 * http://alignedleft.com/tutorials/d3/scales
 		 * consult the above mentioned tutorials
@@ -267,6 +266,8 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 		var duration = 2000;
 		var delay = 2;
 
+
+
 		var force = d3.layout.force()
 			.size([width, height])
 			.charge(100)
@@ -279,12 +280,19 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 				.attr("transform", "translate(" + 0 + "," + 0 + ")")
 
 		//This is the function wchich returns the maximum radius of the bubbles 
-		function drawNodes(nodes){	
+		function drawNodes(nodes){
+				
+		
+			var RScale = d3.scale.linear()
+				.domain(d3.extent(nodes, function(d) { return d.r; }))
+			 	.range([width/25, 2*(width/25)])
+		
+
 			function rmax(){
 				var RMAX = 0
 				$.each(nodes, function(i, __node){
-					if (RMAX < __node.r){
-						RMAX = __node.r
+					if (RMAX < RScale(__node.r)){
+						RMAX = RScale(__node.r)
 					}
 				});
 				return RMAX
@@ -307,7 +315,7 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 				};
 
 			function collide(_node){
-				var r = _node.r + 160;
+				var r = RScale(_node.r);
 	
 				nx1 = _node.x - r,
 				nx2 = _node.x + r,
@@ -319,7 +327,7 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 						var x = _node.x - quad.point.x,
 						y = _node.y - quad.point.y,
 						l = Math.sqrt(x * x + y * y),
-						r = _node.r + quad.point.r;
+						r = RScale(_node.r) + RScale(quad.point.r);
 						if (l < r){
 							l = (l - r)/l*.5;
 							_node.x -= x *= l;
@@ -331,7 +339,7 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 					return x1 > nx2 || x2 < nx1 || y1 > ny2 || y2 < ny1;};
 			
 					}
-		function charge(d){return d.frequency*d.frequency + 1 }     
+		function charge(d){return RScale(d.r) + 1 }     
 
 		force.nodes(nodes)
 			.gravity(.09)
@@ -347,7 +355,7 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 			.duration(duration)
 			.delay(function(d, i) {delay = i * 7; return delay;}) 
 			.style('opacity', 0) 
-			.attr('r', function(d) { return d.r; })
+			.attr('r', function(d) { return RScale(d.r); })
 			.style('opacity', 1); // force to 1, so they don't get stuck below 1 at enter()
 		
 		node.enter()
@@ -358,32 +366,30 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 			.call(force.drag)
 				      
 		node.append("circle")
-			.attr("r", function(d){return d.r})
+			.attr("r", function(d){return RScale(d.r)})
 			.attr("fill", function(d){return color(Math.random())}) 
 			.attr("class", "node")
 			//.attr("fill", function(d){return d.polarity ? "#66CCFF" : "#FF0033" }) 
 			.style("stroke", function(d, i) { return d3.rgb(fill(i & 3)).darker(10); })
 			.on("mousedown", function() { d3.event.stopPropagation(); })
 		
-			
 		$('svg g').tipsy({ gravity: 'w', 
 					html: true, 
 					title: function(){
 					return  "<br>" + 'Name: ' +'  ' +'<span>' + this.__data__.name + '</span>';}
 				      });
 
-
 		node.append('foreignObject')
 			.attr('x', function(d){return this.parentNode.getBBox().x/1.5})
 			.attr('y', function(d){return this.parentNode.getBBox().y/2})
-			.attr('width', function(d){ return 2*d.r * Math.cos(Math.PI / 4)})
-			.attr('height', function(d){ return 2*d.r * Math.cos(Math.PI / 4)})
+			.attr('width', function(d){ return 2*RScale(d.r) * Math.cos(Math.PI / 4)})
+			.attr('height', function(d){ return 2*RScale(d.r) * Math.cos(Math.PI / 4)})
 			.attr('color', 'black')
 			.each(getSize)
 			.append('xhtml:div')
-			.style("font-size", function(d){return d.r/4.2 + "px"})
+			.style("font-size", function(d){return RScale(d.r)/5 + "px"})
 			.append("p")
-			.text(function(d) { return d.name.substring(0, d.r / 3)})
+			.text(function(d) { return d.name.substring(0, RScale(d.r) / 3)})
 			.attr('id', "node-bubble")
 			.style("text-align", "center")
 			.style("vertical-align", "middle")
@@ -407,32 +413,6 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 		
 		}
 		
-		function addShadow(svg){
-			defs = svg.append("defs");
-			filter = defs.append("filter")
-					.attr("id", "drop-shadow")
-					.attr("height", "150%")
-					.attr("width", "200%")
-			
-			filter.append("feGaussianBlur")
-				.attr("in", "SourceAlpha")
-				.attr("stdDeviation", 5)
-				.attr("result", "blur");
-
-			feOffset = filter.append("feOffset")
-					.attr("in", "blur")
-					.attr("dx", 5)
-					.attr("dy", 5)
-					.attr("result", "offsetBlur");
-					
-			feMerge = filter.append("feMerge");
-				feMerge.append("feMergeNode")
-				.attr("in", "offsetBlur")
-					
-			
-			feMerge.append("feMergeNode")
-				.attr("in", "SourceGraphic");
-				}
 
 
 		function getSize(d){
@@ -464,6 +444,10 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 
 
 	OldRender: function(_data){
+		/*This is the old render function which draws bubble 
+		 * cloud with pack layout and do updates it
+		
+		
 		_this = this;
 		function DATA(value, LEVEL){return  _this.dataFunction(value, LEVEL)}
 		LEVEL = 0
@@ -619,6 +603,7 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 
 	//This starts the bubble cloud with initial parent data
 	drawBubbles(DATA(null, LEVEL))
+		*/
 	},
 
 
