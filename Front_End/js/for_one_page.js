@@ -362,39 +362,67 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 			.attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; })
 			.call(force.drag)
 		
-				      
+			
 		node.append("circle")
-			.attr("r", function(d){return RScale(d.r)})
+			.attr("r", 0)
 			.attr("fill", function(d){return color(Math.random())}) 
 			.attr("class", "node")
 			//.attr("fill", function(d){return d.polarity ? "#66CCFF" : "#FF0033" }) 
 			.style("stroke", function(d, i) { return d3.rgb(fill(i & 3)).darker(10); })
 			.on("mousedown", function() { d3.event.stopPropagation(); })
-		
+
+
 		$('svg g').tipsy({ gravity: 'w', 
 					html: true, 
 					title: function(){
 					return  "<br>" + 'Name: ' +'  ' +'<span>' + this.__data__.name + '</span>';}
 				      });
-		
-		node.append('foreignObject')
-			.attr('x', function(d){return this.parentNode.getBBox().x/1.5})
-			.attr('y', function(d){return this.parentNode.getBBox().y/2})
-			.attr('width', function(d){ return 2*RScale(d.r) * Math.cos(Math.PI / 4)})
-			.attr('height', function(d){ return 2*RScale(d.r) * Math.cos(Math.PI / 4)})
-			.attr('color', 'black')
-			.each(getSize)
+
+
+
+		node.append('foreignObject')	
+			.attr("class", "foreign")
 			.append('xhtml:div')
-			.style("font-size", function(d){return RScale(d.r)/5 + "px"})
-			.append("p")
-			.text(function(d) { return d.name.substring(0, RScale(d.r) / 3)})
-			.attr('id', "node-bubble")
-			.style("text-align", "center")
-			.style("vertical-align", "middle")
-			.style("padding", "10px 5px 15px 20px")
-			.style("line-height", "1")
+			.style("font-size", 0)
+			.append("p")	
+		
+		d3.selectAll("circle")
+			.transition()
+			.duration(2000)
+			.attr("r", function(d){return RScale(d.r)})
 			
 		
+		.transition()
+		.each("end", function(){		
+				d3.selectAll(document.getElementsByTagName("foreignObject")).transition()
+					.attr('x', function(d){console.log(this.parentNode.getBBox()); return this.parentNode.getBBox().x/1.5})
+					.attr('y', function(d){return this.parentNode.getBBox().y/2})
+					.attr('width', function(d){ return 2*RScale(d.r) * Math.cos(Math.PI / 4)})
+					.attr('height', function(d){ return 2*RScale(d.r) * Math.cos(Math.PI / 4)})
+					.attr('color', 'black')
+					.each(getSize)
+			
+			})
+
+		.transition()
+		.each("end", function(){		
+				d3.selectAll(document.getElementsByTagName("foreignObject")).selectAll("div").transition()
+					.style("font-size", function(d){return RScale(d.r)/5 + "px"})
+			
+			})	
+			
+		.transition()
+		.each("end", function(){		
+				d3.selectAll(document.getElementsByTagName("foreignObject")).selectAll("div").selectAll("p").transition()
+					.text(function(d) { return d.name.substring(0, RScale(d.r) / 3)})
+					.attr('id', "node-bubble")
+					.style("text-align", "center")
+					.style("vertical-align", "middle")
+					.style("padding", "10px 5px 15px 20px")
+					.style("line-height", "1")
+			})
+		
+
 		node.exit().transition().attr("r", 0).duration(750).remove();
 		
 		
@@ -441,168 +469,6 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 
 
 
-	OldRender: function(_data){
-		/*This is the old render function which draws bubble 
-		 * cloud with pack layout and do updates it
-		
-		
-		_this = this;
-		function DATA(value, LEVEL){return  _this.dataFunction(value, LEVEL)}
-		LEVEL = 0
-		var color = d3.scale.category10().domain(d3.range(_data));
-		var width = $(window).width() - 50;
-		var height = $(window).height();
-		format = d3.format(",d"),
-		fill = d3.scale.category10();
-		
-		
-
-
-		var bubble = d3.layout.pack()
-				.sort(null)
-				.size([width, height])
-				.padding(3)
-				.value(function(d) {return d.size;})
- 
-		var svg = d3.select(".container-fluid").append("svg")
-					.attr("width", width)
-					.attr("height", height)
-
-		addShadow(svg)	
-		
-		var g = svg.append("g")
-		    .attr("transform", "translate(2,2)");
-
-	function OnClickBubble(d){
-			LEVEL = LEVEL +1
-			console.log("Here is the pre4sent level or dept at which we are in " +LEVEL)
-			drawBubbles(DATA(d.name, LEVEL))
-	}	
-					
-	
-	function drawBubbles(newData){	
-		var nodes = bubble.nodes(processData(newData))
-			.filter(function(d) { return !d.children; }); // filter out the outer bubble
-
-
-		var duration = 2000;
-		var delay = 2;
-
-		var node = g.selectAll(".node")
-				.data(nodes,  function(d) { return d.name; })
-		node.transition()
-			.duration(duration)
-			.delay(function(d, i) {delay = i * 7; return delay;}) 
-			.style('opacity', 0) 
-			.attr('r', function(d) { return d.r; })
-			.style('opacity', 1); // force to 1, so they don't get stuck below 1 at enter()
-
-		node.enter().append("g")
-				.attr("class", "node")
-				.attr('transform', function(d) { return 'translate('
-							         + d.x + ',' + d.y + ')'; })
-		
-		node.append('circle')
-			.attr('r', function(d) { return d.r; })
-			//.attr("fill", function(d){return d.className ? "#66CCFF" : "#FF0033" }) 
-			.attr("fill", function(d){return color(Math.random())}) 
-			.style("filter", "url(#drop-shadow)")
-			.on("click", OnClickBubble)
-			.attr('class', function(d) { return d.className; })
-			.style('opacity', 0) 
-			.transition()
-			.duration(duration)
-			.style('opacity', 1);
-			
-		$('svg circle').tipsy({ gravity: 'w', 
-					html: true, 
-					title: function(){
-					return 'Name: ' + '<span>' + this.__data__.name + '</span>';}
-				      });
-
-
-		node.append('foreignObject')
-			.attr('x', function(d){return this.parentNode.getBBox().x/1.5})
-			.attr('y', function(d){return this.parentNode.getBBox().y/2})
-			.attr('width', function(d){ return 2*d.r * Math.cos(Math.PI / 4)})
-			.attr('height', function(d){ return 2*d.r * Math.cos(Math.PI / 4)})
-			.attr('color', 'black')
-			.each(getSize)
-			.append('xhtml:div')
-			.style("font-size", function(d){return d.r/4.2 + "px"})
-			.append("p")
-			.on("click", OnClickBubble)
-			.text(function(d) { return d.name.substring(0, d.r / 3)})
-			.attr('id', "node-bubble")
-			.style("text-align", "center")
-			.style("vertical-align", "middle")
-			.style("padding", "10px 5px 15px 20px")
-			.style("line-height", "1")
-			.style('opacity', 0) 
-			.transition()
-			.duration(duration)
-			.style('opacity', 1);
-
-		node.exit()
-			.transition()
-			.duration(duration)
-			.style('opacity', 0)
-			.remove();
-
-
-		}
-	
-		function getSize(d){
-			var radius ;
-			var bbox = this.getBBox();
-			var cbbox = this.parentNode.getBBox(); 
-			radius = this.parentNode.firstChild.getAttribute("r")
-		}
-
-		function processData(data) {
-			var newDataSet = [];
-			$.each(data, function(i, __d){
-				console.log(__d.name, __d.frequency, __d.polarity)
-				newDataSet.push({"name": __d.name, 
-						"className": __d.polarity, 
-						"size": __d.frequency,
-						}
-					)
-				})
-			return {"children": newDataSet};	
-			}
-
-		function addShadow(svg){
-			defs = svg.append("defs");
-			filter = defs.append("filter")
-					.attr("id", "drop-shadow")
-					.attr("height", "150%")
-					.attr("width", "200%")
-			
-			filter.append("feGaussianBlur")
-				.attr("in", "SourceAlpha")
-				.attr("stdDeviation", 5)
-				.attr("result", "blur");
-
-			feOffset = filter.append("feOffset")
-					.attr("in", "blur")
-					.attr("dx", 5)
-					.attr("dy", 5)
-					.attr("result", "offsetBlur");
-					
-			feMerge = filter.append("feMerge");
-				feMerge.append("feMergeNode")
-				.attr("in", "offsetBlur")
-					
-			
-			feMerge.append("feMergeNode")
-				.attr("in", "SourceGraphic");
-				}
-
-	//This starts the bubble cloud with initial parent data
-	drawBubbles(DATA(null, LEVEL))
-		*/
-	},
 
 
 })
