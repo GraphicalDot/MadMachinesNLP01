@@ -136,7 +136,6 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 
 	add_slide_show: function(){$.vegas('slideshow', {
 			  backgrounds:[
-
 			{src: 'css/black-and-white-restaurant-handpainted-mural.jpg', fade:1000 }, 
 			{src: 'css/chef_service.jpg', fade:1000 }, 
 			{src: 'css/corn.jpg', fade:1000 }, 
@@ -274,7 +273,7 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 		var height = $(window).height();
 
 		var fill = d3.scale.category10();
-		var color = d3.scale.category10().domain(d3.range(_data));
+		var color = d3.scale.category10().domain(d3.range(10000));
 
 
 		var duration = 2000;
@@ -379,7 +378,7 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 			
 		node.append("circle")
 			.attr("r", 0)
-			.attr("fill", function(d){return color(Math.random())}) 
+			.attr("fill", function(d, i){console.log(fill(parseInt(Math.random()*1000+ i))); return fill(parseInt(Math.random()*10+ i))}) 
 			.attr("class", "node")
 			//.attr("fill", function(d){return d.polarity ? "#66CCFF" : "#FF0033" }) 
 			.style("stroke", function(d, i) { return d3.rgb(fill(i & 3)).darker(10); })
@@ -389,7 +388,8 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 		$('svg g').tipsy({ gravity: 'w', 
 					html: true, 
 					title: function(){
-					return  "<br>" + 'Name: ' +'  ' +'<span>' + this.__data__.name + '</span>';}
+					//return  "<br>" + 'Name: ' +'  ' +'<span>' + this.__data__.name + '</span>' +"<br>" + 'Frequency: ' +  '<span>' + this.__data__.r + '</span>';}
+					return   "<br>" + 'Frequency: ' +  '<span>' + this.__data__.r + '</span>';}
 				      });
 
 
@@ -402,7 +402,7 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 		
 		d3.selectAll("circle")
 			.transition()
-			.duration(2000)
+			//.duration(2000)
 			.attr("r", function(d){return RScale(d.r)})
 			
 		
