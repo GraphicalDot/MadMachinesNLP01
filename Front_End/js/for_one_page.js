@@ -1,5 +1,7 @@
 $(document).ready(function(){
 
+window.EX_BUBBLES = 100
+
 App.SeeWordCloudDateSelectionView = Backbone.View.extend({
 	template: window.template("see-word-cloud-date-selection"),
 	tag: "form",
@@ -183,6 +185,18 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 		},
 
 	dataFunction: function(value, LEVEL){
+
+
+		function ADD_EX_BUBBLES(old_array){
+			for(var i = 0; i < window.EX_BUBBLES; i++){
+				old_array.push({"name": "NULL", 
+						"polarity": 2, 
+						"r": .1,})
+			}
+				    return old_array;
+		}
+
+
 		function if_data_empty(a_rray){
 			if(a_rray == undefined){
 				LEVEL = LEVEL -1
@@ -460,7 +474,7 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 		
 		};
 
-
+		console.log(DATA(null, LEVEL))
 		drawNodes(DATA(null, LEVEL))
 		//drawNodes(data())
 	},
