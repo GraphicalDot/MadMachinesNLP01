@@ -111,6 +111,8 @@ App.SeeWordCloudDateSelectionView = Backbone.View.extend({
 
 App.WordCloudWith_D3 = Backbone.View.extend({
 	initialize: function(options){
+		//In case svg was present on the page
+		d3.select("svg").remove()
 		this.model = options.model
 		this._data = options.model
 		this.ForceLayout(this.model);
