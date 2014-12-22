@@ -381,7 +381,9 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 			.attr("fill", function(d, i){console.log(fill(parseInt(Math.random()*1000+ i))); return fill(parseInt(Math.random()*10+ i))}) 
 			.attr("class", "node")
 			//.attr("fill", function(d){return d.polarity ? "#66CCFF" : "#FF0033" }) 
-			.style("stroke", function(d, i) { return d3.rgb(fill(i & 3)).darker(10); })
+			//.style("stroke", function(d, i) { return d3.rgb(fill(i & 3)).darker(10); })
+			.style("stroke", function(d, i) { return "#e377c2" })
+			.style('stroke-width', '20px')
 			.on("mousedown", function() { d3.event.stopPropagation(); })
 
 
@@ -403,6 +405,9 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 		d3.selectAll("circle")
 			.transition()
 			//.duration(2000)
+			.ease("cicle")
+			.duration(1000) // this is 1s
+			.delay(50)
 			.attr("r", function(d){return RScale(d.r)})
 			
 		

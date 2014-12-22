@@ -10,8 +10,8 @@ App.Router = Backbone.Router.extend({
 	},
 	
 	welcome: function(){
-		//var str = new App.RootView({model: {"el": this.el}})
-		var str = new App.WordCloudWith_D3({model: {"el": this.el}})
+		var str = new App.RootView({model: {"el": this.el}})
+		//var str = new App.WordCloudWith_D3({model: {"el": this.el}})
 		this.el.html(str.render().el);
 	},
 });
