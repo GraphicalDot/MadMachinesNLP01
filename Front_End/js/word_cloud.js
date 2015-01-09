@@ -114,6 +114,7 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 		//In case svg was present on the page
 		d3.select("svg").remove()
 		this.model = options.model
+		console.log(this.model)
 		this._data = options.model
 		this.ForceLayout(this.model);
 		this.add_slide_show();

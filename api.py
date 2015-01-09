@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #-*- coding: utf-8 -*-
-
+            
 import copy
 import re
 import csv
@@ -37,7 +37,7 @@ from sklearn.externals import joblib
 import numpy
 from multiprocessing import Pool
 from static_data import static_data
-
+from api_helpers import merging_similar_elements
 
 
 
@@ -170,8 +170,8 @@ get_word_cloud_parser.add_argument('end_date', type=str,  required=True, locatio
 
 def cors(func, allow_origin=None, allow_headers=None, max_age=None):
 	if not allow_origin:
-		allow_origin = "*"
-		
+                allow_origin = "*"
+                		
 	if not allow_headers:
 		allow_headers = "content-type, accept"
 		
@@ -702,7 +702,7 @@ class WordCloudWithDates(restful.Resource):
 class GetWordCloud(restful.Resource):
 	@cors
 	@timeit
-	def post(self):
+        def post(self):
 		start = time.time()
 
 
@@ -722,9 +722,12 @@ class GetWordCloud(restful.Resource):
 		
 		
 		noun_phrases_list = list()
-	
+
+
+                #This is mongodb query for the arguments given int he post request, And the result is a list of reviews
 		review_result = reviews.find({"eatery_id" :eatery_id, "converted_epoch": {"$gt":  start_epoch, "$lt" : end_epoch}})
 	
+            
 		review_text = [to_unicode_or_bust(post.get("review_text")) for post in review_result]
 		review_text = " .".join(review_text)
 
@@ -799,79 +802,19 @@ class GetWordCloud(restful.Resource):
 
 		sorted_result = sorted(result, reverse=True, key=lambda x: x.get("frequency"))
 
-
-
-		def merging_similar_elements(original_list):
-			"""
-			This function will calculate the minum distance between two noun phrase and if the distance is 
-			less than 1 and more than .8, delete one of the element and add both their frequencies
-			"""
-
-			original_dict = {element.get("name"): {"frequency": element.get("frequency"), "polarity": element.get("polarity")} \
-					for element in original_list}
-			
-			
-			calc_simililarity = lambda __a, __b: difflib.SequenceMatcher(a=__a.get("name").lower(), b=__b.get("name").lower()).ratio() \
-										if __a.get("name").lower() != __b.get("name").lower() else 0
-			
-			
-			list_with_similarity_ratios = list()
-			for test_element in original_list:
-				for another_element in copy.copy(original_list):
-					r = calc_simililarity(test_element, another_element)	
-					list_with_similarity_ratios.append(dict(test_element.items() +  
-							{"similarity_with": another_element.get("name"), "ratio": r}.items()))
-
-			
-
-			filtered_list = [element for element in list_with_similarity_ratios if element.get("ratio") <1 and element.get("ratio") > .8]
-
-
-
-			
-			for element in filtered_list:
-				try:
-					frequency = original_dict[element.get("name")]["frequency"] + \
-							original_dict[element.get("similarity_with")]["frequency"]
-							
-					del original_dict[element.get("similarity_with")]
-					original_dict[element.get("name")]["frequency"] = frequency
-					
-				except Exception as e:
-					pass
-
-			"""
-			##This is when you want to subtract and add frequency based on the polarity
-			for element in filtered_list:
-				try:
-					if original_dict[element.get("similarity_with")]["polarity"] == 0:
-						frequency = original_dict[element.get("name")]["frequency"] - original_dict[element.get("similarity_with")]["frequency"]
-					else:
-						frequency = original_dict[element.get("name")]["frequency"] + original_dict[element.get("similarity_with")]["frequency"]
-
-					del original_dict[element.get("similarity_with")]
-					original_dict[element.get("name")]["frequency"] = frequency
-					
-				except Exception as e:
-					pass
-			"""
-			result = list()
-
-	
-			for k, v in original_dict.iteritems():
-				l = {"name": k.upper()}
-				l.update(v)
-				result.append(l)
-
-			
-			return  result
-
-		
+		"""
 		#final_result = sorted(merging_similar_elements(sorted_result), reverse=True, key=lambda x: x.get("frequency"))
-		final_result = sorted(sorted_result, reverse=True, key=lambda x: x.get("frequency"))
+                
+                for element in final_result:
+                    print element 
+                
+                """
+                final_result = sorted(sorted_result, reverse=True, key=lambda x: x.get("frequency"))
 
-                print final_result
-		return {"success": True,
+                for element in sorted(final_result, key=lambda x: x.get("name")):
+                    print element 
+		
+                return {"success": True,
 				"error": True,
 				"result": final_result[0:30],
 		}

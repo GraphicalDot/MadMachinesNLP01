@@ -195,6 +195,7 @@ class EateryData(object):
 	def __init__(self, eatery):
 		self.eatery = eatery
 		self.soup = self.with_selenium()
+	        self.retry_eatery_id()
 		self.retry_eatery_name()
 		self.retry_eatery_address()
 		self.retry_eatery_cost()
@@ -220,7 +221,21 @@ class EateryData(object):
 	def area_or_city(self):
 		self.eatery["eatery_area_or_city"] = self.eatery.get("eatery_url").split("/")[3]
 
-	def retry_eatery_name(self):
+	def retry_eatery_id(self):
+                """
+                This class method retries for the eatery id
+                """
+                if not self.eatery.get("eatery_id"):
+	                try:
+                                self.eatery["eatery_id"] = self.soup.find("div", {"itemprop": "ratingValue"}).get("data-res-id")
+	                except Exception:
+		                self.eatery["eatery_id"] = None
+	        return
+	        
+
+            
+            
+        def retry_eatery_name(self):
 		"""
 		This method tries to get the eatery url if the eatery dict supplied doesnt contain eatery name, Which happens
 		if we want to scrape only one particular eatery
@@ -618,8 +633,15 @@ def eatery_specific(eatery_dict):
 
 	return
 
-"""
+"""        
 if __name__ == "__main__":
+        #If you want to scrape a particular restaurant do this
+        url = "https://www.zomato.com/ncr/kylin-premier-vasant-kunj-delhi"
+	number_of_restaurants = 0
+	skip = 0
+        is_eatery = True
+
+	scrape_links(url, number_of_restaurants, skip, is_eatery)
         
 	number_of_restaurants = 30
 	skip = 60
@@ -634,14 +656,14 @@ if __name__ == "__main__":
 	instance = EateriesList(url, int(number_of_restaurants), int(skip))
 	eateries_list = instance.eateries_list()
 	print eateries_list	
-#	scrape("http://www.zomato.com/ncr/malviya-nagar-delhi-restaurants?category=1", 30, 18) 
+        #   scrape("http://www.zomato.com/ncr/malviya-nagar-delhi-restaurants?category=1", 30, 18) 
 	###This is the right one for element in scrape_links("https://www.zomato.com/ncr/south-delhi-restaurants", 30, 30):
 		print element.get("eatery_name")
 		
 		#	scrape("http://www.zomato.com/ncr/khan-market-delhi-restaurants?category=1", 28, 1)
-#runn.apply_async(["https://www.zomato.com/ncr/south-delhi-restaurants", 30, 520]), this has been done for south delhi
+        #runn.apply_async(["https://www.zomato.com/ncr/south-delhi-restaurants", 30, 520]), this has been done for south delhi
 
-#Sun Sep  7 13:31:10 IST 2014
+        #Sun Sep  7 13:31:10 IST 2014
 
 
 """
