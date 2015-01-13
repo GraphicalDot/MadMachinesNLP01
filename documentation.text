@@ -1,0 +1,598 @@
+anworks wiki!
+### URL = http://ec2-54-68-29-37.us-west-2.compute.amazonaws.com:8080/
+### url + '/process_text'
+Args: 
+   
+     'text', type=to_unicode_or_bust, required=True, location="form"
+    
+     'algorithm', type=str, required=True, location="form"
+      rightnow the algorithms that has been implemented are 
+      logistic_regression_classifier
+      multinomial_nb_classifier
+      passive_aggressive_classifier
+      perceptron_classifier
+      ridge_regression_classifier
+      svm_classifier
+      ridge_regression_classifier
+
+Errors:
+
+      if not bool(text):
+                        return {
+                                "error": True,
+                                "success": False,
+                                "error_code": 101,
+                                "messege": "Text field cannot be left empty"
+                                }
+
+      if not bool(algorithm):
+                        return {
+                                "error": True,
+                                "success": False,
+                                "error_code": 302,
+                                "messege": "Algorithm field cannot be left empty"}
+
+Result:
+      
+      return {
+                                "result": result,
+                                "success": True,
+                                "error": False,
+                                "overall_sentiment":              '%.2f'%ProcessingWithBlob.new_blob_polarity(to_unicode_or_bust(text)),
+                                "noun_phrase": noun_phrase,}
+
+
+
+      Sample result: 
+                  with form arguments:
+      
+                  text = 'Went on a sunday afternoon for brunch with a few friends.. the food was good, the service was ok, but not as good as I expected from an international chain! Overall experiance was nice the ambiance was awesome, but I think it is more of an evening place, as even after strong airconditioning the sun was irritating the skin. Will love to go again during an afternoon.'
+ 
+                 algorithm = "logistic_regression_classifier"
+                 you will get the below mentioned result
+
+              {u'error': False,
+               u'noun_phrase': [u'sunday afternoon',
+                               u'international chain',
+                               u'overall experiance',
+                               u'evening place'],
+              u'overall_sentiment': u'0.33',
+              u'result': [{u'customer_type': u'null',
+              u'noun_phrases': [u'sunday afternoon'],
+              u'polarity': {u'name': u'null', u'value': u'0.0'},
+              u'sentence': u'went on a sunday afternoon for brunch with a few friends ..',
+              u'tag': u'null'},
+              {u'customer_type': u'null',
+              u'noun_phrases': [],
+              u'polarity': {u'name': u'super-positive', u'value': u'0.0'},
+              u'sentence': u'the food was good , the service was ok ,',
+              u'tag': u'food'},
+              {u'customer_type': u'null',
+              u'noun_phrases': [u'international chain'],
+              u'polarity': {u'name': u'negative', u'value': u'0.0'},
+              u'sentence': u'but not as good as i expected from an international chain !',
+              u'tag': u'overall'},
+              {u'customer_type': u'null',
+              u'noun_phrases': [u'overall experiance'],
+              u'polarity': {u'name': u'super-positive', u'value': u'0.0'},
+              u'sentence': u'overall experiance was nice the ambiance was awesome ,',
+              u'tag': u'overall'},
+              {u'customer_type': u'null',
+              u'noun_phrases': [u'evening place'],
+              u'polarity': {u'name': u'negative', u'value': u'0.0'},
+              u'sentence': u'but i think it is more of an evening place , as even after strong airconditioning the sun was irritating the skin .',
+              u'tag': u'overall'},
+              {u'customer_type': u'null',
+              u'noun_phrases': [],
+              u'polarity': {u'name': u'super-positive', u'value': u'0.0'},
+              u'sentence': u'will love to go again during an afternoon .',
+              u'tag': u'overall'}],
+              u'success': True}
+
+                    
+ 
+
+***
+***
+     
+### url+ '/update_model'
+Args:
+   
+       'sentence', type=to_unicode_or_bust, required=True, location="form"
+       Explanation:
+                  Any English language text       
+
+       'tag', type=str, required=True, location="form"
+       Explanation:
+               Tag can be any one of the following
+               food
+               service
+               null
+               ambience
+               overlall
+               cost
+
+
+      'review_id', type=str, required=True, location="form"
+      Explanation:
+              Mondodb review_id
+
+Errors:
+      
+      if not os.path.exists(path):
+                        return {"success": False,
+                                        "error": True,
+                                        "messege": "The tag {0} you mentioned doesnt exist in the learning model, ask admin to create this file".format(tag),
+                                        "error_code": 201,
+
+Result:                                }
+      
+       return {"success":  True,
+                        "error": False,
+                        "messege": "The sentence --{0}-- with the changed tag --{1}-- with id --{2} has been uploaded".format(sentence, tag, review_id),
+                        }
+
+
+
+***
+***
+### url + '/update_review_error'
+Args:
+     
+     'sentence', type=to_unicode_or_bust, required=True, location="form"
+      Explanation:
+            English sentence which already has its entry into the mongodb and is a part 
+            of any review.
+
+     'is_error', type=str, required=True, location="form"
+      Explanation:
+             1, as you are about to mark hthis sentence as wrongly classified
+
+     'review_id', type=str, required=True, location="form"
+      Explanation:
+             Mongodb review_id
+
+     'error_messege', type=str, required=True, location="form"
+      Explanation: 
+                 Custom error messege whicle making this sentence as wrongly classified
+Errors:
+      
+      if int(error) != 2:
+                        return {"success": False,
+                                        "error": True,
+                                        "messege": "Only error sentences can be tagged, 'void' is an invalid tag",
+                                        "error_code": 207,
+                                }
+
+       
+     if not os.path.exists(path):
+                        return {"success": False,
+                                        "error": True,
+                                        "messege": "some error occurred",
+                                        "error_code": 210,
+                                }
+
+
+Results:
+        
+       return {"success":  True,
+                        "error": False,
+                        "messege": "The sentence --{0}-- with the error messege --{1}-- with id --{2} has been uploaded".format(sentence, error_messege, review_id),
+                        }
+
+
+***
+***
+### url + '/upload_interjection_error'
+Args:
+     
+     'sentence', type=str,  required=True, location="form"
+
+     'review_id', type=str, required=True, location="form"
+      Explanation:
+             Mongodb review_id
+
+     'error_messege', type=str, required=True, location="form"
+      Explanation: 
+                 Custom error messege whicle making this sentence as wrongly classified
+
+     'is_error', type=str,  required=True, location="form"
+     Explanation:
+            2     
+
+
+Errors:
+       
+      if int(error) != 3:
+                        return {"success": False,
+                                        "error": True,
+                                        "messege": "Only interjection sentences can be tagged, 'void' is an invalid tag",
+                                        "error_code": 207,}
+
+
+        if not os.path.exists(path):
+                        return {"success": False,
+                                        "error": True,
+                                        "messege": "File doenst exists for interjection",
+                                        "error_code": 210,}
+
+Results:
+        
+       return {"success":  True,
+                        "error": False,
+                        "messege": "The sentence --{0}-- with id --{1} has been uploaded for interjection erros".format(sentence, review_id),
+                        }
+
+
+***
+***
+### url + '/update_customer'
+Args:
+    
+     'sentence', type=str,  required=True, location="form"
+    
+     'option_value', type=str,  required=True, location="form"
+      Explanation:
+                 options: 3 for recommended_customer
+                          2 for repeted customer    
+
+     'option_text', type=str,  required=True, location="form"
+      Explanation:
+                options:
+                       recommended_customer
+                       repeated_customer
+      'review_id', type=str,  required=True, location="form"
+      Explanation:
+                 Mongodb review_id 
+
+Errors:
+      
+     if int(option_value) != 2 and int(option_value) != 3:
+                        return {"success": False,
+                                        "error": True,
+                                        "messege": "Only repeated customer or recommended customer sentences can be tagged, 'void' is an invalid tag",
+                                        "error_code": 206,}
+
+                
+       if not os.path.exists(path):
+                        return {"success": False,
+                                        "error": True,
+                                        "messege": "File for {0} doesnt exists in the backend, Please contact your asshole admin".format(option_text),
+                                        "error_code": 205,}
+
+Results:
+        
+       return {"success":  True,
+                        "error": False,
+                        "messege": "The sentence --{0}-- with review id --{1} has been uploaded for {2}".format(sentence, review_id, option_text),
+                        }
+***
+***
+### url +'/eateries_list'
+Args:
+    
+     'city', type=str,  required=True, location="form"
+      Explanation:
+                 The name of the city for which you want to get the eateries list scraped till now
+                 options: 
+                         ncr
+                         mumbai
+                         banglore
+                         kolkata
+                         chennai
+                         pune
+                         hyderabad
+                         ahmedabad
+                         chandigarh
+                         jaipur
+                         guwahati
+                 
+Results:
+        
+      return {"success": False,
+                        "error": True,
+                        "result": result,
+                        }
+
+      Sample Result
+      city = "ncr"
+      Will get you following result
+
+       {u'error': True,
+        u'result': [{u'eatery_id': u'3393',
+              u'eatery_name': u'Parikrama - The Revolving Restaurant'},
+             {u'eatery_id': u'308322', u'eatery_name': u'Hauz Khas Social'},
+             {u'eatery_id': u'305461', u'eatery_name': u'Monkey Bar'},
+             {u'eatery_id': u'3077', u'eatery_name': u'Pirates of Grill'},
+             {u'eatery_id': u'6957', u'eatery_name': u'My Bar Lounge & Restaurant'},
+             {u'eatery_id': u'799', u'eatery_name': u'Gulati'},
+             {u'eatery_id': u'8913', u'eatery_name': u'Pirates of Grill'},
+             {u'eatery_id': u'9941', u'eatery_name': u'Skooter - Hotel Samrat'},
+             {u'eatery_id': u'5030', u'eatery_name': u'Out Of The Box'},
+             {u'eatery_id': u'2760', u'eatery_name': u'Vapour Pub & Brewery'},
+             {u'eatery_id': u'306046', u'eatery_name': u'SodaBottleOpenerWala'},
+             {u'eatery_id': u'4631', u'eatery_name': u'Andhra Bhavan'},
+             {u'eatery_id': u'301665', u'eatery_name': u'White Waters'},
+             {u'eatery_id': u'301605', u'eatery_name': u'Warehouse Cafe'},
+             {u'eatery_id': u'3928', u'eatery_name': u'Freeze Lounge'},
+             {u'eatery_id': u'1188', u'eatery_name': u'Lodi - The Garden Restaurant'},],
+             u'success': False}
+
+
+
+
+***
+***
+### url + '/eateries_details'
+Args:
+     
+     'eatery_id', type=str,  required=True, location="form"
+Results:
+     
+     return {"success": False,
+                        "error": True,
+                        "result": result,
+                        "classified_reviews": is_classified_reviews,
+                        "unclassified_reviews": not_classified_reviews,
+                        }
+          
+
+***
+***
+### url + '/update_review_classification'
+Args:
+     
+     'review_id', type=str,  required=True, location="form"
+Errors:
+      
+      if not reviews.find_one({'review_id': __id}):
+                        return {"success": False,
+                                        "error": True,
+                                        "messege": "The review doesnt exists",
+                        }
+
+       if reviews.find_one({'review_id': __id}).get("is_classified"):
+                        return {"success": False,
+                                        "error": True,
+                                        "messege": "The reviews has already been marked classified, Please refresh the page",
+                        }
+Results:
+        
+       return {"success": True,
+                                        "error": False,
+                                        "messege": "The reviews has been marked classified",
+                        }
+
+***
+***      
+### url + '/get_review_details'
+Args:
+     
+     'review_id', type=str,  required=True, location="form"
+Errors: 
+      
+     if not reviews.find_one({'review_id': __id}):
+                        return {"success": False,
+                                        "error": True,
+                                        "messege": "The review doesnt exists",
+                        }
+
+Results:      
+       
+       return {"success": True,
+                                        "error": False,
+                                        "result": result,
+                        }
+
+***
+***
+### url + '/get_ngrams'
+Args:
+    
+     'sentence', type=str,  required=True, location="form"
+    
+     'grams', type=str,  required=True, location="form"
+Errors:   
+    
+      if not sentence:
+                        return {"success": False,
+                                        "error": True,
+                                        "messege": "The text field cannot be left empty",
+                        }
+
+     if not grams:
+                        return {"success": False,
+                                        "error": True,
+                                        "messege": "The grams field cannot be left empty",
+                        }
+
+      if grams == "void":
+                        return {"success": False,
+                                        "error": True,
+                                        "messege": "The grams field cannot be equals to void",
+                        }
+
+Results:
+       
+        return {"success": True,
+                                        "error": False,
+                                        "result": nltk_ngrams(sentence, grams),
+                        }
+***
+***
+### url + '/upload_noun_phrases'
+Args:
+    
+     'noun_phrase', type=str,  required=True, location="form"
+    
+     'review_id', type=str,  required=True, location="form"
+    
+      'sentence', type=str,  required=True, location="form"
+
+Errors: 
+      
+     if not reviews.find_one({'review_id': review_id}):
+                        return {"success": False,
+                                        "error": True,
+                                        "messege": "The review doesnt exists",
+                        }
+
+       if not noun_phrase:
+                        return {"success": False,
+                                        "error": True,
+                                        "messege": "The Noun phrase field cannot be left empty",
+                        }
+
+Results:       
+        
+       return {"success": True,
+                                        "error": False,
+                                        "messege": "noun phrase --{0}-- for sentence --{1}-- with review id --<{2}>--has been uploaded".format(noun_phrase, sentence, review_id),
+                        }
+
+
+***
+***
+### url + '/get_reviews_count'
+Args:
+     
+    None,
+Errors:
+     
+    None,
+Results:
+       
+      return {"success": True,
+                                "error": True,
+                                "result": result,
+                }
+
+
+***
+***
+### url + '/get_start_date_for_restaurant'
+Args:
+     
+     'eatery_id', type=str,  required=True, location="form"
+Errors: 
+     
+      None
+Results:
+      
+       "success": True,
+                                "error": True,
+                                "result": {"start": "{0}-{1}-{2}".format(start_year, start_month, start_date),
+                                        "end": "{0}-{1}-{2}".format(end_year, end_month, end_date)},
+                }
+
+***
+***
+### url + '/get_word_cloud_with_dates'
+Args:
+    
+    'eatery_id', type=str,  required=True, location="form"
+    
+    'category', type=str,  required=True, location="form"
+    
+    'start_date', type=str,  required=True, location="form"
+    
+    'end_date', type=str,  required=True, location="form"
+Errors:
+     
+    None
+Results:
+      
+     return {"success": True,
+                                "error": True,
+                                "result": result
+            }
+
+
+
+***
+***
+### url + '/get_word_cloud'
+Args:
+    
+    'eatery_id', type=str,  required=True, location="form"
+    
+    'category', type=str,  required=True, location="form"
+    
+    'start_date', type=str,  required=True, location="form"
+    
+    'end_date', type=str,  required=True, location="form"
+Errors:
+    
+     None,
+Results:
+        
+      return {"success": True,
+                                "error": True,
+                                "result": final_result[0:30],
+                }
+
+
+      Sample Result:
+              
+            {"success": True,
+             "error": False,
+              "result": 
+                     [
+                        {'polarity': 1, 'frequency': 1, 'name': u'whole experience'},
+                        {'polarity': 1, 'frequency': 1, 'name': u'whole meal'},
+                        {'polarity': 1, 'frequency': 2, 'name': u'whole wheat bread'}, 
+                        {'polarity': 0, 'frequency': 1, 'name': u'wide spread'},
+                        {'polarity': 1, 'frequency': 2, 'name': u'wonderful ambience'},
+                        {'polarity': 1, 'frequency': 2, 'name': u'wonderful experience'},
+                        {'polarity': 1, 'frequency': 1, 'name': u'wooden type material'},
+                        {'polarity': 1, 'frequency': 2, 'name': u'world'},
+                        {'polarity': 0, 'frequency': 1, 'name': u'worth food'},
+                        {'polarity': 1, 'frequency': 2, 'name': u'worth money'},
+                        {'polarity': 1, 'frequency': 2, 'name': u'worth spending money'},
+                        {'polarity': 0, 'frequency': 1, 'name': u'wrap'},
+                        {'polarity': 1, 'frequency': 1, 'name': u'years old eatery'},
+                        {'polarity': 1, 'frequency': 4, 'name': u'yellow dal'},
+                        {'polarity': 1, 'frequency': 2, 'name': u'\u2022 veg korma char minar'},],
+                     }
+
+***
+***
+### url + '/compare_algorithms'
+Args:
+     
+     'text', type=to_unicode_or_bust, required=True, location="form"
+     
+     'sentences_with_classification', type=to_unicode_or_bust, required=True, location="form", action="append")
+Errors:
+     
+      None,
+Results:
+       
+     return{
+                                "result": result,
+                                "success": True,
+                                "error": False,
+                                }
+
+***
+***
+### url + '/get_all_algorithms_name'
+Args: 
+     
+    None,
+Errors:
+     
+    None,
+Results: 
+     
+       {u'error': False,
+       u'result': [u'logistic_regression_classifier',
+                   u'multinomial_nb_classifier',
+                   u'passive_agressive_classifier',
+                   u'perceptron_classifier',
+                   u'ridge_regression_classifier',
+                   u'svm_classifier',
+                   u'svm_grid_search_classifier'],
+                   u'success': True}
+***
+***
