@@ -874,5 +874,5 @@ api.add_resource(OnePageApi, '/one_page_api')
 
 
 if __name__ == '__main__':
-	#load_classifiers_in_memory()
+        #load_classifiers_in_memory()
 	app.run(port=8000, debug=True)

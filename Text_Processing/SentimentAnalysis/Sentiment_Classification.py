@@ -23,7 +23,7 @@ from MainAlgorithms import InMemoryMainClassifier, timeit, cd, path_parent_dir, 
 class SentimentClassifier(InMemoryMainClassifier):
 	def __init__(self):
 		tag_list = ["super-positive", "positive", "negative", "super-negative", "null"] 
-		InMemoryMainClassifier.__init__(self, tag_list)
+		InMemoryMainClassifier.__init__(self, tag_list, from_files= True)
 		
 	@timeit
 	def loading_all_classifiers_in_memory(self):

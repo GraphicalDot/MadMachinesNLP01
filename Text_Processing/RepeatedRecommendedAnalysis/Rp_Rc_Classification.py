@@ -23,7 +23,7 @@ from MainAlgorithms import InMemoryMainClassifier, timeit, cd, path_parent_dir, 
 class RpRcClassifier(InMemoryMainClassifier):
 	def __init__(self):
 		tag_list = ["repeated_customer", "recommended_customer", "null"]	
-		InMemoryMainClassifier.__init__(self, tag_list)  
+		InMemoryMainClassifier.__init__(self, tag_list, from_files= True)  
 	
 	@timeit
 	def loading_all_classifiers_in_memory(self):
