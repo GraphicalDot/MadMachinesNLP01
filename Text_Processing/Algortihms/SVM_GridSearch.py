@@ -26,6 +26,7 @@ class SVMWithGridSearch:
 		
 		pipeline = Pipeline([ ('vect', CountVectorizer()),
 					('tfidf', TfidfTransformer()),
+                                        ('chi2', SelectKBest(chi2, k="all")),
 					('clf', SGDClassifier()),
 					])
 
@@ -33,16 +34,17 @@ class SVMWithGridSearch:
 		# increase processing time in a combinatorial way
 
 		parameters = { 'vect__max_df': (0.5, 0.75, 1.0),
-				#'vect__max_features': (None, 5000, 10000, 50000),
-				'vect__ngram_range': [(1, 4)],  # unigrams or bigrams
+				'vect__max_features': (None, 500, 1000, 5000),
+				'vect__ngram_range': [(1, 2), (1, 3), (1, 1)],  # unigrams or bigrams
 				#'tfidf__use_idf': (True, False),
 				#'tfidf__norm': ('l1', 'l2'),
-				'clf__alpha': (0.00001, 0.000001),
-				'clf__penalty': ('l2', 'elasticnet'),
+				#'clf__alpha': (0.00001, 0.000001),
+				#'clf__penalty': ('l2', 'elasticnet'),
 				#'clf__n_iter': (10, 50, 80),
 				}
 
-		svm_with_grid_search = GridSearchCV(pipeline, parameters, n_jobs=-1, verbose=1)
+
+		svm_with_grid_search = GridSearchCV(pipeline, parameters, n_jobs=-2, verbose=1)
 		svm_with_grid_search.fit(self.data, self.target)
 
 		return svm_with_grid_search

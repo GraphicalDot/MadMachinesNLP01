@@ -39,8 +39,9 @@ class EateriesList(object):
 			self.number_of_restaurants = number_of_restaurants
 			self.skip = skip
 			self.soup = self.prepare_soup(self.url)
-			self.get_eateries_list = self.eateries_list()
 	
+        def get_eateries_list(self):
+                return self.eateries_list()
 
 
         def prepare_soup(self, url):
@@ -75,7 +76,6 @@ class EateriesList(object):
 			pages_number = 1
 		
 		__pages_url = ["%s?page=%s"%(self.url, page_number) for page_number in range(1, int(pages_number)+1)]
-		print __pages_url
 		return __pages_url
 
 
@@ -98,11 +98,6 @@ class EateriesList(object):
 		self.end_page_number = self.number_of_restaurants/30 
 
 		pages = self.pagination_links()
-                print pages
-
-
-                print self.start_page_number, self.end_page_number
-                print  pages[self.start_page_number: self.start_page_number + self.end_page_number]
 
 
 		for page in pages[self.start_page_number: self.start_page_number + self.end_page_number]:
@@ -137,7 +132,7 @@ class EateriesList(object):
                 
                 #Subarea like gk, khan market
                 try:
-                    eatery["eatery_sub_area"] = "-".join(self.url.split("/")[-1].split("-")[0: -2])
+                    eatery["eatery_sub_area"] = self.url.split("/")[-2] 
                     
                 except :
                     
@@ -152,8 +147,8 @@ class EateriesList(object):
 		except Exception:
 			eatery["eatery_address"] = None
 
-		eatery["eatery_cuisine"] = eatery_soup.find("div", {"class": "res-snippet-small-cuisine truncate"}).text
-		eatery["eatery_cost"] = eatery_soup.find("div", {"class": "ln24"}).text
+                eatery["eatery_cuisine"] = eatery_soup.find("div", {"class": "res-snippet-small-cuisine truncate search-page-text"}).text 
+                eatery["eatery_cost"] = eatery_soup.find("div", {"class": "search-page-text"}).text  
 		
 		soup = eatery_soup.find("div", {"class": "right"})
 		try:
@@ -445,7 +440,7 @@ class EateryData(object):
 
 	def eatery_photos(self):
 		try:
-			self.eatery["eatery_photos"] = (True, False)[self.soup.find("div", {"class": "res-photo-thumbnails"}).findAll("a") == None]
+                        self.eatery["eatery_photos"] = self.soup.find("div", {"id": "ph_count"}).text 
 		except AttributeError:
 			self.eatery["eatery_photos"] = False
 		return
@@ -543,7 +538,7 @@ def scrape_links(url, number_of_restaurants, skip, is_eatery):
 	instance = EateriesList(url, int(number_of_restaurants), int(skip), is_eatery)
 
 
-	eateries_list = instance.get_eateries_list
+	eateries_list = instance.get_eateries_list()
 	
 	print "\n {color} Printing Eateries list \n".format(color=bcolors.OKBLUE)
 	for eatery in eateries_list:
@@ -592,12 +587,14 @@ def eatery_specific(eatery_dict):
 
 	#writer.writerow(eatery_row)
 	DBInsert.db_insert_eateries(eatery_modified)
-	"""
+        
+        """
         if eatery_collection.find_one({"eatery_id": eatery_dict.get("eatery_id")}):
 		print "\n {color} The Eatery with the url --<{url} has already been scraped>\n".format(color=bcolors.WARNING, url=eatery_dict.get("eatery_url"))
 		return
-	"""	
-	reviews = instance.eatery.get("reviews")
+	"""
+        
+        reviews = instance.eatery.get("reviews")
 	
         
         DBInsert.db_insert_reviews(reviews)
