@@ -1,6 +1,18 @@
 #!/usr/bin/env python
 #-*- coding: utf-8 -*-
-            
+
+"""
+Author:Kaali
+Dated: 17 January, 2015
+Day: Saturday
+Description: This file has been written for the android developer, This will be used by minimum viable product implementation
+            on android 
+
+Comment: None
+"""
+
+
+
 import copy
 import re
 import csv
@@ -38,13 +50,20 @@ import numpy
 from multiprocessing import Pool
 from static_data import static_data
 from api_helpers import merging_similar_elements
-
-
+import base64
+import requests
+from PIL import Image
 
 connection = pymongo.Connection()
 db = connection.modified_canworks
 eateries = db.eatery
 reviews = db.review
+
+#This is for android apps, may not be required later
+android_db = connection.android_app
+android_users = android_db.users
+users_pic = android_db.pics
+#####
 
 
 app = Flask(__name__)
@@ -75,11 +94,44 @@ def to_unicode_or_bust(obj, encoding='utf-8'):
 
 
 
+#fb_login
+fb_login_parser = reqparse.RequestParser()
+fb_login_parser.add_argument("fb_id", type=str, required=True, location="form")
+fb_login_parser.add_argument("email", type=str, required=True, location="form")
+fb_login_parser.add_argument("user_name", type=str, required=True, location="form")
+fb_login_parser.add_argument("age", type=str, required=False, location="form")
+fb_login_parser.add_argument("user_friends", type=str, required=False, location="form", action="append")
+
+
+
+#post_comment
+post_comment_parser = reqparse.RequestParser()
+post_comment_parser.add_argument("fb_id", type=str, required=True, location="form")
+post_comment_parser.add_argument("comment", type=str, required=True, location="form")
+
+
+#suggest_name
+suggest_name_parser = reqparse.RequestParser()
+suggest_name_parser.add_argument("fb_id", type=str, required=True, location="form")
+suggest_name_parser.add_argument("name_suggestion", type=str, required=True, location="form")
+
+
+#post_picture
+post_pic_parser = reqparse.RequestParser()
+post_pic_parser.add_argument("fb_id", type=str, required=True, location="form")
+post_pic_parser.add_argument("image_name", type=str, required=True, location="form")
+post_pic_parser.add_argument("image_string", type=str, required=True, location="form")
+
+
+#get_pics
+get_pics_parser = reqparse.RequestParser()
+get_pics_parser.add_argument("dish_name", type=str, required=True, location="args")
 
 ##GetWordCloud
 get_word_cloud_parser = reqparse.RequestParser()
 get_word_cloud_parser.add_argument('eatery_id', type=str,  required=True, location="form")
 get_word_cloud_parser.add_argument('category', type=str,  required=True, location="form")
+
 
 
 
@@ -116,12 +168,154 @@ def cors(func, allow_origin=None, allow_headers=None, max_age=None):
 	return wrapper
 
 
+class FBLogin(restful.Resource):
+	@cors
+	def post(self):
+                """
+                If the length of the new user_friends pposted ont he api uis greater than the length
+                of the user_friends present in the database,
+                then the list of user_friends shall be updated in the database
+
+                """
+
+		args = fb_login_parser.parse_args()
+
+                if not android_users.find_one({"fb_id": args["fb_id"]}):
+                        android_users.update({"fb_id": args["fb_id"]}, {"$set": {
+                                                "user_name": args["user_name"],
+                                                "email": args["email"],
+                                                "user_friends": args["user_friends"],}} , upsert=True) 
+                
+                        return {"error": False,
+                                "success": True,
+                                "error_code": 0,
+                                "messege": "The user with fb_id {0} and name {1} has been inserted correctly".
+                                                    format(args["fb_id"], args["user_name"] ),}
+                
+                
+                if android_users.find_one({"fb_id": args["fb_id"]}):
+                        if len(android_users.find_one({"fb_id": args["fb_id"]}).get("user_friends")) < len(args["user_friends"]):
+                                android_users.update({"fb_id": args["fb_id"]}, {"$set": {
+                                                "user_friends": args["user_friends"],}} , upsert=False) 
+                                
+                    
+                                return {"error": False,
+                                        "success": True,
+                                        "error_code": 0,
+                                        "messege": "The user with fb_id {0} and name {1} has been updated with new user_friends".
+                                                    format(args["fb_id"], args["user_name"] ),}
+                
+                        return {"error": True,
+                                "success": False,
+                                "error_code": 0, 
+                                "messege": "The user with fb_id {0} and name {1} already exists".
+                                                    format(args["fb_id"], args["user_name"] ),}
+                
+                return
+
+
+class PostComment(restful.Resource):
+	@cors
+	def post(self):
+                args = post_comment_parser.parse_args()
+                if not android_users.find_one({"fb_id": args["fb_id"]}):
+                        return {"error": True,
+                                "success": False,
+                                "messege": "Please register the user first before posting the comment",}
+                
+                android_users.update({"fb_id": args["fb_id"]}, {"$push": {
+                                                "comments": args["comment"],}}) 
+            
+                return {"error": False,
+                        "success": True,
+                        "messege": "The comment has been posted successfully",}
+                        
+
+
+
+class SuggestName(restful.Resource):
+	@cors
+	def post(self):
+                args = suggest_name_parser.parse_args()
+                if not android_users.find_one({"fb_id": args["fb_id"]}):
+                        return {"error": True,
+                                "success": False,
+                                "messege": "Please register the user first before posting the comment",}
+                
+                android_users.update({"fb_id": args["fb_id"]}, {"$push": {
+                                                "name_suggestion": args["name_suggestion"],}}) 
+            
+                return {"error": False,
+                        "success": True,
+                        "messege": "The suggestion for the name has been taken successfully",}
+
+
+
+            
+class PostPicture(restful.Resource):
+	@cors
+	def post(self):
+                args = post_pic_parser.parse_args()
+                if not android_users.find_one({"fb_id": args["fb_id"]}):
+                        return {"error": True,
+                                "success": False,
+                                "messege": "Please register the user first before posting the image",}
+
+                try:
+                        base64.decodestring(args["image_string"])
+
+                except Exception as e:
+                        return {"error": True,
+                                "success": False,
+                                "messege": "The pic cannot be posted because of the error {0}".format(e),}
+
+                
+                #md5 checksum of the base64 encoded image, to form its unique id
+                image_id = hashlib.md5(args["image_string"]).hexdigest() 
+
+
+                #to check whether the same user is going to upload the same pic again
+                if users_pic.find_one({"fb_id": args["fb_id"], "image_id": image_id }):
+                        return {"error": True,
+                                "success": False,
+                                "messege": "This pic for this user has already been posted",}
+                        
+
+
+                android_users.update({"fb_id": args["fb_id"]}, {"$push": {
+                                            "pics": image_id,}}) 
+                
+                users_pic.insert({"image_id": image_id, "image_name": args["image_name"], "fb_id": args["fb_id"], 
+                                "image_base64_encoded_string": args["image_string"]})
+
+
+                return {"error": False,
+                        "success": True,
+                        "messege": "The pic has been posted successfully",}
+
+
+                #do we have image name options to be selected from
+            
+class GetPics(restful.Resource):
+	@cors
+	def get(self):
+                args = get_pics_parser.parse_args()
+                args["dish_name"]
+                return {"error": False,
+                        "success": True,
+                        "result": result,}
+
+
+
+
+
+
 
 
 class EateriesList(restful.Resource):
 	@cors
 	def get(self):
-		result = list(eateries.find({"area_or_city": "ncr" }, fields= {"eatery_id": True, "_id": False, "eatery_name": True}))
+                result = list(eateries.find({"eatery_area_or_city": "ncr"}, fields= {"eatery_id": True, "_id": False, "eatery_name": True}).limit(200).sort("eatery_total_reviews", -1))
 		
                 return {"success": False,
 			"error": True,
@@ -259,6 +453,11 @@ class GetWordCloud(restful.Resource):
 
 api.add_resource(EateriesList, '/eateries_list')
 api.add_resource(GetWordCloud, '/get_word_cloud')
+api.add_resource(FBLogin, '/fb_login')
+api.add_resource(PostComment, '/post_comment')
+api.add_resource(SuggestName, '/name_suggestion')
+api.add_resource(PostPicture, '/post_pic')
+api.add_resource(GetPics, '/get_pics')
 
 
 if __name__ == '__main__':

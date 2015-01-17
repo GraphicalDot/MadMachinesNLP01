@@ -200,6 +200,7 @@ class EateryData(object):
 		self.retry_eatery_cuisine()
 		
 		
+                self.eatery_total_reviews()
 		self.eatery_highlights()
 		self.eatery_popular_reviews()
 		self.eatery_opening_hours()
@@ -372,7 +373,24 @@ class EateryData(object):
 		soup = BeautifulSoup.BeautifulSoup(data)
 		return soup
 
-	def eatery_establishment_type(self):
+	
+        def eatery_total_reviews(self):
+                """
+                This method tries to find the total reviews of the eatery
+
+                """
+                try:
+                        variable = self.soup.find("a", {"class": "default-section-title everyone empty"}).findNext().text
+			self.eatery["eatery_total_reviews"] = variable
+                except Exception:
+			self.eatery["eatery_total_reviews"] = None
+
+                return
+                        
+
+        
+        
+        def eatery_establishment_type(self):
 		try:
                         variable = self.soup.find("div", {"class": "pb5 res-info-cuisines clearfix"}).text
 			self.eatery["eatery_establishment_type"] = variable
