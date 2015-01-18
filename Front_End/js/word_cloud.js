@@ -206,7 +206,10 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 
 		//This is the function wchich returns the maximum radius of the bubbles 
 		function drawNodes(nodes){
-				
+			function convert_polarity(polarity){
+				return polarity == 1? "positive":"negative" 
+
+			};
 		
 			var RScale = d3.scale.linear()
 				.domain(d3.extent(nodes, function(d) { return d.r; }))
@@ -295,8 +298,8 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 			//.attr("fill", function(d){return d.polarity ? "#66CCFF" : "#FF0033" }) 
 			//.style("stroke", function(d, i) { return d3.rgb(fill(i & 3)).darker(10); })
 			//.style("stroke", function(d, i) { return "#e377c2" })
-			.style("stroke", function(d, i) { return d.polarity == 1? "blue":"red" })
-			.style('stroke-width', '10px')
+			//.style("stroke", function(d, i) { return d.polarity == 1? "blue":"red" })
+			//.style('stroke-width', '10px')
 			.on("mousedown", function() { d3.event.stopPropagation(); })
 
 
@@ -304,7 +307,7 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 					html: true, 
 					title: function(){
 					//return  "<br>" + 'Name: ' +'  ' +'<span>' + this.__data__.name + '</span>' +"<br>" + 'Frequency: ' +  '<span>' + this.__data__.r + '</span>';}
-					return   "<br>" + 'Frequency: ' +  '<span>' + this.__data__.r + '</span>';}
+					return   '<span>' + convert_polarity(this.__data__.polarity) + '</span>' + "<br>" + 'Frequency: ' +  '<span>' + this.__data__.r + '</span>';}
 				      });
 
 
