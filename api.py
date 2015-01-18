@@ -97,9 +97,11 @@ def to_unicode_or_bust(obj, encoding='utf-8'):
 #fb_login
 fb_login_parser = reqparse.RequestParser()
 fb_login_parser.add_argument("fb_id", type=str, required=True, location="form")
-fb_login_parser.add_argument("email", type=str, required=True, location="form")
+fb_login_parser.add_argument("email", type=str, required=False, location="form")
+fb_login_parser.add_argument("gender", type=str, required=True, location="form")
 fb_login_parser.add_argument("user_name", type=str, required=True, location="form")
-fb_login_parser.add_argument("age", type=str, required=False, location="form")
+fb_login_parser.add_argument("date_of_birth", type=str, required=True, location="form")
+fb_login_parser.add_argument("location", type=str, required=True, location="form")
 fb_login_parser.add_argument("user_friends", type=str, required=False, location="form", action="append")
 
 
@@ -179,11 +181,14 @@ class FBLogin(restful.Resource):
                 """
 
 		args = fb_login_parser.parse_args()
-
+                print args
                 if not android_users.find_one({"fb_id": args["fb_id"]}):
                         android_users.update({"fb_id": args["fb_id"]}, {"$set": {
                                                 "user_name": args["user_name"],
                                                 "email": args["email"],
+                                                "gender": args["gender"], 
+                                                "date_of_birth": args["date_of_birth"],
+                                                "location": args["location"],
                                                 "user_friends": args["user_friends"],}} , upsert=True) 
                 
                         return {"error": False,
@@ -312,13 +317,27 @@ class GetPics(restful.Resource):
 
 
 
+class LimitedEateriesList(restful.Resource):
+	@cors
+	def get(self):
+                """
+                This gives only the limited eatery list like the top on the basis of the reviews count
+                """
+                result = list(eateries.find({"eatery_area_or_city": "ncr"}, fields= {"eatery_id": True, "_id": False, "eatery_name": True}).limit(15).sort("eatery_total_reviews", -1))
+		
+                return {"success": True,
+			"error": False,
+			"result": result,
+			}
+
+                
 class EateriesList(restful.Resource):
 	@cors
 	def get(self):
                 result = list(eateries.find({"eatery_area_or_city": "ncr"}, fields= {"eatery_id": True, "_id": False, "eatery_name": True}).limit(200).sort("eatery_total_reviews", -1))
 		
-                return {"success": False,
-			"error": True,
+                return {"success": True,
+			"error": False,
 			"result": result,
 			}
 
@@ -330,13 +349,13 @@ class GetWordCloud(restful.Resource):
 	@cors
 	@timeit
         def post(self):
-		start = time.time()
-
-
 		args = get_word_cloud_parser.parse_args()
-		__format = '%Y-%m-%d'
+		print args
+                start = time.time()
+
+
 		eatery_id = args["eatery_id"]
-		category = args["category"]
+		category = args["category"].lower()
 		
                 if not reviews.find({"eatery_id": eatery_id}):
                         return {"error": True,
@@ -442,16 +461,17 @@ class GetWordCloud(restful.Resource):
                 """
                 final_result = sorted(sorted_result, reverse=True, key=lambda x: x.get("frequency"))
 
-		
+	        print final_result	
                 return {"success": True,
-				"error": True,
-				"result": final_result[0:15],
+				"error": False,
+				"result": final_result[0:20],
 		}
 	
 
 
 
 api.add_resource(EateriesList, '/eateries_list')
+api.add_resource(LimitedEateriesList, '/limited_eateries_list')
 api.add_resource(GetWordCloud, '/get_word_cloud')
 api.add_resource(FBLogin, '/fb_login')
 api.add_resource(PostComment, '/post_comment')

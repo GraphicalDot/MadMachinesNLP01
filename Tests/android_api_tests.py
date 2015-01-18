@@ -41,11 +41,14 @@ class api_tests():
                 """
                 This doesnt test anything but just be used to insert test user
                 """
-                r = requests.post(self.url,
-                            data={"fb_id": "442424",
-                                "email": "saurav.verma@outlook.com",
-                                "user_name": "saurav verma",
-                                "user_friends": ["112", "113", "114"]})
+                r = requests.post('http://localhost:8000/fb_login', 
+                            data={"fb_id": "442424", 
+                                "email": None, 
+                                "user_name": "kaali", 
+                                "user_friends": "hey", 
+                                "location": "delhi", 
+                                "date_of_birth": "20-june-1986", 
+                                "gender": "male"})
                 return 
 
 
@@ -53,12 +56,15 @@ class api_tests():
 
         def post_user(self):
                 TEST = "Post new user"
-                r = requests.post(self.url,
-                            data={"fb_id": "442424",
-                                "email": "saurav.verma@outlook.com",
-                                "user_name": "saurav verma",
-                                "user_friends": ["112", "113", "114"]})
-
+                r = requests.post('http://localhost:8000/fb_login', 
+                            data={"fb_id": "442424", 
+                                "email": None, 
+                                "user_name": "kaali", 
+                                "user_friends": "hey", 
+                                "location": "delhi", 
+                                "date_of_birth": "20-june-1986", 
+                                "gender": "male"})
+                
                 print ["Test Failed {0}\n".format(TEST), "Test Passed {0}\n".format(TEST)][r.json()["success"] == True]
                 return 
 
