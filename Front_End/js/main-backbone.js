@@ -23,6 +23,7 @@ App.RootView = Backbone.View.extend({
 			else{
 				bootbox.alert(data.error)	
 			}
+		//	self.$(".append_eatery").append('<hr><hr><tr><td></td></tr><tr><td><b>Select Sentiment</b></td></tr><tr><td><label class="checkbox"><input type="checkbox" value="1" id="positive" class="sentiment">positive</label></td></tr><tr><td><label class="checkbox"><input type="checkbox" value="0" id="negative" class="sentiment">negative</label></td></tr>')	
 		})
 		
 		jqhr.fail(function(data){
@@ -43,8 +44,15 @@ App.RootView = Backbone.View.extend({
 	events: {
 	
 		"click #seeWordCloud": "seeWordCloud",
-		"change .oo": "ClickEatery",
+		"change .change_eatery_id": "ClickEatery",
+		//"change .sentiment": "ChaneSentiment",
 		},
+
+	ChaneSentiment: function(event){
+		event.preventDefault();
+		var id = $(event.currentTarget).attr("id")
+		console.log("id");
+	},
 
 
 	ClickEatery: function(event){
@@ -62,6 +70,7 @@ App.RootView = Backbone.View.extend({
 		
 		console.log(id)
 		if ($(":checkbox:checked").length == 1){
+			//$(".sentiment").prop("checked", true)
 			this.seeWordCloud(id);
 		};
 	},

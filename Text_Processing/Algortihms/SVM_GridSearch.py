@@ -32,14 +32,20 @@ class SVMWithGridSearch:
 
 		# uncommenting more parameters will give better exploring power but will
 		# increase processing time in a combinatorial way
+                """
+                gives around 50% for [(2, 3)]
+                66% for [(1, 3)]
+		68% for 'vect__ngram_range': [(1, 1), (1, 4), ],
+
+                """
 
 		parameters = { 'vect__max_df': (0.5, 0.75, 1.0),
-				'vect__max_features': (None, 500, 1000, 5000),
-				'vect__ngram_range': [(1, 2), (1, 3), (1, 1)],  # unigrams or bigrams
+				'vect__max_features': (None, 500, 1000),
+				'vect__ngram_range': [(1, 1), (1, 2), (1, 3), ],  # unigrams or bigrams
 				#'tfidf__use_idf': (True, False),
 				#'tfidf__norm': ('l1', 'l2'),
 				#'clf__alpha': (0.00001, 0.000001),
-				#'clf__penalty': ('l2', 'elasticnet'),
+				'clf__penalty': ('l1', 'elasticnet'),
 				#'clf__n_iter': (10, 50, 80),
 				}
 

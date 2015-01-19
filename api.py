@@ -461,7 +461,7 @@ class GetWordCloud(restful.Resource):
                 """
                 final_result = sorted(sorted_result, reverse=True, key=lambda x: x.get("frequency"))
 
-	        print final_result	
+                print   [(e, "\n")  for e in final_result[0: 20]]	
                 return {"success": True,
 				"error": False,
 				"result": final_result[0:20],

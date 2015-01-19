@@ -46,7 +46,8 @@ App.SeeWordCloudDateSelectionView = Backbone.View.extend({
 		this.$el.addClass("dvLoading");
 	
 		this.loading_bootbox()
-
+		window.eatery_id = $(":checkbox:checked").attr("id");
+		window.word_cloud_category =  $("#wordCloudCategory").find("option:selected").val();
 	
 	
 		var jqhr = $.post(window.get_word_cloud, {"eatery_id": $(":checkbox:checked").attr("id"),
