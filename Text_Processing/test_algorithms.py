@@ -14,6 +14,20 @@ http://stackoverflow.com/questions/23815938/recursive-feature-elimination-and-gr
 http://stackoverflow.com/questions/14866228/combining-grid-search-and-cross-validation-in-scikit-learn?rq=1
 http://stackoverflow.com/questions/15254243/different-accuracy-for-libsvm-and-scikit-learn?rq=1
 
+Some good refrences to get a good background of the Natrual language processing algorithms
+
+http://www.quora.com/What-are-the-advantages-of-different-classification-algorithms
+
+
+difference between l1, l2 and elasticnet
+http://www.quora.com/What-is-the-difference-between-L1-and-L2-regularization
+Two popular regularization methods are L1 and L2. If you're familiar with Bayesian statistics: 
+L1 usually corresponds to setting a Laplacean prior on the regression coefficients - and picking a maximum a posteriori hypothesis. 
+L2 similarly corresponds to Gaussian prior. As one moves away from zero, the probability for such a coefficient grows progressively smaller.
+
+Feature unions 
+http://zacstewart.com/2014/08/05/pipelines-of-featureunions-of-pipelines.html
+
 """
 
 import pymongo
@@ -78,8 +92,51 @@ def generate_test_data_2():
         __ = [(element[2].lower(), element[3]) for element in test_data[1:] if element[3] != "mix"]
         return __
 
+
+def generate_test_data_3():
+        __test_data = list()
+        wb = openpyxl.load_workbook("/home/k/Programs/python/canworks/new_test_data.xlsx")
+        sh = wb.get_active_sheet()
+        test_data = [[cell.value for cell in r] for r in sh.rows]
+        for element in test_data[1:]:
+                if element[3] != "mix":
+                        try:
+                            __test_data.append((element[2].lower(), element[3]))
+                        except Exception as e:
+                            print e
+                            pass
+        return __test_data
+
+
+def generate_test_data_sentiment():
+        __test_data = list()
+        wb = openpyxl.load_workbook("/home/k/Programs/python/canworks/new_test_data.xlsx")
+        sh = wb.get_active_sheet()
+        test_data = [[cell.value for cell in r] for r in sh.rows]
+        for element in test_data[1:]:
+                if element[4]:
+                        try:
+                                __test_data.append((element[2].lower(), element[4]))
+                        except Exception as e:
+                            print e
+                            pass
+        return __test_data
+
+
+
 def return_tags_training_set():
         tag_list = ["food", "service", "ambience", "cost", "null", "overall",]
+        from_db_data_lambda = lambda tag:  np.array([(sent.lower(), tag) for sent in list(itertools.chain(*[post.get(tag) for post in reviews.find() if post.get(tag)]))])
+        db_whole_set = list(itertools.chain(*map(from_db_data_lambda, tag_list)))
+        [random.shuffle(db_whole_set) for i in range(0, 10)]
+        training_sentences, training_target_tags = zip(*db_whole_set)
+        return (training_sentences, training_target_tags)
+
+
+
+def return_sentiment_training_set():
+        
+        tag_list = ["positive", "negative", "super positive", "super negative", "neutral",]
         from_db_data_lambda = lambda tag:  np.array([(sent.lower(), tag) for sent in list(itertools.chain(*[post.get(tag) for post in reviews.find() if post.get(tag)]))])
         db_whole_set = list(itertools.chain(*map(from_db_data_lambda, tag_list)))
         [random.shuffle(db_whole_set) for i in range(0, 10)]
@@ -96,40 +153,87 @@ def with_svm_countvectorizer():
             ('chi2', SelectKBest(chi2, k=900)),
             ('clf', SGDClassifier(loss='hinge', penalty='elasticnet', alpha=1e-3, n_iter=5)),])   
 
+        tuned_parameters = {"clf__alpha": 1e-05,
+                            "clf__n_iter": 50,
+                            "clf__penalty": 'l1',
+                            "tfidf__norm": 'l1',
+                            "tfidf__use_idf": False,
+                            "vect__max_df": 0.5,
+                            "vect__max_features": None,
+                            "vect__ngram_range": (1, 1),
+                            }
 
         classifier.fit(TAGS_TRAINING_SENTENCES, TAG_TARGETS)
         print "Accuracy with 200 samples with SVM %.3f"%(classifier.score(TEST_SENTENCES, TEST_TARGET))
 
-       
+
 
 def sgd_with_grid_search():
-        pipeline = Pipeline([ ('vect', CountVectorizer()),
+        """
+        Stochastic gradient descent
+        """
+        def search_params():
+                """
+                This function makes a gris search for suitable parametrs
+                From the previous grid search these are the following tuned params which we got
+                tuned_parameters = {"clf__n_iter": 80, 
+                            clf__penalty: 'l1',
+                            tfidf__norm: 'l1',
+                            tfidf__use_idf: True,
+                            vect__analyzer: 'char_wb',
+                            vect__max_df: 1.0,
+                            vect__max_features: None,
+                            vect__ngram_range: (1, 4),
+                            }
+                """
+    
+    
+                pipeline = Pipeline([('vect', CountVectorizer()),
                                         ('tfidf', TfidfTransformer()),
                                         ('chi2', SelectKBest(chi2, k="all")),
                                         ('clf', SGDClassifier()),
                                         ])
 
-        parameters = { 'vect__max_df': (0.5, 0.75, 1.0),
-                                'vect__max_features': (None, 500, 1000),
-                                'vect__ngram_range': [(1, 1), (1,4)],  # unigrams or bigrams
+
+                parameters = { 'vect__max_df': (0.5, 0.75, 1.0),
+                                'vect__max_features': (None, 50),
+                                'vect__ngram_range': [(1,4)],  # unigrams or bigrams
+                                'vect__analyzer': ['word', 'char', 'char_wb'],
                                 'tfidf__use_idf': (True, False),
                                 'tfidf__norm': ('l1', 'l2'),
                                 'clf__alpha': (0.00001, 0.000001),
                                 'clf__penalty': ('l1', 'elasticnet'),
                                 'clf__n_iter': (10, 50, 80),
                                 }
+
+                classifier= GridSearchCV(pipeline, parameters, verbose=1)
         
-        classifier= GridSearchCV(pipeline, parameters, verbose=1)
-
-
-
+                print "Best score: %0.3f" % classifier.best_score_
+                print "Best parameters set:"
+                best_parameters = classifier.best_estimator_.get_params()
+                for param_name in sorted(parameters.keys()):
+                        print "\t%s: %r" % (param_name, best_parameters[param_name])
+                return
+        
+        
+        classifier = Pipeline([('vect', CountVectorizer(max_df = 1.0, max_features =None, ngram_range=(1, 5), analyzer='char_wb')),
+                                        ('tfidf', TfidfTransformer(use_idf=True, norm="l1")),
+                                        ('chi2', SelectKBest(chi2, k="all")),
+                                        ('clf', SGDClassifier(n_iter=80, penalty="l1", alpha=0.000001)),
+                                        ])
+        
         classifier.fit(TAGS_TRAINING_SENTENCES, TAG_TARGETS)
-        print "Accuracy with 200 samples with LDA %.3f"%(classifier.score(TEST_SENTENCES, TEST_TARGET))
-        print "Best score: %0.3f" % classifier.best_score_
-        print "Best parameters set:"
-        best_parameters = classifier.best_estimator_.get_params()
-        for param_name in sorted(parameters.keys()):
-                print "\t%s: %r" % (param_name, best_parameters[param_name])
+        print "Accuracy with 200 samples with sgd grid search %.3f"%(classifier.score(TEST_SENTENCES, TEST_TARGET))
+        print "Accuracy with 500 samples with sgd grid search %.3f"%(classifier.score(TEST_SENTENCES_500, TEST_TARGET_500))
+        
+        classifier = Pipeline([('vect', CountVectorizer(max_df = 1.0, max_features =None, ngram_range=(1, 5), analyzer='char_wb')),
+                                        ('tfidf', TfidfTransformer(use_idf=True, norm="l1")),
+                                        ('chi2', SelectKBest(chi2, k="all")),
+                                        ('clf', SGDClassifier(n_iter=80, penalty="l1", alpha=0.000001)),
+                                        ])
+        classifier.fit(SENTIMENT_TRAINING_SENTENCES, SENTIMENT_TARGETS)
+        print "Accuracy with 200 samples with sgd grid search %.3f"%(classifier.score(SENTIMENT_TEST_SENTENCES, SENTIMENT_TEST_TARGET))
+
 
 
 
@@ -157,42 +261,66 @@ def with_svm():
         
 
 
-def with_lda():
+def with_support_vector_machines():
+        """
+        C :
+                The C parameter tells the SVM optimization how much you want to avoid misclassifying each training example. 
+                For large values of C, the optimization will choose a smaller-margin hyperplane if that hyperplane does a better job 
+                of getting all the training points classified correctly. Conversely, a very small value of C will cause the optimizer 
+                to look for a larger-margin separating hyperplane, even if that hyperplane misclassifies more points. For very tiny values of C, 
+                you should get misclassified examples, often even if your training data is linearly separable.
+
+        """
                                         
-        pipeline = Pipeline([ ('vect', CountVectorizer()),
+        pipeline = Pipeline([ ('vect', CountVectorizer(ngram_range=(1, 4), analyzer="char_wb")),
                                     ('tfidf', TfidfTransformer()),
-                                        #('chi2', SelectKBest(chi2, k="all")),
-                                        ('clf', SVC()),
-                                        #('clf', SGDClassifier()),
+                                        ('chi2', SelectKBest(chi2, k="all")),
+                                        ('clf', SVC(C=1, kernel="linear", gamma=.0001)),
                                         ])
 
-
-        parameters = {'clf__kernel': ['linear', 'rbf',], 
-                            'clf__gamma': [1e-3, 1e-4],
-                            'clf__C': [1, 10, 100, 1000]
+        """
+        parameters = {
+                        'vect__ngram_range': [(1, 1), (1, 2), (1, 3), (1,4)],  # unigrams or bigrams
+                        'vect__analyzer': ['word', 'char', 'char_wb'],
+                        'clf__kernel': ['linear', 'rbf',], 
+                        'clf__gamma': [1e-3, 1e-4],
+                        'clf__C': [1, 10, 100, 1000]
                                  }
 
 
 
         classifier= GridSearchCV(pipeline, parameters, verbose=1)
+        """
 
 
-
-        classifier.fit(TAGS_TRAINING_SENTENCES, TAG_TARGETS)
-        print "Accuracy with 200 samples with LDA %.3f"%(classifier.score(TEST_SENTENCES, TEST_TARGET))
+        pipeline = Pipeline([ ('vect', CountVectorizer(ngram_range=(1, 6), analyzer="char_wb")),
+                                    ('tfidf', TfidfTransformer()),
+                                        ('chi2', SelectKBest(chi2, k="all")),
+                                        ('clf', SVC(C=1, kernel="linear", gamma=.0001)),
+                                        ])
+        pipeline.fit(TAGS_TRAINING_SENTENCES, TAG_TARGETS)
+        print "Accuracy with 200 samples with SVM %.3f"%(pipeline.score(TEST_SENTENCES, TEST_TARGET))
+        print "Accuracy with 500 samples with svm search %.3f"%(pipeline.score(TEST_SENTENCES_500, TEST_TARGET_500))
+        
+        """
         print "Best score: %0.3f" % classifier.best_score_
         print "Best parameters set:"
         best_parameters = classifier.best_estimator_.get_params()
         for param_name in sorted(parameters.keys()):
                 print "\t%s: %r" % (param_name, best_parameters[param_name])
 
-
+        """
 
 if __name__ == "__main__":
         TAGS_TRAINING_SENTENCES, TAG_TARGETS = return_tags_training_set()
+        SENTIMENT_TRAINING_SENTENCES, SENTIMENT_TARGETS = return_sentiment_training_set()
+
         TEST_SENTENCES, TEST_TARGET = zip(*generate_test_data())
+        TEST_SENTENCES_500, TEST_TARGET_500 = zip(*generate_test_data_3())
+
+        SENTIMENT_TEST_SENTENCES, SENTIMENT_TEST_TARGET = zip(*generate_test_data_sentiment())
         #with_svm_countvectorizer()
         #:with_svm()
         #with_lda()
-        sgd_with_grid_search()
-
+        ##sgd_with_grid_search()
+        with_support_vector_machines()
