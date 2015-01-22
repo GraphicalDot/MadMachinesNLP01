@@ -129,11 +129,19 @@ post_pic_parser.add_argument("image_string", type=str, required=True, location="
 get_pics_parser = reqparse.RequestParser()
 get_pics_parser.add_argument("dish_name", type=str, required=True, location="args")
 
+
+##GetStartDateForRestaurant
+get_start_date_for_restaurant_parser = reqparse.RequestParser()
+get_start_date_for_restaurant_parser.add_argument('eatery_id', type=str,  required=True, location="form")
+word_cloud_with_dates_parser = reqparse.RequestParser() 
+
+
 ##GetWordCloud
 get_word_cloud_parser = reqparse.RequestParser()
 get_word_cloud_parser.add_argument('eatery_id', type=str,  required=True, location="form")
 get_word_cloud_parser.add_argument('category', type=str,  required=True, location="form")
-
+get_word_cloud_parser.add_argument('start_date', type=str,  required=True, location="form")
+get_word_cloud_parser.add_argument('end_date', type=str,  required=True, location="form") 
 
 
 
@@ -343,6 +351,28 @@ class EateriesList(restful.Resource):
 
 
 
+class GetStartDateForRestaurant(restful.Resource):
+	@cors
+	def post(self):
+		args = get_start_date_for_restaurant_parser.parse_args()
+		eatery_id = args["eatery_id"]
+		sorted_list_by_epoch = list(reviews.find({"eatery_id" :eatery_id}).sort("converted_epoch", 1))
+		start_date = sorted_list_by_epoch[0].get('readable_review_day')
+		start_month = sorted_list_by_epoch[0].get('readable_review_month')
+		start_year = sorted_list_by_epoch[0].get('readable_review_year')
+		
+		end_date = sorted_list_by_epoch[-1].get('readable_review_day')
+		end_month = sorted_list_by_epoch[-1].get('readable_review_month')
+		end_year = sorted_list_by_epoch[-1].get('readable_review_year')
+		
+		
+		
+		
+		return {"success": True,
+				"error": True,
+				"result": {"start": "{0}-{1}-{2}".format(start_year, start_month, start_date), 
+					"end": "{0}-{1}-{2}".format(end_year, end_month, end_date)},
+		}
 
 
 class GetWordCloud(restful.Resource):
@@ -352,11 +382,21 @@ class GetWordCloud(restful.Resource):
 		args = get_word_cloud_parser.parse_args()
 		print args
                 start = time.time()
-
-
+		__format = '%Y-%m-%d'
 		eatery_id = args["eatery_id"]
 		category = args["category"].lower()
 		
+		try:
+			start_epoch = time.mktime(time.strptime(args["start_date"], __format))
+			end_epoch = time.mktime(time.strptime(args["end_date"], __format))
+		except Exception:
+			return {"success": False,
+				"error": "Dude!!, Please wait for the dates to be updated",
+			}
+	
+
+
+		print "start epoch is -->%s and end_apoch is -->%s"%(start_epoch, end_epoch) 
                 if not reviews.find({"eatery_id": eatery_id}):
                         return {"error": True,
                                 "success": False,
@@ -372,12 +412,14 @@ class GetWordCloud(restful.Resource):
 
 
 		noun_phrases_list = list()
+		print type(start_epoch), type(end_epoch)
 
 
                 #This is mongodb query for the arguments given int he post request, And the result is a list of reviews
-		review_result = reviews.find({"eatery_id" :eatery_id})
-	
-            
+		print "total reviews %s "%reviews.find({"eatery_id" :eatery_id}).count()
+		review_result = reviews.find({"eatery_id" :eatery_id, "converted_epoch": {"$gt":  start_epoch, "$lt" : end_epoch}})  
+            	print "the length with start date and the end date %s"%review_result.count()
+
 		review_text = [to_unicode_or_bust(post.get("review_text")) for post in review_result]
 		review_text = " .".join(review_text)
 
@@ -478,7 +520,7 @@ api.add_resource(PostComment, '/post_comment')
 api.add_resource(SuggestName, '/name_suggestion')
 api.add_resource(PostPicture, '/post_pic')
 api.add_resource(GetPics, '/get_pics')
-
+api.add_resource(GetStartDateForRestaurant, '/get_start_date_for_restaurant') 
 
 if __name__ == '__main__':
         #load_classifiers_in_memory()

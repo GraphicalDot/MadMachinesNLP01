@@ -19,9 +19,24 @@ App.SeeWordCloudDateSelectionView = Backbone.View.extend({
 
 
 	render: function(){
+		this.beforeRender();
 		this.$el.append(this.template(this));
 		return this;	
 	},
+
+	beforeRender: function(){
+		var self = this;
+		window.eatery_id = $(":checkbox:checked").attr("id");
+		
+		var jqhr = $.post(window.get_start_date_for_restaurant, {"eatery_id": window.eatery_id})	
+		jqhr.done(function(data){
+			console.log(data.result)
+			self.$("#startDate").val(data.result.start)
+			self.$("#selectStartDate").val(data.result.start)
+			self.$("#endDate").val(data.result.end)
+			self.$("#selectEndDate").val(data.result.end)
+		});
+		},
 
 
 	events: {
@@ -45,15 +60,29 @@ App.SeeWordCloudDateSelectionView = Backbone.View.extend({
 		event.preventDefault();
 		this.$el.addClass("dvLoading");
 	
-		this.loading_bootbox()
-		window.eatery_id = $(":checkbox:checked").attr("id");
 		window.word_cloud_category =  $("#wordCloudCategory").find("option:selected").val();
-	
-	
-		var jqhr = $.post(window.get_word_cloud, {"eatery_id": $(":checkbox:checked").attr("id"),
-		    					"category": $("#wordCloudCategory").find("option:selected").val(),
-						})	
 		
+		this.loading_bootbox()
+		if ($('#startDate').val() > $('#selectStartDate').val()){
+			bootbox.alert("Genius the start date selected should be greater then start date").find('.modal-content').addClass("bootbox-modal-custom-class");
+			return
+
+		}
+		if ($('#endDate').val() < $('#selectEndDate').val()){
+
+			bootbox.alert("Genius the end date selected should be less then end date").find('.modal-content').addClass("bootbox-modal-custom-class");
+			return
+		}
+	
+
+		console.log(window.eatery_id + "    " + window.word_cloud_category);	
+		var jqhr = $.post(window.get_word_cloud, {"eatery_id": window.eatery_id,
+							"start_date": $('#selectStartDate').val(),
+							"end_date": $('#selectEndDate').val(),
+		    					"category": window.word_cloud_category,
+						})
+
+
 		
 		//On success of the jquery post request
 		jqhr.done(function(data){
