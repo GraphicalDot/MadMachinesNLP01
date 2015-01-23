@@ -541,5 +541,5 @@ api.add_resource(GetPics, '/get_pics')
 api.add_resource(GetStartDateForRestaurant, '/get_start_date_for_restaurant') 
 
 if __name__ == '__main__':
-        #load_classifiers_in_memory()
-	app.run(port=8000, debug=True)
+        load_classifiers_in_memory()
+	#app.run(port=8000, debug=True)

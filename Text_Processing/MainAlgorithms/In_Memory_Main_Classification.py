@@ -111,16 +111,14 @@ class InMemoryMainClassifier(object):
 	
 				joblib.dump(classifier, joblib_name_for_classifier) 
 
-
+        """
 	@timeit
 	def multinomial_nb_classifier(self):
-		"""
-		This method returns a claqssfier trained with multinomial naive bayes using cost, services and ambience as three categories
-		fit_prior : boolean
-			Whether to learn class prior probabilities or not. If false, a uniform prior will be used.
-		class_prior : array-like, size (n_classes,)
-			Prior probabilities of the classes. If specified the priors are not adjusted according to the data.
-		"""
+		#This method returns a claqssfier trained with multinomial naive bayes using cost, services and ambience as three categories
+		#fit_prior : boolean
+		#	Whether to learn class prior probabilities or not. If false, a uniform prior will be used.
+		#class_prior : array-like, size (n_classes,)
+		#	Prior probabilities of the classes. If specified the priors are not adjusted according to the data.
 		print "\n Running {0} \n".format(inspect.currentframe())
 		
 		classifier = Pipeline([('vect', CountVectorizer()), ('tfidf', TfidfTransformer()), 
@@ -129,7 +127,7 @@ class InMemoryMainClassifier(object):
 		classifier.fit(self.training_sentences, self.training_target_tags)
 		return classifier
 
-
+        """
 	@timeit
 	def svm_classifier(self):
 		classifier = Pipeline([('vect', CountVectorizer()), ('tfidf', TfidfTransformer()), 
@@ -138,7 +136,7 @@ class InMemoryMainClassifier(object):
 		classifier.fit(self.training_sentences, self.training_target_tags)
 		return classifier
 
-
+        """
 	@timeit
 	def logistic_regression_classifier(self):
 		classifier = Pipeline([('vect', CountVectorizer()), ('tfidf', TfidfTransformer()), 
@@ -176,8 +174,6 @@ class InMemoryMainClassifier(object):
 		classifier.fit(self.training_sentences, self.training_target_tags)
 		return classifier
 
-
-	"""
 	@timeit
 	def random_forests_classifier(self):
 
