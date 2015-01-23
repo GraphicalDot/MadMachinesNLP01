@@ -473,21 +473,16 @@ class GetWordCloud(restful.Resource):
                         #split string otherwise whole string would give low string similarity ratio like .5 which would
                         #misinterpret "amazing ambiance" different from "ambience" 
                         for noun in noun_phrase.split(" "):
-                                if difflib.SequenceMatcher(a=category, b=noun).ratio() > .8:
-                                    return True
-                                return False
-
+                                ratio = difflib.SequenceMatcher(a=category, b=noun).ratio()
+                                if ratio > .8:
+                                        return True
 
 
 
                 #instance.noun_phrase(to_unicode_or_bust(text[0])) gives a list of noun phrases with the help of text blob library
-                #Now re.search(category, noun, re.IGNORECASE)  this expression makes sure that the , those noun phrases which 
-                #have the category mentioned in it shall be disacarded
-                #For example for the word cloud of "food" category, every noun phrases like "awesome food", "great food" shall be
-                #discarded
 		for text in filtered_tag_text:
 			noun_phrases_list.extend([(noun.lower(),  text[2]) for noun in instance.noun_phrase(to_unicode_or_bust(text[0]))
-                                                if not re.search(category, noun, re.IGNORECASE) and not check_lavenshtein_similarity(category, noun)
+                            if not check_lavenshtein_similarity(category, noun)
                             ])
 
 
