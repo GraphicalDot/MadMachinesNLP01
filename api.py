@@ -74,16 +74,18 @@ api = restful.Api(app,)
 
 
 def load_classifiers_in_memory():
-	instance = RpRcClassifier()
+	"""
+        instance = RpRcClassifier()
 	instance.loading_all_classifiers_in_memory()
-
+        """
 	#Loading all the classifiers in the memory for tags classification
 	instance = TagClassifier()
 	instance.loading_all_classifiers_in_memory()
-
+        
+        """
 	instance = SentimentClassifier()
 	instance.loading_all_classifiers_in_memory()
-
+        """
 
 def to_unicode_or_bust(obj, encoding='utf-8'):
 	if isinstance(obj, basestring):
@@ -426,6 +428,7 @@ class GetWordCloud(restful.Resource):
 		
 		with cd(path_in_memory_classifiers):
 			tag_classifier = joblib.load('svm_grid_search_classifier_tag.lib')
+			#tag_classifier = joblib.load('svm_linear_kernel_classifier_tag.lib')
 			sentiment_classifier = joblib.load('svm_grid_search_classifier_sentiment.lib')
 		
 		noun_phrase = list()
@@ -461,8 +464,31 @@ class GetWordCloud(restful.Resource):
 		instance = ProcessingWithBlobInMemory()
 		__k = lambda text: noun_phrases_list.extend([(noun.lower(),  text[2]) for noun in instance.noun_phrase(to_unicode_or_bust(text[0]))])	
 		
+
+
+                def check_lavenshtein_similarity(category, noun_phrase):
+                        #This function checks if the noun phrase is neary same with the category or not
+                        #for example the noun phrase "amazing ambiance" should be same sa "ambience"
+                        #So the "amazing ambiance" should be split and the word similarity shall be checked with each
+                        #split string otherwise whole string would give low string similarity ratio like .5 which would
+                        #misinterpret "amazing ambiance" different from "ambience" 
+                        for noun in noun_phrase.split(" "):
+                                if difflib.SequenceMatcher(a=category, b=noun).ratio() > .8:
+                                    return True
+                                return False
+
+
+
+
+                #instance.noun_phrase(to_unicode_or_bust(text[0])) gives a list of noun phrases with the help of text blob library
+                #Now re.search(category, noun, re.IGNORECASE)  this expression makes sure that the , those noun phrases which 
+                #have the category mentioned in it shall be disacarded
+                #For example for the word cloud of "food" category, every noun phrases like "awesome food", "great food" shall be
+                #discarded
 		for text in filtered_tag_text:
-			noun_phrases_list.extend([(noun.lower(),  text[2]) for noun in instance.noun_phrase(to_unicode_or_bust(text[0]))])
+			noun_phrases_list.extend([(noun.lower(),  text[2]) for noun in instance.noun_phrase(to_unicode_or_bust(text[0]))
+                                                if not re.search(category, noun, re.IGNORECASE) and not check_lavenshtein_similarity(category, noun)
+                            ])
 
 
 		

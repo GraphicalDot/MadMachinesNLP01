@@ -29,6 +29,7 @@ from sklearn.naive_bayes import BernoulliNB, MultinomialNB
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.neighbors import NearestCentroid
 from sklearn.externals import joblib
+from sklearn.svm import SVC 
 
 from paths import path_in_memory_classifiers, path_trainers_file, path_parent_dir
 
@@ -194,6 +195,31 @@ class InMemoryMainClassifier(object):
 		instance = SVMWithGridSearch(self.training_sentences, self.training_target_tags)
 		classifier = instance.classifier()
 		return classifier
+	
+        
+        @timeit
+	def svm_grid_search_classifier(self):
+		print "\n Running {0} \n".format(inspect.stack()[0][3])
+		instance = SVMWithGridSearch(self.training_sentences, self.training_target_tags)
+		classifier = instance.classifier()
+		return classifier
+
+        
+        @timeit
+	def svm_linear_kernel_classifier(self):
+                print "\n Running {0} \n".format(inspect.stack()[0][3])
+		classifier = Pipeline([ ('vect', CountVectorizer(ngram_range=(1, 6), analyzer="char_wb")),
+                    ('tfidf', TfidfTransformer()),
+                    ('chi2', SelectKBest(chi2, k="all")),
+                    ('clf', SVC(C=1, kernel="linear", gamma=.0001)),])     
+            
+            
+            
+	        classifier.fit(self.training_sentences, self.training_target_tags)  
+		return classifier
+
+
+
 
 
 

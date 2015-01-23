@@ -3,6 +3,31 @@ import difflib
 import copy
         
 
+def merging_if_one_common_element(original_list):
+        """
+        
+        
+        
+        """
+        
+        original_dict = {element.get("name"): {"frequency": element.get("frequency"), "polarity": element.get("polarity")} \
+					for element in original_list}
+			
+			
+        calc_simililarity = lambda __a, __b: difflib.SequenceMatcher(a=__a.get("name").lower(), b=__b.get("name").lower()).ratio() \
+										if __a.get("name").lower() != __b.get("name").lower() else 0
+			
+			
+	list_with_similarity_ratios = list()
+	for test_element in original_list:
+	        for another_element in copy.copy(original_list):
+		        r = calc_simililarity(test_element, another_element)	
+			list_with_similarity_ratios.append(dict(test_element.items() +  
+					{"similarity_with": another_element.get("name"), "ratio": r}.items()))
+
+			
+
+	
 def merging_similar_elements(original_list):
         """
         This function will calculate the minum distance between two noun phrase and if the distance is 

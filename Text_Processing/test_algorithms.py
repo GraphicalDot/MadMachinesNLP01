@@ -78,20 +78,6 @@ def print_term_frequencies(corpus):
 
 
 
-def generate_test_data():
-        wb = openpyxl.load_workbook("/home/k/Programs/python/canworks/test_data.xlsx")
-        sh = wb.get_active_sheet()
-        __ = [(element[2].lower(), element[3]) for element in [[cell.value for cell in r if cell.value] for r in sh.rows]][1: ]
-        return [element for element in __ if __[1] != "mix"]
-
-
-def generate_test_data_2():
-        wb = openpyxl.load_workbook("/home/k/Programs/python/canworks/test_data.xlsx")
-        sh = wb.get_sheet_by_name("15Jan")
-        test_data = [[cell.value for cell in r] for r in sh.rows]
-        __ = [(element[2].lower(), element[3]) for element in test_data[1:] if element[3] != "mix"]
-        return __
-
 
 def generate_test_data_3():
         __test_data = list()
@@ -108,6 +94,18 @@ def generate_test_data_3():
         return __test_data
 
 
+def generate_training_sentiment_data_from_files():
+        #This lambda function generates the training dataset from the manually_classified_ files                                              
+        sent_tokenizer = SentenceTokenizationOnRegexOnInterjections()
+        files_lambda = lambda tag: np.array([(sent, tag) for sent in sent_tokenizer.tokenize(open("{0}/manually_classified_{1}.txt".format(path_trainers_file, tag), "rb").read(),) if sent != ""])            
+        tag_list = ["super-positive", "super-negative", "neutral", "positive", "negative"]
+        whole_set = list(itertools.chain(*map(files_lambda, tag_list))) 
+
+        [random.shuffle(whole_set) for i in range(0, 10)]
+        return zip(*whole_set)
+
+
+
 def generate_test_data_sentiment():
         __test_data = list()
         wb = openpyxl.load_workbook("/home/k/Programs/python/canworks/new_test_data.xlsx")
@@ -121,6 +119,8 @@ def generate_test_data_sentiment():
                             print e
                             pass
         return __test_data
+
+
 
 
 
@@ -293,14 +293,58 @@ def with_support_vector_machines():
         """
 
 
+        
+        pipeline = Pipeline([ ('vect', CountVectorizer(ngram_range=(2, 6), analyzer="char_wb")),
+                                    ('tfidf', TfidfTransformer()),
+                                        ('chi2', SelectKBest(chi2, k="all")),
+                                        ('clf', SVC(C=1, kernel="linear", gamma=.001)),
+                                        ])
+        pipeline.fit(TAGS_TRAINING_SENTENCES, TAG_TARGETS)
+        print "Accuracy with 500 samples with svm search %.3f"%(pipeline.score(TEST_SENTENCES_500, TEST_TARGET_500))
+        pipeline = Pipeline([ ('vect', CountVectorizer(ngram_range=(2, 6), analyzer="char_wb")),
+                                    ('tfidf', TfidfTransformer()),
+                                        ('chi2', SelectKBest(chi2, k="all")),
+                                        ('clf', SVC(C=1, kernel="linear", gamma=.01)),
+                                        ])
+        pipeline.fit(TAGS_TRAINING_SENTENCES, TAG_TARGETS)
+        print "Accuracy with 500 samples with svm search %.3f"%(pipeline.score(TEST_SENTENCES_500, TEST_TARGET_500))
+        
         pipeline = Pipeline([ ('vect', CountVectorizer(ngram_range=(1, 6), analyzer="char_wb")),
                                     ('tfidf', TfidfTransformer()),
                                         ('chi2', SelectKBest(chi2, k="all")),
-                                        ('clf', SVC(C=1, kernel="linear", gamma=.0001)),
+                                        ('clf', SVC(C=1, kernel="linear", gamma=0.0)),
                                         ])
         pipeline.fit(TAGS_TRAINING_SENTENCES, TAG_TARGETS)
-        print "Accuracy with 200 samples with SVM %.3f"%(pipeline.score(TEST_SENTENCES, TEST_TARGET))
         print "Accuracy with 500 samples with svm search %.3f"%(pipeline.score(TEST_SENTENCES_500, TEST_TARGET_500))
+        """
+        print "Best score: %0.3f" % classifier.best_score_
+        print "Best parameters set:"
+        best_parameters = classifier.best_estimator_.get_params()
+        for param_name in sorted(parameters.keys()):
+                print "\t%s: %r" % (param_name, best_parameters[param_name])
+
+        """
+
+def with_support_vector_machines_for_sentiment():
+        """
+        C :
+                The C parameter tells the SVM optimization how much you want to avoid misclassifying each training example. 
+                For large values of C, the optimization will choose a smaller-margin hyperplane if that hyperplane does a better job 
+                of getting all the training points classified correctly. Conversely, a very small value of C will cause the optimizer 
+                to look for a larger-margin separating hyperplane, even if that hyperplane misclassifies more points. For very tiny values of C, 
+                you should get misclassified examples, often even if your training data is linearly separable.
+
+        """
+                                        
+        pipeline = Pipeline([ ('vect', CountVectorizer(ngram_range=(2, 4), analyzer="char_wb")),
+                                    ('tfidf', TfidfTransformer()),
+                                        ('chi2', SelectKBest(chi2, k="all")),
+                                        ('clf', SVC(C=1, kernel="linear", gamma=.001)),
+                                        ])
+
+        pipeline.fit(SENTIMENT_TRAINING_SENTENCES, SENTIMENT_TARGETS)
+
+        print "Accuracy with 500 samples with SVM %.3f"%(pipeline.score(SENTIMENT_TEST_SENTENCES, SENTIMENT_TEST_TARGET))
         
         """
         print "Best score: %0.3f" % classifier.best_score_
@@ -313,9 +357,10 @@ def with_support_vector_machines():
 
 if __name__ == "__main__":
         TAGS_TRAINING_SENTENCES, TAG_TARGETS = return_tags_training_set()
-        SENTIMENT_TRAINING_SENTENCES, SENTIMENT_TARGETS = return_sentiment_training_set()
+        #SENTIMENT_TRAINING_SENTENCES, SENTIMENT_TARGETS = return_sentiment_training_set()
+        SENTIMENT_TRAINING_SENTENCES, SENTIMENT_TARGETS = generate_training_sentiment_data_from_files()
 
-        TEST_SENTENCES, TEST_TARGET = zip(*generate_test_data())
+        #TEST_SENTENCES, TEST_TARGET = zip(*generate_test_data())
         TEST_SENTENCES_500, TEST_TARGET_500 = zip(*generate_test_data_3())
 
         SENTIMENT_TEST_SENTENCES, SENTIMENT_TEST_TARGET = zip(*generate_test_data_sentiment())
@@ -324,3 +369,4 @@ if __name__ == "__main__":
         #with_lda()
         ##sgd_with_grid_search()
         with_support_vector_machines()
+        #with_support_vector_machines_for_sentiment()
