@@ -74,18 +74,15 @@ api = restful.Api(app,)
 
 
 def load_classifiers_in_memory():
-	"""
         instance = RpRcClassifier()
 	instance.loading_all_classifiers_in_memory()
-        """
-	#Loading all the classifiers in the memory for tags classification
+	
+        #Loading all the classifiers in the memory for tags classification
 	instance = TagClassifier()
 	instance.loading_all_classifiers_in_memory()
         
-        """
 	instance = SentimentClassifier()
 	instance.loading_all_classifiers_in_memory()
-        """
 
 def to_unicode_or_bust(obj, encoding='utf-8'):
 	if isinstance(obj, basestring):
