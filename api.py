@@ -402,6 +402,11 @@ class GetWordCloud(restful.Resource):
                                 "error_messege": "The eatery id  {0} is not present".format(eatery_id), 
                                 }
 
+
+
+                #name of the eatery
+                eatery_name = eateries.find_one({"eatery_id": eatery_id}).get("eatery_name")
+
                 if category not in ["service", "food", "ambience", "null", "overall", "cost"]:
                         return {"error": True,
                                 "success": False,
@@ -424,8 +429,8 @@ class GetWordCloud(restful.Resource):
 
 		
 		with cd(path_in_memory_classifiers):
-			tag_classifier = joblib.load('svm_grid_search_classifier_tag.lib')
-			#tag_classifier = joblib.load('svm_linear_kernel_classifier_tag.lib')
+			#tag_classifier = joblib.load('svm_grid_search_classifier_tag.lib')
+			tag_classifier = joblib.load('svm_linear_kernel_classifier_tag.lib')
 			sentiment_classifier = joblib.load('svm_grid_search_classifier_sentiment.lib')
 		
 		noun_phrase = list()
@@ -469,12 +474,19 @@ class GetWordCloud(restful.Resource):
                         #So the "amazing ambiance" should be split and the word similarity shall be checked with each
                         #split string otherwise whole string would give low string similarity ratio like .5 which would
                         #misinterpret "amazing ambiance" different from "ambience" 
-                        for noun in noun_phrase.split(" "):
-                                ratio = difflib.SequenceMatcher(a=category, b=noun).ratio()
+                        for __noun in noun_phrase.split(" "):
+                                ratio = difflib.SequenceMatcher(a=category, b=__noun).ratio()
                                 if ratio > .8:
                                         return True
-
-
+                               
+                                
+                                #The next lines of code checks for the presence of restaurant name in the noun_phrase
+                                #If the restaurant is a name like "andhra bhawan" it qalso checks for that by splitting
+                                #the string into two string and checks for the sequence matching for both
+                                for __string in eatery_name.split(" "):
+                                    __ratio = difflib.SequenceMatcher(a=__string, b=__noun).ratio()
+                                    if __ratio > .6:
+                                        return True
 
                 #instance.noun_phrase(to_unicode_or_bust(text[0])) gives a list of noun phrases with the help of text blob library
 		for text in filtered_tag_text:
@@ -524,7 +536,7 @@ class GetWordCloud(restful.Resource):
                 print   [(e, "\n")  for e in final_result[0: 20]]	
                 return {"success": True,
 				"error": False,
-				"result": final_result[0:20],
+				"result": final_result[0:30],
 		}
 	
 
@@ -541,5 +553,5 @@ api.add_resource(GetPics, '/get_pics')
 api.add_resource(GetStartDateForRestaurant, '/get_start_date_for_restaurant') 
 
 if __name__ == '__main__':
-        load_classifiers_in_memory()
-	#app.run(port=8000, debug=True)
+        #load_classifiers_in_memory()
+	app.run(port=8000, debug=True)
