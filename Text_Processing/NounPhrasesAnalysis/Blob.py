@@ -16,7 +16,10 @@ from MainAlgorithms import InMemoryMainClassifier, timeit, cd, path_parent_dir, 
 
 
 class ProcessingWithBlobInMemory:
+        """
+        NNp if folled by NN, Parse the tree
 
+        """
 	def __init__(self):
 		self.conll_extractor = ConllExtractor()
 

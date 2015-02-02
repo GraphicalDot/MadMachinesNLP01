@@ -429,8 +429,8 @@ class GetWordCloud(restful.Resource):
 
 		
 		with cd(path_in_memory_classifiers):
-			#tag_classifier = joblib.load('svm_grid_search_classifier_tag.lib')
-			tag_classifier = joblib.load('svm_linear_kernel_classifier_tag.lib')
+			tag_classifier = joblib.load('svm_grid_search_classifier_tag.lib')
+			#tag_classifier = joblib.load('svm_linear_kernel_classifier_tag.lib')
 			sentiment_classifier = joblib.load('svm_grid_search_classifier_sentiment.lib')
 		
 		noun_phrase = list()
@@ -536,7 +536,7 @@ class GetWordCloud(restful.Resource):
                 print   [(e, "\n")  for e in final_result[0: 20]]	
                 return {"success": True,
 				"error": False,
-				"result": final_result[0:30],
+				"result": final_result[0:15],
 		}
 	
 

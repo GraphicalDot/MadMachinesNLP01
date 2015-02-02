@@ -254,7 +254,7 @@ class SentenceTokenizationOnRegexOnInterjections:
 					{"char": "_", "on_repetitions": "more_than_one_repetition"},
 					{"char": "\\", "on_repetitions": "more_than_one_repetition"},
 					{"char": "/", "on_repetitions": "more_than_one_repetition"},
-					{"char": "!", "on_repetitions": "more_than_one_repetition"},
+					{"char": "!", "on_repetitions": "single"},
 					]
 	
 		

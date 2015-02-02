@@ -108,20 +108,20 @@ fi
 
 function env_canworks
 	{
-	cd /home/k/Programs/Canworks/; 
+	cd /home/k/Programs/Python/Canworks/; 
 	source bin/activate; cd canworks; 
 	clear;
 	}
 
 function canworks_process_eatery_worker() {
-	cd /home/k/Programs/Canworks/; 
+	cd /home/k/Programs/Python/Canworks/; 
 	source bin/activate; 
 	cd canworks; clear ; 
 	cd Scraping/Zom; 
 	celery -A  celery -A tasks worker -n $1 -Q process_eatery_q --concurrency=1 --loglevel=info;
 	}
 function canworks_intermediate_worker() {
-	cd /home/k/Programs/Canworks/; 
+	cd /home/k/Programs/Python/Canworks/; 
 	source bin/activate; 
 	cd canworks; clear ; 
 	cd Scraping/Zom; 
@@ -129,7 +129,7 @@ function canworks_intermediate_worker() {
 	}
 
 function canworks_scrape_url_worker() {
-	cd /home/k/Programs/Canworks/; 
+	cd /home/k/Programs/Python/Canworks/; 
 	source bin/activate; 
 	cd canworks; clear ; 
 	cd Scraping/Zom; 
@@ -137,16 +137,13 @@ function canworks_scrape_url_worker() {
 	}
 
 function canworks_junk_worker() {
-	cd /home/k/Programs/Canworks/; 
+	cd /home/k/Programs/Python/Canworks/; 
 	source bin/activate; 
 	cd canworks; clear ; 
 	cd Scraping/Zom;
 	celery -A tasks worker -n junk_worker -Q junk  --concurrency=1 --loglevel=info; 
 	}
 
-alias env_amoeba_environment="cd /home/k/Programs/python/Amoeba/; source bin/activate; cd amoeba; clear"
-alias env_pdfconverter="cd /home/k/Programs/python/PdfCOnverter/; source bin/activate; clear"
-alias blah='function _blah(){ echo "First: $1"; echo "Second: $2"; };_blah'
 
 a="Welcome Kaali"
 b=$date
