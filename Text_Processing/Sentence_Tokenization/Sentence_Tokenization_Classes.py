@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 #-*- coding: utf-8 -*-
 
-
-
 import nltk
 from text_sentence import Tokenizer
 import re
@@ -184,7 +182,7 @@ class SentenceTokenizationOnRegexOnInterjections:
 	"""
 	def __init__(self):
 		self.custom_tokenizer = Tokenizer()
-	
+
 	def tokenize(self, text):
 		self.splitting_on_interjections_modified_sentence = list()
 		self.splitting_on_special_characters_modified_sentence = list()

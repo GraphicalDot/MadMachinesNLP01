@@ -33,10 +33,12 @@ import os
 import StringIO
 import difflib
 from bson.json_util import dumps
-from Text_Processing import ProcessingWithBlob, PosTags, nltk_ngrams, get_all_algorithms_result, RpRcClassifier, \
+from Text_Processing import NounPhrases, nltk_ngrams, get_all_algorithms_result, RpRcClassifier, \
 		bcolors, CopiedSentenceTokenizer, SentenceTokenizationOnRegexOnInterjections, get_all_algorithms_result, \
 		path_parent_dir, path_trainers_file, path_in_memory_classifiers, timeit, cd, SentimentClassifier, \
-		TagClassifier, ProcessingWithBlobInMemory
+		TagClassifier
+from Text_Processing import WordTokenize, PosTaggers
+
 
 import time
 from datetime import timedelta
@@ -48,7 +50,6 @@ import random
 from sklearn.externals import joblib
 import numpy
 from multiprocessing import Pool
-from static_data import static_data
 from api_helpers import merging_similar_elements
 import base64
 import requests
@@ -540,6 +541,22 @@ class GetWordCloud(restful.Resource):
 		}
 	
 
+class TestWhole(restful.Resource):
+	@cors
+	@timeit
+        def get(self):
+                review_text = [to_unicode_or_bust(post.get("review_text")) for post in reviews.find({"eatery_id": "4571"})]
+		review_text = " .".join(review_text)
+                sent_tokenizer = SentenceTokenizationOnRegexOnInterjections()
+                __word_tokenize = WordTokenize(sent_tokenizer.tokenize(review_text)) #using punkt_n_treebank_tokenizer
+                word_tokenized_list =  __word_tokenize.word_tokenized_list
+                __pos_tagger = PosTaggers(word_tokenized_list.get("punkt_n_treebank")[82:100]) #using default standford pos tagger
+                __pos_tagged_sentences =  __pos_tagger.pos_tagged_sentences
+                print __pos_tagged_sentences
+                
+                __noun_phrases = NounPhrases(__pos_tagged_sentences.get("stan_pos_tagger"))
+                print __noun_phrases.noun_phrases
+                return        
 
 
 api.add_resource(EateriesList, '/eateries_list')
@@ -551,6 +568,7 @@ api.add_resource(SuggestName, '/name_suggestion')
 api.add_resource(PostPicture, '/post_pic')
 api.add_resource(GetPics, '/get_pics')
 api.add_resource(GetStartDateForRestaurant, '/get_start_date_for_restaurant') 
+api.add_resource(TestWhole, '/test') 
 
 if __name__ == '__main__':
         #load_classifiers_in_memory()
