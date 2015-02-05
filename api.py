@@ -550,12 +550,15 @@ class TestWhole(restful.Resource):
                 sent_tokenizer = SentenceTokenizationOnRegexOnInterjections()
                 __word_tokenize = WordTokenize(sent_tokenizer.tokenize(review_text)) #using punkt_n_treebank_tokenizer
                 word_tokenized_list =  __word_tokenize.word_tokenized_list
+                
                 __pos_tagger = PosTaggers(word_tokenized_list.get("punkt_n_treebank")[82:100]) #using default standford pos tagger
                 __pos_tagged_sentences =  __pos_tagger.pos_tagged_sentences
+                
                 print __pos_tagged_sentences
                 
                 __noun_phrases = NounPhrases(__pos_tagged_sentences.get("stan_pos_tagger"))
                 print __noun_phrases.noun_phrases
+                
                 return        
 
 
