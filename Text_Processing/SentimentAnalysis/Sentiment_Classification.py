@@ -22,18 +22,8 @@ from MainAlgorithms import InMemoryMainClassifier, timeit, cd, path_parent_dir, 
 
 class SentimentClassifier(InMemoryMainClassifier):
 	def __init__(self):
-		tag_list = ["super-positive", "positive", "negative", "super-negative", "null"] 
+		tag_list = ["super-positive", "positive", "negative", "super-negative", "neutral"] 
 		InMemoryMainClassifier.__init__(self, tag_list, from_files= True)
 		
-	@timeit
-	def loading_all_classifiers_in_memory(self):
-		with cd(path_in_memory_classifiers):
-			for class_method in self.cls_methods_for_algortihms:
-				classifier = eval("{0}.{1}()".format("self", class_method))
-				joblib_name_for_classifier = "{0}_sentiment.lib".format(class_method)
-				print classifier, joblib_name_for_classifier
-	
-				joblib.dump(classifier, joblib_name_for_classifier) 
-
 
 

@@ -27,6 +27,15 @@ collection = db.intermediate_collection
 
 logger = logging.getLogger(__name__)
 """
+To daemonize the celery workers
+https://celery.readthedocs.org/en/latest/tutorials/daemonizing.html#daemonizing
+-P threads
+
+   The thread pool will execute tasks in separate threads and the --concurrency
+      argument controls the maximum number of threads used for that.
+
+
+
 To run tasks for scraping one restaurant 
 runn.apply_async(["https://www.zomato.com/ncr/pita-pit-lounge-greater-kailash-gk-1-delhi", None, None, True])
 

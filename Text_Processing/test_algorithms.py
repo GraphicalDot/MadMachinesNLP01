@@ -94,17 +94,6 @@ def generate_test_data_3():
         return __test_data
 
 
-def generate_training_sentiment_data_from_files():
-        #This lambda function generates the training dataset from the manually_classified_ files                                              
-        sent_tokenizer = SentenceTokenizationOnRegexOnInterjections()
-        files_lambda = lambda tag: np.array([(sent, tag) for sent in sent_tokenizer.tokenize(open("{0}/manually_classified_{1}.txt".format(path_trainers_file, tag), "rb").read(),) if sent != ""])            
-        tag_list = ["super-positive", "super-negative", "neutral", "positive", "negative"]
-        whole_set = list(itertools.chain(*map(files_lambda, tag_list))) 
-
-        [random.shuffle(whole_set) for i in range(0, 10)]
-        return zip(*whole_set)
-
-
 
 def generate_test_data_sentiment():
         __test_data = list()
@@ -120,28 +109,6 @@ def generate_test_data_sentiment():
                             pass
         return __test_data
 
-
-
-
-
-def return_tags_training_set():
-        tag_list = ["food", "service", "ambience", "cost", "null", "overall",]
-        from_db_data_lambda = lambda tag:  np.array([(sent.lower(), tag) for sent in list(itertools.chain(*[post.get(tag) for post in reviews.find() if post.get(tag)]))])
-        db_whole_set = list(itertools.chain(*map(from_db_data_lambda, tag_list)))
-        [random.shuffle(db_whole_set) for i in range(0, 10)]
-        training_sentences, training_target_tags = zip(*db_whole_set)
-        return (training_sentences, training_target_tags)
-
-
-
-def return_sentiment_training_set():
-        
-        tag_list = ["positive", "negative", "super positive", "super negative", "neutral",]
-        from_db_data_lambda = lambda tag:  np.array([(sent.lower(), tag) for sent in list(itertools.chain(*[post.get(tag) for post in reviews.find() if post.get(tag)]))])
-        db_whole_set = list(itertools.chain(*map(from_db_data_lambda, tag_list)))
-        [random.shuffle(db_whole_set) for i in range(0, 10)]
-        training_sentences, training_target_tags = zip(*db_whole_set)
-        return (training_sentences, training_target_tags)
 
 def with_svm_countvectorizer():
         pca = PCA()

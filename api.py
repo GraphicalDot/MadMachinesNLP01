@@ -33,7 +33,7 @@ import os
 import StringIO
 import difflib
 from bson.json_util import dumps
-from Text_Processing import NounPhrases, nltk_ngrams, get_all_algorithms_result, RpRcClassifier, \
+from Text_Processing import NounPhrases, get_all_algorithms_result, RpRcClassifier, \
 		bcolors, CopiedSentenceTokenizer, SentenceTokenizationOnRegexOnInterjections, get_all_algorithms_result, \
 		path_parent_dir, path_trainers_file, path_in_memory_classifiers, timeit, cd, SentimentClassifier, \
 		TagClassifier
@@ -74,16 +74,6 @@ api = restful.Api(app,)
 
 
 
-def load_classifiers_in_memory():
-        instance = RpRcClassifier()
-	instance.loading_all_classifiers_in_memory()
-	
-        #Loading all the classifiers in the memory for tags classification
-	instance = TagClassifier()
-	instance.loading_all_classifiers_in_memory()
-        
-	instance = SentimentClassifier()
-	instance.loading_all_classifiers_in_memory()
 
 def to_unicode_or_bust(obj, encoding='utf-8'):
 	if isinstance(obj, basestring):
@@ -429,7 +419,7 @@ class GetWordCloud(restful.Resource):
 		review_text = " .".join(review_text)
 
 		
-		with cd(path_in_memory_classifiers):
+		with cd("{0}/PrepareClassifiers/InMemoryClassifiers".format(path_parent_dir)):
 			tag_classifier = joblib.load('svm_grid_search_classifier_tag.lib')
 			#tag_classifier = joblib.load('svm_linear_kernel_classifier_tag.lib')
 			sentiment_classifier = joblib.load('svm_grid_search_classifier_sentiment.lib')
@@ -574,5 +564,4 @@ api.add_resource(GetStartDateForRestaurant, '/get_start_date_for_restaurant')
 api.add_resource(TestWhole, '/test') 
 
 if __name__ == '__main__':
-        #load_classifiers_in_memory()
-	app.run(port=8000, debug=True)
+        app.run(port=8000, debug=True)

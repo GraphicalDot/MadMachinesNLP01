@@ -94,40 +94,9 @@ class InMemoryMainClassifier(object):
 		
 	
 		self.training_sentences, self.training_target_tags = zip(*self.whole_set)
-
-                #This list all the method for this class
-		self.cls_methods_for_algortihms = [method[0] for method in inspect.getmembers(self, predicate=inspect.ismethod) if method[0] not in ['loading_all_classifiers_in_memory', "__init__"]]
-		print "{0} Total time taken to intialize class Main_Classification FUNCTION--<{1}{2}".format(bcolors.OKGREEN, time.time()-start, bcolors.RESET) 	
+                return
 
 
-	@timeit
-	def loading_all_classifiers_in_memory(self):
-		with cd(path_in_memory_classifiers):
-			for class_method in self.cls_methods_for_algortihms:
-				instance = InMemoryMainClassifier()
-				classifier = eval("{0}.{1}()".format("instance", class_method))
-				joblib_name_for_classifier = "{0}_tag.lib".format(class_method)
-				print classifier, joblib_name_for_classifier
-	
-				joblib.dump(classifier, joblib_name_for_classifier) 
-
-        """
-	@timeit
-	def multinomial_nb_classifier(self):
-		#This method returns a claqssfier trained with multinomial naive bayes using cost, services and ambience as three categories
-		#fit_prior : boolean
-		#	Whether to learn class prior probabilities or not. If false, a uniform prior will be used.
-		#class_prior : array-like, size (n_classes,)
-		#	Prior probabilities of the classes. If specified the priors are not adjusted according to the data.
-		print "\n Running {0} \n".format(inspect.currentframe())
-		
-		classifier = Pipeline([('vect', CountVectorizer()), ('tfidf', TfidfTransformer()), 
-			('clf', MultinomialNB(class_prior=None, fit_prior=False)),])
-		
-		classifier.fit(self.training_sentences, self.training_target_tags)
-		return classifier
-
-        """
 	@timeit
 	def svm_classifier(self):
 		classifier = Pipeline([('vect', CountVectorizer()), ('tfidf', TfidfTransformer()), 
@@ -135,8 +104,6 @@ class InMemoryMainClassifier(object):
 
 		classifier.fit(self.training_sentences, self.training_target_tags)
 		return classifier
-
-        """
 	@timeit
 	def logistic_regression_classifier(self):
 		classifier = Pipeline([('vect', CountVectorizer()), ('tfidf', TfidfTransformer()), 
@@ -145,7 +112,6 @@ class InMemoryMainClassifier(object):
 		classifier.fit(self.training_sentences, self.training_target_tags)
 		return classifier
 
-
 	@timeit
 	def perceptron_classifier(self):
 		classifier = Pipeline([('vect', CountVectorizer()), ('tfidf', TfidfTransformer()), 
@@ -153,7 +119,6 @@ class InMemoryMainClassifier(object):
 		
 		classifier.fit(self.training_sentences, self.training_target_tags)
 		return classifier
-
 
 
 	@timeit
@@ -165,7 +130,6 @@ class InMemoryMainClassifier(object):
 		classifier.fit(self.training_sentences, self.training_target_tags)
 		return classifier
 
-
 	@timeit
 	def passive_agressive_classifier(self):
 		classifier = Pipeline([('vect', CountVectorizer()), ('tfidf', TfidfTransformer()), 
@@ -174,6 +138,8 @@ class InMemoryMainClassifier(object):
 		classifier.fit(self.training_sentences, self.training_target_tags)
 		return classifier
 
+        """
+        Could not be implemented beacuse it cant be run on sparse numpy array
 	@timeit
 	def random_forests_classifier(self):
 
@@ -183,7 +149,7 @@ class InMemoryMainClassifier(object):
 		
 
 		return classifier
-	"""
+        """
 	
 	@timeit
 	def svm_grid_search_classifier(self):
@@ -230,3 +196,8 @@ class cd:
 		
 	def __exit__(self, etype, value, traceback):
 		os.chdir(self.savedPath)
+
+
+if __name__ == "__main__":
+        tag_list = ["food", "ambience", "cost", "service", "overall", "null"]
+        ins = InMemoryMainClassifier(tag_list)  
