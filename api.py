@@ -54,6 +54,7 @@ from api_helpers import merging_similar_elements
 import base64
 import requests
 from PIL import Image
+from ProcessingCeleryTask import return_result 
 
 connection = pymongo.Connection()
 db = connection.modified_canworks
@@ -535,12 +536,16 @@ class TestWhole(restful.Resource):
 	@cors
 	@timeit
         def get(self):
+                result = return_result.apply_async(args=["4571"])
+                """
                 review_text = [to_unicode_or_bust(post.get("review_text")) for post in reviews.find({"eatery_id": "4571"})]
-		review_text = " .".join(review_text)
+		
+                review_text = " .".join(review_text)
                 sent_tokenizer = SentenceTokenizationOnRegexOnInterjections()
                 __word_tokenize = WordTokenize(sent_tokenizer.tokenize(review_text)) #using punkt_n_treebank_tokenizer
                 word_tokenized_list =  __word_tokenize.word_tokenized_list
-                
+               
+
                 __pos_tagger = PosTaggers(word_tokenized_list.get("punkt_n_treebank")[82:100]) #using default standford pos tagger
                 __pos_tagged_sentences =  __pos_tagger.pos_tagged_sentences
                 
@@ -548,8 +553,10 @@ class TestWhole(restful.Resource):
                 
                 __noun_phrases = NounPhrases(__pos_tagged_sentences.get("stan_pos_tagger"))
                 print __noun_phrases.noun_phrases
-                
-                return        
+                """
+                return   {"success": True,
+                            "error": False,
+                            "result": result.result}
 
 
 api.add_resource(EateriesList, '/eateries_list')

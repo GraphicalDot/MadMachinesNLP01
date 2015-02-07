@@ -1,36 +1,58 @@
+#-*- coding: utf-8 -*-
 import os
 from kombu import Exchange, Queue
 from celery.schedules import crontab
 #from kombu import serialization
 #serialization.registry._decoders.pop("application/x-python-serialize")
 #BROKER_URL = 'redis://'
-BROKER_URL = 'redis://localhost:6379/0'
+#BROKER_URL = 'redis://192.168.1.5:6379/0'
+BROKER_URL = 'redis://localhost/0'
+
+
+#CELERY_DEFAULT_QUEUE = 'default'
+#Exchange Type can be specified by [providing type keyword while intializing Exchange with the key word type
+#The four options for this type can be
+#"direct"
+#"topic"
+#"fanout"
+#"header"
 
 CELERY_QUEUES = (
-		Queue('junk', Exchange('default', delivery_mode= 2),  routing_key='junk.import'),
-		Queue('scrape_url', Exchange('default', delivery_mode= 2),  routing_key='scrape_url.import'),
-		Queue('process_eatery_q', Exchange('default', delivery_mode=2),  routing_key='process_eatery_q.import'),
-		Queue('intermediate', Exchange('default', delivery_mode=2),  routing_key='intermediate.import'),
+
+		Queue('mapping_list', Exchange('mapping_list', delivery_mode= 2),  routing_key='mapping_list.import'),
+		Queue('result', Exchange('default', delivery_mode= 2),  routing_key='result.import'),
+		Queue('word_tokenization', Exchange('word_tokenization', delivery_mode= 2),  routing_key='word_tokenization.import'),
+		Queue('sentence_tokenization', Exchange('sentence_tokenization', delivery_mode= 2),  routing_key='sentence_tokenization.import'),
+		Queue('review_ids', Exchange('review_ids', delivery_mode= 2),  routing_key='review_ids.import'),
 		    )
 
-CELERY_ROUTES = {
-		'tasks.runn': {
-				'queue': 'junk',
-				'routing_key': 'junk.import',
-					},
-		'tasks.eateries_list': {
-				'queue': 'scrape_url',
-				'routing_key': 'scrape_url.import',
-				},
 
-		'tasks.process_eatery': {
-				'queue': 'process_eatery_q',
-				'routing_key': 'process_eatery_q.import',
-							        },
-		'tasks.dmap': {
-				'queue': 'intermediate',
-				'routing_key': 'intermediate.import',
-							        },
+#And your routes that will decide which task goes where:
+CELERY_ROUTES = {
+		'ProcessingCeleryTask.SentenceTokenization': {
+				'queue': 'sentence_tokenization',
+				'routing_key': 'sentence_tokenization.import',
+                        },		
+		'ProcessingCeleryTask.return_result': {
+				'queue': 'result',
+				'routing_key': 'result.import',
+                        },		
+                
+                
+                'ProcessingCeleryTask.WordTokenization': {
+				'queue': 'word_tokenization',
+				'routing_key': 'word_tokenization.import',
+					},
+                
+                'ProcessingCeleryTask.MappingList': {
+				'queue': 'mapping_list',
+				'routing_key': 'mapping_list.import',
+                                    },
+                                
+                'ProcessingCeleryTask.ReviewIds': {
+				'queue': 'review_ids',
+				'routing_key': 'review_ids.import',
+					},
 			}
 #BROKER_HOST = ''
 #BROKER_PORT = ''
@@ -46,6 +68,7 @@ CELERY_RESULT_BACKEND = 'mongodb'
 
 CELERY_MONGODB_BACKEND_SETTINGS = {
 		'host': 'localhost',
+#		'host': '192.168.1.15',
 		'port': 27017,
 		'database': 'celery',
 #		'user': '',
@@ -54,12 +77,30 @@ CELERY_MONGODB_BACKEND_SETTINGS = {
 			}
 
 
+#How many messages to prefetch at a time multiplied by the number of concurrent processes. The default is 4 
+#(four messages for each process). The default setting is usually a good choice, however – if you have very 
+#long running tasks waiting in the queue and you have to start the workers, note that the first worker to 
+#start will receive four times the number of messages initially. Thus the tasks may not be fairly distributed 
+#to the workers.
+CELERYD_PREFETCH_MULTIPLIER = 1
+
+
+#CELERY_RESULT_ENGINE_OPTIONS = {'echo': True}
 #CELERY_TASK_SERIALIZER = 'json'
 #CELERY_RESULT_SERIALIZER = 'json'
 #CELERY_ACCEPT_CONTENT=['application/json']
 CELERY_ENABLE_UTC = True
-CELERYD_CONCURRENCY = 20
+#CELERYD_CONCURRENCY = 20
 #CELERYD_LOG_FILE="%s/celery.log"%os.path.dirname(os.path.abspath(__file__))
 CELERY_DISABLE_RATE_LIMITS = True
 CELERY_RESULT_PERSISTENT = True #Keeps the result even after broker restart
 #CELERYD_POOL = 'gevent'
+
+
+#CELERY_ALWAYS_EAGER = True, this is setup for local development and debugging. This setting tells Celery to 
+#process all tasks synchronously which is perfect for running our tests and working locally so we don't have 
+#to run a separate worker process. You'll obviously want to turn that off in production.
+#CELERY_EAGER_PROPAGATES_EXCEPTIONS = True
+#CELERY_ALWAYS_EAGER = True
+
+
