@@ -2,11 +2,15 @@
 import os
 from kombu import Exchange, Queue
 from celery.schedules import crontab
+
+
+
+CELERY_IMPORTS = ("ProcessingCeleryTask", )
 #from kombu import serialization
 #serialization.registry._decoders.pop("application/x-python-serialize")
 #BROKER_URL = 'redis://'
 #BROKER_URL = 'redis://192.168.1.5:6379/0'
-BROKER_URL = 'redis://localhost/0'
+BROKER_URL = 'redis://localhost/1'
 
 
 #CELERY_DEFAULT_QUEUE = 'default'
@@ -16,12 +20,19 @@ BROKER_URL = 'redis://localhost/0'
 #"topic"
 #"fanout"
 #"header"
+#celery -A ProcessingCeleryTask  worker -n mapping_list_worker -Q mapping_list --concurrency=1 --loglevel=info;
+#celery -A ProcessingCeleryTask  worker -n result_worker -Q result --concurrency=1 --loglevel=info;
+#celery -A ProcessingCeleryTask  worker -n review_id_worker -Q review_ids --concurrency=1 --loglevel=info;
+#celery -A ProcessingCeleryTask  worker -n sentence_tokenization_one -Q sentence_tokenization --concurrency=1 --loglevel=info;
+#celery -A ProcessingCeleryTask  worker -n word_tokenization_one -Q word_tokenization --concurrency=1 --loglevel=info;
+ 
+
 
 CELERY_QUEUES = (
 
-		Queue('mapping_list', Exchange('mapping_list', delivery_mode= 2),  routing_key='mapping_list.import'),
+#		Queue('mapping_list', Exchange('mapping_list', delivery_mode= 2),  routing_key='mapping_list.import'),
 		Queue('result', Exchange('default', delivery_mode= 2),  routing_key='result.import'),
-		Queue('word_tokenization', Exchange('word_tokenization', delivery_mode= 2),  routing_key='word_tokenization.import'),
+#		Queue('word_tokenization', Exchange('word_tokenization', delivery_mode= 2),  routing_key='word_tokenization.import'),
 		Queue('sentence_tokenization', Exchange('sentence_tokenization', delivery_mode= 2),  routing_key='sentence_tokenization.import'),
 		Queue('review_ids', Exchange('review_ids', delivery_mode= 2),  routing_key='review_ids.import'),
 		    )
@@ -39,15 +50,15 @@ CELERY_ROUTES = {
                         },		
                 
                 
-                'ProcessingCeleryTask.WordTokenization': {
-				'queue': 'word_tokenization',
-				'routing_key': 'word_tokenization.import',
-					},
+#                'ProcessingCeleryTask.WordTokenization': {
+#				'queue': 'word_tokenization',
+#				'routing_key': 'word_tokenization.import',
+#					},
                 
-                'ProcessingCeleryTask.MappingList': {
-				'queue': 'mapping_list',
-				'routing_key': 'mapping_list.import',
-                                    },
+ #               'ProcessingCeleryTask.MappingList': {
+#				'queue': 'mapping_list',
+#				'routing_key': 'mapping_list.import',
+ #                                   },
                                 
                 'ProcessingCeleryTask.ReviewIds': {
 				'queue': 'review_ids',
@@ -86,15 +97,13 @@ CELERYD_PREFETCH_MULTIPLIER = 1
 
 
 #CELERY_RESULT_ENGINE_OPTIONS = {'echo': True}
-#CELERY_TASK_SERIALIZER = 'json'
-#CELERY_RESULT_SERIALIZER = 'json'
-#CELERY_ACCEPT_CONTENT=['application/json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_ACCEPT_CONTENT=['application/json']
 CELERY_ENABLE_UTC = True
 #CELERYD_CONCURRENCY = 20
 #CELERYD_LOG_FILE="%s/celery.log"%os.path.dirname(os.path.abspath(__file__))
 CELERY_DISABLE_RATE_LIMITS = True
-CELERY_RESULT_PERSISTENT = True #Keeps the result even after broker restart
-#CELERYD_POOL = 'gevent'
 
 
 #CELERY_ALWAYS_EAGER = True, this is setup for local development and debugging. This setting tells Celery to 
@@ -103,4 +112,5 @@ CELERY_RESULT_PERSISTENT = True #Keeps the result even after broker restart
 #CELERY_EAGER_PROPAGATES_EXCEPTIONS = True
 #CELERY_ALWAYS_EAGER = True
 
-
+#CELERY_IGNORE_RESULT = True
+CELERY_TRACK_STARTED = True 

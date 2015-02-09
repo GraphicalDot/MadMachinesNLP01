@@ -54,7 +54,7 @@ from api_helpers import merging_similar_elements
 import base64
 import requests
 from PIL import Image
-from ProcessingCeleryTask import return_result 
+from ProcessingCeleryTask import SentenceTokenization, ReviewIds 
 
 connection = pymongo.Connection()
 db = connection.modified_canworks
@@ -536,7 +536,19 @@ class TestWhole(restful.Resource):
 	@cors
 	@timeit
         def get(self):
-                result = return_result.apply_async(args=["4571"])
+                def solve_key_error_threading():
+                        if 'threading' in sys.modules:
+                                del sys.modules['threading']
+                        import gevent
+                        import gevent.socket
+                        import gevent.monkey
+                        gevent.monkey.patch_all()
+
+                #solve_key_error_threading()
+                result = (ReviewIds.s("4571")| SentenceTokenization.s())()
+                while result.state != "SUCCESS":
+                    pass
+
                 """
                 review_text = [to_unicode_or_bust(post.get("review_text")) for post in reviews.find({"eatery_id": "4571"})]
 		
@@ -556,8 +568,8 @@ class TestWhole(restful.Resource):
                 """
                 return   {"success": True,
                             "error": False,
-                            "result": result.result}
-
+                            "result": result.get(),
+                            }
 
 api.add_resource(EateriesList, '/eateries_list')
 api.add_resource(LimitedEateriesList, '/limited_eateries_list')
