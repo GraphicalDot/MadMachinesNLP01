@@ -54,7 +54,7 @@ from api_helpers import merging_similar_elements
 import base64
 import requests
 from PIL import Image
-from ProcessingCeleryTask import SentenceTokenization, ReviewIds 
+from ProcessingCeleryTask import SentenceTokenization, Classification
 
 connection = pymongo.Connection()
 db = connection.modified_canworks
@@ -545,7 +545,7 @@ class TestWhole(restful.Resource):
                         gevent.monkey.patch_all()
 
                 #solve_key_error_threading()
-                result = (ReviewIds.s("4571")| SentenceTokenization.s())()
+                result = (SentenceTokenization.s("4571")| Classification.s())()
                 while result.state != "SUCCESS":
                     pass
 

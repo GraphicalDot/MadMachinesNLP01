@@ -31,7 +31,7 @@ BROKER_URL = 'redis://localhost/1'
 CELERY_QUEUES = (
 
 #		Queue('mapping_list', Exchange('mapping_list', delivery_mode= 2),  routing_key='mapping_list.import'),
-		Queue('result', Exchange('default', delivery_mode= 2),  routing_key='result.import'),
+		Queue('classification', Exchange('default', delivery_mode= 2),  routing_key='classification.import'),
 #		Queue('word_tokenization', Exchange('word_tokenization', delivery_mode= 2),  routing_key='word_tokenization.import'),
 		Queue('sentence_tokenization', Exchange('sentence_tokenization', delivery_mode= 2),  routing_key='sentence_tokenization.import'),
 		Queue('review_ids', Exchange('review_ids', delivery_mode= 2),  routing_key='review_ids.import'),
@@ -44,9 +44,9 @@ CELERY_ROUTES = {
 				'queue': 'sentence_tokenization',
 				'routing_key': 'sentence_tokenization.import',
                         },		
-		'ProcessingCeleryTask.return_result': {
-				'queue': 'result',
-				'routing_key': 'result.import',
+		'ProcessingCeleryTask.Classification': {
+				'queue': 'classification',
+				'routing_key': 'classification.import',
                         },		
                 
                 

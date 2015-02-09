@@ -116,16 +116,9 @@ def eateries_list(url, number_of_restaurants, skip, is_eatery):
 
 
 """
-@app.task(ignore_result=True, max_retries=3, retry=True, acks_late= True)
-def MappingList(it, callback):
-	# Map a callback over an iterator and return as a group
-	callback = subtask(callback)
-	return group(callback.clone([arg,]) for arg in it)()
-
 
 @app.task()
 class WordTokenization(celery.Task):
-	ignore_result=True, 
 	max_retries=3, 
 	acks_late=True
 	default_retry_delay = 5
@@ -135,94 +128,106 @@ class WordTokenization(celery.Task):
                     tuple (sentence, tag, sentiment)
 
                 """
-                print __tuple.result
-                #word_tokenize = WordTokenize([__tuple[0]])
-                #result = word_tokenize.word_tokenized_list
-                """
+                word_tokenize = WordTokenize([__tuple[0]])
                 result = {"word_tokenization": word_tokenize.word_tokenized_list,
                                 "sentence": __tuple[0], 
                                 "tag": __tuple[1],
                                 "sentiment": __tuple[2]}
 		logger.info("Getting reviw text for review id {0}".format(word_tokenize.word_tokenized_list))
-	        """
                 return
+	
+        def after_return(self, status, retval, task_id, args, kwargs, einfo):
+		#exit point of the task whatever is the state
+		logger.info("Ending run Word Tokenization")
+		pass
 
 	def on_failure(self, exc, task_id, args, kwargs, einfo):
 		print "fucking faliure occured"
 		self.retry(exc=exc)
-
 
 
 @app.task()
 class Classification(celery.Task):
-        """
-        This clery tasks deals with the classification of the tokenized sentences,
-        Right now the classification for tags and sentiments are being done
-        """
-	ignore_result=True, 
 	max_retries=3, 
 	acks_late=True
 	default_retry_delay = 5
-	def run(self, list_of_sentences):
-                tag_classifier = joblib.load("Text_Processing/PrepareClassifiers/InMemoryClassifiers/svm_linear_kernel_classifier_tag.lib")
-                sentiment_classifier =joblib.load("Text_Processing/PrepareClassifiers/InMemoryClassifiers/svm_linear_kernel_classifier_sentiment.lib")
-                
-                tokenized_sentence_list = sent_tokenizer.tokenize(review_text)
-                result = zip(tokenized_sentence_list, tag_classifier.predict(tokenized_sentence_list), 
-                                                        sentiment_classifier.predict(tokenized_sentence_list))
-                
+	def run(self, __sent_tokenized_list):
+                """
+                Args:
+                    tuple (review_id, sentence, sentence_tokenized_list)
 
+                """
+
+                result = list()
+                ALGORITHM_TAG = "svm_linear_kernel"
+                ALGORITHM_SENTIMENT = "svm_linear_kernel"
+                whole_list = list()
+                for __tuple in __sent_tokenized_list:
+                        for sentence in __tuple[2]:
+                                whole_list.append((__tuple[0], sentence))
+
+                tag_classifier = joblib.load("Text_Processing/PrepareClassifiers/InMemoryClassifiers/{0}_classifier_tag.lib".format(ALGORITHM_TAG))
+                sentiment_classifier =joblib.load("Text_Processing/PrepareClassifiers/InMemoryClassifiers/{0}_classifier_sentiment.lib".format(ALGORITHM_SENTIMENT))
+                predicted_tags = tag_classifier.predict([__tuple[1] for __tuple in whole_list])
+                predicted_sentiments = sentiment_classifier.predict([__tuple[1] for __tuple in whole_list])
+                
+                for __ in zip(whole_list, predicted_tags, predicted_sentiments):
+                        result.append({"review_id": __[0][0],
+                                        "sentence": __[0][1], 
+                                        "tag": (ALGORITHM_TAG, __[1]),
+                                        "sentiment": (ALGORITHM_SENTIMENT, __[2])
+                                        })
+
+
+                return result
+	
+        def after_return(self, status, retval, task_id, args, kwargs, einfo):
+		#exit point of the task whatever is the state
+		logger.info("Ending run Classification")
+		pass
 
 	def on_failure(self, exc, task_id, args, kwargs, einfo):
 		print "fucking faliure occured"
 		self.retry(exc=exc)
+
+
 
 @app.task()
 class SentenceTokenization(celery.Task):
 	max_retries=3, 
 	acks_late=True
 	default_retry_delay = 5
-	def run(self, list_of_tuples):
-                """
-                Args:
-                    a list of the tuples with first element as id and second element as review text
-                returns
-                    a list of the tuples with first element as id, second element as review text and 
-                    third element as sent_tokenized review text
-
-                """
-                sent_tokenizer = SentenceTokenizationOnRegexOnInterjections()
-                result = [ (__tuple[0], __tuple[1], sent_tokenizer.tokenize(__tuple[1])) for __tuple in list_of_tuples]
-		logger.info("REsult from Sentence tokenization task %s"%result)
-	        return  result
-
-	def on_failure(self, exc, task_id, args, kwargs, einfo):
-		print "fucking faliure occured"
-		self.retry(exc=exc)
-
-@app.task()
-class ReviewIds(celery.Task):
-	max_retries=3, 
-	acks_late=True
-	default_retry_delay = 5
 	def run(self, eatery_id):
-                """
-                Args: 
-                        eatery_id: eatry id of the eatery for which the word cloud has to be seen
-                result:
-                    returns a list of the tuples with first element as id and second element as review text
-                """
-                reviews_id = reviews.find({"eatery_id": eatery_id})
-                result = [(review.get("review_id"), review.get("review_text")) for review in reviews_id]
+                sent_tokenizer = SentenceTokenizationOnRegexOnInterjections()
+                result = [(review.get("review_id"), review.get("review_text"), sent_tokenizer.tokenize(review.get("review_text")))
+                                for review in reviews.find({"eatery_id": eatery_id})]
                 return result
 
-
+        
+        def after_return(self, status, retval, task_id, args, kwargs, einfo):
+		#exit point of the task whatever is the state
+		logger.info("Ending run Sentence tokenization")
+		pass
 
 	def on_failure(self, exc, task_id, args, kwargs, einfo):
 		print "fucking faliure occured"
 		self.retry(exc=exc)
 
 
+@app.task(ignore_result=False, max_retries=3, retry=True, acks_late= True)
+def MappingList(it, callback):
+	# Map a callback over an iterator and return as a group
+	callback = subtask(callback)
+	return group(callback.clone([arg,]) for arg in it)()
 
+
+
+@app.task(ignore_result=True, max_retries=3, retry=True)
+def return_result(eatery_id):
+        #process_list = SentenceTokenization.s(eatery_id) | MappingList.s(Classification.s())
+        process_list = SentenceTokenization.s(eatery_id) 
+        result = group(Classification.chunks(process_list.get(), 100))
+        
+        return result
                     
 
