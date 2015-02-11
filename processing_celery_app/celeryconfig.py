@@ -10,7 +10,7 @@ CELERY_IMPORTS = ("ProcessingCeleryTask", )
 #serialization.registry._decoders.pop("application/x-python-serialize")
 #BROKER_URL = 'redis://'
 #BROKER_URL = 'redis://192.168.1.5:6379/0'
-BROKER_URL = 'redis://localhost/1'
+BROKER_URL = 'redis://localhost/0'
 
 
 #CELERY_DEFAULT_QUEUE = 'default'
@@ -29,17 +29,27 @@ BROKER_URL = 'redis://localhost/1'
 
 
 CELERY_QUEUES = (
+		Queue('test', Exchange('default', delivery_mode= 2),  routing_key='test.import'),
 
-#		Queue('mapping_list', Exchange('mapping_list', delivery_mode= 2),  routing_key='mapping_list.import'),
+		Queue('pos_tagger', Exchange('pos_tagger', delivery_mode= 2),  routing_key='pos_tagger.import'),
+		Queue('process_eatery_id', Exchange('process_eatery_id', delivery_mode= 2),  routing_key='process_eatery_id.import'),
+		Queue('mapping_list', Exchange('mapping_list', delivery_mode= 2),  routing_key='mapping_list.import'),
 		Queue('classification', Exchange('default', delivery_mode= 2),  routing_key='classification.import'),
-#		Queue('word_tokenization', Exchange('word_tokenization', delivery_mode= 2),  routing_key='word_tokenization.import'),
+		Queue('word_tokenization', Exchange('word_tokenization', delivery_mode= 2),  routing_key='word_tokenization.import'),
 		Queue('sentence_tokenization', Exchange('sentence_tokenization', delivery_mode= 2),  routing_key='sentence_tokenization.import'),
-		Queue('review_ids', Exchange('review_ids', delivery_mode= 2),  routing_key='review_ids.import'),
 		    )
 
 
 #And your routes that will decide which task goes where:
 CELERY_ROUTES = {
+		'ProcessingCeleryTask.PosTagger': {
+				'queue': 'pos_tagger',
+				'routing_key': 'pos_tagger.import',
+                        },		
+		'ProcessingCeleryTask.Test': {
+				'queue': 'test',
+				'routing_key': 'test.import',
+                        },		
 		'ProcessingCeleryTask.SentenceTokenization': {
 				'queue': 'sentence_tokenization',
 				'routing_key': 'sentence_tokenization.import',
@@ -50,19 +60,19 @@ CELERY_ROUTES = {
                         },		
                 
                 
-#                'ProcessingCeleryTask.WordTokenization': {
-#				'queue': 'word_tokenization',
-#				'routing_key': 'word_tokenization.import',
-#					},
+                'ProcessingCeleryTask.WordTokenization': {
+				'queue': 'word_tokenization',
+				'routing_key': 'word_tokenization.import',
+					},
                 
- #               'ProcessingCeleryTask.MappingList': {
-#				'queue': 'mapping_list',
-#				'routing_key': 'mapping_list.import',
- #                                   },
+                'ProcessingCeleryTask.MappingList': {
+				'queue': 'mapping_list',
+				'routing_key': 'mapping_list.import',
+                                   },
                                 
-                'ProcessingCeleryTask.ReviewIds': {
-				'queue': 'review_ids',
-				'routing_key': 'review_ids.import',
+                'ProcessingCeleryTask.ProcessEateryId': {
+				'queue': 'process_eatery_id',
+				'routing_key': 'process_eatery_id.import',
 					},
 			}
 #BROKER_HOST = ''
@@ -93,7 +103,7 @@ CELERY_MONGODB_BACKEND_SETTINGS = {
 #long running tasks waiting in the queue and you have to start the workers, note that the first worker to 
 #start will receive four times the number of messages initially. Thus the tasks may not be fairly distributed 
 #to the workers.
-CELERYD_PREFETCH_MULTIPLIER = 1
+CELERYD_PREFETCH_MULTIPLIER = 20
 
 
 #CELERY_RESULT_ENGINE_OPTIONS = {'echo': True}
@@ -113,4 +123,11 @@ CELERY_DISABLE_RATE_LIMITS = True
 #CELERY_ALWAYS_EAGER = True
 
 #CELERY_IGNORE_RESULT = True
-CELERY_TRACK_STARTED = True 
+CELERY_TRACK_STARTED = True
+
+#Added because of the pobable soultion of the problem 
+#InconsistencyError: 
+#    Cannot route message for exchange 'celery': Table empty or key no longer exists.
+#    Probably the key ('_kombu.binding.celery') has been removed from the Redis database.
+#While running chunks on Classification task
+SEND_TASK_SENT_EVENT = True
