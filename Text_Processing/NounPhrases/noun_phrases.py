@@ -115,6 +115,7 @@ import sys
 import inspect
 import nltk
 import re
+from functools import wraps
 from nltk.tag.hunpos import HunposTagger
 from textblob.np_extractors import ConllExtractor
 from textblob import TextBlob
@@ -127,6 +128,20 @@ sys.path.append(os.path.join(directory))
 from MainAlgorithms import InMemoryMainClassifier, timeit, cd, path_parent_dir, path_trainers_file, path_in_memory_classifiers
 stanford_file_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 sys.path.append(os.path.join(stanford_file_path))
+
+
+def need_pos_tagged(pos_tagged):  
+        def tags_decorator(func):
+                @wraps(func)
+                def func_wrapper(self, *args, **kwargs):
+                        if pos_tagged and type(self.list_of_sentences[0]) != list :
+                                raise StandardError("The pos tagger you are trying run needs pos tagged list of sentences\
+                                        Please try some other pos tagger which doesnt require word tokenized sentences")
+                        func(self, *args, **kwargs)
+                return func_wrapper 
+        return tags_decorator  
+
+
 
 class NounPhrases:
         def __init__(self, list_of_sentences, default_np_extractor=None, regexp_grammer=None):
@@ -148,17 +163,19 @@ class NounPhrases:
                 self.noun_phrases = list()
                 self.conll_extractor = ConllExtractor()
                 self.list_of_sentences = list_of_sentences
-                self.np_extractor = ("regex_textblob_conll_np", default_np_extractor)[default_np_extractor != None]
+                print "from the noun phrases class %s"%len(self.list_of_sentences)
+                self.np_extractor = ("textblob_np_conll", default_np_extractor)[default_np_extractor != None]
                 if not regexp_grammer:
                         self.regexp_grammer = r"CustomNounP:{<JJ|VB|FW|VBN>?<NN.*>*<NN.*>}"
 
+                print "self.{0}()".format(self.np_extractor)
                 eval("self.{0}()".format(self.np_extractor)) 
                
                 self.noun_phrases = {self.np_extractor: self.noun_phrases}
                 
                 return 
 
-
+        @need_pos_tagged(True)
         def regex_np_extractor(self):
                 __parser = nltk.RegexpParser(self.regexp_grammer)
                 for __sentence in self.list_of_sentences:
@@ -169,19 +186,22 @@ class NounPhrases:
 
 
 
-	def textblob_np_conll(self, text):
+        @need_pos_tagged(False)
+	def textblob_np_conll(self):
                 for __sentence in self.list_of_sentences:
-		        blob = TextBlob(" ".join([word[0] for _word in __sentence]), np_extractor=self.conll_extractor)
-		        self.noun_phrases.append(blob.noun_phrases)
-                        return
-		
+		        blob = TextBlob(__sentence, np_extractor=self.conll_extractor)
+                        self.noun_phrases.append(list(blob.noun_phrases))
+                return
+        
+        @need_pos_tagged(False)
         def textblob_np_base(self):
                 for __sentence in self.list_of_sentences:
-		        blob = TextBlob(" ".join([_word[0] for _word in __sentence]),)
+		        blob = TextBlob(__sentence)
 		        self.noun_phrases.append(blob.noun_phrases)
-                        return
+                return
 
 
+        @need_pos_tagged(True)
         def regex_textblob_conll_np(self):
                 """
                 Gives a union of the noun phrases of regex grammer and text blob conll noun phrases

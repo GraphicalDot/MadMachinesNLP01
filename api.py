@@ -322,7 +322,7 @@ class LimitedEateriesList(restful.Resource):
                 """
                 This gives only the limited eatery list like the top on the basis of the reviews count
                 """
-                result = list(eateries.find({"eatery_area_or_city": "ncr"}, fields= {"eatery_id": True, "_id": False, "eatery_name": True}).limit(15).sort("eatery_total_reviews", -1))
+                result = list(eateries.find({"eatery_area_or_city": "ncr"}, fields= {"eatery_id": True, "_id": False, "eatery_name": True}).limit(200).sort("eatery_total_reviews", -1))
 		
                 return {"success": True,
 			"error": False,
@@ -454,11 +454,32 @@ class GetWordCloud(restful.Resource):
 		new_time = time.time()
 		filtered_tag_text = [text for text in zip(test_sentences, __predicted_tags, __predicted_sentiment) if text[1] == category]
 	
+                
+                
+                """
+                __word_tokenize = WordTokenize([__tuple[0] for __tuple in filtered_tag_text]) #using punkt_n_treebank_tokenizer
+                word_tokenized_list =  __word_tokenize.word_tokenized_list
+               
 
-		instance = ProcessingWithBlobInMemory()
-		__k = lambda text: noun_phrases_list.extend([(noun.lower(),  text[2]) for noun in instance.noun_phrase(to_unicode_or_bust(text[0]))])	
-		
+                __pos_tagger = PosTaggers(word_tokenized_list.get("punkt_n_treebank")) #using default standford pos tagger
+                __pos_tagged_sentences =  __pos_tagger.pos_tagged_sentences
+                
 
+                __noun_phrases = NounPhrases(__pos_tagged_sentences.get("nltk_pos_tagger"))
+		"""
+
+        
+                __noun_phrases = NounPhrases([__tuple[0] for __tuple in filtered_tag_text]) #using punkt_n_treebank_tokenizer
+                print __noun_phrases.noun_phrases.get("textblob_np_conll")
+
+
+                #final_noun_phrases = list()
+                #for element in zip(__noun_phrases.noun_phrases.get("textblob_np_conll"), [__text[2] for __text in filtered_tag_text]):
+                #            final_noun_phrases.append([(noun, element[1]) for noun in element[0]])
+                        
+                #noun_phrases = list(itertools.chain(*final_noun_phrases))
+
+                #print noun_phrases
 
                 def check_lavenshtein_similarity(category, noun_phrase):
                         #This function checks if the noun phrase is neary same with the category or not
@@ -481,6 +502,7 @@ class GetWordCloud(restful.Resource):
                                         return True
 
                 #instance.noun_phrase(to_unicode_or_bust(text[0])) gives a list of noun phrases with the help of text blob library
+                """
 		for text in filtered_tag_text:
 			noun_phrases_list.extend([(noun.lower(),  text[2]) for noun in instance.noun_phrase(to_unicode_or_bust(text[0]))
                             if not check_lavenshtein_similarity(category, noun)
@@ -491,7 +513,7 @@ class GetWordCloud(restful.Resource):
 		##Incresing and decrasing frequency of the noun phrases who are superpositive and supernegative and changing
 		##their tags to positive and negative
 		edited_result = list()
-		for __noun_phrase_dict in noun_phrases_list:
+                for __noun_phrase_dict in noun_phrases_list:
 			if __noun_phrase_dict[1] == "super-positive" or __noun_phrase_dict[1] == "super-negative":
 				edited_result.append((__noun_phrase_dict[0], __noun_phrase_dict[1].split("-")[1]))
 				#Added twice beacause super postive was given twice as weightage as positive and some goes for supernegative 
@@ -506,23 +528,17 @@ class GetWordCloud(restful.Resource):
 		for key, value in Counter(edited_result).iteritems():
 			result.append({"name": key[0], "polarity": 1 if key[1] == 'positive' else 0 , "frequency": value}) 
 		
-
-		"""
 		with open("/home/k/word_cloud.csv", "wb") as csv_file:
 			writer = csv.writer(csv_file, delimiter=',')
 			for line in result:
 				writer.writerow([line.get("name").encode("utf-8"), line.get("polarity"), line.get("frequency")])
-		"""
 
 		sorted_result = sorted(result, reverse=True, key=lambda x: x.get("frequency"))
-
-		"""
 		#final_result = sorted(merging_similar_elements(sorted_result), reverse=True, key=lambda x: x.get("frequency"))
                 
                 for element in final_result:
                     print element 
                 
-                """
                 final_result = sorted(sorted_result, reverse=True, key=lambda x: x.get("frequency"))
 
                 print   [(e, "\n")  for e in final_result[0: 20]]	
@@ -530,8 +546,7 @@ class GetWordCloud(restful.Resource):
 				"error": False,
 				"result": final_result[0:15],
 		}
-	
-
+                """
 class TestWhole(restful.Resource):
 	@cors
 	@timeit

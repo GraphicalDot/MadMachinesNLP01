@@ -22,8 +22,12 @@ from MainAlgorithms import InMemoryMainClassifier, timeit, cd, path_parent_dir, 
 
 class SentimentClassifier(InMemoryMainClassifier):
 	def __init__(self):
-		tag_list = ["super-positive", "positive", "negative", "super-negative", "neutral"] 
-		InMemoryMainClassifier.__init__(self, tag_list, from_files= True)
+		"""
+                If the data is to be loaded from the files, Then supply from_files= True while
+                initiating InMemoryMainClassifier class, By Default it is false
+                """
+                tag_list = ["super-positive", "positive", "negative", "super-negative", "neutral"] 
+		InMemoryMainClassifier.__init__(self, tag_list)
 		
 
 

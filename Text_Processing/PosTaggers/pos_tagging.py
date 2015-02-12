@@ -9,7 +9,8 @@ import os
 import sys
 import subprocess
 import warnings
-from textblob import TextBlob                                              
+from textblob import TextBlob      
+from functools import wraps
 from nltk import wordpunct_tokenize
 from nltk import pos_tag as nltk_pos_tag
 from nltk.tag.hunpos import HunposTagger
@@ -18,6 +19,17 @@ stanford_file_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dir
 sys.path.append(os.path.join(stanford_file_path))  
 
 
+def need_word_tokenization(word_tokenize):
+        def tags_decorator(func):
+                @wraps(func)
+                def func_wrapper(self, *args, **kwargs):
+                        if word_tokenize and type(self.list_of_sentences[0]) != list : 
+                                raise StandardError("This Pos tagger needs a Word tokenized list of sentences, Please try some other pos tagger\
+                                        which doesnt require word tokenized sentences")
+                        func(self, *args, **kwargs)
+                        print self.list_of_sentences
+                return func_wrapper
+        return tags_decorator
 
 class PosTaggers:
         os.environ["JAVA_HOME"] = "{0}/ForStanford/jdk1.8.0_31/jre/bin/".format(stanford_file_path)
@@ -39,6 +51,12 @@ class PosTaggers:
                                 hunpos_pos_tagger
                                 nltk_pos_tagger
                                 textblob_pos_tagger
+
+                
+                need_word_tokenization decorator two things
+                    if the pos tagger needs a word tokenized list of sentences or list of sentences
+                    @need_word_tokenization(True) means that this pos tagger needs word tokenized list 
+                    and then checks whether self.list_of_sentences is that or not 
                 """
 
                 self.check_if_hunpos() 
@@ -47,7 +65,7 @@ class PosTaggers:
                 
                 self.list_of_sentences = list_of_sentences
                 self.pos_tagged_sentences = list()
-                self.pos_tagger = ("stan_pos_tagger", default_pos_tagger)[default_pos_tagger != None]                
+                self.pos_tagger = ("nltk_pos_tagger", default_pos_tagger)[default_pos_tagger != None]                
                 eval("self.{0}()".format(self.pos_tagger))
 
                 self.pos_tagged_sentences = {self.pos_tagger: self.pos_tagged_sentences}
@@ -68,11 +86,16 @@ class PosTaggers:
                         subprocess.call(["rm", "-rf", "hunpos-1.0-linux.tgz"]) 
 
 
+        
+
+
+        @need_word_tokenization(True)
         def hunpos_pos_tagger(self):
                 for __sentence in self.list_of_sentences:
                         self.pos_tagged_sentences.append(self.hunpos_tagger.tag(__sentence))
                 return
 
+        @need_word_tokenization(True)
         def stan_pos_tagger(self):
                 for __sentence in self.list_of_sentences:
                         try:
@@ -83,20 +106,21 @@ class PosTaggers:
                             pass
                 return
 
+        @need_word_tokenization(False)
         def textblob_pos_tagger(self):
                 for __sentence in self.list_of_sentences:
-                        __sentence = " ".join([ element for element in __sentence])
                         blob = TextBlob(__sentence)
                         self.pos_tagged_sentences.append(blob.pos_tags)
                 return 
 
+        @need_word_tokenization(True)
         def nltk_pos_tagger(self):
                 for __sentence in self.list_of_sentences:
                         self.pos_tagged_sentences.append(nltk_pos_tag(__sentence))
                 return
-"""
+
+
 if __name__ == "__main__":
-        p = PosTaggers([wordpunct_tokenize("I went there to have chicken pizza")], default_pos_tagger="nltk_pos_tagger")
+        p = PosTaggers(["I went there to have chicken pizza"], default_pos_tagger="hunpos_pos_tagger")
         print p.pos_tagged_sentences
-"""
 

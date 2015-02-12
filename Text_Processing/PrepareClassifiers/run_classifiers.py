@@ -163,7 +163,7 @@ class cd:
 
 
 if __name__ == "__main__":
-        __ = LoadClassifiers(category="cost", load="all") 
+        __ = LoadClassifiers(category="sentiment", load="all") 
 
 
 
