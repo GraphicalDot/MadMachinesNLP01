@@ -29,20 +29,34 @@ BROKER_URL = 'redis://localhost/0'
 
 
 CELERY_QUEUES = (
-		Queue('test', Exchange('default', delivery_mode= 2),  routing_key='test.import'),
 
+		Queue('review_ids', Exchange('default', delivery_mode= 2),  routing_key='review_ids.import'),
+		Queue('does_all', Exchange('default', delivery_mode= 2),  routing_key='does_all.import'),
+
+
+		Queue('test', Exchange('default', delivery_mode= 2),  routing_key='test.import'),
 		Queue('pos_tagger', Exchange('pos_tagger', delivery_mode= 2),  routing_key='pos_tagger.import'),
 		Queue('process_eatery_id', Exchange('process_eatery_id', delivery_mode= 2),  routing_key='process_eatery_id.import'),
 		Queue('mapping_list', Exchange('mapping_list', delivery_mode= 2),  routing_key='mapping_list.import'),
 		Queue('classification', Exchange('default', delivery_mode= 2),  routing_key='classification.import'),
 		Queue('word_tokenization', Exchange('word_tokenization', delivery_mode= 2),  routing_key='word_tokenization.import'),
 		Queue('sentence_tokenization', Exchange('sentence_tokenization', delivery_mode= 2),  routing_key='sentence_tokenization.import'),
-		    )
+                    )
 
 
 #And your routes that will decide which task goes where:
 CELERY_ROUTES = {
-		'ProcessingCeleryTask.PosTagger': {
+		'ProcessingCeleryTask.ReviewIds': {
+				'queue': 'review_ids',
+				'routing_key': 'review_ids.import',
+                        },		
+		'ProcessingCeleryTask.DoesAll': {
+				'queue': 'does_all',
+				'routing_key': 'does_all.import',
+                        },		
+		
+                
+                'ProcessingCeleryTask.PosTagger': {
 				'queue': 'pos_tagger',
 				'routing_key': 'pos_tagger.import',
                         },		
@@ -74,7 +88,8 @@ CELERY_ROUTES = {
 				'queue': 'process_eatery_id',
 				'routing_key': 'process_eatery_id.import',
 					},
-			}
+                        
+                        }
 #BROKER_HOST = ''
 #BROKER_PORT = ''
 #BROKER_USER = ''
@@ -103,7 +118,7 @@ CELERY_MONGODB_BACKEND_SETTINGS = {
 #long running tasks waiting in the queue and you have to start the workers, note that the first worker to 
 #start will receive four times the number of messages initially. Thus the tasks may not be fairly distributed 
 #to the workers.
-CELERYD_PREFETCH_MULTIPLIER = 20
+CELERYD_PREFETCH_MULTIPLIER = 1
 
 
 #CELERY_RESULT_ENGINE_OPTIONS = {'echo': True}

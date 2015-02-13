@@ -100,7 +100,6 @@ class PosTaggers:
                 for __sentence in self.list_of_sentences:
                         try:
                             __tagged_sentence = self.stanford_tagger.tag(__sentence)
-                            print __tagged_sentence
                             self.pos_tagged_sentences.append(__tagged_sentence)
                         except Exception:
                             pass
@@ -120,7 +119,4 @@ class PosTaggers:
                 return
 
 
-if __name__ == "__main__":
-        p = PosTaggers(["I went there to have chicken pizza"], default_pos_tagger="hunpos_pos_tagger")
-        print p.pos_tagged_sentences
 
