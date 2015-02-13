@@ -134,7 +134,6 @@ def need_pos_tagged(pos_tagged):
         def tags_decorator(func):
                 @wraps(func)
                 def func_wrapper(self, *args, **kwargs):
-                        rint self.list_of_sentences
                         if pos_tagged and type(self.list_of_sentences[0]) != list :
                                 raise StandardError("The pos tagger you are trying run needs pos tagged list of sentences\
                                         Please try some other pos tagger which doesnt require word tokenized sentences")

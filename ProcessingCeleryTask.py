@@ -301,34 +301,39 @@ class DoesAll(celery.Task):
 	acks_late=True
 	default_retry_delay = 5
 	def run(self, review_id):
-                review_text = reviews.find_one({"review_id": review_id}).get("review_text")
-                sent_tokenizer = SentenceTokenizationOnRegexOnInterjections()
-                tokenized_sentences = sent_tokenizer.tokenize(review_text)
+                try:
+                        review_text = reviews.find_one({"review_id": review_id}).get("review_text")
+                        sent_tokenizer = SentenceTokenizationOnRegexOnInterjections()
+                        tokenized_sentences = sent_tokenizer.tokenize(review_text)
                 
-                ALGORITHM_TAG = "svm_linear_kernel"
-                ALGORITHM_SENTIMENT = "svm_linear_kernel"
+                        ALGORITHM_TAG = "svm_linear_kernel"
+                        ALGORITHM_SENTIMENT = "svm_linear_kernel"
 
 
-                ##Nxt lines of the code predicts the tag, sentiment fo rthe tokenized sentences
-                tag_classifier = joblib.load("Text_Processing/PrepareClassifiers/InMemoryClassifiers/{0}_classifier_tag.lib".format(ALGORITHM_TAG))
+                        ##Nxt lines of the code predicts the tag, sentiment fo rthe tokenized sentences
+                        tag_classifier = joblib.load("Text_Processing/PrepareClassifiers/InMemoryClassifiers/{0}_classifier_tag.lib".format(ALGORITHM_TAG))
                 
-                sentiment_classifier =joblib.load("Text_Processing/PrepareClassifiers/InMemoryClassifiers/{0}_classifier_sentiment.lib".format(ALGORITHM_SENTIMENT))
-                predicted_tags = tag_classifier.predict(tokenized_sentences)
-                predicted_sentiments = sentiment_classifier.predict(tokenized_sentences)
+                        sentiment_classifier =joblib.load("Text_Processing/PrepareClassifiers/InMemoryClassifiers/{0}_classifier_sentiment.lib".format(ALGORITHM_SENTIMENT))
+                        predicted_tags = tag_classifier.predict(tokenized_sentences)
+                        predicted_sentiments = sentiment_classifier.predict(tokenized_sentences)
                 
-                WORD_TOKENIZATION_ALGORITHM = "punkt_n_treebank"
+                        WORD_TOKENIZATION_ALGORITHM = "punkt_n_treebank"
 
-                word_tokenize = WordTokenize(tokenized_sentences)
-                word_tokenized_sentences = word_tokenize.word_tokenized_list.get(WORD_TOKENIZATION_ALGORITHM)
+                        word_tokenize = WordTokenize(tokenized_sentences)
+                        word_tokenized_sentences = word_tokenize.word_tokenized_list.get(WORD_TOKENIZATION_ALGORITHM)
                 
-                __pos_tagger = PosTaggers(word_tokenized_sentences,  default_pos_tagger="stan_pos_tagger") #using default standford pos tagger
-                __pos_tagged_sentences =  __pos_tagger.pos_tagged_sentences.get("stan_pos_tagger")
+                        __pos_tagger = PosTaggers(word_tokenized_sentences,  default_pos_tagger="stan_pos_tagger") #using default standford pos tagger
+                        __pos_tagged_sentences =  __pos_tagger.pos_tagged_sentences.get("stan_pos_tagger")
 
 
-                __noun_phrases = NounPhrases(__pos_tagged_sentences, default_np_extractor = "regex_textblob_conll_np")
+                        __noun_phrases = NounPhrases(__pos_tagged_sentences, default_np_extractor = "regex_textblob_conll_np")
                 
-                result =  __noun_phrases.noun_phrases.get("regex_textblob_conll_np")
-                return result
+                        result =  __noun_phrases.noun_phrases.get("regex_textblob_conll_np")
+                        return result
+                except Exception as e:
+                        print "{0}Error OCCURRED {1}{2}".format(bcolors.WARNING, e, bcolors.RESET)
+                        self.on_failure
+                return
 
         def after_return(self, status, retval, task_id, args, kwargs, einfo):
 		#exit point of the task whatever is the state
@@ -336,7 +341,7 @@ class DoesAll(celery.Task):
 		pass
 
 	def on_failure(self, exc, task_id, args, kwargs, einfo):
-		print "fucking faliure occured in Test"
+		print "fucking faliure occured in Doesall Function"
 		self.retry(exc=exc)
 
 
