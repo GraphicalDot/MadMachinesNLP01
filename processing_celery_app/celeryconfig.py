@@ -9,7 +9,7 @@ CELERY_IMPORTS = ("ProcessingCeleryTask", )
 #from kombu import serialization
 #serialization.registry._decoders.pop("application/x-python-serialize")
 #BROKER_URL = 'redis://'
-BROKER_URL = 'redis://192.168.1.15:6379/0'
+BROKER_URL = 'redis://192.168.1.3:6379/0'
 #BROKER_URL = 'redis://localhost/0'
 
 
@@ -103,7 +103,7 @@ CELERY_RESULT_BACKEND = 'mongodb'
 #the same server
 
 CELERY_MONGODB_BACKEND_SETTINGS = {
-		'host': '192.168.1.15',
+		'host': '192.168.1.3',
 #		'host': 'localhost',
 		'port': 27017,
 		'database': 'celery',

@@ -322,17 +322,17 @@ class DoesAll(celery.Task):
                 ##word_tokenized_sentences = word_tokenize.word_tokenized_list.get(WORD_TOKENIZATION_ALGORITHM)
                 word_tokenized_sentence = word_tokenize.word_tokenized_list.get(WORD_TOKENIZATION_ALGORITHM)
                
-                return (__sentence[0], __sentence[1], predicted_tags, predicted_sentiment, word_tokenized_sentence)
                     
-                """
-                __pos_tagger = PosTaggers(word_tokenized_sentences,  default_pos_tagger="stan_pos_tagger") #using default standford pos tagger
-                __pos_tagged_sentences =  __pos_tagger.pos_tagged_sentences.get("stan_pos_tagger")
+                __pos_tagger = PosTaggers(word_tokenized_sentence,  default_pos_tagger="hunpos_pos_tagger") #using default standford pos tagger
+                __pos_tagged_sentences =  __pos_tagger.pos_tagged_sentences.get("hunpos_pos_tagger")
 
 
+                
                 __noun_phrases = NounPhrases(__pos_tagged_sentences, default_np_extractor = "regex_textblob_conll_np")
                 
-                result =  __noun_phrases.noun_phrases.get("regex_textblob_conll_np")
-                """
+                noun_phrases =  __noun_phrases.noun_phrases.get("regex_textblob_conll_np")
+                
+                return (__sentence[0], __sentence[1], predicted_tags, predicted_sentiment, word_tokenized_sentence, __pos_tagged_sentences, noun_phrases)
 
         def after_return(self, status, retval, task_id, args, kwargs, einfo):
 		#exit point of the task whatever is the state
@@ -355,7 +355,7 @@ class ReviewIds(celery.Task):
                 review_list = [(post.get("review_id"), post.get("review_text")) for post in reviews.find({"eatery_id": eatery_id})]
                 for element in review_list:
                         for __sentence in sent_tokenizer.tokenize(element[1]): 
-                                result.append((element[0], __sentence))
+                                result.append((element[0], __sentence.encode("ascii", "xmlcharrefreplace")))
 
                 logger.warning("Lenght of the reviews list is %s"%len(result))
                 return result
@@ -371,6 +371,11 @@ class ReviewIds(celery.Task):
 
 
 
+def to_unicode_or_bust(obj, encoding='utf-8'):
+        if isinstance(obj, basestring):
+                if not isinstance(obj, unicode):
+                        obj = unicode(obj, encoding)
+        return obj
 
 
 

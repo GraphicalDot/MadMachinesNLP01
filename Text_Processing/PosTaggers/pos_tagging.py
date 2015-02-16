@@ -18,6 +18,7 @@ from nltk.tag.stanford import POSTagger
 stanford_file_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))                                    
 sys.path.append(os.path.join(stanford_file_path))  
 
+dir_name = os.path.dirname(os.path.abspath(__file__))                           
 
 def need_word_tokenization(word_tokenize):
         def tags_decorator(func):
@@ -30,6 +31,11 @@ def need_word_tokenization(word_tokenize):
                         print self.list_of_sentences
                 return func_wrapper
         return tags_decorator
+
+
+
+
+
 
 class PosTaggers:
         os.environ["JAVA_HOME"] = "{0}/ForStanford/jdk1.8.0_31/jre/bin/".format(stanford_file_path)
@@ -60,7 +66,8 @@ class PosTaggers:
                 """
 
                 self.check_if_hunpos() 
-                self.hunpos_tagger = HunposTagger('hunpos-1.0-linux/en_wsj.model','hunpos-1.0-linux/hunpos-tag')
+                self.hunpos_tagger = HunposTagger('{0}/hunpos-1.0-linux/en_wsj.model'.format(dir_name),
+                                                    '{0}/hunpos-1.0-linux/hunpos-tag'.format(dir_name))
                 self.stanford_tagger = POSTagger(self.stanford_tagger, self.stanford_jar_file) 
                 
                 self.list_of_sentences = list_of_sentences
@@ -75,7 +82,7 @@ class PosTaggers:
                 """
                 This method checks if the executabled of hunpos exists or not
                 """
-                if not os.path.exists("hunpos-1.0-linux"):
+                if not os.path.exists("{0}/hunpos-1.0-linux".format(dir_name)):
                         warnings.warn("Downloading the hun pos tagger files as they werent here,to be used for tagging")
                         subprocess.call(["wget", "https://hunpos.googlecode.com/files/hunpos-1.0-linux.tgz"])
                         subprocess.call(["wget", "https://hunpos.googlecode.com/files/en_wsj.model.gz"])
@@ -117,6 +124,4 @@ class PosTaggers:
                 for __sentence in self.list_of_sentences:
                         self.pos_tagged_sentences.append(nltk_pos_tag(__sentence))
                 return
-
-
 
