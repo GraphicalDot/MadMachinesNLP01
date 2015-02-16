@@ -37,7 +37,7 @@ from Text_Processing import NounPhrases, get_all_algorithms_result, RpRcClassifi
 		bcolors, CopiedSentenceTokenizer, SentenceTokenizationOnRegexOnInterjections, get_all_algorithms_result, \
 		path_parent_dir, path_trainers_file, path_in_memory_classifiers, timeit, cd, SentimentClassifier, \
 		TagClassifier
-from Text_Processing import WordTokenize, PosTaggers
+from Text_Processing import WordTokenize, PosTaggers, NounPhrases
 
 
 import time
@@ -50,11 +50,11 @@ import random
 from sklearn.externals import joblib
 import numpy
 from multiprocessing import Pool
-from api_helpers import merging_similar_elements
 import base64
 import requests
 from PIL import Image
-from ProcessingCeleryTask import SentenceTokenization, Classification
+import inspect
+from ProcessingCeleryTask import ProcessEateryId
 
 connection = pymongo.Connection()
 db = connection.modified_canworks
@@ -82,6 +82,34 @@ def to_unicode_or_bust(obj, encoding='utf-8'):
 			obj = unicode(obj, encoding)
 	return obj
 
+
+
+def word_tokenization_algorithm(algorithm_name):
+        members = [member[0] for member in inspect.getmembers(WordTokenize, predicate=inspect.ismethod) if member[0] 
+                                            not in ["__init__", "to_unicode_or_bust"]]
+        
+        if algorithm_name not in members:
+                raise StandardError("The algorithm you are trying to use for word tokenization doesnt exists yet,\
+                                    please try from these algorithms {0}".format(members))
+        return algorithm_name
+
+def pos_tagging_algorithm(algorithm_name):
+        members = [member[0] for member in inspect.getmembers(PosTaggers, predicate=inspect.ismethod) if member[0] 
+                                            not in ["__init__", "to_unicode_or_bust"]]
+
+        if algorithm_name not in members:
+                raise StandardError("The algorithm you are trying to use for word tokenization doesnt exists yet,\
+                                    please try from these algorithms {0}".format(members))
+        return algorithm_name
+
+def noun_phrases_algorithm(algorithm_name):
+        members = [member[0] for member in inspect.getmembers(NounPhrases, predicate=inspect.ismethod) if member[0] 
+                                            not in ["__init__", "to_unicode_or_bust"]]
+
+        if algorithm_name not in members:
+                raise StandardError("The algorithm you are trying to use for word tokenization doesnt exists yet,\
+                                    please try from these algorithms {0}".format(members))
+        return algorithm_name
 
 
 
@@ -133,6 +161,9 @@ get_word_cloud_parser.add_argument('eatery_id', type=str,  required=True, locati
 get_word_cloud_parser.add_argument('category', type=str,  required=True, location="form")
 get_word_cloud_parser.add_argument('start_date', type=str,  required=True, location="form")
 get_word_cloud_parser.add_argument('end_date', type=str,  required=True, location="form") 
+get_word_cloud_parser.add_argument('word_tokenization_algorithm', type=word_tokenization_algorithm,  required=False, location="form")
+get_word_cloud_parser.add_argument('noun_phrases_algorithm', type=noun_phrases_algorithm,  required=False, location="form")
+get_word_cloud_parser.add_argument('pos_tagging_algorithm', type=pos_tagging_algorithm,  required=False, location="form")
 
 
 
@@ -370,13 +401,35 @@ class GetWordCloud(restful.Resource):
 	@cors
 	@timeit
         def post(self):
-		args = get_word_cloud_parser.parse_args()
+		"""
+
+
+
+                To test
+                    eatery_id = "4571"
+                    start_epoch = 1318185000.0
+                    end_epoch = 1420569000.0
+                    
+                    start_date = "2011-10-10"
+                    end_date = "2015-01-07"
+                    category = "food"
+                """ 
+                args = get_word_cloud_parser.parse_args()
 		print args
                 start = time.time()
 		__format = '%Y-%m-%d'
 		eatery_id = args["eatery_id"]
 		category = args["category"].lower()
-		
+                
+                word_tokenization_algorithm = ("punkt_n_treebank", args["word_tokenization_algorithm"])[args["word_tokenization_algorithm"] != None]
+                
+                
+                noun_phrases_algorithm = ("regex_textblob_conll_np", args["noun_phrases_algorithm"])[args["noun_phrases_algorithm"] != None]
+                
+                
+                pos_tagging_algorithm = ("hunpos_pos_tagger", args["pos_tagging_algorithm"])[args["pos_tagging_algorithm"] != None]
+
+    
 		try:
 			start_epoch = time.mktime(time.strptime(args["start_date"], __format))
 			end_epoch = time.mktime(time.strptime(args["end_date"], __format))
@@ -404,10 +457,19 @@ class GetWordCloud(restful.Resource):
                                 "success": False,
                                 "error_messege": "This is a n invalid tag %s"%category, 
                                 }
-                        
+        
+                
+                print args
+                print word_tokenization_algorithm, noun_phrases_algorithm, pos_tagging_algorithm
 
-
-		noun_phrases_list = list()
+                result = list()
+                ret = ProcessEateryId.apply_async(args=[eatery_id, category, start_epoch, end_epoch, word_tokenization_algorithm, 
+                                        pos_tagging_algorithm, noun_phrases_algorithm])
+                for child in ret.children[0]:
+                        result.append(child.get())
+                
+		"""
+                noun_phrases_list = list()
 		print type(start_epoch), type(end_epoch)
 
 
@@ -456,7 +518,6 @@ class GetWordCloud(restful.Resource):
 	
                 
                 
-                """
                 __word_tokenize = WordTokenize([__tuple[0] for __tuple in filtered_tag_text]) #using punkt_n_treebank_tokenizer
                 word_tokenized_list =  __word_tokenize.word_tokenized_list
                
@@ -466,7 +527,6 @@ class GetWordCloud(restful.Resource):
                 
 
                 __noun_phrases = NounPhrases(__pos_tagged_sentences.get("nltk_pos_tagger"))
-		"""
 
         
                 __noun_phrases = NounPhrases([__tuple[0] for __tuple in filtered_tag_text]) #using punkt_n_treebank_tokenizer
@@ -481,28 +541,6 @@ class GetWordCloud(restful.Resource):
 
                 #print noun_phrases
 
-                def check_lavenshtein_similarity(category, noun_phrase):
-                        #This function checks if the noun phrase is neary same with the category or not
-                        #for example the noun phrase "amazing ambiance" should be same sa "ambience"
-                        #So the "amazing ambiance" should be split and the word similarity shall be checked with each
-                        #split string otherwise whole string would give low string similarity ratio like .5 which would
-                        #misinterpret "amazing ambiance" different from "ambience" 
-                        for __noun in noun_phrase.split(" "):
-                                ratio = difflib.SequenceMatcher(a=category, b=__noun).ratio()
-                                if ratio > .8:
-                                        return True
-                               
-                                
-                                #The next lines of code checks for the presence of restaurant name in the noun_phrase
-                                #If the restaurant is a name like "andhra bhawan" it qalso checks for that by splitting
-                                #the string into two string and checks for the sequence matching for both
-                                for __string in eatery_name.split(" "):
-                                    __ratio = difflib.SequenceMatcher(a=__string, b=__noun).ratio()
-                                    if __ratio > .6:
-                                        return True
-
-                #instance.noun_phrase(to_unicode_or_bust(text[0])) gives a list of noun phrases with the help of text blob library
-                """
 		for text in filtered_tag_text:
 			noun_phrases_list.extend([(noun.lower(),  text[2]) for noun in instance.noun_phrase(to_unicode_or_bust(text[0]))
                             if not check_lavenshtein_similarity(category, noun)
@@ -550,7 +588,7 @@ class GetWordCloud(restful.Resource):
 class TestWhole(restful.Resource):
 	@cors
 	@timeit
-        def get(self):
+        def post(self):
                 def solve_key_error_threading():
                         if 'threading' in sys.modules:
                                 del sys.modules['threading']
@@ -560,11 +598,11 @@ class TestWhole(restful.Resource):
                         gevent.monkey.patch_all()
 
                 #solve_key_error_threading()
-                result = (SentenceTokenization.s("4571")| Classification.s())()
-                while result.state != "SUCCESS":
-                    pass
-
+                args = test_whole_parser.parse_args()    
+                print args
                 """
+
+
                 review_text = [to_unicode_or_bust(post.get("review_text")) for post in reviews.find({"eatery_id": "4571"})]
 		
                 review_text = " .".join(review_text)

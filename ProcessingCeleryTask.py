@@ -122,171 +122,6 @@ def eateries_list(url, number_of_restaurants, skip, is_eatery):
 
 """
 
-@app.task()
-class PosTagger(celery.Task):
-        #Queue: pos_tagger
-        max_retries=3, 
-	acks_late=False
-	default_retry_delay = 5
-	def run(self, __sentence_dict):
-                """
-                Args:
-                {"review_id": "6538124", "sentence": "great Food & amp ; Drinks .", 
-                                    "sentiment": ["svm_linear_kernel", "super-positive"], 
-                                    "tag": ["svm_linear_kernel", "food"]
-                                    "word_tokenization: {"punkt_n_treebank": [
-                                                                            ]
-                                                        },
-                                    "pos_tagger": [{"word_tokenizer": "punkt_n_treebank",
-                                                    "stan_pos_tagger": []}
-                                    ]    
-                                                    } 
-
-                __pos_tagger = PosTaggers([__sentence_dict.get("word_tokenization").get("punkt_n_treebank")]) #using default standford pos tagger
-                 
-                __pos_tagged_sentences =  __pos_tagger.pos_tagged_sentences
-                #Updating __pos_tagged_sentences dict with the nameof word tokenizer
-                __pos_tagged_sentences.update({"word_tokenizer": "punkt_n_treebank"})
-
-                
-                __sentence_dict.update({"pos_tagger": __pos_tagged_sentences})
-		
-                        
-                logger.info("Finished Word tokenization")
-                """
-                return __sentence_dict
-        def after_return(self, status, retval, task_id, args, kwargs, einfo):
-		#exit point of the task whatever is the state
-		logger.info("Ending run Word Tokenization")
-		pass
-
-	def on_failure(self, exc, task_id, args, kwargs, einfo):
-		print "fucking faliure occured"
-		self.retry(exc=exc)
-
-@app.task()
-class WordTokenization(celery.Task):
-        #Queue: word_tokenization
-        max_retries=3, 
-	acks_late=True
-	default_retry_delay = 5
-	def run(self,  __sentence_dict):
-                """
-                Args:
-                    dictionary with keys as follows
-                    review_id: Id of the review from which the sentence has been tokenized
-                    sentence:  The sentence
-                    sentiment: List of tuples, with each tuple has first element has a algorithm name
-                                                an second element as the precited sentiment by this algorithm
-                    tag: List of tuples, with each tuple has first element has a algorithm name
-                                                an second element as the precited tag by this algorithm
-
-
-                Result:
-                    [{"review_id": "6538124", "sentence": "great Food & amp ; Drinks .", 
-                                    "sentiment": ["svm_linear_kernel", "super-positive"], 
-                                    "tag": ["svm_linear_kernel", "food"]
-                                    "word_tokenization: {"punkt_n_treebank": [
-                                                                            ]
-                                                        },}, 
-                """
-                #Other options are, punkt_tokenize, treebank_tokenize, default is punkt_n_treebank
-                WORD_TOKENIZATION_ALGORITHM = "punkt_n_treebank"
-
-                word_tokenize = WordTokenize([__sentence_dict.get("sentence")])
-                __sentence_dict.update({"word_tokenization": word_tokenize.word_tokenized_list})
-		
-                        
-                logger.info("Finished Word tokenization")
-                return __sentence_dict
-	
-        def after_return(self, status, retval, task_id, args, kwargs, einfo):
-		#exit point of the task whatever is the state
-		logger.info("Ending run Word Tokenization")
-		pass
-
-	def on_failure(self, exc, task_id, args, kwargs, einfo):
-		print "fucking faliure occured"
-		self.retry(exc=exc)
-
-
-@app.task()
-class Classification(celery.Task):
-        #Queue: classification
-        max_retries=3, 
-	acks_late=True
-	default_retry_delay = 5
-	def run(self, __sent_tokenized_list):
-                """
-                Args:
-                    tuple (review_id, sentence, sentence_tokenized_list)
-
-                returns:
-                 [{"review_id": "6538124", "sentence": "great Food & amp ; Drinks .", "sentiment": ["svm_linear_kernel", "super-positive"], 
-                                                                                        "tag": ["svm_linear_kernel", "food"]}, 
-                {"review_id": "6538124", "sentence": "food Presentation & amp ; Server were great as well .", 
-                                                                                        "sentiment": ["svm_linear_kernel", "super-positive"], 
-                                                                                        "tag": ["svm_linear_kernel", "service"]},  
-                ]
-                """
-
-                result = list()
-                ALGORITHM_TAG = "svm_linear_kernel"
-                ALGORITHM_SENTIMENT = "svm_linear_kernel"
-                whole_list = list()
-                for __tuple in __sent_tokenized_list:
-                        for sentence in __tuple[2]:
-                                whole_list.append((__tuple[0], sentence))
-
-                tag_classifier = joblib.load("Text_Processing/PrepareClassifiers/InMemoryClassifiers/{0}_classifier_tag.lib".format(ALGORITHM_TAG))
-                sentiment_classifier =joblib.load("Text_Processing/PrepareClassifiers/InMemoryClassifiers/{0}_classifier_sentiment.lib".format(ALGORITHM_SENTIMENT))
-                predicted_tags = tag_classifier.predict([__tuple[1] for __tuple in whole_list])
-                predicted_sentiments = sentiment_classifier.predict([__tuple[1] for __tuple in whole_list])
-                
-                for __ in zip(whole_list, predicted_tags, predicted_sentiments):
-                        result.append({"review_id": __[0][0],
-                                        "sentence": __[0][1], 
-                                        "tag": (ALGORITHM_TAG, __[1]),
-                                        "sentiment": (ALGORITHM_SENTIMENT, __[2])
-                                        })
-
-
-                return result
-	
-        def after_return(self, status, retval, task_id, args, kwargs, einfo):
-		#exit point of the task whatever is the state
-		logger.info("Ending run Classification")
-		pass
-
-	def on_failure(self, exc, task_id, args, kwargs, einfo):
-		print "fucking faliure occured"
-		self.retry(exc=exc)
-
-
-
-@app.task()
-class SentenceTokenization(celery.Task):
-        #Queue: sentence_tokenization
-        max_retries=3, 
-	acks_late=True
-	default_retry_delay = 5
-	def run(self, eatery_id):
-                sent_tokenizer = SentenceTokenizationOnRegexOnInterjections()
-                result = [(review.get("review_id"), review.get("review_text"), sent_tokenizer.tokenize(review.get("review_text")))
-                                for review in reviews.find({"eatery_id": eatery_id})]
-                return result
-
-        
-        def after_return(self, status, retval, task_id, args, kwargs, einfo):
-		#exit point of the task whatever is the state
-		logger.info("Ending run Sentence tokenization")
-		pass
-
-	def on_failure(self, exc, task_id, args, kwargs, einfo):
-		print "fucking faliure occured"
-		self.retry(exc=exc)
-
-
 
 
 
@@ -302,9 +137,9 @@ def MappingList(it, callback):
 
 
 @app.task()
-class DoesAll(celery.Task):
+class SentTokenizeToNP(celery.Task):
 	max_retries=3, 
-	acks_late=False
+	acks_late=True
 	default_retry_delay = 5
 	def run(self, __sentence):
                 """
@@ -345,20 +180,21 @@ class DoesAll(celery.Task):
 
 
 @app.task()
-class ReviewIds(celery.Task):
+class ReviewIdToSentTokenize(celery.Task):
 	max_retries=3, 
-	acks_late=False
+	acks_late=True
 	default_retry_delay = 5
-	def run(self, eatery_id):
+	def run(self, eatery_id, start_epoch, end_epoch):
                 sent_tokenizer = SentenceTokenizationOnRegexOnInterjections()
                 result = list()
-                review_list = [(post.get("review_id"), post.get("review_text")) for post in reviews.find({"eatery_id": eatery_id})]
+                review_list = [(post.get("review_id"), post.get("review_text")) for post in 
+                            reviews.find({"eatery_id" :eatery_id, "converted_epoch": {"$gt":  start_epoch, "$lt" : end_epoch}})]
                 for element in review_list:
                         for __sentence in sent_tokenizer.tokenize(element[1]): 
                                 result.append((element[0], __sentence.encode("ascii", "xmlcharrefreplace")))
 
                 logger.warning("Lenght of the reviews list is %s"%len(result))
-                return result
+                return result[0:400]
         
         def after_return(self, status, retval, task_id, args, kwargs, einfo):
 		#exit point of the task whatever is the state
@@ -371,17 +207,9 @@ class ReviewIds(celery.Task):
 
 
 
-def to_unicode_or_bust(obj, encoding='utf-8'):
-        if isinstance(obj, basestring):
-                if not isinstance(obj, unicode):
-                        obj = unicode(obj, encoding)
-        return obj
 
-
-
-
-@app.task(max_retries=3, retry=True)
-def ProcessEateryId(eatery_id):
+@app.task(max_retries=3, retry=True, acks_late=True)
+def ProcessEateryId(eatery_id, category, start_epoch, end_epoch, word_tokenization_algorithm, pos_tagging_algorithm, noun_phrases_algorithm):
         #process_list = SentenceTokenization.s(eatery_id) | MappingList.s(Classification.s())
         """
         Queue: process_eatery_id
@@ -394,35 +222,8 @@ def ProcessEateryId(eatery_id):
                 for element in zip(__noun_phrases.noun_phrases.get("textblob_np_conll"), [__text[2] for __text in filtered_tag_text]):
                 for element in zip(__noun_phrases.noun_phrases.get("textblob_np_conll"), [__text[2] for __text in filtered_tag_text]):
         """
-        first = (SentenceTokenization.s(eatery_id)| Classification.s()| MappingList.s(WordTokenization.s()))()
-        
-
-
-        result = chord(MappingList.s(PosTagger.s()),),
+        result = (ReviewIdToSentTokenize.s(eatery_id, start_epoch, end_epoch)| MappingList.s(SentTokenizeToNP.s(category, word_tokenization_algorithm, pos_tagging_algorithm, noun_phrases_algorithm)))()
         return result
-
-
-@app.task()
-class Test(celery.Task):
-	max_retries=3, 
-	acks_late=True
-	default_retry_delay = 5
-	def run(self, sentences):
-                ALGORITHM_TAG = "svm_linear_kernel"
-                ALGORITHM_SENTIMENT = "svm_linear_kernel"
-                tag_classifier = joblib.load("Text_Processing/PrepareClassifiers/InMemoryClassifiers/{0}_classifier_tag.lib".format(ALGORITHM_TAG))
-                predicted = tag_classifier.predict(sentences) 
-                return list(predicted)
-
-        
-        def after_return(self, status, retval, task_id, args, kwargs, einfo):
-		#exit point of the task whatever is the state
-		logger.info("Ending Test")
-		pass
-
-	def on_failure(self, exc, task_id, args, kwargs, einfo):
-		print "fucking faliure occured in Test"
-		self.retry(exc=exc)
 
 
                     
