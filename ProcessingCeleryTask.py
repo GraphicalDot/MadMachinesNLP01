@@ -28,6 +28,12 @@ logger = logging.getLogger(__name__)
 db = connection.modified_canworks
 reviews = db.review
 
+ALGORITHM_TAG = "svm_linear_kernel"
+ALGORITHM_SENTIMENT = "svm_linear_kernel"
+
+
+TAG_CLASSIFIER = joblib.load("Text_Processing/PrepareClassifiers/InMemoryClassifiers/{0}_classifier_tag.lib".format(ALGORITHM_TAG))
+SENTIMENT_CLASSIFIER =joblib.load("Text_Processing/PrepareClassifiers/InMemoryClassifiers/{0}_classifier_sentiment.lib".format(ALGORITHM_SENTIMENT))
 
 """
 status: List active nodes in this cluster
@@ -298,42 +304,35 @@ def MappingList(it, callback):
 @app.task()
 class DoesAll(celery.Task):
 	max_retries=3, 
-	acks_late=True
+	acks_late=False
 	default_retry_delay = 5
-	def run(self, review_id):
-                try:
-                        review_text = reviews.find_one({"review_id": review_id}).get("review_text")
-                        sent_tokenizer = SentenceTokenizationOnRegexOnInterjections()
-                        tokenized_sentences = sent_tokenizer.tokenize(review_text)
-                
-                        ALGORITHM_TAG = "svm_linear_kernel"
-                        ALGORITHM_SENTIMENT = "svm_linear_kernel"
+	def run(self, __sentence):
+                """
+                Args:
+                    __sentence is a tuple with first element as its review id from which it have been generated and
+                    the second element of the tuple is sentence itself
+                """
+                predicted_tags = TAG_CLASSIFIER.predict([__sentence[1]])[0]
+                predicted_sentiment = SENTIMENT_CLASSIFIER.predict([__sentence[1]])[0]
+               
+                sentence = __sentence[1]
+                WORD_TOKENIZATION_ALGORITHM = "punkt_n_treebank"
+
+                word_tokenize = WordTokenize([sentence])
+                ##word_tokenized_sentences = word_tokenize.word_tokenized_list.get(WORD_TOKENIZATION_ALGORITHM)
+                word_tokenized_sentence = word_tokenize.word_tokenized_list.get(WORD_TOKENIZATION_ALGORITHM)
+               
+                return (__sentence[0], __sentence[1], predicted_tags, predicted_sentiment, word_tokenized_sentence)
+                    
+                """
+                __pos_tagger = PosTaggers(word_tokenized_sentences,  default_pos_tagger="stan_pos_tagger") #using default standford pos tagger
+                __pos_tagged_sentences =  __pos_tagger.pos_tagged_sentences.get("stan_pos_tagger")
 
 
-                        ##Nxt lines of the code predicts the tag, sentiment fo rthe tokenized sentences
-                        tag_classifier = joblib.load("Text_Processing/PrepareClassifiers/InMemoryClassifiers/{0}_classifier_tag.lib".format(ALGORITHM_TAG))
+                __noun_phrases = NounPhrases(__pos_tagged_sentences, default_np_extractor = "regex_textblob_conll_np")
                 
-                        sentiment_classifier =joblib.load("Text_Processing/PrepareClassifiers/InMemoryClassifiers/{0}_classifier_sentiment.lib".format(ALGORITHM_SENTIMENT))
-                        predicted_tags = tag_classifier.predict(tokenized_sentences)
-                        predicted_sentiments = sentiment_classifier.predict(tokenized_sentences)
-                
-                        WORD_TOKENIZATION_ALGORITHM = "punkt_n_treebank"
-
-                        word_tokenize = WordTokenize(tokenized_sentences)
-                        word_tokenized_sentences = word_tokenize.word_tokenized_list.get(WORD_TOKENIZATION_ALGORITHM)
-                
-                        __pos_tagger = PosTaggers(word_tokenized_sentences,  default_pos_tagger="stan_pos_tagger") #using default standford pos tagger
-                        __pos_tagged_sentences =  __pos_tagger.pos_tagged_sentences.get("stan_pos_tagger")
-
-
-                        __noun_phrases = NounPhrases(__pos_tagged_sentences, default_np_extractor = "regex_textblob_conll_np")
-                
-                        result =  __noun_phrases.noun_phrases.get("regex_textblob_conll_np")
-                        return result
-                except Exception as e:
-                        print "{0}Error OCCURRED {1}{2}".format(bcolors.WARNING, e, bcolors.RESET)
-                        self.on_failure
-                return
+                result =  __noun_phrases.noun_phrases.get("regex_textblob_conll_np")
+                """
 
         def after_return(self, status, retval, task_id, args, kwargs, einfo):
 		#exit point of the task whatever is the state
@@ -348,15 +347,22 @@ class DoesAll(celery.Task):
 @app.task()
 class ReviewIds(celery.Task):
 	max_retries=3, 
-	acks_late=True
+	acks_late=False
 	default_retry_delay = 5
 	def run(self, eatery_id):
-                return [post.get("review_id") for post in reviews.find({"eatery_id": eatery_id})][0:2]
+                sent_tokenizer = SentenceTokenizationOnRegexOnInterjections()
+                result = list()
+                review_list = [(post.get("review_id"), post.get("review_text")) for post in reviews.find({"eatery_id": eatery_id})]
+                for element in review_list:
+                        for __sentence in sent_tokenizer.tokenize(element[1]): 
+                                result.append((element[0], __sentence))
 
+                logger.warning("Lenght of the reviews list is %s"%len(result))
+                return result
         
         def after_return(self, status, retval, task_id, args, kwargs, einfo):
 		#exit point of the task whatever is the state
-		logger.info("Ending Test")
+		logger.info("Ending Review ids task")
 		pass
 
 	def on_failure(self, exc, task_id, args, kwargs, einfo):
@@ -389,13 +395,19 @@ def ProcessEateryId(eatery_id):
 
         result = chord(MappingList.s(PosTagger.s()),),
         return result
+
+
 @app.task()
 class Test(celery.Task):
 	max_retries=3, 
 	acks_late=True
 	default_retry_delay = 5
-	def run(self, x, y):
-                return x +y 
+	def run(self, sentences):
+                ALGORITHM_TAG = "svm_linear_kernel"
+                ALGORITHM_SENTIMENT = "svm_linear_kernel"
+                tag_classifier = joblib.load("Text_Processing/PrepareClassifiers/InMemoryClassifiers/{0}_classifier_tag.lib".format(ALGORITHM_TAG))
+                predicted = tag_classifier.predict(sentences) 
+                return list(predicted)
 
         
         def after_return(self, status, retval, task_id, args, kwargs, einfo):
