@@ -23,6 +23,8 @@ connection = pymongo.Connection()
 db = connection.intermediate
 collection = db.intermediate_collection
 from Text_Processing import WordTokenize, PosTaggers, SentenceTokenizationOnRegexOnInterjections, bcolors, NounPhrases
+from processing_celery_app.celeryconfig import RESULT_BACKEND_IP, RESULT_BACKEND_PORT
+from pymongo.errors import BulkWriteError
 
 logger = logging.getLogger(__name__)
 
@@ -112,14 +114,39 @@ runn.apply_async(args=["https://www.zomato.com/ncr/south-delhi-restaurants", 30,
 	     starting two tasks on the same worker instance.
 
 
-@app.task(ignore_result=True, max_retries=3, retry=True)
-def eateries_list(url, number_of_restaurants, skip, is_eatery):
-	print "{color} Execution of the function {function_name} starts".format(color=bcolors.OKBLUE, function_name=inspect.stack()[0][3])
-	eateries_list = scrape_links(url, number_of_restaurants, skip, is_eatery)
-	return eateries_list
-
 
 """
+@app.task()
+class CleanResultBackEnd(celery.Task):
+	ignore_result = True
+	max_retries=3, 
+	acks_late=True
+	default_retry_delay = 5
+        def run(self, id_list):
+                connection = pymongo.Connection(RESULT_BACKEND_IP, int(RESULT_BACKEND_PORT))
+                celery_collection_bulk = connection.celery.celery_taskmeta.initialize_unordered_bulk_op()
+                
+                for _id in id_list:
+                        celery_collection_bulk.find({'_id': _id}).remove_one()
+
+                try:
+                    celery_collection_bulk.execute()
+                except BulkWriteError as bwe:
+                    print(bwe.details)
+                connection.close()
+                return 
+
+        def after_return(self, status, retval, task_id, args, kwargs, einfo):
+		#exit point of the task whatever is the state
+		logger.info("Ending")
+		pass
+
+	def on_failure(self, exc, task_id, args, kwargs, einfo):
+		logger.info("{color} Execution of the function {function_name} Failed".format(color=bcolors.FAIL,\
+                        function_name=inspect.stack()[0][3]))
+                logger.info("{0}{1}".format(einfo, bcolors.RESET))
+		self.retry(exc=exc)
+
 
 
 
@@ -151,7 +178,6 @@ def sentiment_classification(sentiment_analysis_algorithm, sentences):
 
 
 
-
 @app.task()
 class SentTokenizeToNP(celery.Task):
 	max_retries=3, 
@@ -159,9 +185,28 @@ class SentTokenizeToNP(celery.Task):
 	default_retry_delay = 5
 	def run(self, __sentence, word_tokenization_algorithm, pos_tagging_algorithm, noun_phrases_algorithm):
                 """
+                To Start this worker
+                    celery -A ProcessingCeleryTask  worker -n SentTokenizeToNP -Q SentTokenizeToNP --concurrency=4 
+                    --loglevel=info 
+                
+                Estimated Time:
+                    generally takes 0.09 to 0.15, Can increase to greater magnitude if used with more slow 
+                    pos taggers like standford pos tagger
+
                 Args:
-                    __sentence is a tuple with first element as its review id from which it have been generated and
-                    the second element of the tuple is sentence itself
+                    __sentence = [id, sentence, predicted_tag, predicted_sentiment]
+                    word_tokenization_algorithm:
+                            type: str
+                            Name of the algorithm that shall be used to do word tokenization of the sentence
+
+                    pos_tagging_algorithm: 
+                            type: str
+                            Name of the algorithm that shall be used to do pos_tagging of the sentence
+
+                    noun_phrases_algorithm:
+                            type: str
+                            Name of the algorithm that shall be used to do noun phrase extraction from the sentence
+                
                 """
                
                 sentence = __sentence[1]
@@ -180,7 +225,13 @@ class SentTokenizeToNP(celery.Task):
                 
                 noun_phrases =  __noun_phrases.noun_phrases.get(noun_phrases_algorithm)
                 
-                return (__sentence[0], __sentence[1], __sentence[2], __sentence[3], word_tokenized_sentence, __pos_tagged_sentences, noun_phrases)
+                return {"id": __sentence[0],
+                        "sentence": __sentence[1],
+                        "tag": __sentence[2], 
+                        "sentiment": __sentence[3], 
+                        "word_tokenization": {word_tokenization_algorithm: word_tokenized_sentence},
+                        "pos_tagging": {pos_tagging_algorithm:  __pos_tagged_sentences}, 
+                        "noun_phrases": {noun_phrases_algorithm: noun_phrases}}
 
         def after_return(self, status, retval, task_id, args, kwargs, einfo):
 		#exit point of the task whatever is the state
@@ -198,13 +249,35 @@ class ReviewIdToSentTokenize(celery.Task):
 	acks_late=True
 	default_retry_delay = 5
 	def run(self, eatery_id, category, start_epoch, end_epoch, tag_analysis_algorithm, sentiment_analysis_algorithm):
-                logger.info(eatery_id)
-                logger.info(category)
-                logger.info(start_epoch)
-                logger.info(end_epoch)
-                logger.info(tag_analysis_algorithm)
-                logger.info(sentiment_analysis_algorithm)
+                """
+                Start This worker:
+                    celery -A ProcessingCeleryTask  worker -n ReviewIdToSentTokenizeOne -Q ReviewIdToSentTokenizeQueue 
+                                --concurrency=4 --loglevel=info
                 
+                Args:
+                    eatery_id: 
+                            type: str
+                            Id of the eatery for which the reviews has to be classfied and the noun phrases to be found
+                    start_epoch: float
+                            1324173248.0
+                            Start time for the reviews
+                    end_epoch: 
+                            type: float
+                            1424173248.0
+                            End time for the reviews
+
+                    tag_analysis_algorithm: 
+                            type: str
+                            Name of the algortihm that shall be used for tag classification
+
+                    sentiment_analysis_algorithm:
+                            type: str
+                            Name of the algortihm that shall be used for tag classification
+                
+                Returns:
+                        type: List of lists, which each list is of four elements
+                        (id, sentence, predicted_tag, predicted_sentiment)
+                """
                 
                 sent_tokenizer = SentenceTokenizationOnRegexOnInterjections()
                 
@@ -231,21 +304,29 @@ class ReviewIdToSentTokenize(celery.Task):
                 return result
         
         def after_return(self, status, retval, task_id, args, kwargs, einfo):
-		logger.info("Ending ReviewIdToSentTokenize task")
+		logger.info("{color} Execution of the function {function_name} Executed successfully".format(color=bcolors.OKBLUE,\
+                        function_name=inspect.stack()[0][3]))
 		pass
 
 	def on_failure(self, exc, task_id, args, kwargs, einfo):
-		print "fucking faliure occured in ReviewIdToSentTokenize"
+		logger.info("{color} Execution of the function {function_name} Failed".format(color=bcolors.FAIL,\
+                        function_name=inspect.stack()[0][3]))
+                logger.info("{0}{1}".format(einfo, bcolors.RESET))
 		self.retry(exc=exc)
 
 
 @app.task(max_retries=3, retry=True, acks_late= True)
 def MappingList(it, word_tokenization_algorithm, pos_tagging_algorithm, noun_phrases_algorithm, callback):
-	print callback, 
-        print type(callback)
-        print it
-        # Map a callback over an iterator and return as a group
-	callback = subtask(callback)
+	"""
+        To start:
+        celery -A ProcessingCeleryTask  worker -n MappingListOne -Q MappingListQueue --concurrency=4 --loglevel=info                  
+        Time to execute:
+            Generlly in milliseconds as it just do mapping
+        
+        This worker just executes a parelled exectuion on the result returned by ReviewIdToSentTokenizeQueue by mappping 
+        each element of the result to each SentTokenizeToNPQueue worker 
+        """
+        callback = subtask(callback)
 	return group(callback.clone([arg, word_tokenization_algorithm, pos_tagging_algorithm, noun_phrases_algorithm,]) for arg in it)()
 
 

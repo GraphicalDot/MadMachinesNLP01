@@ -54,7 +54,8 @@ import base64
 import requests
 from PIL import Image
 import inspect
-from ProcessingCeleryTask import ProcessEateryId
+from ProcessingCeleryTask import ProcessEateryId, ReviewIdToSentTokenize, SentTokenizeToNP, MappingList, CleanResultBackEnd
+from celery.result import AsyncResult
 
 connection = pymongo.Connection()
 db = connection.modified_canworks
@@ -439,7 +440,6 @@ class GetWordCloud(restful.Resource):
                     category = "food"
                 """ 
                 args = get_word_cloud_parser.parse_args()
-		print args
                 start = time.time()
 		__format = '%Y-%m-%d'
 		eatery_id = args["eatery_id"]
@@ -489,15 +489,57 @@ class GetWordCloud(restful.Resource):
                                 }
         
                 
-                print args
-                print word_tokenization_algorithm, noun_phrases_algorithm, pos_tagging_algorithm
-                print sentiment_analysis_algorithm, tag_analysis_algorithm
+
+                result = list()
+                celery_chain = (ReviewIdToSentTokenize.s(eatery_id, category, start_epoch, end_epoch, tag_analysis_algorithm, 
+                    sentiment_analysis_algorithm)|  MappingList.s(word_tokenization_algorithm, pos_tagging_algorithm, 
+                                noun_phrases_algorithm, SentTokenizeToNP.s()))()
+                
+                ##Waitng for the ReviewIdToSentTokenize task to finish
+                while celery_chain.status != "SUCCESS":
+                        pass    
+
+                ##Waiting for the SentTokenizeToNP tasks to finish
+                for id in celery_chain.children[0]:    
+                        while id.status != "SUCCESS":
+                                pass
+
+                    
+                ##Te above code gurantees that all the SentTokenizeToNP has been finished and now we can gather reult of these
+                ##tasks
+                for id in celery_chain.children[0]:    
+                        result.append(id.get())
+                
+                ##Deleting all the results from the backends
+                ids =  [__id.id for __id in celery_chain.children[0]]
+                ids.extend([celery_chain.parent.id, celery_chain.id])
+               
+                CleanResultBackEnd.apply_async(args=[ids])
+
+                return result
+
+                print return_result()
+                
+                """
+
+                result = list()
+		celery_chain = (ReviewIdToSentTokenize.s(eatery_id, category, start_epoch, end_epoch, tag_analysis_algorithm, sentiment_analysis_algorithm)|  MappingList.s(word_tokenization_algorithm, pos_tagging_algorithm, noun_phrases_algorithm, SentTokenizeToNP.s()))()
+
+                ids = list()
+                while celery_chain.status != "SUCCESS":
+                        ids.append(e)
+
+                for id in ids:
+                        while AsyncResult(id).status != "SUCCESS":
+                                result.append(AsyncResult(id).get())
+
+                return result
+
 
                 result = list()
                 ret = ProcessEateryId.apply_async(args=[eatery_id, category, start_epoch, end_epoch, word_tokenization_algorithm, 
                                         pos_tagging_algorithm, noun_phrases_algorithm, tag_analysis_algorithm, sentiment_analysis_algorithm])
                 
-		"""
                 noun_phrases_list = list()
 		print type(start_epoch), type(end_epoch)
 

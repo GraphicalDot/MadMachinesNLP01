@@ -9,10 +9,10 @@ CELERY_IMPORTS = ("ProcessingCeleryTask", )
 #from kombu import serialization
 #serialization.registry._decoders.pop("application/x-python-serialize")
 #BROKER_URL = 'redis://'
-BROKER_URL = 'redis://192.168.1.3:6379/0'
+BROKER_URL = 'redis://192.168.1.15:6379/0'
 #BROKER_URL = 'redis://localhost/0'
 
-
+"""
 #CELERY_DEFAULT_QUEUE = 'default'
 #Exchange Type can be specified by [providing type keyword while intializing Exchange with the key word type
 #The four options for this type can be
@@ -20,19 +20,34 @@ BROKER_URL = 'redis://192.168.1.3:6379/0'
 #"topic"
 #"fanout"
 #"header"
-#celery -A ProcessingCeleryTask  worker -n mapping_list_worker -Q mapping_list --concurrency=1 --loglevel=info;
-#celery -A ProcessingCeleryTask  worker -n result_worker -Q result --concurrency=1 --loglevel=info;
-#celery -A ProcessingCeleryTask  worker -n review_id_worker -Q review_ids --concurrency=1 --loglevel=info;
-#celery -A ProcessingCeleryTask  worker -n sentence_tokenization_one -Q sentence_tokenization --concurrency=1 --loglevel=info;
-#celery -A ProcessingCeleryTask  worker -n word_tokenization_one -Q word_tokenization --concurrency=1 --loglevel=info;
- 
+To start a ReviewIdToSentTokenizeOne, This workers returns a list of lists of the form
+(id, sentence, predicted_tag, predicted_sentiment)
+celery -A ProcessingCeleryTask  worker -n ReviewIdToSentTokenizeOne -Q ReviewIdToSentTokenizeQueue --concurrency=4 --loglevel=info
+    
+To start a MappingList worker, This worker just executes a parelled exectuion on the result returned by ReviewIdToSentTokenizeQueue 
+by mappping each element of the result to each SentTokenizeToNPQueue worker
+celery -A ProcessingCeleryTask  worker -n MappingListOne -Q MappingListQueue --concurrency=4 --loglevel=info
+    
+To start a CleanResultBackEnd worker, This worker takes a liat of parent task, task and its children and removes
+their enteries from the result backend which in our case is mongodb, We cannot make our result backend off, because
+then the states of taks remain pending, The api doesnt wait for this task to complete, this tasks runs in background
+celery -A ProcessingCeleryTask  worker -n CleanResultBackEndOne -Q CleanResultBackEndQueue --concurrency=4 --loglevel=info
 
+To start SentTokenizeToNP worker, This worker does all the heavy lifting, This gets a list of the form 
+(id, sentence, predicted_tag, predicted_sentiment)
+
+and returns a list of the form 
+    celery -A ProcessingCeleryTask  worker -n SentTokenizeToNP -Q SentTokenizeToNP --concurrency=4 --loglevel=info
+"""
+
+RESULT_BACKEND_IP = "192.168.1.15"
+RESULT_BACKEND_PORT = "27017"
 
 CELERY_QUEUES = (
 		Queue('ReviewIdToSentTokenizeQueue', Exchange('default', delivery_mode= 2),  routing_key='ReviewIdToSentTokenizeQueue.import'),
-		Queue('ProcessEateryIdQueue', Exchange('default', delivery_mode= 2),  routing_key='ProcessEateryIdQueue.import'),
 		Queue('SentTokenizeToNPQueue', Exchange('default', delivery_mode= 2),  routing_key='SentTokenizeToNPQueue.import'),
 		Queue('MappingListQueue', Exchange('pos_tagger', delivery_mode= 2),  routing_key='MappingListQueue.import'),
+		Queue('CleanResultBackEndQueue', Exchange('clean_backend', delivery_mode= 2),  routing_key='CleanResultBackEndQueue.import'),
                     )
 
 
@@ -41,10 +56,6 @@ CELERY_ROUTES = {
 		'ProcessingCeleryTask.ReviewIdToSentTokenize': {
 				'queue': 'ReviewIdToSentTokenizeQueue',
 				'routing_key': 'ReviewIdToSentTokenizeQueue.import',
-                        },		
-		'ProcessingCeleryTask.ProcessEateryId': {
-				'queue': 'ProcessEateryIdQueue',
-				'routing_key': 'ProcessEateryIdQueue.import',
                         },		
 		
                 
@@ -56,6 +67,10 @@ CELERY_ROUTES = {
                 'ProcessingCeleryTask.MappingList': {
 				'queue': 'MappingListQueue',
 				'routing_key': 'MappingListQueue.import',
+                                   },
+                'ProcessingCeleryTask.CleanResultBackEnd': {
+				'queue': 'CleanResultBackEndQueue',
+				'routing_key': 'CleanResultBackEndQueue.import',
                                    },
                         }
 #BROKER_HOST = ''
@@ -71,9 +86,9 @@ CELERY_RESULT_BACKEND = 'mongodb'
 #the same server
 
 CELERY_MONGODB_BACKEND_SETTINGS = {
-		'host': '192.168.1.3',
+		'host': RESULT_BACKEND_IP,
 #		'host': 'localhost',
-		'port': 27017,
+		'port': RESULT_BACKEND_PORT,
 		'database': 'celery',
 #		'user': '',
 #		'password': '',
