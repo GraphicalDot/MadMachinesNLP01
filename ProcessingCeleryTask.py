@@ -18,6 +18,7 @@ import inspect
 from celery import task, group
 from sklearn.externals import joblib
 import time
+import os
 connection = pymongo.Connection()
 db = connection.intermediate
 collection = db.intermediate_collection
@@ -28,12 +29,10 @@ logger = logging.getLogger(__name__)
 db = connection.modified_canworks
 reviews = db.review
 
-ALGORITHM_TAG = "svm_linear_kernel"
-ALGORITHM_SENTIMENT = "svm_linear_kernel"
+ALGORITHM_TAG = ""
+ALGORITHM_SENTIMENT = ""
 
-
-TAG_CLASSIFIER = joblib.load("Text_Processing/PrepareClassifiers/InMemoryClassifiers/{0}_classifier_tag.lib".format(ALGORITHM_TAG))
-SENTIMENT_CLASSIFIER =joblib.load("Text_Processing/PrepareClassifiers/InMemoryClassifiers/{0}_classifier_sentiment.lib".format(ALGORITHM_SENTIMENT))
+file_path = os.path.dirname(os.path.abspath(__file__))
 
 """
 status: List active nodes in this cluster
@@ -124,16 +123,33 @@ def eateries_list(url, number_of_restaurants, skip, is_eatery):
 
 
 
+def tag_classification(tag_analysis_algorithm, sentences):
+        """
+        Args:
+            sentences: List of the sentences for whom the NLP clssification has to be done
+            
+            tag_analysis_algorithm: The name of the tag analysis algorithm on the basis of which the 
+                                domain ralted tags has to be decided, Like for an example for the food domain the 
+                                five tags thats has to be decided are food, overall, null, service, cost, ambience
+        Returns:
+            ["food", "ambience", ......]
+
+        """
+        classifier_path = "{0}/Text_Processing/PrepareClassifiers/InMemoryClassifiers/".format(file_path)
+        classifier = joblib.load("{0}{1}".format(classifier_path, tag_analysis_algorithm))
+        return classifier.predict(sentences)
 
 
-@app.task(max_retries=3, retry=True, acks_late= True)
-def MappingList(it, callback):
-	print callback, 
-        print type(callback)
-        print it
-        # Map a callback over an iterator and return as a group
-	callback = subtask(callback)
-	return group(callback.clone([arg,]) for arg in it)()
+
+def sentiment_classification(sentiment_analysis_algorithm, sentences):
+        classifier_path = "{0}/Text_Processing/PrepareClassifiers/InMemoryClassifiers/".format(file_path)
+        classifier = joblib.load("{0}{1}".format(classifier_path, sentiment_analysis_algorithm))
+        return classifier.predict(sentences) 
+
+
+
+
+
 
 
 @app.task()
@@ -141,33 +157,30 @@ class SentTokenizeToNP(celery.Task):
 	max_retries=3, 
 	acks_late=True
 	default_retry_delay = 5
-	def run(self, __sentence):
+	def run(self, __sentence, word_tokenization_algorithm, pos_tagging_algorithm, noun_phrases_algorithm):
                 """
                 Args:
                     __sentence is a tuple with first element as its review id from which it have been generated and
                     the second element of the tuple is sentence itself
                 """
-                predicted_tags = TAG_CLASSIFIER.predict([__sentence[1]])[0]
-                predicted_sentiment = SENTIMENT_CLASSIFIER.predict([__sentence[1]])[0]
                
                 sentence = __sentence[1]
-                WORD_TOKENIZATION_ALGORITHM = "punkt_n_treebank"
-
+                
                 word_tokenize = WordTokenize([sentence])
                 ##word_tokenized_sentences = word_tokenize.word_tokenized_list.get(WORD_TOKENIZATION_ALGORITHM)
-                word_tokenized_sentence = word_tokenize.word_tokenized_list.get(WORD_TOKENIZATION_ALGORITHM)
+                word_tokenized_sentence = word_tokenize.word_tokenized_list.get(word_tokenization_algorithm)
                
                     
-                __pos_tagger = PosTaggers(word_tokenized_sentence,  default_pos_tagger="hunpos_pos_tagger") #using default standford pos tagger
-                __pos_tagged_sentences =  __pos_tagger.pos_tagged_sentences.get("hunpos_pos_tagger")
+                __pos_tagger = PosTaggers(word_tokenized_sentence,  default_pos_tagger=pos_tagging_algorithm) #using default standford pos tagger
+                __pos_tagged_sentences =  __pos_tagger.pos_tagged_sentences.get(pos_tagging_algorithm)
 
 
                 
-                __noun_phrases = NounPhrases(__pos_tagged_sentences, default_np_extractor = "regex_textblob_conll_np")
+                __noun_phrases = NounPhrases(__pos_tagged_sentences, default_np_extractor=noun_phrases_algorithm)
                 
-                noun_phrases =  __noun_phrases.noun_phrases.get("regex_textblob_conll_np")
+                noun_phrases =  __noun_phrases.noun_phrases.get(noun_phrases_algorithm)
                 
-                return (__sentence[0], __sentence[1], predicted_tags, predicted_sentiment, word_tokenized_sentence, __pos_tagged_sentences, noun_phrases)
+                return (__sentence[0], __sentence[1], __sentence[2], __sentence[3], word_tokenized_sentence, __pos_tagged_sentences, noun_phrases)
 
         def after_return(self, status, retval, task_id, args, kwargs, einfo):
 		#exit point of the task whatever is the state
@@ -184,46 +197,76 @@ class ReviewIdToSentTokenize(celery.Task):
 	max_retries=3, 
 	acks_late=True
 	default_retry_delay = 5
-	def run(self, eatery_id, start_epoch, end_epoch):
+	def run(self, eatery_id, category, start_epoch, end_epoch, tag_analysis_algorithm, sentiment_analysis_algorithm):
+                logger.info(eatery_id)
+                logger.info(category)
+                logger.info(start_epoch)
+                logger.info(end_epoch)
+                logger.info(tag_analysis_algorithm)
+                logger.info(sentiment_analysis_algorithm)
+                
+                
                 sent_tokenizer = SentenceTokenizationOnRegexOnInterjections()
-                result = list()
+                
+                ids_sentences = list()
                 review_list = [(post.get("review_id"), post.get("review_text")) for post in 
                             reviews.find({"eatery_id" :eatery_id, "converted_epoch": {"$gt":  start_epoch, "$lt" : end_epoch}})]
+
+
+
+
                 for element in review_list:
                         for __sentence in sent_tokenizer.tokenize(element[1]): 
-                                result.append((element[0], __sentence.encode("ascii", "xmlcharrefreplace")))
+                                ids_sentences.append((element[0], __sentence.encode("ascii", "xmlcharrefreplace")))
 
-                logger.warning("Lenght of the reviews list is %s"%len(result))
-                return result[0:400]
+
+                ids, sentences = map(list, zip(*ids_sentences))
+    
+                predicted_tags = tag_classification(tag_analysis_algorithm, sentences)
+                predicted_sentiment = sentiment_classification(sentiment_analysis_algorithm, sentences)
+
+
+                result = [element for element in zip(ids, sentences, predicted_tags, predicted_sentiment) if element[2] == category]
+
+                return result
         
         def after_return(self, status, retval, task_id, args, kwargs, einfo):
-		#exit point of the task whatever is the state
-		logger.info("Ending Review ids task")
+		logger.info("Ending ReviewIdToSentTokenize task")
 		pass
 
 	def on_failure(self, exc, task_id, args, kwargs, einfo):
-		print "fucking faliure occured in Test"
+		print "fucking faliure occured in ReviewIdToSentTokenize"
 		self.retry(exc=exc)
 
 
+@app.task(max_retries=3, retry=True, acks_late= True)
+def MappingList(it, word_tokenization_algorithm, pos_tagging_algorithm, noun_phrases_algorithm, callback):
+	print callback, 
+        print type(callback)
+        print it
+        # Map a callback over an iterator and return as a group
+	callback = subtask(callback)
+	return group(callback.clone([arg, word_tokenization_algorithm, pos_tagging_algorithm, noun_phrases_algorithm,]) for arg in it)()
 
 
-@app.task(max_retries=3, retry=True, acks_late=True)
-def ProcessEateryId(eatery_id, category, start_epoch, end_epoch, word_tokenization_algorithm, pos_tagging_algorithm, noun_phrases_algorithm):
-        #process_list = SentenceTokenization.s(eatery_id) | MappingList.s(Classification.s())
-        """
-        Queue: process_eatery_id
-        
-        Getting result of the below mentioned task
-                for element in zip(__noun_phrases.noun_phrases.get("textblob_np_conll"), [__text[2] for __text in filtered_tag_text]):
-        [element.get() for element in result.children[0]]
-                for element in zip(__noun_phrases.noun_phrases.get("textblob_np_conll"), [__text[2] for __text in filtered_tag_text]):
+@app.task()
+class ProcessEateryId(celery.Task):
+	def run(self, eatery_id, category, start_epoch, end_epoch, word_tokenization_algorithm, pos_tagging_algorithm, 
+                                                    noun_phrases_algorithm, tag_analysis_algorithm, sentiment_analysis_algorithm):
+                result = (ReviewIdToSentTokenize.s(eatery_id, category, start_epoch, end_epoch, tag_analysis_algorithm, sentiment_analysis_algorithm)|
+                        MappingList.s(word_tokenization_algorithm, pos_tagging_algorithm, noun_phrases_algorithm, SentTokenizeToNP.s()))()
+                
+                return result
 
-                for element in zip(__noun_phrases.noun_phrases.get("textblob_np_conll"), [__text[2] for __text in filtered_tag_text]):
-                for element in zip(__noun_phrases.noun_phrases.get("textblob_np_conll"), [__text[2] for __text in filtered_tag_text]):
-        """
-        result = (ReviewIdToSentTokenize.s(eatery_id, start_epoch, end_epoch)| MappingList.s(SentTokenizeToNP.s(category, word_tokenization_algorithm, pos_tagging_algorithm, noun_phrases_algorithm)))()
-        return result
+        def after_return(self, status, retval, task_id, args, kwargs, einfo):
+		#exit point of the task whatever is the state
+		logger.info("Ending")
+		pass
+
+	def on_failure(self, exc, task_id, args, kwargs, einfo):
+		print "fucking faliure occured in Doesall Function"
+		self.retry(exc=exc)
+
 
 
                     

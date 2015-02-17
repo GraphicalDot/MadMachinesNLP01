@@ -113,6 +113,28 @@ def noun_phrases_algorithm(algorithm_name):
 
 
 
+
+def tag_analysis_algorithm(algorithm_name):
+        members = [member[0] for member in inspect.getmembers(TagClassifier, predicate=inspect.ismethod) if member[0] 
+                                            not in ["__init__", "to_unicode_or_bust"]]
+
+        if algorithm_name not in members:
+                raise StandardError("The algorithm you are trying to use for tag analysis doesnt exists yet,\
+                                    please try from these algorithms {0}".format(members))
+        return algorithm_name
+
+def sentiment_analysis_algorithm(algorithm_name):
+        members = [member[0] for member in inspect.getmembers(SentimentClassifier, predicate=inspect.ismethod) if member[0] 
+                                            not in ["__init__", "to_unicode_or_bust"]]
+
+        if algorithm_name not in members:
+                raise StandardError("The algorithm you are trying to use for sentiment analysis doesnt exists yet,\
+                                    please try from these algorithms {0}".format(members))
+        return algorithm_name
+
+
+
+
 #fb_login
 fb_login_parser = reqparse.RequestParser()
 fb_login_parser.add_argument("fb_id", type=str, required=True, location="form")
@@ -164,6 +186,8 @@ get_word_cloud_parser.add_argument('end_date', type=str,  required=True, locatio
 get_word_cloud_parser.add_argument('word_tokenization_algorithm', type=word_tokenization_algorithm,  required=False, location="form")
 get_word_cloud_parser.add_argument('noun_phrases_algorithm', type=noun_phrases_algorithm,  required=False, location="form")
 get_word_cloud_parser.add_argument('pos_tagging_algorithm', type=pos_tagging_algorithm,  required=False, location="form")
+get_word_cloud_parser.add_argument('tag_analysis_algorithm', type=tag_analysis_algorithm,  required=False, location="form")
+get_word_cloud_parser.add_argument('sentiment_analysis_algorithm', type=sentiment_analysis_algorithm,  required=False, location="form")
 
 
 
@@ -428,6 +452,12 @@ class GetWordCloud(restful.Resource):
                 
                 
                 pos_tagging_algorithm = ("hunpos_pos_tagger", args["pos_tagging_algorithm"])[args["pos_tagging_algorithm"] != None]
+                
+                tag_analysis_algorithm = ("svm_linear_kernel_classifier_tag.lib", 
+                                                    "{0}_tag.lib".format(args["tag_analysis_algorithm"]))[args["tag_analysis_algorithm"] != None]
+                
+                sentiment_analysis_algorithm = ("svm_linear_kernel_classifier_sentiment.lib", 
+                                    "{0}_sentiment.lib".format(args["sentiment_analysis_algorithm"]))[args["sentiment_analysis_algorithm"] != None]
 
     
 		try:
@@ -461,12 +491,11 @@ class GetWordCloud(restful.Resource):
                 
                 print args
                 print word_tokenization_algorithm, noun_phrases_algorithm, pos_tagging_algorithm
+                print sentiment_analysis_algorithm, tag_analysis_algorithm
 
                 result = list()
                 ret = ProcessEateryId.apply_async(args=[eatery_id, category, start_epoch, end_epoch, word_tokenization_algorithm, 
-                                        pos_tagging_algorithm, noun_phrases_algorithm])
-                for child in ret.children[0]:
-                        result.append(child.get())
+                                        pos_tagging_algorithm, noun_phrases_algorithm, tag_analysis_algorithm, sentiment_analysis_algorithm])
                 
 		"""
                 noun_phrases_list = list()
