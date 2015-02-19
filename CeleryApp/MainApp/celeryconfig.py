@@ -1,17 +1,4 @@
 #-*- coding: utf-8 -*-
-import os
-from kombu import Exchange, Queue
-from celery.schedules import crontab
-
-
-
-CELERY_IMPORTS = ("ProcessingCeleryTask", )
-#from kombu import serialization
-#serialization.registry._decoders.pop("application/x-python-serialize")
-#BROKER_URL = 'redis://'
-BROKER_URL = 'redis://192.168.1.15:6379/0'
-#BROKER_URL = 'redis://localhost/0'
-
 """
 #CELERY_DEFAULT_QUEUE = 'default'
 #Exchange Type can be specified by [providing type keyword while intializing Exchange with the key word type
@@ -39,9 +26,26 @@ To start SentTokenizeToNP worker, This worker does all the heavy lifting, This g
 and returns a list of the form 
     celery -A ProcessingCeleryTask  worker -n SentTokenizeToNP -Q SentTokenizeToNP --concurrency=4 --loglevel=info
 """
+import os
+from kombu import Exchange, Queue
+from celery.schedules import crontab
+import sys
+file_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(file_path)
+from GlobalConfigs import MONGO_REVIEWS_IP, MONGO_REVIEWS_PORT, CELERY_REDIS_BROKER_IP,\
+                    CELERY_REDIS_BROKER_PORT, CELERY_REDIS_BROKER_DB_NUMBER
 
-RESULT_BACKEND_IP = "192.168.1.15"
-RESULT_BACKEND_PORT = "27017"
+
+
+CELERY_IMPORTS = ("ProcessingCeleryTask", )
+#from kombu import serialization
+#serialization.registry._decoders.pop("application/x-python-serialize")
+#BROKER_URL = 'redis://'
+#BROKER_URL = 'redis://192.168.1.15:6379/0'
+BROKER_URL = 'redis://{host}:{port}/{db_number}'.format(host=CELERY_REDIS_BROKER_IP, port=CELERY_REDIS_BROKER_PORT, 
+                                                        db_number=CELERY_REDIS_BROKER_DB_NUMBER)
+
+
 
 CELERY_QUEUES = (
 		Queue('ReviewIdToSentTokenizeQueue', Exchange('default', delivery_mode= 2),  routing_key='ReviewIdToSentTokenizeQueue.import'),
@@ -73,11 +77,6 @@ CELERY_ROUTES = {
 				'routing_key': 'CleanResultBackEndQueue.import',
                                    },
                         }
-#BROKER_HOST = ''
-#BROKER_PORT = ''
-#BROKER_USER = ''
-#BROKER_PASSWORD = ''
-#BROKER_POOL_LIMIT = 20
 
 #Celery result backend settings, We are using monngoodb to store the results after running the tasks through celery
 CELERY_RESULT_BACKEND = 'mongodb'
@@ -86,9 +85,8 @@ CELERY_RESULT_BACKEND = 'mongodb'
 #the same server
 
 CELERY_MONGODB_BACKEND_SETTINGS = {
-		'host': RESULT_BACKEND_IP,
-#		'host': 'localhost',
-		'port': RESULT_BACKEND_PORT,
+		'host': MONGO_REVIEWS_IP,
+		'port': MONGO_REVIEWS_PORT,
 		'database': 'celery',
 #		'user': '',
 #		'password': '',

@@ -2,9 +2,9 @@
 #-*- coding: utf-8 -*-
 from celery import Celery
 import os
-os.environ.setdefault('CELERY_CONFIG_MODULE', 'processing_celery_app.celeryconfig')
+os.environ.setdefault('CELERY_CONFIG_MODULE', 'MainApp.celeryconfig')
 
-app = Celery("processing_celery_app")
+app = Celery("MainApp")
 
 app.config_from_envvar('CELERY_CONFIG_MODULE')
 

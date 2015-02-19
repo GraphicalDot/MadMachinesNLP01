@@ -40,7 +40,7 @@ esac
 # uncomment for a colored prompt, if the terminal has the capability; turned
 # off by default to not distract the user: the focus in a terminal window
 # should be on the output of commands, not on the prompt
-#force_color_prompt=yes
+force_color_prompt=yes
 
 if [ -n "$force_color_prompt" ]; then
     if [ -x /usr/bin/tput ] && tput setaf 1 >&/dev/null; then
@@ -63,8 +63,9 @@ unset color_prompt force_color_prompt
 # If this is an xterm set the title to user@host:dir
 case "$TERM" in
 xterm*|rxvt*)
-    PS1="\[\e]0;${debian_chroot:+($debian_chroot)}\u@\h: \w\a\]$PS1"
-    ;;
+    #PS1="\[\e]0;${debian_chroot:+($debian_chroot)}\u@\h: \w\a\]$PS1"
+	PS1="[\t \u@\h:\W] $ "    
+;;
 *)
     ;;
 esac
@@ -106,10 +107,21 @@ if [ -f /etc/bash_completion ] && ! shopt -oq posix; then
     . /etc/bash_completion
 fi
 
+Black='\033[0;30m'     
+DarkGray='\033[1;30m'
+Blue='\033[0;34m'     
+LightBlue='\033[1;34m'
+Green='\033[0;32m'     
+LightGreen='\033[1;32m'
+Cyan='\033[0;36m'     
+LightCyan='\033[1;36m'
+NC='\033[0m'
+
+
 function env_canworks
 	{
 	cd /home/kaali/Programs/Python/Canworks/; 
-	source bin/activate; cd Canworks; 
+	source bin/activate; cd Canworks;
 	clear;
 	}
 
@@ -142,6 +154,18 @@ function canworks_junk_worker() {
 	cd Canworks; clear ; 
 	cd Scraping/Zom;
 	celery -A tasks worker -n junk_worker -Q junk  --concurrency=1 --loglevel=info; 
+	}
+
+function SentTokenizeToNPWorker(){
+	echo -e "${LightBlue}This worker does all the heavy lifting, This gets a list of the form" 
+	echo -e "(id, sentence, predicted_tag, predicted_sentiment)"
+	echo -e "And outputs result of the form ${NC}"
+	cd /home/kaali/Programs/Python/Canworks/; 
+	source bin/activate; 
+	cd Canworks/CeleryApp;  
+	worker_name="SentTokenizeToNPWorker_"
+	worker_name+=$1
+	celery -A ProcessingCeleryTask  worker -n $worker_name -Q SentTokenizeToNPQueue --concurrency=4  --loglevel=info; 
 	}
 
 

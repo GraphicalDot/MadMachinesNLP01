@@ -11,7 +11,7 @@ from celery.utils.log import get_task_logger
 import time
 import pymongo
 import random
-from processing_celery_app.App import app
+from MainApp.App import app
 from celery.registry import tasks
 import logging
 import inspect
@@ -19,11 +19,10 @@ from celery import task, group
 from sklearn.externals import joblib
 import time
 import os
+import sys
 connection = pymongo.Connection()
 db = connection.intermediate
 collection = db.intermediate_collection
-from Text_Processing import WordTokenize, PosTaggers, SentenceTokenizationOnRegexOnInterjections, bcolors, NounPhrases
-from processing_celery_app.celeryconfig import RESULT_BACKEND_IP, RESULT_BACKEND_PORT
 from pymongo.errors import BulkWriteError
 
 logger = logging.getLogger(__name__)
@@ -34,7 +33,10 @@ reviews = db.review
 ALGORITHM_TAG = ""
 ALGORITHM_SENTIMENT = ""
 
-file_path = os.path.dirname(os.path.abspath(__file__))
+file_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(file_path)
+from Text_Processing import WordTokenize, PosTaggers, SentenceTokenizationOnRegexOnInterjections, bcolors, NounPhrases
+from GlobalConfigs import MONGO_REVIEWS_IP, MONGO_REVIEWS_PORT
 
 """
 status: List active nodes in this cluster
@@ -123,7 +125,7 @@ class CleanResultBackEnd(celery.Task):
 	acks_late=True
 	default_retry_delay = 5
         def run(self, id_list):
-                connection = pymongo.Connection(RESULT_BACKEND_IP, int(RESULT_BACKEND_PORT))
+                connection = pymongo.Connection(MONGO_REVIEWS_IP, MONGO_REVIEWS_PORT)
                 celery_collection_bulk = connection.celery.celery_taskmeta.initialize_unordered_bulk_op()
                 
                 for _id in id_list:
