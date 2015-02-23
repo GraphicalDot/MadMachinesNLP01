@@ -30,8 +30,6 @@ import os
 from kombu import Exchange, Queue
 from celery.schedules import crontab
 import sys
-file_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(file_path)
 from GlobalConfigs import MONGO_REVIEWS_IP, MONGO_REVIEWS_PORT, CELERY_REDIS_BROKER_IP,\
                     CELERY_REDIS_BROKER_PORT, CELERY_REDIS_BROKER_DB_NUMBER
 

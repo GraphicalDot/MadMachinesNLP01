@@ -12,7 +12,7 @@ Comment: None
 """
 
 
-
+from __future__ import absolute_import
 import copy
 import re
 import csv
@@ -54,7 +54,7 @@ import base64
 import requests
 from PIL import Image
 import inspect
-from ProcessingCeleryTask import ProcessEateryId, ReviewIdToSentTokenize, SentTokenizeToNP, MappingList, CleanResultBackEnd
+from ProcessingCeleryTask import MappingList, SentTokenizeToNP, ReviewIdToSentTokenize, CleanResultBackEnd
 from celery.result import AsyncResult
 
 connection = pymongo.Connection()
@@ -427,9 +427,6 @@ class GetWordCloud(restful.Resource):
 	@timeit
         def post(self):
 		"""
-
-
-
                 To test
                     eatery_id = "4571"
                     start_epoch = 1318185000.0
@@ -490,11 +487,13 @@ class GetWordCloud(restful.Resource):
         
                 
 
+                print eatery_id, category, start_epoch,  end_epoch, tag_analysis_algorithm, sentiment_analysis_algorithm, word_tokenization_algorithm, pos_tagging_algorithm, noun_phrases_algorithm
+                
                 result = list()
                 celery_chain = (ReviewIdToSentTokenize.s(eatery_id, category, start_epoch, end_epoch, tag_analysis_algorithm, 
                     sentiment_analysis_algorithm)|  MappingList.s(word_tokenization_algorithm, pos_tagging_algorithm, 
-                                noun_phrases_algorithm, SentTokenizeToNP.s()))()
-                
+                        noun_phrases_algorithm, SentTokenizeToNP.s()))()
+                print celery_chain
                 ##Waitng for the ReviewIdToSentTokenize task to finish
                 while celery_chain.status != "SUCCESS":
                         pass    
@@ -516,9 +515,10 @@ class GetWordCloud(restful.Resource):
                
                 CleanResultBackEnd.apply_async(args=[ids])
 
-                return result
-
-                print return_result()
+                return {"success": True,
+				"error": False,
+				"result": result,
+                    }
                 
                 """
 
