@@ -163,7 +163,6 @@ class NounPhrases:
                 self.noun_phrases = list()
                 self.conll_extractor = ConllExtractor()
                 self.list_of_sentences = list_of_sentences
-                print "from the noun phrases class %s"%len(self.list_of_sentences)
                 self.np_extractor = ("textblob_np_conll", default_np_extractor)[default_np_extractor != None]
                 if not regexp_grammer:
                         self.regexp_grammer = r"CustomNounP:{<JJ|VB|FW|VBN>?<NN.*>*<NN.*>}"

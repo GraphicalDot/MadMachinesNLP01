@@ -182,8 +182,8 @@ word_cloud_with_dates_parser = reqparse.RequestParser()
 get_word_cloud_parser = reqparse.RequestParser()
 get_word_cloud_parser.add_argument('eatery_id', type=str,  required=True, location="form")
 get_word_cloud_parser.add_argument('category', type=str,  required=True, location="form")
-get_word_cloud_parser.add_argument('start_date', type=str,  required=True, location="form")
-get_word_cloud_parser.add_argument('end_date', type=str,  required=True, location="form") 
+get_word_cloud_parser.add_argument('start_date', type=str,  required=False, location="form")
+get_word_cloud_parser.add_argument('end_date', type=str,  required=False, location="form") 
 get_word_cloud_parser.add_argument('word_tokenization_algorithm', type=word_tokenization_algorithm,  required=False, location="form")
 get_word_cloud_parser.add_argument('noun_phrases_algorithm', type=noun_phrases_algorithm,  required=False, location="form")
 get_word_cloud_parser.add_argument('pos_tagging_algorithm', type=pos_tagging_algorithm,  required=False, location="form")
@@ -427,6 +427,7 @@ class GetWordCloud(restful.Resource):
 	@timeit
         def post(self):
 		"""
+                __test_eateries = [("7227", 232), ("4114", 50), ("154", 25), ("307799", 109), ("4815", 403), ("94286", 704)]
                 To test
                     eatery_id = "4571"
                     start_epoch = 1318185000.0
@@ -457,13 +458,17 @@ class GetWordCloud(restful.Resource):
                                     "{0}_sentiment.lib".format(args["sentiment_analysis_algorithm"]))[args["sentiment_analysis_algorithm"] != None]
 
     
-		try:
-			start_epoch = time.mktime(time.strptime(args["start_date"], __format))
-			end_epoch = time.mktime(time.strptime(args["end_date"], __format))
-		except Exception:
-			return {"success": False,
-				"error": "Dude!!, Please wait for the dates to be updated",
-			}
+                if args["start_date"] and ["end_date"]:
+		        try:
+		                start_epoch = time.mktime(time.strptime(args["start_date"], __format))
+			        end_epoch = time.mktime(time.strptime(args["end_date"], __format))
+		        except Exception:
+			        return {"success": False,
+                                        "error": True,
+                                        }
+
+                else:
+                        start_epoch, end_epoch = None, None
 	
 
 

@@ -19,7 +19,6 @@ from sklearn.externals import joblib
 import time
 import os
 import sys
-import time
 connection = pymongo.Connection()
 db = connection.intermediate
 collection = db.intermediate_collection
@@ -211,7 +210,7 @@ class SentTokenizeToNP(celery.Task):
                             Name of the algorithm that shall be used to do noun phrase extraction from the sentence
                 
                 """
-                self.start = time.time() 
+               
                 sentence = __sentence[1]
                 
                 word_tokenize = WordTokenize([sentence])
@@ -238,20 +237,12 @@ class SentTokenizeToNP(celery.Task):
 
         def after_return(self, status, retval, task_id, args, kwargs, einfo):
 		#exit point of the task whatever is the state
-		logger.info("{color} Ending --<{function_name}--> of task --<{task_name}>-- with time taken\
-                        --<{time}>-- seconds  {reset}".format(color=bcolors.OKBLUE,\
-                        function_name=inspect.stack()[0][3], task_name= self.__class__.__name__, 
-                            time=time.time() -self.start, reset=bcolors.RESET))
+		logger.info("Ending")
 		pass
 
 	def on_failure(self, exc, task_id, args, kwargs, einfo):
-		logger.info("{color} Ending --<{function_name}--> of task --<{task_name}>-- failed fucking\
-                        miserably {reset}".format(color=bcolors.OKBLUE,\
-                        function_name=inspect.stack()[0][3], task_name= self.__class__.__name__, reset=bcolors.RESET))
-                logger.info("{0}{1}".format(einfo, bcolors.RESET))
+		print "fucking faliure occured in Doesall Function"
 		self.retry(exc=exc)
-
-        
 
 
 @app.task()
@@ -260,7 +251,6 @@ class ReviewIdToSentTokenize(celery.Task):
 	acks_late=True
 	default_retry_delay = 5
 	def run(self, eatery_id, category, start_epoch, end_epoch, tag_analysis_algorithm, sentiment_analysis_algorithm):
-                start = time.time()
                 """
                 Start This worker:
                     celery -A ProcessingCeleryTask  worker -n ReviewIdToSentTokenizeOne -Q ReviewIdToSentTokenizeQueue 
@@ -291,18 +281,12 @@ class ReviewIdToSentTokenize(celery.Task):
                         (id, sentence, predicted_tag, predicted_sentiment)
                 """
                 
-                self.start = time.time()
                 sent_tokenizer = SentenceTokenizationOnRegexOnInterjections()
                 
                 ids_sentences = list()
-                if start_epoch and end_epoch:
-                        review_list = [(post.get("review_id"), post.get("review_text")) for post in 
+                review_list = [(post.get("review_id"), post.get("review_text")) for post in 
                             reviews.find({"eatery_id" :eatery_id, "converted_epoch": {"$gt":  start_epoch, "$lt" : end_epoch}})]
 
-                else:
-                        review_list = [(post.get("review_id"), post.get("review_text")) for post in 
-                            reviews.find({"eatery_id" :eatery_id})]
-                        
 
 
 
@@ -324,16 +308,13 @@ class ReviewIdToSentTokenize(celery.Task):
                 return result
         
         def after_return(self, status, retval, task_id, args, kwargs, einfo):
-		logger.info("{color} Ending --<{function_name}--> of task --<{task_name}>-- with time taken\
-                        --<{time}>-- seconds  {reset}".format(color=bcolors.OKBLUE,\
-                        function_name=inspect.stack()[0][3], task_name= self.__class__.__name__, 
-                            time=time.time() -self.start, reset=bcolors.RESET))
+		logger.info("{color} Execution of the function {function_name} Executed successfully {reset}".format(color=bcolors.OKBLUE,\
+                        function_name=inspect.stack()[0][3], reset=bcolors.RESET))
 		pass
 
 	def on_failure(self, exc, task_id, args, kwargs, einfo):
-		logger.info("{color} Ending --<{function_name}--> of task --<{task_name}>-- failed fucking\
-                        miserably {reset}".format(color=bcolors.OKBLUE,\
-                        function_name=inspect.stack()[0][3], task_name= self.__class__.__name__, reset=bcolors.RESET))
+		logger.info("{color} Execution of the function {function_name} Failed".format(color=bcolors.FAIL,\
+                        function_name=inspect.stack()[0][3]))
                 logger.info("{0}{1}".format(einfo, bcolors.RESET))
 		self.retry(exc=exc)
 
@@ -357,7 +338,6 @@ def MappingList(it, word_tokenization_algorithm, pos_tagging_algorithm, noun_phr
 class ProcessEateryId(celery.Task):
 	def run(self, eatery_id, category, start_epoch, end_epoch, word_tokenization_algorithm, pos_tagging_algorithm, 
                                                     noun_phrases_algorithm, tag_analysis_algorithm, sentiment_analysis_algorithm):
-                self.start = time.time()
                 result = (ReviewIdToSentTokenize.s(eatery_id, category, start_epoch, end_epoch, tag_analysis_algorithm, sentiment_analysis_algorithm)|
                         MappingList.s(word_tokenization_algorithm, pos_tagging_algorithm, noun_phrases_algorithm, SentTokenizeToNP.s()))()
                 
@@ -365,17 +345,11 @@ class ProcessEateryId(celery.Task):
 
         def after_return(self, status, retval, task_id, args, kwargs, einfo):
 		#exit point of the task whatever is the state
-		logger.info("{color} Ending --<{function_name}--> of task --<{task_name}>-- with time taken\
-                        --<{time}>-- seconds  {reset}".format(color=bcolors.OKBLUE,\
-                        function_name=inspect.stack()[0][3], task_name= self.__class__.__name__, 
-                            time=time.time() -self.start, reset=bcolors.RESET))
+		logger.info("Ending")
 		pass
 
 	def on_failure(self, exc, task_id, args, kwargs, einfo):
-		logger.info("{color} Ending --<{function_name}--> of task --<{task_name}>-- failed fucking\
-                        miserably {reset}".format(color=bcolors.OKBLUE,\
-                        function_name=inspect.stack()[0][3], task_name= self.__class__.__name__, reset=bcolors.RESET))
-                logger.info("{0}{1}".format(einfo, bcolors.RESET))
+		print "fucking faliure occured in Doesall Function"
 		self.retry(exc=exc)
 
 
