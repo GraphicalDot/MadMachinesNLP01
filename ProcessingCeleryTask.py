@@ -21,6 +21,7 @@ import os
 import sys
 import time
 import hashlib
+import itertools
 connection = pymongo.Connection()
 db = connection.intermediate
 collection = db.intermediate_collection
@@ -38,6 +39,7 @@ from GlobalConfigs import MONGO_REVIEWS_IP, MONGO_REVIEWS_PORT, MONGO_NLP_RESULT
         MONGO_NLP_RESULTS_PORT, MONGO_NLP_RESULTS_DB, MONGO_NLP_RESULTS_COLLECTION 
 
 from __Celery_APP.App import app
+from __Celery_APP.MongoScript import MongoForCeleryResults
 from Text_Processing import WordTokenize, PosTaggers, SentenceTokenizationOnRegexOnInterjections, bcolors, NounPhrases
 
 file_path = os.path.dirname(os.path.abspath(__file__))
@@ -258,29 +260,36 @@ class SentTokenizeToNP(celery.Task):
                 """
                 self.start = time.time() 
                 sentence = __sentence[1]
-                
-                word_tokenize = WordTokenize([sentence])
-                ##word_tokenized_sentences = word_tokenize.word_tokenized_list.get(WORD_TOKENIZATION_ALGORITHM)
-                word_tokenized_sentence = word_tokenize.word_tokenized_list.get(word_tokenization_algorithm)
+                sentence_id = __sentence[2]
+
+                word_tokenization_algorithm_result, pos_tagging_algorithm_result,\
+                        noun_phrases_algorithm_result = MongoForCeleryResults.retrieve_document(sentence_id, word_tokenization_algorithm,\
+                        pos_tagging_algorithm, noun_phrases_algorithm)
+
+
+                if not word_tokenization_algorithm_result:
+                        word_tokenize = WordTokenize([sentence])
+                        ##word_tokenized_sentences = word_tokenize.word_tokenized_list.get(WORD_TOKENIZATION_ALGORITHM)
+                        word_tokenization_algorithm_result = word_tokenize.word_tokenized_list.get(word_tokenization_algorithm)
                
-                    
-                __pos_tagger = PosTaggers(word_tokenized_sentence,  default_pos_tagger=pos_tagging_algorithm) #using default standford pos tagger
-                __pos_tagged_sentences =  __pos_tagger.pos_tagged_sentences.get(pos_tagging_algorithm)
+                if not pos_tagging_algorithm_result:
+                        __pos_tagger = PosTaggers(word_tokenization_algorithm_result,  default_pos_tagger=pos_tagging_algorithm) 
+                        #using default standford pos tagger
+                        pos_tagging_algorithm_result =  __pos_tagger.pos_tagged_sentences.get(pos_tagging_algorithm)
 
 
-                
-                __noun_phrases = NounPhrases(__pos_tagged_sentences, default_np_extractor=noun_phrases_algorithm)
-                
-                noun_phrases =  __noun_phrases.noun_phrases.get(noun_phrases_algorithm)
+                if noun_phrases_algorithm_result:
+                        __noun_phrases = NounPhrases(pos_tagging_algorithm_result, default_np_extractor=noun_phrases_algorithm)
+                        noun_phrases_algorithm_result =  __noun_phrases.noun_phrases.get(noun_phrases_algorithm)
                 
                 return {"from_review_id": __sentence[0],
-                        "sentence_id": hashlib.md5(__sentence[1]).hexdigest(), 
                         "sentence": __sentence[1],
-                        "tag": {tag_analysis_algorithm: __sentence[2]}, 
+                        "sentence_id": __sentence[2], 
+                        "tag": {tag_analysis_algorithm: __sentence[3]}, 
                         "sentiment": {sentiment_analysis_algorithm: __sentence[3]}, 
-                        "word_tokenization": {word_tokenization_algorithm: word_tokenized_sentence},
-                        "pos_tagging": {pos_tagging_algorithm:  __pos_tagged_sentences}, 
-                        "noun_phrases": {noun_phrases_algorithm: noun_phrases}}
+                        "word_tokenization": {word_tokenization_algorithm: word_tokenization_algorithm_result},
+                        "pos_tagging": {pos_tagging_algorithm:  pos_tagging_algorithm_result}, 
+                        "noun_phrases": {noun_phrases_algorithm: pos_tagging_algorithm_result}}
 
         def after_return(self, status, retval, task_id, args, kwargs, einfo):
 		#exit point of the task whatever is the state
@@ -305,7 +314,7 @@ class ReviewIdToSentTokenize(celery.Task):
 	max_retries=3, 
 	acks_late=True
 	default_retry_delay = 5
-	def run(self, eatery_id, category, start_epoch, end_epoch, tag_analysis_algorithm, sentiment_analysis_algorithm):
+	def run(self, eatery_id, category, start_epoch, end_epoch, tag_analysis_algorithm, sentiment_analysis_algorithm,):
                 start = time.time()
                 """
                 Start This worker:
@@ -354,21 +363,38 @@ class ReviewIdToSentTokenize(celery.Task):
 
                 for element in review_list:
                         for __sentence in sent_tokenizer.tokenize(element[1]): 
-                                ids_sentences.append((element[0], __sentence.encode("ascii", "xmlcharrefreplace")))
+                                ids_sentences.append(list((element[0], __sentence.encode("ascii", "xmlcharrefreplace"), 
+                                                            hashlib.md5(__sentence.encode("ascii", "xmlcharrefreplace")).hexdigest()))) 
+                                #(review_id, sentence, sentence_id)
 
 
-                ids, sentences = map(list, zip(*ids_sentences))
-    
+                for __sentences in ids_sentences:
+                            __sentences.extend(
+                                    MongoForCeleryResults.retrieve_predictions(__sentences[2], tag_analysis_algorithm, sentiment_analysis_algorithm))
+                                    #(review_id, sentence, sentence_id, tag, sentiment)
+        
+               
+               
+                #seperating ids_sentences list into predicted_list and not_predicted_list
+                if_predicted = lambda sentence: True if sentence[3] and sentence[4] else False
+
+
+                t1, t2 = itertools.tee(ids_sentences)
+                predicted_list, not_predicted_list = list(itertools.ifilter(if_predicted, t1)), list(itertools.ifilterfalse(if_predicted, t2))
+
+               
+                ids, sentences, sentences_ids, tag_junk, sentiment_junk = map(list, zip(*not_predicted_list))
+
+
                 predicted_tags = tag_classification(tag_analysis_algorithm, sentences)
                 predicted_sentiment = sentiment_classification(sentiment_analysis_algorithm, sentences)
 
-
-                result = [list(element) for element in zip(ids, sentences, predicted_tags, predicted_sentiment) if element[2] == category]
+                aggregated = predicted_list +  zip(ids, sentences, sentences_ids, predicted_tags, predicted_sentiment)
+                result = [list(element) for element in aggregated if element[3] == category]
 	        logger.info("{color} Length of the result is ---<{length}>--- with type --<{type}>--".format(color=bcolors.OKBLUE,\
                         length=len(result), type=type(result)))
 
                 return result
-        
         def after_return(self, status, retval, task_id, args, kwargs, einfo):
 		logger.info("{color} Ending --<{function_name}--> of task --<{task_name}>-- with time taken\
                         --<{time}>-- seconds  {reset}".format(color=bcolors.OKBLUE,\
@@ -419,9 +445,8 @@ class ProcessEateryId(celery.Task):
                                                     noun_phrases_algorithm, tag_analysis_algorithm, sentiment_analysis_algorithm):
                 self.start = time.time()
                 result = (ReviewIdToSentTokenize.s(eatery_id, category, start_epoch, end_epoch, tag_analysis_algorithm, 
-                    sentiment_analysis_algorithm)|
-                        MappingList.s(word_tokenization_algorithm, pos_tagging_algorithm, noun_phrases_algorithm, 
-                            tag_analysis_algorithm, sentiment_analysis_algorithm,  SentTokenizeToNP.s()))()
+                    sentiment_analysis_algorithm, word_tokenization_algorithm, pos_tagging_algorithm, noun_phrases_algorithm)|
+                        MappingList.s(SentTokenizeToNP.s()))()
                 
                 return result
 
