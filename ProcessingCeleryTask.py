@@ -20,6 +20,7 @@ import time
 import os
 import sys
 import time
+import hashlib
 connection = pymongo.Connection()
 db = connection.intermediate
 collection = db.intermediate_collection
@@ -33,7 +34,9 @@ reviews = db.review
 ALGORITHM_TAG = ""
 ALGORITHM_SENTIMENT = ""
 
-from GlobalConfigs import MONGO_REVIEWS_IP, MONGO_REVIEWS_PORT
+from GlobalConfigs import MONGO_REVIEWS_IP, MONGO_REVIEWS_PORT, MONGO_NLP_RESULTS_IP,\
+        MONGO_NLP_RESULTS_PORT, MONGO_NLP_RESULTS_DB, MONGO_NLP_RESULTS_COLLECTION 
+
 from __Celery_APP.App import app
 from Text_Processing import WordTokenize, PosTaggers, SentenceTokenizationOnRegexOnInterjections, bcolors, NounPhrases
 
@@ -119,36 +122,6 @@ runn.apply_async(args=["https://www.zomato.com/ncr/south-delhi-restaurants", 30,
 
 
 """
-@app.task()
-class CleanResultBackEnd(celery.Task):
-	ignore_result = True
-	max_retries=3, 
-	acks_late=True
-	default_retry_delay = 5
-        def run(self, id_list):
-                connection = pymongo.Connection(MONGO_REVIEWS_IP, MONGO_REVIEWS_PORT)
-                celery_collection_bulk = connection.celery.celery_taskmeta.initialize_unordered_bulk_op()
-                
-                for _id in id_list:
-                        celery_collection_bulk.find({'_id': _id}).remove_one()
-
-                try:
-                    celery_collection_bulk.execute()
-                except BulkWriteError as bwe:
-                    print(bwe.details)
-                connection.close()
-                return 
-
-        def after_return(self, status, retval, task_id, args, kwargs, einfo):
-		#exit point of the task whatever is the state
-		logger.info("Ending")
-		pass
-
-	def on_failure(self, exc, task_id, args, kwargs, einfo):
-		logger.info("{color} Execution of the function {function_name} Failed".format(color=bcolors.FAIL,\
-                        function_name=inspect.stack()[0][3]))
-                logger.info("{0}{1}".format(einfo, bcolors.RESET))
-		self.retry(exc=exc)
 
 
 
@@ -176,7 +149,78 @@ def sentiment_classification(sentiment_analysis_algorithm, sentences):
         classifier = joblib.load("{0}{1}".format(classifier_path, sentiment_analysis_algorithm))
         return classifier.predict(sentences) 
 
+@app.task()
+class CleanResultBackEnd(celery.Task):
+	ignore_result = True
+	max_retries=3, 
+	acks_late=True
+	default_retry_delay = 5
+        def run(self, id_list):
+                connection = pymongo.Connection(MONGO_REVIEWS_IP, MONGO_REVIEWS_PORT)
+                celery_collection_bulk = connection.celery.celery_taskmeta.initialize_unordered_bulk_op()
+                
+                for _id in id_list:
+                        celery_collection_bulk.find({'_id': _id}).remove_one()
 
+                try:
+                    celery_collection_bulk.execute()
+                except BulkWriteError as bwe:
+                    print(bwe.details)
+                connection.close()
+                return 
+
+        def after_return(self, status, retval, task_id, args, kwargs, einfo):
+		#exit point of the task whatever is the state
+		logger.info("{color} Ending --<{function_name}--> of task --<{task_name}>-- with time taken\
+                        --<{time}>-- seconds  {reset}".format(color=bcolors.OKBLUE,\
+                        function_name=inspect.stack()[0][3], task_name= self.__class__.__name__, 
+                            time=time.time() -self.start, reset=bcolors.RESET))
+		pass
+
+	def on_failure(self, exc, task_id, args, kwargs, einfo):
+		logger.info("{color} Ending --<{function_name}--> of task --<{task_name}>-- failed fucking\
+                        miserably {reset}".format(color=bcolors.OKBLUE,\
+                        function_name=inspect.stack()[0][3], task_name= self.__class__.__name__, reset=bcolors.RESET))
+                logger.info("{0}{1}".format(einfo, bcolors.RESET))
+		self.retry(exc=exc)
+
+
+@app.task()
+class StoreFinalResults(celery.Task):
+	max_retries=3, 
+	acks_late=True
+	default_retry_delay = 5
+        def run(self, result):
+                result_collection = eval("pymongo.Connection(MONGO_NLP_RESULTS_IP, MONGO_NLP_RESULTS_PORT).{db_name}.{collection_name}".format(
+                                                                    db_name=MONGO_NLP_RESULTS_DB,
+                                                                    collection_name=MONGO_NLP_RESULTS_COLLECTION))
+                
+                celery_collection_bulk = connection.celery.celery_taskmeta.initialize_unordered_bulk_op()
+                
+                for _id in id_list:
+                        celery_collection_bulk.find({'_id': _id}).remove_one()
+
+                try:
+                    celery_collection_bulk.execute()
+                except BulkWriteError as bwe:
+                    print(bwe.details)
+                connection.close()
+                return 
+
+        def after_return(self, status, retval, task_id, args, kwargs, einfo):
+		#exit point of the task whatever is the state
+		logger.info("{color} Ending --<{function_name}--> of task --<{task_name}>-- with time taken\
+                        --<{time}>-- seconds  {reset}".format(color=bcolors.OKBLUE,\
+                        function_name=inspect.stack()[0][3], task_name= self.__class__.__name__, 
+                            time=time.time() -self.start, reset=bcolors.RESET))
+		pass
+
+	def on_failure(self, exc, task_id, args, kwargs, einfo):
+		logger.info("{color} Ending --<{function_name}--> of task --<{task_name}>-- failed fucking\
+                        miserably {reset}".format(color=bcolors.OKBLUE,\
+                        function_name=inspect.stack()[0][3], task_name= self.__class__.__name__, reset=bcolors.RESET))
+                logger.info("{0}{1}".format(einfo, bcolors.RESET))
+		self.retry(exc=exc)
 
 
 
@@ -186,7 +230,8 @@ class SentTokenizeToNP(celery.Task):
 	max_retries=3, 
 	acks_late=True
 	default_retry_delay = 5
-	def run(self, __sentence, word_tokenization_algorithm, pos_tagging_algorithm, noun_phrases_algorithm):
+	def run(self, __sentence, word_tokenization_algorithm, pos_tagging_algorithm, noun_phrases_algorithm, 
+                                    tag_analysis_algorithm, sentiment_analysis_algorithm):
                 """
                 To Start this worker
                     celery -A ProcessingCeleryTask  worker -n SentTokenizeToNP -Q SentTokenizeToNP --concurrency=4 
@@ -228,10 +273,11 @@ class SentTokenizeToNP(celery.Task):
                 
                 noun_phrases =  __noun_phrases.noun_phrases.get(noun_phrases_algorithm)
                 
-                return {"id": __sentence[0],
+                return {"from_review_id": __sentence[0],
+                        "sentence_id": hashlib.md5(__sentence[1]).hexdigest(), 
                         "sentence": __sentence[1],
-                        "tag": __sentence[2], 
-                        "sentiment": __sentence[3], 
+                        "tag": {tag_analysis_algorithm: __sentence[2]}, 
+                        "sentiment": {sentiment_analysis_algorithm: __sentence[3]}, 
                         "word_tokenization": {word_tokenization_algorithm: word_tokenized_sentence},
                         "pos_tagging": {pos_tagging_algorithm:  __pos_tagged_sentences}, 
                         "noun_phrases": {noun_phrases_algorithm: noun_phrases}}
@@ -317,9 +363,9 @@ class ReviewIdToSentTokenize(celery.Task):
                 predicted_sentiment = sentiment_classification(sentiment_analysis_algorithm, sentences)
 
 
-                result = [element for element in zip(ids, sentences, predicted_tags, predicted_sentiment) if element[2] == category]
-	        logger.info("{color} Length of the result is ---<{length}>---".format(color=bcolors.OKBLUE,\
-                        length=len(result)))
+                result = [list(element) for element in zip(ids, sentences, predicted_tags, predicted_sentiment) if element[2] == category]
+	        logger.info("{color} Length of the result is ---<{length}>--- with type --<{type}>--".format(color=bcolors.OKBLUE,\
+                        length=len(result), type=type(result)))
 
                 return result
         
@@ -339,7 +385,8 @@ class ReviewIdToSentTokenize(celery.Task):
 
 
 @app.task(max_retries=3, retry=True, acks_late= True)
-def MappingList(it, word_tokenization_algorithm, pos_tagging_algorithm, noun_phrases_algorithm, callback):
+def MappingList(it, word_tokenization_algorithm, pos_tagging_algorithm, noun_phrases_algorithm, 
+                                    tag_analysis_algorithm, sentiment_analysis_algorithm, callback):
 	"""
         To start:
         celery -A ProcessingCeleryTask  worker -n MappingListOne -Q MappingListQueue --concurrency=4 --loglevel=info                  
@@ -348,9 +395,22 @@ def MappingList(it, word_tokenization_algorithm, pos_tagging_algorithm, noun_phr
         
         This worker just executes a parelled exectuion on the result returned by ReviewIdToSentTokenizeQueue by mappping 
         each element of the result to each SentTokenizeToNPQueue worker 
+        
+        Errors:
+                tag_analysis_algorithm: svm_linear_kernel_classifier_tag.lib 
+                sentiment_analysis_algorithm: svm_linear_kernel_classifier_sentiment.lib
+                The name svm_linear_kernel_classifier_sentiment.lib can't be passed to callback, because
+                it is not json serializable
+
         """
         callback = subtask(callback)
-	return group(callback.clone([arg, word_tokenization_algorithm, pos_tagging_algorithm, noun_phrases_algorithm,]) for arg in it)()
+        tag_analysis_algorithm = tag_analysis_algorithm.replace("_tag.lib", "")
+        sentiment_analysis_algorithm = sentiment_analysis_algorithm.replace("_sentiment.lib", "")
+
+
+
+	return group(callback.clone([arg, word_tokenization_algorithm, pos_tagging_algorithm, 
+                noun_phrases_algorithm, tag_analysis_algorithm, sentiment_analysis_algorithm]) for arg in it)()
 
 
 @app.task()
@@ -358,8 +418,10 @@ class ProcessEateryId(celery.Task):
 	def run(self, eatery_id, category, start_epoch, end_epoch, word_tokenization_algorithm, pos_tagging_algorithm, 
                                                     noun_phrases_algorithm, tag_analysis_algorithm, sentiment_analysis_algorithm):
                 self.start = time.time()
-                result = (ReviewIdToSentTokenize.s(eatery_id, category, start_epoch, end_epoch, tag_analysis_algorithm, sentiment_analysis_algorithm)|
-                        MappingList.s(word_tokenization_algorithm, pos_tagging_algorithm, noun_phrases_algorithm, SentTokenizeToNP.s()))()
+                result = (ReviewIdToSentTokenize.s(eatery_id, category, start_epoch, end_epoch, tag_analysis_algorithm, 
+                    sentiment_analysis_algorithm)|
+                        MappingList.s(word_tokenization_algorithm, pos_tagging_algorithm, noun_phrases_algorithm, 
+                            tag_analysis_algorithm, sentiment_analysis_algorithm,  SentTokenizeToNP.s()))()
                 
                 return result
 

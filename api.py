@@ -497,7 +497,7 @@ class GetWordCloud(restful.Resource):
                 result = list()
                 celery_chain = (ReviewIdToSentTokenize.s(eatery_id, category, start_epoch, end_epoch, tag_analysis_algorithm, 
                     sentiment_analysis_algorithm)|  MappingList.s(word_tokenization_algorithm, pos_tagging_algorithm, 
-                        noun_phrases_algorithm, SentTokenizeToNP.s()))()
+                        noun_phrases_algorithm, tag_analysis_algorithm, sentiment_analysis_algorithm,  SentTokenizeToNP.s()))()
                 print celery_chain
                 ##Waitng for the ReviewIdToSentTokenize task to finish
                 while celery_chain.status != "SUCCESS":
