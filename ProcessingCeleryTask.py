@@ -158,6 +158,18 @@ class CleanResultBackEnd(celery.Task):
 	acks_late=True
 	default_retry_delay = 5
         def run(self, id_list):
+                """
+                To start this worker,
+                This worker has a Queue CleanResultBackEndQueue
+                celery -A ProcessingCeleryTask  worker -n CleanResultBackEndOne -Q CleanResultBackEndQueue --concurrency=4 --loglevel=info
+                It cleans the results which are being stored into the mongodb which is the result backend
+                for the celery.
+
+                Variables in Scope:
+                    id_list:It is the list of all the ids who are being executed by several celery nodes
+
+                """
+                self.start = time.time() 
                 connection = pymongo.Connection(MONGO_REVIEWS_IP, MONGO_REVIEWS_PORT)
                 celery_collection_bulk = connection.celery.celery_taskmeta.initialize_unordered_bulk_op()
                 
@@ -259,8 +271,11 @@ class SentTokenizeToNP(celery.Task):
                 
                 """
                 self.start = time.time() 
+                review_id = __sentence[0]
                 sentence = __sentence[1]
                 sentence_id = __sentence[2]
+                
+                MongoForCeleryResults.update_insert_sentence(review_id, sentence_id, sentence) 
 
                 word_tokenization_algorithm_result, pos_tagging_algorithm_result,\
                         noun_phrases_algorithm_result = MongoForCeleryResults.retrieve_document(sentence_id, word_tokenization_algorithm,\
@@ -271,16 +286,25 @@ class SentTokenizeToNP(celery.Task):
                         word_tokenize = WordTokenize([sentence])
                         ##word_tokenized_sentences = word_tokenize.word_tokenized_list.get(WORD_TOKENIZATION_ALGORITHM)
                         word_tokenization_algorithm_result = word_tokenize.word_tokenized_list.get(word_tokenization_algorithm)
-               
+                        MongoForCeleryResults.insert_word_tokenization_result(sentence_id, 
+                                                                            word_tokenization_algorithm, 
+                                                                            word_tokenization_algorithm_result)
+
                 if not pos_tagging_algorithm_result:
                         __pos_tagger = PosTaggers(word_tokenization_algorithm_result,  default_pos_tagger=pos_tagging_algorithm) 
                         #using default standford pos tagger
                         pos_tagging_algorithm_result =  __pos_tagger.pos_tagged_sentences.get(pos_tagging_algorithm)
+                        MongoForCeleryResults.insert_pos_tagging_result(sentence_id, 
+                                                                            pos_tagging_algorithm, 
+                                                                            pos_tagging_algorithm_result)
 
 
-                if noun_phrases_algorithm_result:
+                if not noun_phrases_algorithm_result:
                         __noun_phrases = NounPhrases(pos_tagging_algorithm_result, default_np_extractor=noun_phrases_algorithm)
                         noun_phrases_algorithm_result =  __noun_phrases.noun_phrases.get(noun_phrases_algorithm)
+                        MongoForCeleryResults.insert_noun_phrases_result(sentence_id, 
+                                                                            noun_phrases_algorithm, 
+                                                                            noun_phrases_algorithm_result)
                 
                 return {"from_review_id": __sentence[0],
                         "sentence": __sentence[1],
@@ -289,7 +313,7 @@ class SentTokenizeToNP(celery.Task):
                         "sentiment": {sentiment_analysis_algorithm: __sentence[3]}, 
                         "word_tokenization": {word_tokenization_algorithm: word_tokenization_algorithm_result},
                         "pos_tagging": {pos_tagging_algorithm:  pos_tagging_algorithm_result}, 
-                        "noun_phrases": {noun_phrases_algorithm: pos_tagging_algorithm_result}}
+                        "noun_phrases": {noun_phrases_algorithm: noun_phrases_algorithm_result}}
 
         def after_return(self, status, retval, task_id, args, kwargs, einfo):
 		#exit point of the task whatever is the state
@@ -410,9 +434,11 @@ class ReviewIdToSentTokenize(celery.Task):
 		self.retry(exc=exc)
 
 
-@app.task(max_retries=3, retry=True, acks_late= True)
-def MappingList(it, word_tokenization_algorithm, pos_tagging_algorithm, noun_phrases_algorithm, 
-                                    tag_analysis_algorithm, sentiment_analysis_algorithm, callback):
+@app.task()
+class MappingList(celery.Task):
+	max_retries=3, 
+	acks_late=True
+	default_retry_delay = 5
 	"""
         To start:
         celery -A ProcessingCeleryTask  worker -n MappingListOne -Q MappingListQueue --concurrency=4 --loglevel=info                  
@@ -429,15 +455,33 @@ def MappingList(it, word_tokenization_algorithm, pos_tagging_algorithm, noun_phr
                 it is not json serializable
 
         """
-        callback = subtask(callback)
-        tag_analysis_algorithm = tag_analysis_algorithm.replace("_tag.lib", "")
-        sentiment_analysis_algorithm = sentiment_analysis_algorithm.replace("_sentiment.lib", "")
+        def run(self, it, word_tokenization_algorithm, pos_tagging_algorithm, noun_phrases_algorithm, 
+                                    tag_analysis_algorithm, sentiment_analysis_algorithm, callback):
+                self.start = time.time()
+                callback = subtask(callback)
+                tag_analysis_algorithm = tag_analysis_algorithm.replace("_tag.lib", "")
+                sentiment_analysis_algorithm = sentiment_analysis_algorithm.replace("_sentiment.lib", "")
 
 
 
-	return group(callback.clone([arg, word_tokenization_algorithm, pos_tagging_algorithm, 
-                noun_phrases_algorithm, tag_analysis_algorithm, sentiment_analysis_algorithm]) for arg in it)()
+	        return group(callback.clone([arg, word_tokenization_algorithm, pos_tagging_algorithm, 
+                        noun_phrases_algorithm, tag_analysis_algorithm, sentiment_analysis_algorithm]) for arg in it)()
 
+        
+        def after_return(self, status, retval, task_id, args, kwargs, einfo):
+		#exit point of the task whatever is the state
+		logger.info("{color} Ending --<{function_name}--> of task --<{task_name}>-- with time taken\
+                        --<{time}>-- seconds  {reset}".format(color=bcolors.OKBLUE,\
+                        function_name=inspect.stack()[0][3], task_name= self.__class__.__name__, 
+                            time=time.time() -self.start, reset=bcolors.RESET))
+		pass
+
+	def on_failure(self, exc, task_id, args, kwargs, einfo):
+		logger.info("{color} Ending --<{function_name}--> of task --<{task_name}>-- failed fucking\
+                        miserably {reset}".format(color=bcolors.OKBLUE,\
+                        function_name=inspect.stack()[0][3], task_name= self.__class__.__name__, reset=bcolors.RESET))
+                logger.info("{0}{1}".format(einfo, bcolors.RESET))
+		self.retry(exc=exc)
 
 @app.task()
 class ProcessEateryId(celery.Task):

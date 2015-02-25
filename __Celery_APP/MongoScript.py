@@ -29,8 +29,9 @@ class MongoForCeleryResults:
         def __init__(self,):
                 pass
 
+
         @staticmethod
-        def update_insert(__document):
+        def update_insert_sentence(review_id, sentence_id, sentence):
                 """
                 Deals with update and deletion of the document
                 """
@@ -38,8 +39,68 @@ class MongoForCeleryResults:
                 result_collection = eval("connection.{db_name}.{collection_name}".format(
                                                                     db_name=MONGO_NLP_RESULTS_DB,
                                                                     collection_name=MONGO_NLP_RESULTS_COLLECTION)) 
-                sentence_id = __document.get("sentence_id")
-                result_collection.update({"sentence_id": sentence_id}, upsert=True)
+
+                result_collection.update({"sentence_id": sentence_id,}, 
+                                {"$set": {"review_id": review_id, "sentence": sentence,}},  upsert=True)
+                connection.close()
+                return
+
+        @staticmethod
+        def insert_word_tokenization_result(sentence_id, word_tokenization_algorithm_name, 
+                                                            word_tokenization_algorithm_result):
+
+                """
+                Deals with the update and insert operation word_tokenization_algorithm_result of sentence 
+                with sentence_id
+                """
+                connection = pymongo.Connection(MONGO_NLP_RESULTS_IP, MONGO_NLP_RESULTS_PORT)
+                result_collection = eval("connection.{db_name}.{collection_name}".format(
+                                                                    db_name=MONGO_NLP_RESULTS_DB,
+                                                                    collection_name=MONGO_NLP_RESULTS_COLLECTION)) 
+
+                result_collection.update({"sentence_id": sentence_id,}, {"$set": 
+                                    {"word_tokenization.{0}".format(word_tokenization_algorithm_name): word_tokenization_algorithm_result}},  
+                                    upsert=True)
+
+                connection.close()
+                return 
+        
+        @staticmethod
+        def insert_pos_tagging_result(sentence_id, pos_tagging_algorithm_name, 
+                                                            pos_tagging_algorithm_result):
+
+                """
+                Deals with the update and insert operation pos_tagging_algorithm_result of sentence 
+                with sentence_id
+                """
+                connection = pymongo.Connection(MONGO_NLP_RESULTS_IP, MONGO_NLP_RESULTS_PORT)
+                result_collection = eval("connection.{db_name}.{collection_name}".format(
+                                                                    db_name=MONGO_NLP_RESULTS_DB,
+                                                                    collection_name=MONGO_NLP_RESULTS_COLLECTION)) 
+
+                result_collection.update({"sentence_id": sentence_id,}, {"$set": 
+                                    {"pos_tagging.{0}".format(pos_tagging_algorithm_name): pos_tagging_algorithm_result}},  
+                                    upsert=True)
+                connection.close()
+                return 
+        
+        @staticmethod
+        def insert_noun_phrases_result(sentence_id, noun_phrases_algorithm_name, 
+                                                            noun_phrases_algorithm_result):
+
+                """
+                Deals with the update and insert operation noun_phrases_algorithm_result of sentence 
+                with sentence_id
+                """
+                connection = pymongo.Connection(MONGO_NLP_RESULTS_IP, MONGO_NLP_RESULTS_PORT)
+                result_collection = eval("connection.{db_name}.{collection_name}".format(
+                                                                    db_name=MONGO_NLP_RESULTS_DB,
+                                                                    collection_name=MONGO_NLP_RESULTS_COLLECTION)) 
+                result_collection.update({"sentence_id": sentence_id,}, {"$set": 
+                                    {"noun_phrases.{0}".format(noun_phrases_algorithm_name): noun_phrases_algorithm_result}},  
+                                    upsert=True)
+                connection.close()
+                return 
 
 
         @staticmethod
@@ -59,13 +120,23 @@ class MongoForCeleryResults:
 
                 
                 result = result_collection.find_one({"sentence_id": sentence_id})
-                
-                noun_phrases = result.get("noun_phrases").get(noun_phrases_algorithm)
+               
+                try:
+                        noun_phrases = result.get("noun_phrases").get(noun_phrases_algorithm)
+                except Exception as e:
+                        noun_phrases = None
 
-                word_tokenization = result.get("word_tokenization").get(word_tokenization_algorithm)
+                try:
+                        word_tokenization = result.get("word_tokenization").get(word_tokenization_algorithm)
+                except Exception as e:
+                        word_tokenization = None
 
-                pos_tagging = result.get("pos_tagging").get(pos_tagging_algorithm)
+                try:
+                        pos_tagging = result.get("pos_tagging").get(pos_tagging_algorithm)
+                except Exception as e:
+                        pos_tagging = None
 
+                connection.close()
                 return list((word_tokenization, pos_tagging, noun_phrases))
 
         @staticmethod
@@ -83,9 +154,19 @@ class MongoForCeleryResults:
                 if not result_collection.find_one({"sentence_id": sentence_id}):
                         return list((False, False))
 
+
                 result = result_collection.find_one({"sentence_id": sentence_id})
-                tag = result.get("tag").get(tag_analysis_algorithm)
-                sentiment = result.get("sentiment").get(sentiment_analysis_algorithm)
+                try:
+                        tag = result.get("tag").get(tag_analysis_algorithm)
+                except Exception as e:
+                        tag = False
+                
+                try:
+                        sentiment = result.get("sentiment").get(sentiment_analysis_algorithm)
+                except Exception as e:
+                        sentiment= False
+
+                connection.close()
                 return list((tag, sentiment))
 
 
