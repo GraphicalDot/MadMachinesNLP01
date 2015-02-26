@@ -29,7 +29,6 @@ class WordTokenize:
             eval("self.{0}()".format(self.word_tokenize))
 
             self.word_tokenized_list = {self.word_tokenize: self.word_tokenized_list}
-            print self.word_tokenized_list
             return
     
 

@@ -277,13 +277,11 @@ class SentTokenizeToNP(celery.Task):
                 
                 MongoForCeleryResults.update_insert_sentence(review_id, sentence_id, sentence) 
 
-                print word_tokenization_algorithm, pos_tagging_algorithm, noun_phrases_algorithm
                 word_tokenization_algorithm_result, pos_tagging_algorithm_result,\
                         noun_phrases_algorithm_result = MongoForCeleryResults.retrieve_document(sentence_id, word_tokenization_algorithm,\
                         pos_tagging_algorithm, noun_phrases_algorithm)
 
 
-                print word_tokenization_algorithm_result, pos_tagging_algorithm_result, noun_phrases_algorithm_result
                 if not word_tokenization_algorithm_result:
                         word_tokenize = WordTokenize([sentence],  default_word_tokenizer= word_tokenization_algorithm)
                         print word_tokenize
@@ -297,7 +295,8 @@ class SentTokenizeToNP(celery.Task):
                         __pos_tagger = PosTaggers(word_tokenization_algorithm_result,  default_pos_tagger=pos_tagging_algorithm) 
                         #using default standford pos tagger
                         pos_tagging_algorithm_result =  __pos_tagger.pos_tagged_sentences.get(pos_tagging_algorithm)
-                        MongoForCeleryResults.insert_pos_tagging_result(sentence_id, 
+                        MongoForCeleryResults.insert_pos_tagging_result(sentence_id,
+                                                                            word_tokenization_algorithm, 
                                                                             pos_tagging_algorithm, 
                                                                             pos_tagging_algorithm_result)
 
@@ -306,6 +305,8 @@ class SentTokenizeToNP(celery.Task):
                         __noun_phrases = NounPhrases(pos_tagging_algorithm_result, default_np_extractor=noun_phrases_algorithm)
                         noun_phrases_algorithm_result =  __noun_phrases.noun_phrases.get(noun_phrases_algorithm)
                         MongoForCeleryResults.insert_noun_phrases_result(sentence_id, 
+                                                                            word_tokenization_algorithm, 
+                                                                            pos_tagging_algorithm, 
                                                                             noun_phrases_algorithm, 
                                                                             noun_phrases_algorithm_result)
                 

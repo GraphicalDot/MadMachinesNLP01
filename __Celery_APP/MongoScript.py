@@ -19,6 +19,7 @@ import pymongo
 file_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(file_path)
 from GlobalConfigs import MONGO_NLP_RESULTS_IP, MONGO_NLP_RESULTS_PORT, MONGO_NLP_RESULTS_DB, MONGO_NLP_RESULTS_COLLECTION
+from Text_Processing import bcolors 
 
 class MongoForCeleryResults:
         """
@@ -60,13 +61,14 @@ class MongoForCeleryResults:
 
                 result_collection.update({"sentence_id": sentence_id,}, {"$set": 
                                     {"word_tokenization.{0}".format(word_tokenization_algorithm_name): word_tokenization_algorithm_result}},  
-                                    upsert=True)
+                                    upsert=False)
 
                 connection.close()
                 return 
         
         @staticmethod
-        def insert_pos_tagging_result(sentence_id, pos_tagging_algorithm_name, 
+        def insert_pos_tagging_result(sentence_id, word_tokenization_algorithm_name,
+                                                            pos_tagging_algorithm_name, 
                                                             pos_tagging_algorithm_result):
 
                 """
@@ -79,14 +81,15 @@ class MongoForCeleryResults:
                                                                     collection_name=MONGO_NLP_RESULTS_COLLECTION)) 
 
                 result_collection.update({"sentence_id": sentence_id,}, {"$set": 
-                                    {"pos_tagging.{0}".format(pos_tagging_algorithm_name): pos_tagging_algorithm_result}},  
-                                    upsert=True)
+                                    {"pos_tagging.{0}.{1}".format(pos_tagging_algorithm_name, word_tokenization_algorithm_name): 
+                                        pos_tagging_algorithm_result}},  
+                                    upsert=False)
                 connection.close()
                 return 
         
         @staticmethod
-        def insert_noun_phrases_result(sentence_id, noun_phrases_algorithm_name, 
-                                                            noun_phrases_algorithm_result):
+        def insert_noun_phrases_result(sentence_id, word_tokenization_algorithm_name,pos_tagging_algorithm_name, 
+                                                    noun_phrases_algorithm_name, noun_phrases_algorithm_result):
 
                 """
                 Deals with the update and insert operation noun_phrases_algorithm_result of sentence 
@@ -97,8 +100,9 @@ class MongoForCeleryResults:
                                                                     db_name=MONGO_NLP_RESULTS_DB,
                                                                     collection_name=MONGO_NLP_RESULTS_COLLECTION)) 
                 result_collection.update({"sentence_id": sentence_id,}, {"$set": 
-                                    {"noun_phrases.{0}".format(noun_phrases_algorithm_name): noun_phrases_algorithm_result}},  
-                                    upsert=True)
+                                    {"noun_phrases.{0}.{1}.{2}".format(noun_phrases_algorithm_name, pos_tagging_algorithm_name, 
+                                            word_tokenization_algorithm_name): noun_phrases_algorithm_result}},  
+                                    upsert=False)
                 connection.close()
                 return 
         
@@ -117,7 +121,7 @@ class MongoForCeleryResults:
                 result_collection.update({"sentence_id": sentence_id,}, {"$set": 
                                     {"tag.{0}".format(prediction_algorithm_name): tag,  
                                     "sentiment.{0}".format(prediction_algorithm_name): sentiment}},  
-                                    upsert=True)
+                                    upsert=False)
                 connection.close()
                 return 
 
@@ -141,25 +145,66 @@ class MongoForCeleryResults:
                 result = result_collection.find_one({"sentence_id": sentence_id})
                
                 try:
-                        noun_phrases_algorithm_result = result.get("noun_phrases").get(noun_phrases_algorithm)
+                        noun_phrases_algorithm_result = result.get("noun_phrases").get(noun_phrases_algorithm)\
+                                .get(pos_tagging_algorithm).get(word_tokenization_algorithm)
+                        print "{start_color}Noun Phrases for --<<{sentence_id}>>-- for --<<algorithm>>--has aready\
+                                been found --<<{noun_phrases}>>--{end_color}".format(start_color =bcolors.OKBLUE, 
+                                                            sentence_id = sentence_id, 
+                                                            algorithm = noun_phrases_algorithm,
+                                                            noun_phrases= noun_phrases_algorithm_result, 
+                                                            end_color = bcolors.RESET,
+                                                            )
                 except Exception as e:
                         noun_phrases_algorithm_result = None
+                        print "{start_color}Noun Phrases for --<<{sentence_id}>>-- for --<<algorithm>>--has aready\
+                                been found --<<{noun_phrases}>>--{end_color}".format(start_color =bcolors.FAIL, 
+                                                            sentence_id = sentence_id, 
+                                                            algorithm = noun_phrases_algorithm,
+                                                            noun_phrases= noun_phrases_algorithm_result, 
+                                                            end_color = bcolors.RESET,
+                                                            )
 
-                print noun_phrases_algorithm_result
                 try:
                         word_tokenization_algorithm_result = result.get("word_tokenization").get(word_tokenization_algorithm)
+                        print "{start_color}Word Tokenization result for --<<{sentence_id}>>--for --<<{algorithm}>>-- has aready\
+                                been found --<<{word_tokenization}>>-- {end_color}".format(start_color =bcolors.OKBLUE, 
+                                                            sentence_id = sentence_id, 
+                                                            algorithm = word_tokenization_algorithm,
+                                                            word_tokenization = word_tokenization_algorithm_result,
+                                                            end_color = bcolors.RESET
+                                                            )
                 except Exception as e:
                         word_tokenization_algorithm_result = None
+                        print "{start_color}Word Tokenization result for --<<{sentence_id}>>--for --<<{algorithm}>>-- has not been\
+                                found --<<{word_tokenization}>>-- {end_color}".format(start_color =bcolors.FAIL, 
+                                                            sentence_id = sentence_id, 
+                                                            algorithm = word_tokenization_algorithm,
+                                                            word_tokenization = word_tokenization_algorithm_result,
+                                                            end_color = bcolors.RESET
+                                                            )
                         
                         
-                print word_tokenization_algorithm_result
 
                 try:
-                        pos_tagging_algorithm_result = result.get("pos_tagging").get(pos_tagging_algorithm)
+                        pos_tagging_algorithm_result = result.get("pos_tagging").get(pos_tagging_algorithm)\
+                                                .get(word_tokenization_algorithm)
+                        print "{start_color}Pos Tagging result for --<<{sentence_id}>>--for --<<{algorithm}>>--\
+                                has aready been found --<<{pos_tagging}>>--{end_color}".format(start_color =bcolors.OKBLUE, 
+                                                            sentence_id = sentence_id, 
+                                                            algorithm = pos_tagging_algorithm,
+                                                            pos_tagging = pos_tagging_algorithm_result,
+                                                            end_color = bcolors.RESET
+                                                            )
                 except Exception as e:
                         pos_tagging_algorithm_result = None
+                        print "{start_color}Pos Tagging result for --<<{sentence_id}>>--for --<<{algorithm}>>--\
+                                has not been found --<<{pos_tagging}>>--{end_color}".format(start_color =bcolors.FAIL, 
+                                                            sentence_id = sentence_id, 
+                                                            algorithm = pos_tagging_algorithm,
+                                                            pos_tagging = pos_tagging_algorithm_result,
+                                                            end_color = bcolors.RESET
+                                                            )
 
-                print pos_tagging_algorithm_result
                 connection.close()
                 return list((word_tokenization_algorithm_result, 
                                     pos_tagging_algorithm_result, noun_phrases_algorithm_result))
@@ -183,15 +228,23 @@ class MongoForCeleryResults:
                 result = result_collection.find_one({"sentence_id": sentence_id})
                 try:
                         tag = result.get("tag").get(tag_analysis_algorithm)
-                except Exception as e:
-                        tag = False
-                print tag 
-                try:
                         sentiment = result.get("sentiment").get(sentiment_analysis_algorithm)
+                        print "{start_color}Tag for --<<{sentence_id}>>-- has aready been found Tag --<<{tag}>>--\
+                                    and sentiment --<<sentiment>>--{end_color}".format(start_color =bcolors.OKBLUE, 
+                                                            sentence_id = sentence_id, 
+                                                            tag= tag, 
+                                                            sentiment = sentiment,
+                                                            end_color = bcolors.RESET
+                                                            )
                 except Exception as e:
-                        sentiment= False
-
-                print sentiment
+                        tag, sentiment = False, False
+                        print "{start_color}Tag for --<<{sentence_id}>>-- has not been found --<<{tag}>>--\
+                         and sentiment --<<sentiment>>--{end_color}".format(start_color =bcolors.FAIL, 
+                                                            sentence_id = sentence_id, 
+                                                            tag= tag, 
+                                                            sentiment = sentiment,
+                                                            end_color = bcolors.RESET
+                                                            )
                 connection.close()
                 return list((tag, sentiment))
 
