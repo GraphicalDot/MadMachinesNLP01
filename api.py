@@ -99,7 +99,7 @@ def pos_tagging_algorithm(algorithm_name):
                                             not in ["__init__", "to_unicode_or_bust"]]
 
         if algorithm_name not in members:
-                raise StandardError("The algorithm you are trying to use for word tokenization doesnt exists yet,\
+                raise StandardError("The algorithm you are trying to use for Pos Tagging  doesnt exists yet,\
                                     please try from these algorithms {0}".format(members))
         return algorithm_name
 
@@ -108,7 +108,7 @@ def noun_phrases_algorithm(algorithm_name):
                                             not in ["__init__", "to_unicode_or_bust"]]
 
         if algorithm_name not in members:
-                raise StandardError("The algorithm you are trying to use for word tokenization doesnt exists yet,\
+                raise StandardError("The algorithm you are trying to use for noun phrases doesnt exists yet,\
                                     please try from these algorithms {0}".format(members))
         return algorithm_name
 
@@ -470,6 +470,15 @@ class GetWordCloud(restful.Resource):
                 else:
                         start_epoch, end_epoch = None, None
 	
+
+                if tag_analysis_algorithm.replace("_tag.lib", "") != sentiment_analysis_algorithm.replace("_sentiment.lib", ""):
+                        return {"error": True,
+                                "success": False,
+                                "error_messege": "Right now, only the same algortihm can be used for tag, sentiment and cost analysis", 
+                                }
+                        
+
+
 
 
 		print "start epoch is -->%s and end_apoch is -->%s"%(start_epoch, end_epoch) 

@@ -101,6 +101,25 @@ class MongoForCeleryResults:
                                     upsert=True)
                 connection.close()
                 return 
+        
+        @staticmethod
+        def insert_predictions(sentence_id, prediction_algorithm_name, tag, sentiment):
+
+                """
+                Deals with the update and insert operation of tag analysis algorithm results
+                and sentiment analysis algorithm result
+                """
+                connection = pymongo.Connection(MONGO_NLP_RESULTS_IP, MONGO_NLP_RESULTS_PORT)
+                result_collection = eval("connection.{db_name}.{collection_name}".format(
+                                                                    db_name=MONGO_NLP_RESULTS_DB,
+                                                                    collection_name=MONGO_NLP_RESULTS_COLLECTION)) 
+
+                result_collection.update({"sentence_id": sentence_id,}, {"$set": 
+                                    {"tag.{0}".format(prediction_algorithm_name): tag,  
+                                    "sentiment.{0}".format(prediction_algorithm_name): sentiment}},  
+                                    upsert=True)
+                connection.close()
+                return 
 
 
         @staticmethod
@@ -122,22 +141,28 @@ class MongoForCeleryResults:
                 result = result_collection.find_one({"sentence_id": sentence_id})
                
                 try:
-                        noun_phrases = result.get("noun_phrases").get(noun_phrases_algorithm)
+                        noun_phrases_algorithm_result = result.get("noun_phrases").get(noun_phrases_algorithm)
                 except Exception as e:
-                        noun_phrases = None
+                        noun_phrases_algorithm_result = None
+
+                print noun_phrases_algorithm_result
+                try:
+                        word_tokenization_algorithm_result = result.get("word_tokenization").get(word_tokenization_algorithm)
+                except Exception as e:
+                        word_tokenization_algorithm_result = None
+                        
+                        
+                print word_tokenization_algorithm_result
 
                 try:
-                        word_tokenization = result.get("word_tokenization").get(word_tokenization_algorithm)
+                        pos_tagging_algorithm_result = result.get("pos_tagging").get(pos_tagging_algorithm)
                 except Exception as e:
-                        word_tokenization = None
+                        pos_tagging_algorithm_result = None
 
-                try:
-                        pos_tagging = result.get("pos_tagging").get(pos_tagging_algorithm)
-                except Exception as e:
-                        pos_tagging = None
-
+                print pos_tagging_algorithm_result
                 connection.close()
-                return list((word_tokenization, pos_tagging, noun_phrases))
+                return list((word_tokenization_algorithm_result, 
+                                    pos_tagging_algorithm_result, noun_phrases_algorithm_result))
 
         @staticmethod
         def retrieve_predictions(sentence_id, tag_analysis_algorithm, sentiment_analysis_algorithm):
@@ -160,12 +185,13 @@ class MongoForCeleryResults:
                         tag = result.get("tag").get(tag_analysis_algorithm)
                 except Exception as e:
                         tag = False
-                
+                print tag 
                 try:
                         sentiment = result.get("sentiment").get(sentiment_analysis_algorithm)
                 except Exception as e:
                         sentiment= False
 
+                print sentiment
                 connection.close()
                 return list((tag, sentiment))
 

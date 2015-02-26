@@ -76,6 +76,7 @@ class PosTaggers:
                 eval("self.{0}()".format(self.pos_tagger))
 
                 self.pos_tagged_sentences = {self.pos_tagger: self.pos_tagged_sentences}
+                print self.pos_tagged_sentences
                 return 
 
         def check_if_hunpos(self):

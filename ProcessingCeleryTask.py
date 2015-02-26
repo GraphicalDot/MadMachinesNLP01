@@ -277,13 +277,16 @@ class SentTokenizeToNP(celery.Task):
                 
                 MongoForCeleryResults.update_insert_sentence(review_id, sentence_id, sentence) 
 
+                print word_tokenization_algorithm, pos_tagging_algorithm, noun_phrases_algorithm
                 word_tokenization_algorithm_result, pos_tagging_algorithm_result,\
                         noun_phrases_algorithm_result = MongoForCeleryResults.retrieve_document(sentence_id, word_tokenization_algorithm,\
                         pos_tagging_algorithm, noun_phrases_algorithm)
 
 
+                print word_tokenization_algorithm_result, pos_tagging_algorithm_result, noun_phrases_algorithm_result
                 if not word_tokenization_algorithm_result:
-                        word_tokenize = WordTokenize([sentence])
+                        word_tokenize = WordTokenize([sentence],  default_word_tokenizer= word_tokenization_algorithm)
+                        print word_tokenize
                         ##word_tokenized_sentences = word_tokenize.word_tokenized_list.get(WORD_TOKENIZATION_ALGORITHM)
                         word_tokenization_algorithm_result = word_tokenize.word_tokenized_list.get(word_tokenization_algorithm)
                         MongoForCeleryResults.insert_word_tokenization_result(sentence_id, 
@@ -394,7 +397,8 @@ class ReviewIdToSentTokenize(celery.Task):
 
                 for __sentences in ids_sentences:
                             __sentences.extend(
-                                    MongoForCeleryResults.retrieve_predictions(__sentences[2], tag_analysis_algorithm, sentiment_analysis_algorithm))
+                                    MongoForCeleryResults.retrieve_predictions(__sentences[2], 
+                                        tag_analysis_algorithm.replace("_tag.lib", ""), sentiment_analysis_algorithm.replace("_sentiment.lib", "")))
                                     #(review_id, sentence, sentence_id, tag, sentiment)
         
                
@@ -406,14 +410,28 @@ class ReviewIdToSentTokenize(celery.Task):
                 t1, t2 = itertools.tee(ids_sentences)
                 predicted_list, not_predicted_list = list(itertools.ifilter(if_predicted, t1)), list(itertools.ifilterfalse(if_predicted, t2))
 
-               
-                ids, sentences, sentences_ids, tag_junk, sentiment_junk = map(list, zip(*not_predicted_list))
+              
+                if bool(not_predicted_list): #Only to run when not predicted list is non empty
+                        ids, sentences, sentences_ids, tag_junk, sentiment_junk = map(list, zip(*not_predicted_list))
 
 
-                predicted_tags = tag_classification(tag_analysis_algorithm, sentences)
-                predicted_sentiment = sentiment_classification(sentiment_analysis_algorithm, sentences)
+                        predicted_tags = tag_classification(tag_analysis_algorithm, sentences)
+                        predicted_sentiment = sentiment_classification(sentiment_analysis_algorithm, sentences)
 
-                aggregated = predicted_list +  zip(ids, sentences, sentences_ids, predicted_tags, predicted_sentiment)
+
+                        #Inserting tag and sentiment correponding to senences ids
+                        #right now tag_analysis_algorithm shall be same as sentiment_analysis_algorithm
+                        new_predicted_list =  zip(ids, sentences, sentences_ids, predicted_tags, predicted_sentiment) 
+                        for __sentence in new_predicted_list:
+                                MongoForCeleryResults.insert_predictions(__sentence[2], tag_analysis_algorithm.replace("_tag.lib", ""), 
+                                        __sentence[3], __sentence[4])
+                else:
+                        new_predicted_list = list()
+
+
+                aggregated = predicted_list +  new_predicted_list
+
+
                 result = [list(element) for element in aggregated if element[3] == category]
 	        logger.info("{color} Length of the result is ---<{length}>--- with type --<{type}>--".format(color=bcolors.OKBLUE,\
                         length=len(result), type=type(result)))
