@@ -37,7 +37,11 @@ App.RootView = Backbone.View.extend({
 	render: function(){
 		
 		this.$el.append(this.template(this));
-		
+		this.$el.css({
+			'height' :"200px",
+			'overflow-y': "scroll", 
+
+		})
 		return this;
 	},
 	
