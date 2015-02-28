@@ -24,6 +24,10 @@ from GlobalConfigs import MONGO_NLP_RESULTS_IP, MONGO_NLP_RESULTS_PORT, MONGO_NL
 
 from Text_Processing import bcolors 
 
+connection = pymongo.Connection(MONGO_NLP_RESULTS_IP, MONGO_NLP_RESULTS_PORT)
+result_collection = eval("connection.{db_name}.{collection_name}".format(
+                                                                    db_name=MONGO_NLP_RESULTS_DB,
+                                                                    collection_name=MONGO_NLP_RESULTS_COLLECTION)) 
 class MongoForCeleryResults:
         """
         This is the class which deals with the update, deletion and insertion of results
@@ -35,20 +39,15 @@ class MongoForCeleryResults:
 
 
         @staticmethod
-        def update_insert_sentence(review_id, sentence_id, sentence):
+        def update_insert_sentence(review_id, eatery_id, sentence_id, sentence):
                 """
                 Deals with update and deletion of the document
                 The actual length of the sentences will be diferent because multiple reviews would
                 have same setneces and would have same sentences ids
                 """
-                connection = pymongo.Connection(MONGO_NLP_RESULTS_IP, MONGO_NLP_RESULTS_PORT)
-                result_collection = eval("connection.{db_name}.{collection_name}".format(
-                                                                    db_name=MONGO_NLP_RESULTS_DB,
-                                                                    collection_name=MONGO_NLP_RESULTS_COLLECTION)) 
 
                 result_collection.update({"sentence_id": sentence_id,}, 
-                                {"$set": {"review_id": review_id, "sentence": sentence,}},  upsert=True)
-                connection.close()
+                        {"$set": {"review_id": review_id, "sentence": sentence, "eatery_id": eatery_id}},  upsert=True)
                 return
 
         @staticmethod
@@ -59,16 +58,10 @@ class MongoForCeleryResults:
                 Deals with the update and insert operation word_tokenization_algorithm_result of sentence 
                 with sentence_id
                 """
-                connection = pymongo.Connection(MONGO_NLP_RESULTS_IP, MONGO_NLP_RESULTS_PORT)
-                result_collection = eval("connection.{db_name}.{collection_name}".format(
-                                                                    db_name=MONGO_NLP_RESULTS_DB,
-                                                                    collection_name=MONGO_NLP_RESULTS_COLLECTION)) 
-
                 result_collection.update({"sentence_id": sentence_id,}, {"$set": 
                                     {"word_tokenization.{0}".format(word_tokenization_algorithm_name): word_tokenization_algorithm_result}},  
                                     upsert=False)
 
-                connection.close()
                 return 
         
         @staticmethod
@@ -80,16 +73,10 @@ class MongoForCeleryResults:
                 Deals with the update and insert operation pos_tagging_algorithm_result of sentence 
                 with sentence_id
                 """
-                connection = pymongo.Connection(MONGO_NLP_RESULTS_IP, MONGO_NLP_RESULTS_PORT)
-                result_collection = eval("connection.{db_name}.{collection_name}".format(
-                                                                    db_name=MONGO_NLP_RESULTS_DB,
-                                                                    collection_name=MONGO_NLP_RESULTS_COLLECTION)) 
-
                 result_collection.update({"sentence_id": sentence_id,}, {"$set": 
                                     {"pos_tagging.{0}.{1}".format(pos_tagging_algorithm_name, word_tokenization_algorithm_name): 
                                         pos_tagging_algorithm_result}},  
                                     upsert=False)
-                connection.close()
                 return 
         
         @staticmethod
@@ -100,15 +87,10 @@ class MongoForCeleryResults:
                 Deals with the update and insert operation noun_phrases_algorithm_result of sentence 
                 with sentence_id
                 """
-                connection = pymongo.Connection(MONGO_NLP_RESULTS_IP, MONGO_NLP_RESULTS_PORT)
-                result_collection = eval("connection.{db_name}.{collection_name}".format(
-                                                                    db_name=MONGO_NLP_RESULTS_DB,
-                                                                    collection_name=MONGO_NLP_RESULTS_COLLECTION)) 
                 result_collection.update({"sentence_id": sentence_id,}, {"$set": 
                                     {"noun_phrases.{0}.{1}.{2}".format(noun_phrases_algorithm_name, pos_tagging_algorithm_name, 
                                             word_tokenization_algorithm_name): noun_phrases_algorithm_result}},  
                                     upsert=False)
-                connection.close()
                 return 
         
         @staticmethod
@@ -117,17 +99,23 @@ class MongoForCeleryResults:
                 """
                 Deals with the update and insert operation of tag analysis algorithm results
                 and sentiment analysis algorithm result
-                """
-                connection = pymongo.Connection(MONGO_NLP_RESULTS_IP, MONGO_NLP_RESULTS_PORT)
-                result_collection = eval("connection.{db_name}.{collection_name}".format(
-                                                                    db_name=MONGO_NLP_RESULTS_DB,
-                                                                    collection_name=MONGO_NLP_RESULTS_COLLECTION)) 
 
+                """
                 result_collection.update({"sentence_id": sentence_id,}, {"$set": 
                                     {"tag.{0}".format(prediction_algorithm_name): tag,  
                                     "sentiment.{0}".format(prediction_algorithm_name): sentiment}},  
                                     upsert=False)
-                connection.close()
+                        
+                        
+                print "{start_color}Prediction for --<<{sentence_id}>>-- for --<<algorithm>>--with\
+                                tag --<<{noun_phrases}>>-- and sentiment --<{sentiment}> has been\
+                                updated successfully{end_color}".format(start_color =bcolors.OKBLUE, 
+                                                            sentence_id = sentence_id, 
+                                                            algorithm = prediction_algorithm_name,
+                                                            tag = tag,
+                                                            sentiment = sentiment,
+                                                            end_color = bcolors.RESET,
+                                                            )
                 return 
 
 
@@ -137,12 +125,8 @@ class MongoForCeleryResults:
                 Here we need only the sentences_id because
                 #Checking tag_analysis_algorithm result exists or not
                 #result_collection.find_one({"sentence_id": sentence_id, "noun_phrases.regex_textblob_conll": {"$exists": True}})
-                """
                 #Checking tag_analysis_algorithm result exists or not
-                connection = pymongo.Connection(MONGO_NLP_RESULTS_IP, MONGO_NLP_RESULTS_PORT)
-                result_collection = eval("connection.{db_name}.{collection_name}".format(
-                                                                    db_name=MONGO_NLP_RESULTS_DB,
-                                                                    collection_name=MONGO_NLP_RESULTS_COLLECTION)) 
+                """
                 if not result_collection.find_one({"sentence_id": sentence_id}):
                         return list((False, False, False))
 
@@ -210,7 +194,6 @@ class MongoForCeleryResults:
                                                             end_color = bcolors.RESET
                                                             )
 
-                connection.close()
                 return list((word_tokenization_algorithm_result, 
                                     pos_tagging_algorithm_result, noun_phrases_algorithm_result))
 
@@ -221,13 +204,9 @@ class MongoForCeleryResults:
                 or not, returns True if predictions for tag, sentiment, etc present else returns 
                 False
 
-                """
                 print "{0}This is the fucking sentecen id {1}{2}".format(bcolors.FAIL, sentence_id, bcolors.RESET)
 
-                connection = pymongo.Connection(MONGO_NLP_RESULTS_IP, MONGO_NLP_RESULTS_PORT)
-                result_collection = eval("connection.{db_name}.{collection_name}".format(
-                                                                    db_name=MONGO_NLP_RESULTS_DB,
-                                                                    collection_name=MONGO_NLP_RESULTS_COLLECTION)) 
+                """
                 result = result_collection.find_one({"sentence_id": sentence_id})
                 if not result:
                         return list((False, False))
@@ -252,7 +231,6 @@ class MongoForCeleryResults:
                                                             sentiment = sentiment,
                                                             end_color = bcolors.RESET
                                                             )
-                connection.close()
                 return list((tag, sentiment))
 
 

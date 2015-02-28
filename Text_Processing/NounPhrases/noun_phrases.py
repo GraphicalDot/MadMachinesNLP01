@@ -187,7 +187,8 @@ class NounPhrases:
         @need_pos_tagged(False)
 	def textblob_np_conll(self):
                 for __sentence in self.list_of_sentences:
-		        blob = TextBlob(__sentence, np_extractor=self.conll_extractor)
+		        __sentence = " ".join([element[0] for element in __sentence])
+                        blob = TextBlob(__sentence, np_extractor=self.conll_extractor)
                         self.noun_phrases.append(list(blob.noun_phrases))
                 return
         
@@ -219,7 +220,7 @@ if __name__ == "__main__":
         text = [ [(u'i', u'LS'), (u'wanted', u'VBD'), (u'to', u'TO'), (u'go', u'VB'), (u'for', u'IN'), (u'teppanyaki', u'JJ'), (u'grill', u'NN'), (u'since', u'IN'), (u'i', u'FW'), (u'never', u'RB'), (u'tried', u'VBD'), (u'it', u'PRP'), (u'in', u'IN'), (u'Delhi', u'NNP'), (u'(', u'FW'), (u'i', u'FW'), (u'had', u'VBD'), (u'it', u'PRP'), (u'last', u'JJ'), (u'...', u':')], [(u'we', u'PRP'), (u'had', u'VBD'), (u'a', u'DT'), (u'portion', u'NN'), (u'of', u'IN'), (u'both', u'CC'), (u'the', u'DT'), (u'dishes', u'NNS'), (u'and', u'CC'), (u'called', u'VBD'), (u'up', u'RP'), (u'server', u'NN'), (u'again', u'RB'), (u'with', u'IN'), (u'menu', u'NN'), (u'to', u'TO'), (u'confirm', u'VB'), (u'the', u'DT'), (u'ingredients', u'NNS'), (u'and', u'CC'), (u'asked', u'VBD'), (u'him', u'PRP'), (u'to', u'TO'), (u'match', u'VB'), (u'the', u'DT'), (u'dish', u'NN'), (u'with', u'IN'), (u'contents', u'NNS'), (u'mentioned', u'VBN'), (u'in', u'IN'), (u'menu', u'NN'), (u'.', u'.')]]
         
 
-        instance = NounPhrases(text, default_np_extractor="regex_textblob_conll_np")
+        instance = NounPhrases(text, default_np_extractor="textblob_np_conll")
         __l = instance.noun_phrases
         print __l
 

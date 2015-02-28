@@ -399,17 +399,18 @@ class ReviewIdToSentTokenize(celery.Task):
 
 
 
+                ##This for loop inserts all the sentences in the mongodb, independent of the category
+                ##they belongs to, 
                 for element in review_list:
                         for __sentence in sent_tokenizer.tokenize(element[1]): 
                                 ids_sentences.append(list((element[0], __sentence.encode("ascii", "xmlcharrefreplace"), 
                                                             hashlib.md5(__sentence.encode("ascii", "xmlcharrefreplace")).hexdigest()))) 
                                 #(review_id, sentence, sentence_id)
-                                MongoForCeleryResults.update_insert_sentence(element[0], 
+                                MongoForCeleryResults.update_insert_sentence(element[0], eatery_id, 
                                                      hashlib.md5(__sentence.encode("ascii", "xmlcharrefreplace")).hexdigest(),
                                                     __sentence.encode("ascii", "xmlcharrefreplace"))
 
                 
-                print "Length of the ids_Sentecnes is %s"%len(ids_sentences)
                 for __sentences in ids_sentences:
                             __sentences.extend(
                                     MongoForCeleryResults.retrieve_predictions(__sentences[2], 

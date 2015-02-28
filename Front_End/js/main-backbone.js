@@ -5,7 +5,7 @@ App.RootView = Backbone.View.extend({
 	//tagName: "fieldset",
 	//className: "well-lg plan",
 	tagName: "table",
-	className: "table table-hover borderless",
+	className: "table table-hover borderless scroll",
 	template: window.template("root"),
 	
 	initialize: function(){

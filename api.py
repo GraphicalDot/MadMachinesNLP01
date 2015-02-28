@@ -523,8 +523,9 @@ class GetWordCloud(restful.Resource):
                 print eatery_id, category, start_epoch,  end_epoch, tag_analysis_algorithm, sentiment_analysis_algorithm,\
                         word_tokenization_algorithm, pos_tagging_algorithm, noun_phrases_algorithm, np_clustering_algorithm,\
                         total_noun_phrases
-                
+               
                 result = list()
+                
                 celery_chain = (ReviewIdToSentTokenize.s(eatery_id, category, start_epoch, end_epoch, tag_analysis_algorithm, 
                     sentiment_analysis_algorithm)|  
                     MappingList.s(word_tokenization_algorithm, pos_tagging_algorithm, noun_phrases_algorithm, 
@@ -564,143 +565,6 @@ class GetWordCloud(restful.Resource):
 				"error": False,
 				"result": clustering_result.get(),
                     }
-                
-                """
-
-                result = list()
-		celery_chain = (ReviewIdToSentTokenize.s(eatery_id, category, start_epoch, end_epoch, tag_analysis_algorithm, sentiment_analysis_algorithm)|  MappingList.s(word_tokenization_algorithm, pos_tagging_algorithm, noun_phrases_algorithm, SentTokenizeToNP.s()))()
-
-                ids = list()
-                while celery_chain.status != "SUCCESS":
-                        ids.append(e)
-
-                for id in ids:
-                        while AsyncResult(id).status != "SUCCESS":
-                                result.append(AsyncResult(id).get())
-
-                return result
-
-
-                result = list()
-                ret = ProcessEateryId.apply_async(args=[eatery_id, category, start_epoch, end_epoch, word_tokenization_algorithm, 
-                                        pos_tagging_algorithm, noun_phrases_algorithm, tag_analysis_algorithm, sentiment_analysis_algorithm])
-                
-                noun_phrases_list = list()
-		print type(start_epoch), type(end_epoch)
-
-
-                #This is mongodb query for the arguments given int he post request, And the result is a list of reviews
-		print "total reviews %s "%reviews.find({"eatery_id" :eatery_id}).count()
-		review_result = reviews.find({"eatery_id" :eatery_id, "converted_epoch": {"$gt":  start_epoch, "$lt" : end_epoch}})  
-            	print "the length with start date and the end date %s"%review_result.count()
-
-		review_text = [to_unicode_or_bust(post.get("review_text")) for post in review_result]
-		review_text = " .".join(review_text)
-
-		
-		with cd("{0}/PrepareClassifiers/InMemoryClassifiers".format(path_parent_dir)):
-			tag_classifier = joblib.load('svm_grid_search_classifier_tag.lib')
-			#tag_classifier = joblib.load('svm_linear_kernel_classifier_tag.lib')
-			sentiment_classifier = joblib.load('svm_grid_search_classifier_sentiment.lib')
-		
-		noun_phrase = list()
-		result = list() 
-
-		sent_tokenizer = SentenceTokenizationOnRegexOnInterjections()
-		
-		
-		test_sentences = sent_tokenizer.tokenize(to_unicode_or_bust(review_text))
-
-		##with svm returns a list in the following form
-		##[(sentence, tag), (sentence, tag), ................]
-		#for chunk in text_classfication.with_svm():
-		
-		#Getting Sentiment analysis
-		__predicted_tags = tag_classifier.predict(test_sentences)
-		__predicted_sentiment = sentiment_classifier.predict(test_sentences)
-
-
-		index = 0
-
-		#classified_sentences = [('but in the afternoon , it is usually unoccupied .', 'null'),
-		#(u'the food is fine , hard - to - eat in some cases .', 'food')]
-
-		#__predicted_sentiment = ["null", "negative" ]
-
-		print "\n\n %s \n\n"%(time.time() - start)
-
-		new_time = time.time()
-		filtered_tag_text = [text for text in zip(test_sentences, __predicted_tags, __predicted_sentiment) if text[1] == category]
-	
-                
-                
-                __word_tokenize = WordTokenize([__tuple[0] for __tuple in filtered_tag_text]) #using punkt_n_treebank_tokenizer
-                word_tokenized_list =  __word_tokenize.word_tokenized_list
-               
-
-                __pos_tagger = PosTaggers(word_tokenized_list.get("punkt_n_treebank")) #using default standford pos tagger
-                __pos_tagged_sentences =  __pos_tagger.pos_tagged_sentences
-                
-
-                __noun_phrases = NounPhrases(__pos_tagged_sentences.get("nltk_pos_tagger"))
-
-        
-                __noun_phrases = NounPhrases([__tuple[0] for __tuple in filtered_tag_text]) #using punkt_n_treebank_tokenizer
-                print __noun_phrases.noun_phrases.get("textblob_np_conll")
-
-
-                #final_noun_phrases = list()
-                #for element in zip(__noun_phrases.noun_phrases.get("textblob_np_conll"), [__text[2] for __text in filtered_tag_text]):
-                #            final_noun_phrases.append([(noun, element[1]) for noun in element[0]])
-                        
-                #noun_phrases = list(itertools.chain(*final_noun_phrases))
-
-                #print noun_phrases
-
-		for text in filtered_tag_text:
-			noun_phrases_list.extend([(noun.lower(),  text[2]) for noun in instance.noun_phrase(to_unicode_or_bust(text[0]))
-                            if not check_lavenshtein_similarity(category, noun)
-                            ])
-
-
-		
-		##Incresing and decrasing frequency of the noun phrases who are superpositive and supernegative and changing
-		##their tags to positive and negative
-		edited_result = list()
-                for __noun_phrase_dict in noun_phrases_list:
-			if __noun_phrase_dict[1] == "super-positive" or __noun_phrase_dict[1] == "super-negative":
-				edited_result.append((__noun_phrase_dict[0], __noun_phrase_dict[1].split("-")[1]))
-				#Added twice beacause super postive was given twice as weightage as positive and some goes for supernegative 
-				#and negative
-				edited_result.append((__noun_phrase_dict[0], __noun_phrase_dict[1].split("-")[1]))
-
-			else:
-				edited_result.append(__noun_phrase_dict)
-
-		result = list()
-
-		for key, value in Counter(edited_result).iteritems():
-			result.append({"name": key[0], "polarity": 1 if key[1] == 'positive' else 0 , "frequency": value}) 
-		
-		with open("/home/k/word_cloud.csv", "wb") as csv_file:
-			writer = csv.writer(csv_file, delimiter=',')
-			for line in result:
-				writer.writerow([line.get("name").encode("utf-8"), line.get("polarity"), line.get("frequency")])
-
-		sorted_result = sorted(result, reverse=True, key=lambda x: x.get("frequency"))
-		#final_result = sorted(merging_similar_elements(sorted_result), reverse=True, key=lambda x: x.get("frequency"))
-                
-                for element in final_result:
-                    print element 
-                
-                final_result = sorted(sorted_result, reverse=True, key=lambda x: x.get("frequency"))
-
-                print   [(e, "\n")  for e in final_result[0: 20]]	
-                return {"success": True,
-				"error": False,
-				"result": final_result[0:15],
-		}
-                """
 class TestWhole(restful.Resource):
 	@cors
 	@timeit

@@ -38,9 +38,9 @@ def need_word_tokenization(word_tokenize):
 
 
 class PosTaggers:
-        os.environ["JAVA_HOME"] = "{0}/ForStanford/jdk1.8.0_31/jre/bin/".format(stanford_file_path)
-        stanford_jar_file = "{0}/ForStanford/stanford-postagger.jar".format(stanford_file_path) 
-        stanford_tagger = "{0}/ForStanford/models/english-bidirectional-distsim.tagger".format(stanford_file_path) 
+        #os.environ["JAVA_HOME"] = "{0}/ForStanford/jdk1.8.0_31/jre/bin/".format(stanford_file_path)
+        #stanford_jar_file = "{0}/ForStanford/stanford-postagger.jar".format(stanford_file_path) 
+        #stanford_tagger = "{0}/ForStanford/models/english-bidirectional-distsim.tagger".format(stanford_file_path) 
         def __init__(self, list_of_sentences, default_pos_tagger=None):
                 """
                 Args:
@@ -68,7 +68,7 @@ class PosTaggers:
                 self.check_if_hunpos() 
                 self.hunpos_tagger = HunposTagger('{0}/hunpos-1.0-linux/en_wsj.model'.format(dir_name),
                                                     '{0}/hunpos-1.0-linux/hunpos-tag'.format(dir_name))
-                self.stanford_tagger = POSTagger(self.stanford_tagger, self.stanford_jar_file) 
+                #self.stanford_tagger = POSTagger(self.stanford_tagger, self.stanford_jar_file) 
                 
                 self.list_of_sentences = list_of_sentences
                 self.pos_tagged_sentences = list()

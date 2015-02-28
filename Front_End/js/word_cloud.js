@@ -75,12 +75,18 @@ App.SeeWordCloudDateSelectionView = Backbone.View.extend({
 		}
 	
 
+		//payload = {"eatery_id": eatery_id, "category":"overall", "total_noun_phrases": 15, "word_tokenization_algorithm": 
+		//	'punkt_n_treebank', "pos_tagging_algorithm": "hunpos_pos_tagger", "noun_phrases_algorithm":"regex_textblob_conll_np"}
+		
+
+
 		console.log(window.eatery_id + "    " + window.word_cloud_category);	
 		var jqhr = $.post(window.get_word_cloud, {"eatery_id": window.eatery_id,
 							"start_date": $('#selectStartDate').val(),
 							"end_date": $('#selectEndDate').val(),
 		    					"category": window.word_cloud_category,
-						})
+							"total_noun_phrases": 20,	
+					})
 
 
 		
