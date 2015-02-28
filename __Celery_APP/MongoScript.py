@@ -18,13 +18,15 @@ import sys
 import pymongo
 file_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(file_path)
+
 from GlobalConfigs import MONGO_NLP_RESULTS_IP, MONGO_NLP_RESULTS_PORT, MONGO_NLP_RESULTS_DB,\
                 MONGO_NLP_RESULTS_COLLECTION, MONGO_EATERY_NP_RESULTS, MONGO_EATERY_NP_RESULTS_PORT,\
                 MONGO_EATERY_NP_RESULSTS_DB, MONGO_EATERY_NP_RESULTS_COLLECTION 
 
 from Text_Processing import bcolors 
 
-connection = pymongo.Connection(MONGO_NLP_RESULTS_IP, MONGO_NLP_RESULTS_PORT)
+connection = pymongo.MongoClient(MONGO_NLP_RESULTS_IP, MONGO_NLP_RESULTS_PORT, tz_aware=True, w=1, j=True)
+
 result_collection = eval("connection.{db_name}.{collection_name}".format(
                                                                     db_name=MONGO_NLP_RESULTS_DB,
                                                                     collection_name=MONGO_NLP_RESULTS_COLLECTION)) 
