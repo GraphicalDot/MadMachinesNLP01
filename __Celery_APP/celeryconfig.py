@@ -49,6 +49,7 @@ CELERY_QUEUES = (
 		Queue('ReviewIdToSentTokenizeQueue', Exchange('default', delivery_mode= 2),  routing_key='ReviewIdToSentTokenizeQueue.import'),
 		Queue('SentTokenizeToNPQueue', Exchange('default', delivery_mode= 2),  routing_key='SentTokenizeToNPQueue.import'),
 		Queue('MappingListQueue', Exchange('pos_tagger', delivery_mode= 2),  routing_key='MappingListQueue.import'),
+		Queue('NPClusteringQueue', Exchange('pos_tagger', delivery_mode= 2),  routing_key='NPClusteringQueue.import'),
 		Queue('CleanResultBackEndQueue', Exchange('clean_backend', delivery_mode= 2),  routing_key='CleanResultBackEndQueue.import'),
                     )
 
@@ -74,6 +75,10 @@ CELERY_ROUTES = {
 				'queue': 'CleanResultBackEndQueue',
 				'routing_key': 'CleanResultBackEndQueue.import',
                                    },
+		'ProcessingCeleryTask.Clustering': {
+				'queue': 'NPClusteringQueue',
+				'routing_key': 'NPClusteringQueue.import',
+                        },		
                         }
 
 #Celery result backend settings, We are using monngoodb to store the results after running the tasks through celery
@@ -125,3 +130,4 @@ CELERY_TRACK_STARTED = True
 #    Probably the key ('_kombu.binding.celery') has been removed from the Redis database.
 #While running chunks on Classification task
 SEND_TASK_SENT_EVENT = True
+#CELERYMON_LOG_FORMAT =  [%(asctime)s: %(levelname)s/%(processName)s] 

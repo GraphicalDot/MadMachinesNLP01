@@ -12,3 +12,5 @@ from MainAlgorithms import get_all_algorithms_result, path_parent_dir, path_trai
 from Word_Tokenization import WordTokenize
 from PosTaggers import PosTaggers
 from PrepareClassifiers import LoadClassifiers
+from NER import NERs
+from NPClustering import NpClustering

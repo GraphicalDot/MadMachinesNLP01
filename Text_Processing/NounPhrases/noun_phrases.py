@@ -167,7 +167,6 @@ class NounPhrases:
                 if not regexp_grammer:
                         self.regexp_grammer = r"CustomNounP:{<JJ|VB|FW|VBN>?<NN.*>*<NN.*>}"
 
-                print "self.{0}()".format(self.np_extractor)
                 eval("self.{0}()".format(self.np_extractor)) 
                
                 self.noun_phrases = {self.np_extractor: self.noun_phrases}
@@ -216,7 +215,6 @@ class NounPhrases:
                         self.noun_phrases.append(__union)
                 return
 
-"""
 if __name__ == "__main__":
         text = [ [(u'i', u'LS'), (u'wanted', u'VBD'), (u'to', u'TO'), (u'go', u'VB'), (u'for', u'IN'), (u'teppanyaki', u'JJ'), (u'grill', u'NN'), (u'since', u'IN'), (u'i', u'FW'), (u'never', u'RB'), (u'tried', u'VBD'), (u'it', u'PRP'), (u'in', u'IN'), (u'Delhi', u'NNP'), (u'(', u'FW'), (u'i', u'FW'), (u'had', u'VBD'), (u'it', u'PRP'), (u'last', u'JJ'), (u'...', u':')], [(u'we', u'PRP'), (u'had', u'VBD'), (u'a', u'DT'), (u'portion', u'NN'), (u'of', u'IN'), (u'both', u'CC'), (u'the', u'DT'), (u'dishes', u'NNS'), (u'and', u'CC'), (u'called', u'VBD'), (u'up', u'RP'), (u'server', u'NN'), (u'again', u'RB'), (u'with', u'IN'), (u'menu', u'NN'), (u'to', u'TO'), (u'confirm', u'VB'), (u'the', u'DT'), (u'ingredients', u'NNS'), (u'and', u'CC'), (u'asked', u'VBD'), (u'him', u'PRP'), (u'to', u'TO'), (u'match', u'VB'), (u'the', u'DT'), (u'dish', u'NN'), (u'with', u'IN'), (u'contents', u'NNS'), (u'mentioned', u'VBN'), (u'in', u'IN'), (u'menu', u'NN'), (u'.', u'.')]]
         
@@ -225,4 +223,3 @@ if __name__ == "__main__":
         __l = instance.noun_phrases
         print __l
 
-"""

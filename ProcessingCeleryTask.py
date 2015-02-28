@@ -22,6 +22,9 @@ import sys
 import time
 import hashlib
 import itertools
+from compiler.ast import flatten
+from collections import Counter
+
 connection = pymongo.Connection()
 db = connection.intermediate
 collection = db.intermediate_collection
@@ -40,7 +43,8 @@ from GlobalConfigs import MONGO_REVIEWS_IP, MONGO_REVIEWS_PORT, MONGO_NLP_RESULT
 
 from __Celery_APP.App import app
 from __Celery_APP.MongoScript import MongoForCeleryResults
-from Text_Processing import WordTokenize, PosTaggers, SentenceTokenizationOnRegexOnInterjections, bcolors, NounPhrases
+from Text_Processing import WordTokenize, PosTaggers, SentenceTokenizationOnRegexOnInterjections, bcolors, NounPhrases,\
+                NERs, NpClustering
 
 file_path = os.path.dirname(os.path.abspath(__file__))
 
@@ -189,7 +193,7 @@ class CleanResultBackEnd(celery.Task):
                         --<{time}>-- seconds  {reset}".format(color=bcolors.OKBLUE,\
                         function_name=inspect.stack()[0][3], task_name= self.__class__.__name__, 
                             time=time.time() -self.start, reset=bcolors.RESET))
-		pass
+                pass
 
 	def on_failure(self, exc, task_id, args, kwargs, einfo):
 		logger.info("{color} Ending --<{function_name}--> of task --<{task_name}>-- failed fucking\
@@ -200,26 +204,36 @@ class CleanResultBackEnd(celery.Task):
 
 
 @app.task()
-class StoreFinalResults(celery.Task):
+class Clustering(celery.Task):
 	max_retries=3, 
 	acks_late=True
 	default_retry_delay = 5
-        def run(self, result):
-                result_collection = eval("pymongo.Connection(MONGO_NLP_RESULTS_IP, MONGO_NLP_RESULTS_PORT).{db_name}.{collection_name}".format(
-                                                                    db_name=MONGO_NLP_RESULTS_DB,
-                                                                    collection_name=MONGO_NLP_RESULTS_COLLECTION))
-                
-                celery_collection_bulk = connection.celery.celery_taskmeta.initialize_unordered_bulk_op()
-                
-                for _id in id_list:
-                        celery_collection_bulk.find({'_id': _id}).remove_one()
+        def run(self, result, clustering_algorithm_name, number):
+                """
+                Args:
+                    result: A list of list in the form [[u'Subway outlet', u'positive'],
+                     [u'subway', u'positive'],
+                      [u'bread', u'positive']]
 
-                try:
-                    celery_collection_bulk.execute()
-                except BulkWriteError as bwe:
-                    print(bwe.details)
-                connection.close()
-                return 
+                    number: Maximum number of noun phrases required
+                """
+                self.start = time.time()
+                edited_result = list()
+                for element in result:
+                        if element[1].startswith("super"):
+                                edited_result.append((element[0], element[1].split("-")[1]))
+                                edited_result.append((element[0], element[1].split("-")[1]))
+                        else:
+                                edited_result.append(tuple(element))
+
+
+                final_result = list()
+                for key, value in Counter(edited_result).iteritems():
+                        final_result.append({"name": key[0], "polarity": 1 if key[1] == 'positive' else 0 , "frequency": value}) 
+           
+                sorted_result = sorted(final_result, reverse=True, key=lambda x: x.get("frequency"))
+                return sorted_result[0: number]
+
 
         def after_return(self, status, retval, task_id, args, kwargs, einfo):
 		#exit point of the task whatever is the state
@@ -274,8 +288,9 @@ class SentTokenizeToNP(celery.Task):
                 review_id = __sentence[0]
                 sentence = __sentence[1]
                 sentence_id = __sentence[2]
-                
-                MongoForCeleryResults.update_insert_sentence(review_id, sentence_id, sentence) 
+                tag = __sentence[3]
+                sentiment = __sentence[4]
+
 
                 word_tokenization_algorithm_result, pos_tagging_algorithm_result,\
                         noun_phrases_algorithm_result = MongoForCeleryResults.retrieve_document(sentence_id, word_tokenization_algorithm,\
@@ -309,15 +324,10 @@ class SentTokenizeToNP(celery.Task):
                                                                             pos_tagging_algorithm, 
                                                                             noun_phrases_algorithm, 
                                                                             noun_phrases_algorithm_result)
-                
-                return {"from_review_id": __sentence[0],
-                        "sentence": __sentence[1],
-                        "sentence_id": __sentence[2], 
-                        "tag": {tag_analysis_algorithm: __sentence[3]}, 
-                        "sentiment": {sentiment_analysis_algorithm: __sentence[3]}, 
-                        "word_tokenization": {word_tokenization_algorithm: word_tokenization_algorithm_result},
-                        "pos_tagging": {pos_tagging_algorithm:  pos_tagging_algorithm_result}, 
-                        "noun_phrases": {noun_phrases_algorithm: noun_phrases_algorithm_result}}
+               
+                __return_sentiment = lambda noun_phrase: (noun_phrase, sentiment)
+
+                return map(__return_sentiment, flatten(noun_phrases_algorithm_result))
 
         def after_return(self, status, retval, task_id, args, kwargs, einfo):
 		#exit point of the task whatever is the state
@@ -394,8 +404,12 @@ class ReviewIdToSentTokenize(celery.Task):
                                 ids_sentences.append(list((element[0], __sentence.encode("ascii", "xmlcharrefreplace"), 
                                                             hashlib.md5(__sentence.encode("ascii", "xmlcharrefreplace")).hexdigest()))) 
                                 #(review_id, sentence, sentence_id)
+                                MongoForCeleryResults.update_insert_sentence(element[0], 
+                                                     hashlib.md5(__sentence.encode("ascii", "xmlcharrefreplace")).hexdigest(),
+                                                    __sentence.encode("ascii", "xmlcharrefreplace"))
 
-
+                
+                print "Length of the ids_Sentecnes is %s"%len(ids_sentences)
                 for __sentences in ids_sentences:
                             __sentences.extend(
                                     MongoForCeleryResults.retrieve_predictions(__sentences[2], 
@@ -411,7 +425,8 @@ class ReviewIdToSentTokenize(celery.Task):
                 t1, t2 = itertools.tee(ids_sentences)
                 predicted_list, not_predicted_list = list(itertools.ifilter(if_predicted, t1)), list(itertools.ifilterfalse(if_predicted, t2))
 
-              
+             
+
                 if bool(not_predicted_list): #Only to run when not predicted list is non empty
                         ids, sentences, sentences_ids, tag_junk, sentiment_junk = map(list, zip(*not_predicted_list))
 

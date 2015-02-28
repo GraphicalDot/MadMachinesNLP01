@@ -36,7 +36,12 @@ from bson.json_util import dumps
 from Text_Processing import NounPhrases, get_all_algorithms_result, RpRcClassifier, \
 		bcolors, CopiedSentenceTokenizer, SentenceTokenizationOnRegexOnInterjections, get_all_algorithms_result, \
 		path_parent_dir, path_trainers_file, path_in_memory_classifiers, timeit, cd, SentimentClassifier, \
-		TagClassifier
+		TagClassifier, NERs, NpClustering
+
+from compiler.ast import flatten
+##TODO run check_if_hunpos and check_if stanford fruntions for postagging and NERs and postagging
+
+
 from Text_Processing import WordTokenize, PosTaggers, NounPhrases
 
 
@@ -54,7 +59,7 @@ import base64
 import requests
 from PIL import Image
 import inspect
-from ProcessingCeleryTask import MappingList, SentTokenizeToNP, ReviewIdToSentTokenize, CleanResultBackEnd
+from ProcessingCeleryTask import MappingList, SentTokenizeToNP, ReviewIdToSentTokenize, CleanResultBackEnd, Clustering
 from celery.result import AsyncResult
 
 connection = pymongo.Connection()
@@ -133,6 +138,15 @@ def sentiment_analysis_algorithm(algorithm_name):
                                     please try from these algorithms {0}".format(members))
         return algorithm_name
 
+def np_clustering_algorithm(algorithm_name):
+        members = [member[0] for member in inspect.getmembers(NpClustering, predicate=inspect.ismethod) if member[0] 
+                                            not in ["__init__",]]
+
+        if algorithm_name not in members:
+                raise StandardError("The algorithm you are trying to use for noun phrase clustering doesnt exists yet,\
+                                    please try from these algorithms {0}".format(members))
+        return algorithm_name
+
 
 
 
@@ -184,11 +198,13 @@ get_word_cloud_parser.add_argument('eatery_id', type=str,  required=True, locati
 get_word_cloud_parser.add_argument('category', type=str,  required=True, location="form")
 get_word_cloud_parser.add_argument('start_date', type=str,  required=False, location="form")
 get_word_cloud_parser.add_argument('end_date', type=str,  required=False, location="form") 
+get_word_cloud_parser.add_argument('total_noun_phrases', type=int,  required=False, location="form") 
 get_word_cloud_parser.add_argument('word_tokenization_algorithm', type=word_tokenization_algorithm,  required=False, location="form")
 get_word_cloud_parser.add_argument('noun_phrases_algorithm', type=noun_phrases_algorithm,  required=False, location="form")
 get_word_cloud_parser.add_argument('pos_tagging_algorithm', type=pos_tagging_algorithm,  required=False, location="form")
 get_word_cloud_parser.add_argument('tag_analysis_algorithm', type=tag_analysis_algorithm,  required=False, location="form")
 get_word_cloud_parser.add_argument('sentiment_analysis_algorithm', type=sentiment_analysis_algorithm,  required=False, location="form")
+get_word_cloud_parser.add_argument('np_clustering_algorithm', type=np_clustering_algorithm,  required=False, location="form")
 
 
 
@@ -443,6 +459,8 @@ class GetWordCloud(restful.Resource):
 		eatery_id = args["eatery_id"]
 		category = args["category"].lower()
                 
+                total_noun_phrases = (None, args["total_noun_phrases"])[args["total_noun_phrases"] != None]
+                
                 word_tokenization_algorithm = ("punkt_n_treebank", args["word_tokenization_algorithm"])[args["word_tokenization_algorithm"] != None]
                 
                 
@@ -457,6 +475,7 @@ class GetWordCloud(restful.Resource):
                 sentiment_analysis_algorithm = ("svm_linear_kernel_classifier_sentiment.lib", 
                                     "{0}_sentiment.lib".format(args["sentiment_analysis_algorithm"]))[args["sentiment_analysis_algorithm"] != None]
 
+                np_clustering_algorithm = ("k_means", args["np_clustering_algorithm"])[args["np_clustering_algorithm"] != None]
     
                 if args["start_date"] and ["end_date"]:
 		        try:
@@ -501,7 +520,9 @@ class GetWordCloud(restful.Resource):
         
                 
 
-                print eatery_id, category, start_epoch,  end_epoch, tag_analysis_algorithm, sentiment_analysis_algorithm, word_tokenization_algorithm, pos_tagging_algorithm, noun_phrases_algorithm
+                print eatery_id, category, start_epoch,  end_epoch, tag_analysis_algorithm, sentiment_analysis_algorithm,\
+                        word_tokenization_algorithm, pos_tagging_algorithm, noun_phrases_algorithm, np_clustering_algorithm,\
+                        total_noun_phrases
                 
                 result = list()
                 celery_chain = (ReviewIdToSentTokenize.s(eatery_id, category, start_epoch, end_epoch, tag_analysis_algorithm, 
@@ -528,11 +549,20 @@ class GetWordCloud(restful.Resource):
                 ids =  [__id.id for __id in celery_chain.children[0]]
                 ids.extend([celery_chain.parent.id, celery_chain.id])
                
+
+                result = list(itertools.chain.from_iterable(result))
+                clustering_result = Clustering.apply_async(args=[result, np_clustering_algorithm, total_noun_phrases])
+                
+                while clustering_result.status != "SUCCESS":
+                        pass
+
+                ids.append(clustering_result.id)
                 CleanResultBackEnd.apply_async(args=[ids])
+
 
                 return {"success": True,
 				"error": False,
-				"result": result,
+				"result": clustering_result.get(),
                     }
                 
                 """

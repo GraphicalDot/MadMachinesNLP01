@@ -165,7 +165,7 @@ function SentTokenizeToNPWorker(){
 	cd Canworks/CeleryApp;  
 	worker_name="SentTokenizeToNPWorker_"
 	worker_name+=$1
-	celery -A ProcessingCeleryTask  worker -n $worker_name -Q SentTokenizeToNPQueue --concurrency=4  --loglevel=info; 
+	celery -A ProcessingCeleryTask  worker -n $worker_name -Q SentTokenizeToNPQueue --concurrency=4 -P gevent  --loglevel=info --autoreload; 
 	}
 
 

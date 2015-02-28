@@ -18,7 +18,10 @@ import sys
 import pymongo
 file_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(file_path)
-from GlobalConfigs import MONGO_NLP_RESULTS_IP, MONGO_NLP_RESULTS_PORT, MONGO_NLP_RESULTS_DB, MONGO_NLP_RESULTS_COLLECTION
+from GlobalConfigs import MONGO_NLP_RESULTS_IP, MONGO_NLP_RESULTS_PORT, MONGO_NLP_RESULTS_DB,\
+                MONGO_NLP_RESULTS_COLLECTION, MONGO_EATERY_NP_RESULTS, MONGO_EATERY_NP_RESULTS_PORT,\
+                MONGO_EATERY_NP_RESULSTS_DB, MONGO_EATERY_NP_RESULTS_COLLECTION 
+
 from Text_Processing import bcolors 
 
 class MongoForCeleryResults:
@@ -35,6 +38,8 @@ class MongoForCeleryResults:
         def update_insert_sentence(review_id, sentence_id, sentence):
                 """
                 Deals with update and deletion of the document
+                The actual length of the sentences will be diferent because multiple reviews would
+                have same setneces and would have same sentences ids
                 """
                 connection = pymongo.Connection(MONGO_NLP_RESULTS_IP, MONGO_NLP_RESULTS_PORT)
                 result_collection = eval("connection.{db_name}.{collection_name}".format(
@@ -217,15 +222,17 @@ class MongoForCeleryResults:
                 False
 
                 """
+                print "{0}This is the fucking sentecen id {1}{2}".format(bcolors.FAIL, sentence_id, bcolors.RESET)
+
                 connection = pymongo.Connection(MONGO_NLP_RESULTS_IP, MONGO_NLP_RESULTS_PORT)
                 result_collection = eval("connection.{db_name}.{collection_name}".format(
                                                                     db_name=MONGO_NLP_RESULTS_DB,
                                                                     collection_name=MONGO_NLP_RESULTS_COLLECTION)) 
-                if not result_collection.find_one({"sentence_id": sentence_id}):
+                result = result_collection.find_one({"sentence_id": sentence_id})
+                if not result:
                         return list((False, False))
 
 
-                result = result_collection.find_one({"sentence_id": sentence_id})
                 try:
                         tag = result.get("tag").get(tag_analysis_algorithm)
                         sentiment = result.get("sentiment").get(sentiment_analysis_algorithm)
@@ -247,5 +254,6 @@ class MongoForCeleryResults:
                                                             )
                 connection.close()
                 return list((tag, sentiment))
+
 
 
