@@ -225,6 +225,36 @@ class MongoForCeleryResults:
                 return list((word_tokenization_algorithm_result, 
                                     pos_tagging_algorithm_result, noun_phrases_algorithm_result))
 
+
+        @staticmethod
+        def if_review(review_id, prediction_algorithm_name):
+                if not bool(list(result_collection.find(
+                                    {'review_id': review_id, 
+                                    "tag.{0}".format(prediction_algorithm_name): {"$exists": True}}))):
+                        return False
+
+                return True
+        
+        @staticmethod
+        def review_result(review_id, prediction_algorithm_name):
+                def conversion(__object):
+                        return [__object.get("review_id"), __object.get("sentence"), __object.get("sentence_id"), 
+                                __object.get("tag").get('svm_linear_kernel_classifier'), 
+                                __object.get("sentiment").get('svm_linear_kernel_classifier')]
+                    
+            
+            
+                return map(conversion, list(result_collection.find({'review_id': review_id}, 
+                            fields= {"_id": False,
+                                    "review_id": True,
+                                    "sentence": True,
+                                    "tag.{0}".format(prediction_algorithm_name): True, 
+                                    "sentiment.{0}".format(prediction_algorithm_name): True,
+                                    "sentence_id": True
+                                    })))
+
+
+
         @staticmethod
         def retrieve_predictions(sentence_id, tag_analysis_algorithm, sentiment_analysis_algorithm):
                 """

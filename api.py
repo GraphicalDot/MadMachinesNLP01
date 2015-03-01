@@ -493,7 +493,8 @@ class GetWordCloud(restful.Resource):
                 if tag_analysis_algorithm.replace("_tag.lib", "") != sentiment_analysis_algorithm.replace("_sentiment.lib", ""):
                         return {"error": True,
                                 "success": False,
-                                "error_messege": "Right now, only the same algortihm can be used for tag, sentiment and cost analysis", 
+                                "error_messege": "Right now, only the same algortihm can be used for tag, sentiment and cost analysis,\
+                                        Make sure you are sending the same algortihm name for all the classification problems", 
                                 }
                         
 

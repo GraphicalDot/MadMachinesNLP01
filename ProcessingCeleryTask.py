@@ -357,8 +357,25 @@ class ReviewIdToSentTokenize(celery.Task):
                 """
                 Start This worker:
                     celery -A ProcessingCeleryTask  worker -n ReviewIdToSentTokenizeOne -Q ReviewIdToSentTokenizeQueue 
-                                --concurrency=4 --loglevel=info
+                        --concurrency=4 --loglevel=info
                 
+                How it Works:
+                    Get all the review for the particular eatery_id, 
+                    for every review checks the MongoForCeleryResults.if_review(review[0], prediction_algorithm_name)
+                    function, if the sentences for this review_id for the prediction_algorithm_name is present
+                    this function returns True, else False
+
+                    already_predicted_list: All the reviews which have already been predicted and
+                                            db has their tokenized sentences present in it with prediction
+                                            done by prediction_algorithm_name
+
+                    new_predicted_list: Opposite of already_predicted_list
+                        all the review texts for the review_ids present in this list, then be sentence tokenized
+                        and then a bulk insert on mongodb has been done
+                        MongoForCeleryResults.bulk_insert_predictions(eatery_id, tag_analysis_algorithm.replace("_tag.lib", ""), 
+                                        new_predicted_list)
+
+
                 Args:
                     eatery_id: 
                             type: str
@@ -381,9 +398,13 @@ class ReviewIdToSentTokenize(celery.Task):
                 
                 Returns:
                         type: List of lists, which each list is of four elements
-                        (id, sentence, predicted_tag, predicted_sentiment)
+                        (id, sentence, sentence_id, predicted_tag, predicted_sentiment)
                 """
-                
+                #As both tag_analysis_algorithm and sentiment_analysis_algorithm shall be same
+                prediction_algorithm_name = tag_analysis_algorithm.replace("_tag.lib", "")
+
+
+
                 self.start = time.time()
                 sent_tokenizer = SentenceTokenizationOnRegexOnInterjections()
                 
@@ -398,35 +419,29 @@ class ReviewIdToSentTokenize(celery.Task):
                         
 
 
+                
+                predicted_reviews, not_predicted_reviews = list(), list()
 
+                for review in review_list:
+                        if MongoForCeleryResults.if_review(review[0], prediction_algorithm_name):
+                                predicted_reviews.append(review)
+                        else:
+                                not_predicted_reviews.append(review)
+
+                
                 ##This for loop inserts all the sentences in the mongodb, independent of the category
                 ##they belongs to, 
-                for element in review_list:
-                        for __sentence in sent_tokenizer.tokenize(element[1]): 
-                                ids_sentences.append(list((element[0], __sentence.encode("ascii", "xmlcharrefreplace"), 
+
+                new_predicted_list, already_predicted_list = list(), list()
+                if bool(not_predicted_reviews):
+                        for element in not_predicted_reviews:
+                                for __sentence in sent_tokenizer.tokenize(element[1]): 
+                                        ids_sentences.append(list((element[0], __sentence.encode("ascii", "xmlcharrefreplace"), 
                                                             hashlib.md5(__sentence.encode("ascii", "xmlcharrefreplace")).hexdigest()))) 
                                 #(eatery_id, review_id, sentence, sentence_id)
-                MongoForCeleryResults.bulk_update_insert_sentence(eatery_id, ids_sentences)
+                        #MongoForCeleryResults.bulk_update_insert_sentence(eatery_id, ids_sentences)
                 
-                for __sentences in ids_sentences:
-                            __sentences.extend(
-                                    MongoForCeleryResults.retrieve_predictions(__sentences[2], 
-                                        tag_analysis_algorithm.replace("_tag.lib", ""), sentiment_analysis_algorithm.replace("_sentiment.lib", "")))
-                                    #(review_id, sentence, sentence_id, tag, sentiment)
-        
-               
-               
-                #seperating ids_sentences list into predicted_list and not_predicted_list
-                if_predicted = lambda sentence: True if sentence[3] and sentence[4] else False
-
-
-                t1, t2 = itertools.tee(ids_sentences)
-                predicted_list, not_predicted_list = list(itertools.ifilter(if_predicted, t1)), list(itertools.ifilterfalse(if_predicted, t2))
-
-             
-
-                if bool(not_predicted_list): #Only to run when not predicted list is non empty
-                        ids, sentences, sentences_ids, tag_junk, sentiment_junk = map(list, zip(*not_predicted_list))
+                        ids, sentences, sentences_ids = map(list, zip(*ids_sentences))
 
 
                         predicted_tags = tag_classification(tag_analysis_algorithm, sentences)
@@ -436,13 +451,16 @@ class ReviewIdToSentTokenize(celery.Task):
                         #right now tag_analysis_algorithm shall be same as sentiment_analysis_algorithm
                         new_predicted_list =  zip(ids, sentences, sentences_ids, predicted_tags, predicted_sentiment) 
                         MongoForCeleryResults.bulk_insert_predictions(eatery_id, tag_analysis_algorithm.replace("_tag.lib", ""), 
-                                                                new_predicted_list)
+                                        new_predicted_list)
                 
-                else:
-                        new_predicted_list = list()
+
+                if bool(predicted_reviews): #Only to run when predicted_reviews list is non empty
+                        for review in predicted_reviews:
+                                already_predicted_list.extend(
+                                        MongoForCeleryResults.review_result(review[0], prediction_algorithm_name))
 
 
-                aggregated = predicted_list +  new_predicted_list
+                aggregated = new_predicted_list +  already_predicted_list
 
 
                 result = [list(element) for element in aggregated if element[3] == category]
@@ -450,7 +468,6 @@ class ReviewIdToSentTokenize(celery.Task):
                         length=len(result), type=type(result)))
 
                 return result
-        
         
         def after_return(self, status, retval, task_id, args, kwargs, einfo):
 		logger.info("{color} Ending --<{function_name}--> of task --<{task_name}>-- with time taken\
