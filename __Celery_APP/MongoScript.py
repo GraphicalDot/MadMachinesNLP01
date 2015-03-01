@@ -25,11 +25,14 @@ from GlobalConfigs import MONGO_NLP_RESULTS_IP, MONGO_NLP_RESULTS_PORT, MONGO_NL
 
 from Text_Processing import bcolors 
 
-connection = pymongo.MongoClient(MONGO_NLP_RESULTS_IP, MONGO_NLP_RESULTS_PORT, tz_aware=True, w=1, j=True)
+connection = pymongo.MongoClient(MONGO_NLP_RESULTS_IP, MONGO_NLP_RESULTS_PORT, tz_aware=True, w=1, 
+                                            j=True, max_pool_size=200, use_greenlets=True)
 
 result_collection = eval("connection.{db_name}.{collection_name}".format(
                                                                     db_name=MONGO_NLP_RESULTS_DB,
                                                                     collection_name=MONGO_NLP_RESULTS_COLLECTION)) 
+result_collection.ensure_index("sentence_id", unique=True)
+
 class MongoForCeleryResults:
         """
         This is the class which deals with the update, deletion and insertion of results
@@ -39,18 +42,40 @@ class MongoForCeleryResults:
         def __init__(self,):
                 pass
 
-
         @staticmethod
-        def update_insert_sentence(review_id, eatery_id, sentence_id, sentence):
+        def bulk_update_insert_sentence(eatery_id, __sentences):
                 """
+                __sentences of the form list with each lsit of the form
+                review_id, eatery_id, sentence_id, sentence):
                 Deals with update and deletion of the document
                 The actual length of the sentences will be diferent because multiple reviews would
                 have same setneces and would have same sentences ids
                 """
+                bulk = result_collection.initialize_ordered_bulk_op()
+                for sentence in __sentences:
 
+                        #bulk.find({"sentence_id": __sentences[3]}).updateOne{
+                        bulk.find({"sentence_id": sentence[2],}).upsert().update_one(
+                               {"$set": {
+                                    "review_id": sentence[0], 
+                                    "sentence": sentence[1], 
+                                    "eatery_id": eatery_id}})
+                                    
+                        
+                
+                bulk.execute()
+                """
                 result_collection.update({"sentence_id": sentence_id,}, 
                         {"$set": {"review_id": review_id, "sentence": sentence, "eatery_id": eatery_id}},  upsert=True)
-                return
+                
+                print "{start_color}Update for --<<{sentence_id}>>-- sentence is  --<<{sentence}>>--with\
+                                updated successfully{end_color}".format(start_color =bcolors.OKBLUE, 
+                                                            sentence_id = sentence_id, 
+                                                            sentence = sentence,
+                                                            end_color = bcolors.RESET,
+                                                                    )
+                """
+                return                                                    
 
         @staticmethod
         def insert_word_tokenization_result(sentence_id, word_tokenization_algorithm_name, 
@@ -96,28 +121,29 @@ class MongoForCeleryResults:
                 return 
         
         @staticmethod
-        def insert_predictions(sentence_id, prediction_algorithm_name, tag, sentiment):
+        def bulk_insert_predictions(eatery_id, prediction_algorithm_name, __sentences):
 
                 """
                 Deals with the update and insert operation of tag analysis algorithm results
                 and sentiment analysis algorithm result
 
+                 zip(ids, sentences, sentences_ids, predicted_tags, predicted_sentiment) 
                 """
-                result_collection.update({"sentence_id": sentence_id,}, {"$set": 
-                                    {"tag.{0}".format(prediction_algorithm_name): tag,  
-                                    "sentiment.{0}".format(prediction_algorithm_name): sentiment}},  
-                                    upsert=False)
+                bulk = result_collection.initialize_ordered_bulk_op()
+                for sentence in __sentences:
+                        #bulk.find({"sentence_id": __sentences[3]}).updateOne{
+                        bulk.find({"sentence_id": sentence[2],}).upsert().update_one(
+                               {"$set": {
+                                    "review_id": sentence[0], 
+                                    "sentence": sentence[1], 
+                                    "eatery_id": eatery_id,
+                                    "tag.{0}".format(prediction_algorithm_name): sentence[3],  
+                                    "sentiment.{0}".format(prediction_algorithm_name): sentence[4],  
+                                    }})
+                                    
                         
-                        
-                print "{start_color}Prediction for --<<{sentence_id}>>-- for --<<algorithm>>--with\
-                                tag --<<{noun_phrases}>>-- and sentiment --<{sentiment}> has been\
-                                updated successfully{end_color}".format(start_color =bcolors.OKBLUE, 
-                                                            sentence_id = sentence_id, 
-                                                            algorithm = prediction_algorithm_name,
-                                                            tag = tag,
-                                                            sentiment = sentiment,
-                                                            end_color = bcolors.RESET,
-                                                            )
+                
+                bulk.execute()
                 return 
 
 
@@ -217,22 +243,26 @@ class MongoForCeleryResults:
                 try:
                         tag = result.get("tag").get(tag_analysis_algorithm)
                         sentiment = result.get("sentiment").get(sentiment_analysis_algorithm)
+                        """
                         print "{start_color}Tag for --<<{sentence_id}>>-- has aready been found Tag --<<{tag}>>--\
-                                    and sentiment --<<sentiment>>--{end_color}".format(start_color =bcolors.OKBLUE, 
+                                    and sentiment --<<{sentiment}>>--{end_color}".format(start_color =bcolors.OKBLUE, 
                                                             sentence_id = sentence_id, 
                                                             tag= tag, 
                                                             sentiment = sentiment,
                                                             end_color = bcolors.RESET
                                                             )
+                        """
                 except Exception as e:
                         tag, sentiment = False, False
+                        """
                         print "{start_color}Tag for --<<{sentence_id}>>-- has not been found --<<{tag}>>--\
-                         and sentiment --<<sentiment>>--{end_color}".format(start_color =bcolors.FAIL, 
+                         and sentiment --<<{sentiment}>>--{end_color}".format(start_color =bcolors.FAIL, 
                                                             sentence_id = sentence_id, 
                                                             tag= tag, 
                                                             sentiment = sentiment,
                                                             end_color = bcolors.RESET
-                                                            )
+                                                         )
+                        """
                 return list((tag, sentiment))
 
 

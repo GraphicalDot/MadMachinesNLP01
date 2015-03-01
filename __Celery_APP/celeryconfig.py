@@ -49,8 +49,9 @@ CELERY_QUEUES = (
 		Queue('ReviewIdToSentTokenizeQueue', Exchange('default', delivery_mode= 2),  routing_key='ReviewIdToSentTokenizeQueue.import'),
 		Queue('SentTokenizeToNPQueue', Exchange('default', delivery_mode= 2),  routing_key='SentTokenizeToNPQueue.import'),
 		Queue('MappingListQueue', Exchange('pos_tagger', delivery_mode= 2),  routing_key='MappingListQueue.import'),
-		Queue('NPClusteringQueue', Exchange('pos_tagger', delivery_mode= 2),  routing_key='NPClusteringQueue.import'),
+		Queue('NPClusteringQueue', Exchange('np_clusteringr', delivery_mode= 2),  routing_key='NPClusteringQueue.import'),
 		Queue('CleanResultBackEndQueue', Exchange('clean_backend', delivery_mode= 2),  routing_key='CleanResultBackEndQueue.import'),
+		Queue('PredictionQueue', Exchange('prediction', delivery_mode= 2),  routing_key='PredictionQueue.import'),
                     )
 
 
@@ -78,6 +79,11 @@ CELERY_ROUTES = {
 		'ProcessingCeleryTask.Clustering': {
 				'queue': 'NPClusteringQueue',
 				'routing_key': 'NPClusteringQueue.import',
+                        },		
+		
+                'ProcessingCeleryTask.Prediction': {
+				'queue': 'PredictionQueue',
+				'routing_key': 'PredictionQueue.import',
                         },		
                         }
 

@@ -405,11 +405,8 @@ class ReviewIdToSentTokenize(celery.Task):
                         for __sentence in sent_tokenizer.tokenize(element[1]): 
                                 ids_sentences.append(list((element[0], __sentence.encode("ascii", "xmlcharrefreplace"), 
                                                             hashlib.md5(__sentence.encode("ascii", "xmlcharrefreplace")).hexdigest()))) 
-                                #(review_id, sentence, sentence_id)
-                                MongoForCeleryResults.update_insert_sentence(element[0], eatery_id, 
-                                                     hashlib.md5(__sentence.encode("ascii", "xmlcharrefreplace")).hexdigest(),
-                                                    __sentence.encode("ascii", "xmlcharrefreplace"))
-
+                                #(eatery_id, review_id, sentence, sentence_id)
+                MongoForCeleryResults.bulk_update_insert_sentence(eatery_id, ids_sentences)
                 
                 for __sentences in ids_sentences:
                             __sentences.extend(
@@ -435,13 +432,12 @@ class ReviewIdToSentTokenize(celery.Task):
                         predicted_tags = tag_classification(tag_analysis_algorithm, sentences)
                         predicted_sentiment = sentiment_classification(sentiment_analysis_algorithm, sentences)
 
-
                         #Inserting tag and sentiment correponding to senences ids
                         #right now tag_analysis_algorithm shall be same as sentiment_analysis_algorithm
                         new_predicted_list =  zip(ids, sentences, sentences_ids, predicted_tags, predicted_sentiment) 
-                        for __sentence in new_predicted_list:
-                                MongoForCeleryResults.insert_predictions(__sentence[2], tag_analysis_algorithm.replace("_tag.lib", ""), 
-                                        __sentence[3], __sentence[4])
+                        MongoForCeleryResults.bulk_insert_predictions(eatery_id, tag_analysis_algorithm.replace("_tag.lib", ""), 
+                                                                new_predicted_list)
+                
                 else:
                         new_predicted_list = list()
 
@@ -454,6 +450,8 @@ class ReviewIdToSentTokenize(celery.Task):
                         length=len(result), type=type(result)))
 
                 return result
+        
+        
         def after_return(self, status, retval, task_id, args, kwargs, einfo):
 		logger.info("{color} Ending --<{function_name}--> of task --<{task_name}>-- with time taken\
                         --<{time}>-- seconds  {reset}".format(color=bcolors.OKBLUE,\
@@ -518,6 +516,30 @@ class MappingList(celery.Task):
                 logger.info("{0}{1}".format(einfo, bcolors.RESET))
 		self.retry(exc=exc)
 
+@app.task()
+class Prediction(celery.Task):
+	def run(self, sentences, prediction_algorithm_name):
+                self.start = time.time()
+
+
+                classifier_path = "{0}/Text_Processing/PrepareClassifiers/InMemoryClassifiers/".format(file_path)
+                classifier = joblib.load("{0}{1}".format(classifier_path, prediction_algorithm_name))
+                return list(classifier.predict(sentences))
+
+        def after_return(self, status, retval, task_id, args, kwargs, einfo):
+		#exit point of the task whatever is the state
+		logger.info("{color} Ending --<{function_name}--> of task --<{task_name}>-- with time taken\
+                        --<{time}>-- seconds  {reset}".format(color=bcolors.OKBLUE,\
+                        function_name=inspect.stack()[0][3], task_name= self.__class__.__name__, 
+                            time=time.time() -self.start, reset=bcolors.RESET))
+		pass
+
+	def on_failure(self, exc, task_id, args, kwargs, einfo):
+		logger.info("{color} Ending --<{function_name}--> of task --<{task_name}>-- failed fucking\
+                        miserably {reset}".format(color=bcolors.OKBLUE,\
+                        function_name=inspect.stack()[0][3], task_name= self.__class__.__name__, reset=bcolors.RESET))
+                logger.info("{0}{1}".format(einfo, bcolors.RESET))
+		self.retry(exc=exc)
 @app.task()
 class ProcessEateryId(celery.Task):
 	def run(self, eatery_id, category, start_epoch, end_epoch, word_tokenization_algorithm, pos_tagging_algorithm, 
