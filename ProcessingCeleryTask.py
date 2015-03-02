@@ -258,8 +258,8 @@ class SentTokenizeToNP(celery.Task):
 	max_retries=3, 
 	acks_late=True
 	default_retry_delay = 5
-	def run(self, __sentence, word_tokenization_algorithm, pos_tagging_algorithm, noun_phrases_algorithm, 
-                                    tag_analysis_algorithm, sentiment_analysis_algorithm):
+	def run(self, __sentence, ner_algorithm, word_tokenization_algorithm, pos_tagging_algorithm, noun_phrases_algorithm, 
+                                    tag_analysis_algorithm, sentiment_analysis_algorithm,):
                 """
                 To Start this worker
                     celery -A ProcessingCeleryTask  worker -n SentTokenizeToNP -Q SentTokenizeToNP --concurrency=4 
@@ -293,8 +293,8 @@ class SentTokenizeToNP(celery.Task):
 
 
                 word_tokenization_algorithm_result, pos_tagging_algorithm_result,\
-                        noun_phrases_algorithm_result = MongoForCeleryResults.retrieve_document(sentence_id, word_tokenization_algorithm,\
-                        pos_tagging_algorithm, noun_phrases_algorithm)
+                        noun_phrases_algorithm_result, ner_algorithm_result = MongoForCeleryResults.retrieve_document(\
+                        sentence_id, word_tokenization_algorithm, pos_tagging_algorithm, noun_phrases_algorithm, ner_algorithm)
 
 
                 if not word_tokenization_algorithm_result:
@@ -316,7 +316,15 @@ class SentTokenizeToNP(celery.Task):
                                                                             pos_tagging_algorithm, 
                                                                             pos_tagging_algorithm_result)
 
+                if not ner_algorithm_result:
+                        __ner_class = NERs(pos_tagging_algorithm_result, default_ner=ner_algorithm)
+                        ner_result = __ner_class.ners.get(ner_algorithm)
+                        MongoForCeleryResults.insert_ner_result(sentence_id, 
+                                                                        pos_tagging_algorithm, 
+                                                                        ner_algorithm,
+                                                                        ner_result,)
 
+                """
                 if not noun_phrases_algorithm_result:
                         __noun_phrases = NounPhrases(pos_tagging_algorithm_result, default_np_extractor=noun_phrases_algorithm)
                         noun_phrases_algorithm_result =  __noun_phrases.noun_phrases.get(noun_phrases_algorithm)
@@ -325,7 +333,8 @@ class SentTokenizeToNP(celery.Task):
                                                                             pos_tagging_algorithm, 
                                                                             noun_phrases_algorithm, 
                                                                             noun_phrases_algorithm_result)
-               
+                """
+
                 __return_sentiment = lambda noun_phrase: (noun_phrase, sentiment)
 
                 return map(__return_sentiment, flatten(noun_phrases_algorithm_result))
@@ -509,7 +518,7 @@ class MappingList(celery.Task):
                 it is not json serializable
 
         """
-        def run(self, it, word_tokenization_algorithm, pos_tagging_algorithm, noun_phrases_algorithm, 
+        def run(self, it, ner_algorithm, word_tokenization_algorithm, pos_tagging_algorithm, noun_phrases_algorithm, 
                                     tag_analysis_algorithm, sentiment_analysis_algorithm, callback):
                 self.start = time.time()
                 callback = subtask(callback)
@@ -518,7 +527,7 @@ class MappingList(celery.Task):
 
 
 
-	        return group(callback.clone([arg, word_tokenization_algorithm, pos_tagging_algorithm, 
+	        return group(callback.clone([arg, ner_algorithm, word_tokenization_algorithm, pos_tagging_algorithm, 
                         noun_phrases_algorithm, tag_analysis_algorithm, sentiment_analysis_algorithm]) for arg in it)()
 
         

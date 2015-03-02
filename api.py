@@ -148,6 +148,16 @@ def np_clustering_algorithm(algorithm_name):
         return algorithm_name
 
 
+def ner_algorithm(algorithm_name):
+        members = [member[0] for member in inspect.getmembers(NERs, predicate=inspect.ismethod) if member[0] 
+                                            not in ["__init__",]]
+
+        if algorithm_name not in members:
+                raise StandardError("The algorithm you are trying to use for ner extraction doesnt exists yet,\
+                                    please try from these algorithms {0}".format(members))
+        return algorithm_name
+
+
 
 
 #fb_login
@@ -205,6 +215,7 @@ get_word_cloud_parser.add_argument('pos_tagging_algorithm', type=pos_tagging_alg
 get_word_cloud_parser.add_argument('tag_analysis_algorithm', type=tag_analysis_algorithm,  required=False, location="form")
 get_word_cloud_parser.add_argument('sentiment_analysis_algorithm', type=sentiment_analysis_algorithm,  required=False, location="form")
 get_word_cloud_parser.add_argument('np_clustering_algorithm', type=np_clustering_algorithm,  required=False, location="form")
+get_word_cloud_parser.add_argument('ner_algorithm', type=ner_algorithm,  required=False, location="form")
 
 
 
@@ -464,7 +475,7 @@ class GetWordCloud(restful.Resource):
                 word_tokenization_algorithm = ("punkt_n_treebank", args["word_tokenization_algorithm"])[args["word_tokenization_algorithm"] != None]
                 
                 
-                noun_phrases_algorithm = ("regex_textblob_conll_np", args["noun_phrases_algorithm"])[args["noun_phrases_algorithm"] != None]
+                noun_phrases_algorithm = ("textblob_np_conll", args["noun_phrases_algorithm"])[args["noun_phrases_algorithm"] != None]
                 
                 
                 pos_tagging_algorithm = ("hunpos_pos_tagger", args["pos_tagging_algorithm"])[args["pos_tagging_algorithm"] != None]
@@ -476,6 +487,8 @@ class GetWordCloud(restful.Resource):
                                     "{0}_sentiment.lib".format(args["sentiment_analysis_algorithm"]))[args["sentiment_analysis_algorithm"] != None]
 
                 np_clustering_algorithm = ("k_means", args["np_clustering_algorithm"])[args["np_clustering_algorithm"] != None]
+                
+                ner_algorithm = ("nltk_maxent_ner", args["ner_algorithm"])[args["ner_algorithm"] != None]
     
                 if args["start_date"] and ["end_date"]:
 		        try:
@@ -523,7 +536,7 @@ class GetWordCloud(restful.Resource):
 
                 print eatery_id, category, start_epoch,  end_epoch, tag_analysis_algorithm, sentiment_analysis_algorithm,\
                         word_tokenization_algorithm, pos_tagging_algorithm, noun_phrases_algorithm, np_clustering_algorithm,\
-                        total_noun_phrases
+                        total_noun_phrases, ner_algorithm
                
                 result = list()
        
@@ -533,7 +546,7 @@ class GetWordCloud(restful.Resource):
                 """
                 celery_chain = (ReviewIdToSentTokenize.s(eatery_id, category, start_epoch, end_epoch, tag_analysis_algorithm, 
                     sentiment_analysis_algorithm)|  
-                    MappingList.s(word_tokenization_algorithm, pos_tagging_algorithm, noun_phrases_algorithm, 
+                    MappingList.s(ner_algorithm, word_tokenization_algorithm, pos_tagging_algorithm, noun_phrases_algorithm, 
                          tag_analysis_algorithm,  sentiment_analysis_algorithm, SentTokenizeToNP.s()))()
                 print celery_chain
                 ##Waitng for the ReviewIdToSentTokenize task to finish

@@ -175,9 +175,24 @@ class NounPhrases:
 
         @need_pos_tagged(True)
         def regex_np_extractor(self):
+                """
+                We need convert_to_tuple method because mongodb doesnt save tuple and converts into a list
+                so when we pick dat from mongodb it gives data of this type
+                __text = [[[u'this', u'DT'], [u'is', u'VBZ'], [u'one', u'CD'], [u'of', u'IN'], [u'the', u'DT'], [u'good', u'JJ']]
+
+                if we pass this text to __parser it gives chunk error, 
+                so to convert this sentnece into the form 
+                __text = [[(u'this', u'DT'), (u'is', u'VBZ'), (u'one', u'CD'), (u'of', u'IN'), (u'the', u'DT'), (u'good', u'JJ')]
+                we need convert_to_tuple method
+
+                """
+                def convert_to_tuple(element):
+                        return tuple(element)
+            
                 __parser = nltk.RegexpParser(self.regexp_grammer)
                 for __sentence in self.list_of_sentences:
                         print "This is the sentence that got into noun phrase algorithm %s"%__sentence
+                        __sentence = map(convert_to_tuple, __sentence)
                         tree = __parser.parse(__sentence)
                         for subtree in tree.subtrees(filter = lambda t: t.label()=='CustomNounP'):
                                 self.noun_phrases.append(" ".join([e[0] for e in subtree.leaves()]))
@@ -226,7 +241,7 @@ if __name__ == "__main__":
 
 
         #instance = NounPhrases(new_text, default_np_extractor="textblob_np_conll")
-        instance = NounPhrases(new_text, default_np_extractor="regex_np_extractor")
+        instance = NounPhrases(__text, default_np_extractor="regex_np_extractor")
         __l = instance.noun_phrases
         print __l
 

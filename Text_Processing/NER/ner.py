@@ -9,17 +9,20 @@ import os
 import sys
 import subprocess
 import warnings
+from nltk import ne_chunk
 from nltk.tag.stanford import NERTagger
 
-stanford_file_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-print stanford_file_path
-sys.path.append(os.path.join(stanford_file_path)) 
+file_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.append(os.path.join(file_path)) 
+
+base_file_path = os.path.dirname(os.path.abspath(__file__))
 
 STANFORD_NER_LINK = "http://nlp.stanford.edu/software/stanford-ner-2015-01-29.zip"
 
 class NERs:
-        os.environ["JAVA_HOME"] = "{0}/jdk1.8.0_31/jre/bin/".format(stanford_file_path)
+        os.environ["JAVA_HOME"] = "{0}/jdk1.8.0_31/jre/bin/".format(file_path)
         def __init__(self, list_of_sentences, default_ner=None):
+                self.check_if_stanford_ner()
                 self.ners = list()
                 self.list_of_sentences = list_of_sentences
                 self.ner = ("stanford_ner", default_ner)[default_ner != None]
@@ -29,28 +32,48 @@ class NERs:
 
             
         def stanford_ner(self):
-                st = NERTagger('stanford-ner-2015-01-30/classifiers/english.all.3class.distsim.crf.ser.gz',
-                                       'stanford-ner-2015-01-30/stanford-ner.jar')
+                st = NERTagger('{0}/stanford-ner-2015-01-30/classifiers/english.all.3class.distsim.crf.ser.gz'.format(base_file_path),
+                                       '{0}/stanford-ner-2015-01-30/stanford-ner.jar'.format(base_file_path))
                 for __sentence in self.list_of_sentences:
-                        self.ners.append(st.tag(__sentence.upper().split()))
+                        output = st.tag(__sentence.split())
+                        chunked, pos, prev_tag = [], "", ""
+                        for i, word_pos in enumerate(output): 
+                                word, pos = word_pos
+                                if pos in ['PERSON', 'ORGANIZATION', 'LOCATION'] and pos == prev_tag:
+                                        chunked[-1]+=word_pos
+                                else:
+                                        chunked.append(word_pos)
+                                prev_tag = pos
+
+                        clean_chunked = [tuple([" ".join(wordpos[::2]), wordpos[-1]]) if len(wordpos)!=2 else wordpos for wordpos in chunked]
+                        for element in clean_chunked:
+                            if element[1] == "LOCATION" or element[1] == "ORGANIZATION" or element[1] == "PERSON":
+                                self.ners.append(element[0])
                 return
+
+
+        def nltk_maxent_ner(self):
+                for __sentence in self.list_of_sentences:
+                       tree =  ne_chunk(__sentence) 
+                       for subtree in tree.subtrees(filter = lambda t: t.label()=='ORGANIZATION' or t.label() == "LOCATION" or 
+                                                        t.label() == "PERSON"):
+                                self.ners.append(" ".join([e[0] for e in subtree.leaves()]))
+
 
         def check_if_stanford_ner(self):
                 """
                 This method checks if the stanford ner is available or not
                 """
-                print "checking"
-                if not os.path.exists("stanford-ner-2015-01-30"):
+                if not os.path.exists("{0}/stanford-ner-2015-01-30".format(base_file_path)):
                         warnings.warn("Downloading the stanford ner") 
                         subprocess.call(["wget", STANFORD_NER_LINK])
                         subprocess.call(["unzip", "stanford-ner-2015-01-30.zip"])
-                        subprocess.call(["rm", "-rf", "stanford-ner-2014-06-16.zip"])
+                        subprocess.call(["rm", "-rf", "stanford-ner-2015-01-30.zip"])
                 
                 return
 
 
 
-"""
 if __name__ == "__main__":
-        pp = NERs(['farzi cafe is decent restaurant located in south delhi'])
-"""
+        pp = NERs(["Alice went to the Museum of Natural History."])
+        print pp.ners

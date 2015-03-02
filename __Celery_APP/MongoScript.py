@@ -121,6 +121,19 @@ class MongoForCeleryResults:
                 return 
         
         @staticmethod
+        def insert_ner_result(sentence_id, pos_tagging_algorithm, ner_algorithm, ner_result):
+
+                """
+                Deals with the update and insert operation noun_phrases_algorithm_result of sentence 
+                with sentence_id
+                """
+                result_collection.update({"sentence_id": sentence_id,}, {"$set": 
+                                    {"ner.{0}.{1}".format(ner_algorithm, pos_tagging_algorithm): 
+                                        ner_result}},  
+                                    upsert=False)
+                return 
+        
+        @staticmethod
         def bulk_insert_predictions(eatery_id, prediction_algorithm_name, __sentences):
 
                 """
@@ -148,7 +161,8 @@ class MongoForCeleryResults:
 
 
         @staticmethod
-        def retrieve_document(sentence_id, word_tokenization_algorithm, pos_tagging_algorithm, noun_phrases_algorithm):
+        def retrieve_document(sentence_id, word_tokenization_algorithm, pos_tagging_algorithm, 
+                                                                noun_phrases_algorithm, ner_algorithm):
                 """
                 Here we need only the sentences_id because
                 #Checking tag_analysis_algorithm result exists or not
@@ -161,6 +175,27 @@ class MongoForCeleryResults:
                 
                 result = result_collection.find_one({"sentence_id": sentence_id})
                
+                try:
+                        ner_algorithm_result = result.get("ner").get(ner_algorithm).get(pos_tagging_algorithm)
+                        
+                        print "{start_color}NER for --<<{sentence_id}>>-- for --<<algorithm>>--has aready\
+                                been found --<<{ners}>>--{end_color}".format(start_color =bcolors.OKBLUE, 
+                                                            sentence_id = sentence_id, 
+                                                            algorithm = ner_algorithm,
+                                                            ners= ner_algorithm_result, 
+                                                            end_color = bcolors.RESET,
+                                                            )
+
+                except Exception as e:
+                        ner_algorithm_result = None
+                        print "{start_color}NER for --<<{sentence_id}>>-- for --<<algorithm>>--has not\
+                                been found --<<{ners}>>--{end_color}".format(start_color =bcolors.FAIL, 
+                                                            sentence_id = sentence_id, 
+                                                            algorithm = ner_algorithm,
+                                                            ners= ner_algorithm_result, 
+                                                            end_color = bcolors.RESET,
+                                                            )
+
                 try:
                         noun_phrases_algorithm_result = result.get("noun_phrases").get(noun_phrases_algorithm)\
                                 .get(pos_tagging_algorithm).get(word_tokenization_algorithm)
@@ -223,7 +258,7 @@ class MongoForCeleryResults:
                                                             )
 
                 return list((word_tokenization_algorithm_result, 
-                                    pos_tagging_algorithm_result, noun_phrases_algorithm_result))
+                                    pos_tagging_algorithm_result, noun_phrases_algorithm_result, ner_algorithm_result))
 
 
         @staticmethod
