@@ -103,6 +103,8 @@ CELERY_MONGODB_BACKEND_SETTINGS = {
 			}
 
 
+
+CELERYD_POOL_RESTARTS = True
 #How many messages to prefetch at a time multiplied by the number of concurrent processes. The default is 4 
 #(four messages for each process). The default setting is usually a good choice, however – if you have very 
 #long running tasks waiting in the queue and you have to start the workers, note that the first worker to 
