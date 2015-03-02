@@ -526,9 +526,11 @@ class GetWordCloud(restful.Resource):
                         total_noun_phrases
                
                 result = list()
+       
+                """ 
                 ReviewIdToSentTokenize.apply_async(args=[eatery_id, category, start_epoch, end_epoch, tag_analysis_algorithm, 
                     sentiment_analysis_algorithm]) 
-                """ 
+                """
                 celery_chain = (ReviewIdToSentTokenize.s(eatery_id, category, start_epoch, end_epoch, tag_analysis_algorithm, 
                     sentiment_analysis_algorithm)|  
                     MappingList.s(word_tokenization_algorithm, pos_tagging_algorithm, noun_phrases_algorithm, 
@@ -568,7 +570,6 @@ class GetWordCloud(restful.Resource):
 				"error": False,
 				"result": clustering_result.get(),
                     }
-                """
 class TestWhole(restful.Resource):
 	@cors
 	@timeit

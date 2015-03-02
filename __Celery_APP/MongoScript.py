@@ -239,12 +239,12 @@ class MongoForCeleryResults:
         def review_result(review_id, prediction_algorithm_name):
                 def conversion(__object):
                         return [__object.get("review_id"), __object.get("sentence"), __object.get("sentence_id"), 
-                                __object.get("tag").get('svm_linear_kernel_classifier'), 
-                                __object.get("sentiment").get('svm_linear_kernel_classifier')]
+                                __object.get("tag").get(prediction_algorithm_name), 
+                                __object.get("sentiment").get(prediction_algorithm_name)]
                     
             
             
-                return map(conversion, list(result_collection.find({'review_id': review_id}, 
+                result = map(conversion, list(result_collection.find({'review_id': review_id}, 
                             fields= {"_id": False,
                                     "review_id": True,
                                     "sentence": True,
@@ -253,6 +253,7 @@ class MongoForCeleryResults:
                                     "sentence_id": True
                                     })))
 
+                return result
 
 
         @staticmethod

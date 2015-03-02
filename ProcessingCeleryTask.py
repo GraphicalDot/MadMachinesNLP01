@@ -310,6 +310,7 @@ class SentTokenizeToNP(celery.Task):
                         __pos_tagger = PosTaggers(word_tokenization_algorithm_result,  default_pos_tagger=pos_tagging_algorithm) 
                         #using default standford pos tagger
                         pos_tagging_algorithm_result =  __pos_tagger.pos_tagged_sentences.get(pos_tagging_algorithm)
+                        print pos_tagging_algorithm
                         MongoForCeleryResults.insert_pos_tagging_result(sentence_id,
                                                                             word_tokenization_algorithm, 
                                                                             pos_tagging_algorithm, 
@@ -404,6 +405,7 @@ class ReviewIdToSentTokenize(celery.Task):
                 prediction_algorithm_name = tag_analysis_algorithm.replace("_tag.lib", "")
 
 
+                print prediction_algorithm_name
 
                 self.start = time.time()
                 sent_tokenizer = SentenceTokenizationOnRegexOnInterjections()
@@ -452,13 +454,16 @@ class ReviewIdToSentTokenize(celery.Task):
                         new_predicted_list =  zip(ids, sentences, sentences_ids, predicted_tags, predicted_sentiment) 
                         MongoForCeleryResults.bulk_insert_predictions(eatery_id, tag_analysis_algorithm.replace("_tag.lib", ""), 
                                         new_predicted_list)
-                
+              
+                        print "Length of the new_predicted_list is %s"%len(new_predicted_list)
+                        print new_predicted_list[0]
 
                 if bool(predicted_reviews): #Only to run when predicted_reviews list is non empty
                         for review in predicted_reviews:
                                 already_predicted_list.extend(
                                         MongoForCeleryResults.review_result(review[0], prediction_algorithm_name))
-
+                        print "Length of the already_predicted_list is %s"%len(already_predicted_list)
+                        print already_predicted_list[0]
 
                 aggregated = new_predicted_list +  already_predicted_list
 
@@ -468,7 +473,6 @@ class ReviewIdToSentTokenize(celery.Task):
                         length=len(result), type=type(result)))
 
                 return result
-        
         def after_return(self, status, retval, task_id, args, kwargs, einfo):
 		logger.info("{color} Ending --<{function_name}--> of task --<{task_name}>-- with time taken\
                         --<{time}>-- seconds  {reset}".format(color=bcolors.OKBLUE,\

@@ -9,6 +9,7 @@ import os
 import sys
 import subprocess
 import warnings
+from itertools import chain
 from textblob import TextBlob      
 from functools import wraps
 from nltk import wordpunct_tokenize
@@ -28,7 +29,6 @@ def need_word_tokenization(word_tokenize):
                                 raise StandardError("This Pos tagger needs a Word tokenized list of sentences, Please try some other pos tagger\
                                         which doesnt require word tokenized sentences")
                         func(self, *args, **kwargs)
-                        print self.list_of_sentences
                 return func_wrapper
         return tags_decorator
 
@@ -41,7 +41,7 @@ class PosTaggers:
         #os.environ["JAVA_HOME"] = "{0}/ForStanford/jdk1.8.0_31/jre/bin/".format(stanford_file_path)
         #stanford_jar_file = "{0}/ForStanford/stanford-postagger.jar".format(stanford_file_path) 
         #stanford_tagger = "{0}/ForStanford/models/english-bidirectional-distsim.tagger".format(stanford_file_path) 
-        def __init__(self, list_of_sentences, default_pos_tagger=None):
+        def __init__(self, list_of_sentences, default_pos_tagger=None, list_of_sentences_type=None):
                 """
                 Args:
                     list_of_sentences:
@@ -76,7 +76,6 @@ class PosTaggers:
                 eval("self.{0}()".format(self.pos_tagger))
 
                 self.pos_tagged_sentences = {self.pos_tagger: self.pos_tagged_sentences}
-                print self.pos_tagged_sentences
                 return 
 
         def check_if_hunpos(self):
@@ -101,6 +100,7 @@ class PosTaggers:
         def hunpos_pos_tagger(self):
                 for __sentence in self.list_of_sentences:
                         self.pos_tagged_sentences.append(self.hunpos_tagger.tag(__sentence))
+
                 return
 
         @need_word_tokenization(True)
@@ -126,3 +126,10 @@ class PosTaggers:
                         self.pos_tagged_sentences.append(nltk_pos_tag(__sentence))
                 return
 
+
+if __name__ =="__main__":
+        text = [[u'i', u'like', u'how', u'we', u'young', u'people', u'are', u'realizing', u'the', u'importance', u'of', u'eating', u'healthy', u'rather', u'than', u'eating', u'junk', u'.']]
+
+
+        p = PosTaggers(text, default_pos_tagger="hunpos_pos_tagger")
+        print p.pos_tagged_sentences
