@@ -570,6 +570,8 @@ class Prediction(celery.Task):
                         function_name=inspect.stack()[0][3], task_name= self.__class__.__name__, reset=bcolors.RESET))
                 logger.info("{0}{1}".format(einfo, bcolors.RESET))
 		self.retry(exc=exc)
+
+
 @app.task()
 class ProcessEateryId(celery.Task):
 	def run(self, eatery_id, category, start_epoch, end_epoch, word_tokenization_algorithm, pos_tagging_algorithm, 

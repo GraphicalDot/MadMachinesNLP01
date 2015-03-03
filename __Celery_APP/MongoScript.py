@@ -124,8 +124,10 @@ class MongoForCeleryResults:
         def insert_ner_result(sentence_id, pos_tagging_algorithm, ner_algorithm, ner_result):
 
                 """
-                Deals with the update and insert operation noun_phrases_algorithm_result of sentence 
-                with sentence_id
+                Deals with the update and insert operation for ner result with sentence_id
+                ner_algorithm, pos_tagging_algorithm, The ner result is based only on the 
+                pos tagging of the sentnece, so the ner result will be stored only on the basis
+                of the two algorithms name
                 """
                 result_collection.update({"sentence_id": sentence_id,}, {"$set": 
                                     {"ner.{0}.{1}".format(ner_algorithm, pos_tagging_algorithm): 
