@@ -51,7 +51,7 @@ CELERY_QUEUES = (
 		Queue('MappingListQueue', Exchange('pos_tagger', delivery_mode= 2),  routing_key='MappingListQueue.import'),
 		Queue('NPClusteringQueue', Exchange('np_clusteringr', delivery_mode= 2),  routing_key='NPClusteringQueue.import'),
 		Queue('CleanResultBackEndQueue', Exchange('clean_backend', delivery_mode= 2),  routing_key='CleanResultBackEndQueue.import'),
-		Queue('PredictionQueue', Exchange('prediction', delivery_mode= 2),  routing_key='PredictionQueue.import'),
+		Queue('NoNounPhrasesReviewsQueue', Exchange('no_noun_phrases_reviews', delivery_mode= 2),  routing_key='NoNounPhrasesReviewsQueue.import'),
                     )
 
 
@@ -81,9 +81,9 @@ CELERY_ROUTES = {
 				'routing_key': 'NPClusteringQueue.import',
                         },		
 		
-                'ProcessingCeleryTask.Prediction': {
-				'queue': 'PredictionQueue',
-				'routing_key': 'PredictionQueue.import',
+                'ProcessingCeleryTask.NoNounPhrasesReviews': {
+				'queue': 'NoNounPhrasesReviewsQueue',
+				'routing_key': 'NoNounPhrasesReviewsQueue.import',
                         },		
                         }
 

@@ -19,19 +19,27 @@ import pymongo
 file_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(file_path)
 
-from GlobalConfigs import MONGO_NLP_RESULTS_IP, MONGO_NLP_RESULTS_PORT, MONGO_NLP_RESULTS_DB,\
-                MONGO_NLP_RESULTS_COLLECTION, MONGO_EATERY_NP_RESULTS, MONGO_EATERY_NP_RESULTS_PORT,\
-                MONGO_EATERY_NP_RESULSTS_DB, MONGO_EATERY_NP_RESULTS_COLLECTION 
+from GlobalConfigs import MONGO_NP_RESULTS_IP, MONGO_NP_RESULTS_PORT, MONGO_NP_RESULTS_DB, MONGO_SENTENCES_NP_RESULTS_COLLECTION,\
+                        MONGO_REVIEWS_NP_RESULTS_COLLECTION
 
 from Text_Processing import bcolors 
 
-connection = pymongo.MongoClient(MONGO_NLP_RESULTS_IP, MONGO_NLP_RESULTS_PORT, tz_aware=True, w=1, 
+connection = pymongo.MongoClient(MONGO_NP_RESULTS_IP, MONGO_NP_RESULTS_PORT, tz_aware=True, w=1, 
                                             j=True, max_pool_size=200, use_greenlets=True)
 
-result_collection = eval("connection.{db_name}.{collection_name}".format(
-                                                                    db_name=MONGO_NLP_RESULTS_DB,
-                                                                    collection_name=MONGO_NLP_RESULTS_COLLECTION)) 
-result_collection.ensure_index("sentence_id", unique=True)
+
+#This will have results for sentences
+sentences_result_collection = eval("connection.{db_name}.{collection_name}".format(
+                                                                    db_name=MONGO_NP_RESULTS_DB,
+                                                                    collection_name=MONGO_SENTENCES_NP_RESULTS_COLLECTION)) 
+
+#This will have combined result of all the setences present in the review, matched by review id 
+reviews_result_collection = eval("connection.{db_name}.{collection_name}".format(
+                                                                    db_name=MONGO_NP_RESULTS_DB,
+                                                                    collection_name=MONGO_REVIEWS_NP_RESULTS_COLLECTION)) 
+
+sentences_result_collection.ensure_index("sentence_id", unique=True)
+reviews_result_collection.ensure_index("review_id", unique=True)
 
 class MongoForCeleryResults:
         """
@@ -51,7 +59,7 @@ class MongoForCeleryResults:
                 The actual length of the sentences will be diferent because multiple reviews would
                 have same setneces and would have same sentences ids
                 """
-                bulk = result_collection.initialize_ordered_bulk_op()
+                bulk = sentences_result_collection.initialize_ordered_bulk_op()
                 for sentence in __sentences:
 
                         #bulk.find({"sentence_id": __sentences[3]}).updateOne{
@@ -64,17 +72,6 @@ class MongoForCeleryResults:
                         
                 
                 bulk.execute()
-                """
-                result_collection.update({"sentence_id": sentence_id,}, 
-                        {"$set": {"review_id": review_id, "sentence": sentence, "eatery_id": eatery_id}},  upsert=True)
-                
-                print "{start_color}Update for --<<{sentence_id}>>-- sentence is  --<<{sentence}>>--with\
-                                updated successfully{end_color}".format(start_color =bcolors.OKBLUE, 
-                                                            sentence_id = sentence_id, 
-                                                            sentence = sentence,
-                                                            end_color = bcolors.RESET,
-                                                                    )
-                """
                 return                                                    
 
         @staticmethod
@@ -85,7 +82,7 @@ class MongoForCeleryResults:
                 Deals with the update and insert operation word_tokenization_algorithm_result of sentence 
                 with sentence_id
                 """
-                result_collection.update({"sentence_id": sentence_id,}, {"$set": 
+                sentences_result_collection.update({"sentence_id": sentence_id,}, {"$set": 
                                     {"word_tokenization.{0}".format(word_tokenization_algorithm_name): word_tokenization_algorithm_result}},  
                                     upsert=False)
 
@@ -100,7 +97,7 @@ class MongoForCeleryResults:
                 Deals with the update and insert operation pos_tagging_algorithm_result of sentence 
                 with sentence_id
                 """
-                result_collection.update({"sentence_id": sentence_id,}, {"$set": 
+                sentences_result_collection.update({"sentence_id": sentence_id,}, {"$set": 
                                     {"pos_tagging.{0}.{1}".format(pos_tagging_algorithm_name, word_tokenization_algorithm_name): 
                                         pos_tagging_algorithm_result}},  
                                     upsert=False)
@@ -114,7 +111,7 @@ class MongoForCeleryResults:
                 Deals with the update and insert operation noun_phrases_algorithm_result of sentence 
                 with sentence_id
                 """
-                result_collection.update({"sentence_id": sentence_id,}, {"$set": 
+                sentences_result_collection.update({"sentence_id": sentence_id,}, {"$set": 
                                     {"noun_phrases.{0}.{1}.{2}".format(noun_phrases_algorithm_name, pos_tagging_algorithm_name, 
                                             word_tokenization_algorithm_name): noun_phrases_algorithm_result}},  
                                     upsert=False)
@@ -129,7 +126,7 @@ class MongoForCeleryResults:
                 pos tagging of the sentnece, so the ner result will be stored only on the basis
                 of the two algorithms name
                 """
-                result_collection.update({"sentence_id": sentence_id,}, {"$set": 
+                sentences_result_collection.update({"sentence_id": sentence_id,}, {"$set": 
                                     {"ner.{0}.{1}".format(ner_algorithm, pos_tagging_algorithm): 
                                         ner_result}},  
                                     upsert=False)
@@ -144,7 +141,7 @@ class MongoForCeleryResults:
 
                  zip(ids, sentences, sentences_ids, predicted_tags, predicted_sentiment) 
                 """
-                bulk = result_collection.initialize_ordered_bulk_op()
+                bulk = sentences_result_collection.initialize_ordered_bulk_op()
                 for sentence in __sentences:
                         #bulk.find({"sentence_id": __sentences[3]}).updateOne{
                         bulk.find({"sentence_id": sentence[2],}).upsert().update_one(
@@ -163,7 +160,7 @@ class MongoForCeleryResults:
 
 
         @staticmethod
-        def retrieve_document(sentence_id, word_tokenization_algorithm, pos_tagging_algorithm, 
+        def retrieve_document(sentence_id, prediction_algorithm, word_tokenization_algorithm, pos_tagging_algorithm, 
                                                                 noun_phrases_algorithm, ner_algorithm):
                 """
                 Here we need only the sentences_id because
@@ -171,12 +168,25 @@ class MongoForCeleryResults:
                 #result_collection.find_one({"sentence_id": sentence_id, "noun_phrases.regex_textblob_conll": {"$exists": True}})
                 #Checking tag_analysis_algorithm result exists or not
                 """
-                if not result_collection.find_one({"sentence_id": sentence_id}):
+                if not sentences_result_collection.find_one({"sentence_id": sentence_id}):
                         return list((False, False, False))
 
                 
-                result = result_collection.find_one({"sentence_id": sentence_id})
-               
+                result = sentences_result_collection.find_one({"sentence_id": sentence_id})
+                try:
+                        tag_result = result.get("tag").get(prediction_algorithm)
+
+                except Exception as e:
+                        tag_result = None
+                        print "Tga could be found"
+                
+                try:
+                        sentiment_result = result.get("sentiment").get(prediction_algorithm)
+
+                except Exception as e:
+                        sentiment_result = None
+                        print "Tga could be found"
+
                 try:
                         ner_algorithm_result = result.get("ner").get(ner_algorithm).get(pos_tagging_algorithm)
                         
@@ -259,15 +269,109 @@ class MongoForCeleryResults:
                                                             end_color = bcolors.RESET
                                                             )
 
-                return list((word_tokenization_algorithm_result, 
+                return list((tag_result, sentiment_result, word_tokenization_algorithm_result, 
                                     pos_tagging_algorithm_result, noun_phrases_algorithm_result, ner_algorithm_result))
 
 
         @staticmethod
         def if_review(review_id, prediction_algorithm_name):
-                if not bool(list(result_collection.find(
+                if not bool(list(sentences_result_collection.find(
                                     {'review_id': review_id, 
                                     "tag.{0}".format(prediction_algorithm_name): {"$exists": True}}))):
+                        return False
+
+                return True
+      
+
+        @staticmethod
+        def get_review_sentence_ids(review_id):
+                def conversion(__object):
+                    return {"review_id": review_id,
+                            "sentence_id": __object[0],
+                            "sentence": __object[1],
+                                } 
+                result = reviews_result_collection.find_one({'review_id': review_id}).get("sentence_ids")
+
+                return map(conversion, result)
+
+
+        @staticmethod
+        def update_review_sentence_ids(review_id, sentence_ids):
+                """
+                Args:
+                    review_id
+                    sentence_ids : a list of tuple with each tuple of the form
+                            [["424r2cdcdv", "hey man!"], [], []]
+
+                """
+                bulk =  reviews_result_collection.initialize_ordered_bulk_op()
+                for sentence in sentence_ids:
+
+                        #bulk.find({"sentence_id": __sentences[3]}).updateOne{
+                        bulk.find({"review_id": review_id,}).upsert().update_one(
+                               {"$push": {
+                                    "sentence_ids": sentence}})
+                bulk.execute()
+                return                                                    
+
+        
+        @staticmethod
+        def post_review_noun_phrases(review_id, tag, sentiment, noun_phrases, word_tokenization_algorithm_name, 
+                                                    pos_tagging_algorithm_name, noun_phrases_algorithm_name):
+                
+                bulk =  reviews_result_collection.initialize_ordered_bulk_op()
+                for __np in noun_phrases:
+                        for element in __np:
+                                bulk.find({"review_id": review_id,}).upsert().update_one(
+                               {"$push": {
+                                    "noun_phrases.{0}.{1}.{2}.{3}".format(tag, noun_phrases_algorithm_name, 
+                                        pos_tagging_algorithm_name, word_tokenization_algorithm_name): (element, sentiment)}})
+                try:
+                        bulk.execute()
+                
+                except pymongo.errors.InvalidOperation  as e:
+                        reviews_result_collection.update({"review_id": review_id,}, 
+                               {"$push": {
+                                    "noun_phrases.{0}.{1}.{2}.{3}".format(tag, noun_phrases_algorithm_name, 
+                                        pos_tagging_algorithm_name, word_tokenization_algorithm_name): (None, None)}}, 
+                                        upsert=True)
+                        print "No noun phrases"
+                return                                                    
+                
+
+
+
+        
+        @staticmethod
+        def get_review_noun_phrases(review_id, category, word_tokenization_algorithm, pos_tagging_algorithm, 
+                                                                            noun_phrases_algorithm):
+                
+                """
+                Checks whether the noun phrases for review_id is present for algorithms in
+                reviews_result_collection
+                """
+                try:
+                        result = reviews_result_collection.find_one({"review_id": review_id}, 
+                            {"noun_phrases.{0}.{1}.{2}.{3}".format(category, noun_phrases_algorithm, pos_tagging_algorithm, 
+                                word_tokenization_algorithm): True}).get("noun_phrases").get(category).get(noun_phrases_algorithm).get(pos_tagging_algorithm).get(word_tokenization_algorithm)
+
+                except Exception as e:
+                        print e
+                        print "This review might not have any sentence categorized into desired category"
+                        result = [None, None]
+                return result
+        
+        @staticmethod
+        def review_noun_phrases(review_id, category, word_tokenization_algorithm_name, pos_tagging_algorithm_name, 
+                                                                            noun_phrases_algorithm_name):
+                
+                """
+                Checks whether the noun phrases for review_id is present for algorithms in
+                reviews_result_collection
+                """
+                if not reviews_result_collection.find_one({"review_id": review_id, 
+                            "noun_phrases.{0}.{1}.{2}.{3}".format(category, noun_phrases_algorithm_name, pos_tagging_algorithm_name, 
+                                word_tokenization_algorithm_name): {"$exists": True}}):
                         return False
 
                 return True
@@ -281,7 +385,7 @@ class MongoForCeleryResults:
                     
             
             
-                result = map(conversion, list(result_collection.find({'review_id': review_id}, 
+                result = map(conversion, list(sentences_result_collection.find({'review_id': review_id}, 
                             fields= {"_id": False,
                                     "review_id": True,
                                     "sentence": True,
@@ -303,7 +407,7 @@ class MongoForCeleryResults:
                 print "{0}This is the fucking sentecen id {1}{2}".format(bcolors.FAIL, sentence_id, bcolors.RESET)
 
                 """
-                result = result_collection.find_one({"sentence_id": sentence_id})
+                result = sentences_result_collection.find_one({"sentence_id": sentence_id})
                 if not result:
                         return list((False, False))
 

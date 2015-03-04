@@ -59,8 +59,10 @@ import base64
 import requests
 from PIL import Image
 import inspect
-from ProcessingCeleryTask import MappingList, SentTokenizeToNP, ReviewIdToSentTokenize, CleanResultBackEnd, Clustering
+from ProcessingCeleryTask import MappingList, SentTokenizeToNP, ReviewIdToSentTokenize, CleanResultBackEnd,\
+                    Clustering, NoNounPhrasesReviews
 from celery.result import AsyncResult
+from celery import chord
 
 connection = pymongo.Connection()
 db = connection.modified_canworks
@@ -540,9 +542,27 @@ class GetWordCloud(restful.Resource):
                
                 result = list()
        
-                """ 
-                ReviewIdToSentTokenize.apply_async(args=[eatery_id, category, start_epoch, end_epoch, tag_analysis_algorithm, 
-                    sentiment_analysis_algorithm]) 
+                celery_chain = (ReviewIdToSentTokenize.s(eatery_id, category, start_epoch, end_epoch, tag_analysis_algorithm, 
+                    sentiment_analysis_algorithm)| NoNounPhrasesReviews.s(category, word_tokenization_algorithm, 
+                            pos_tagging_algorithm, noun_phrases_algorithm)| MappingList.s(ner_algorithm, word_tokenization_algorithm, 
+                                pos_tagging_algorithm, noun_phrases_algorithm, tag_analysis_algorithm,  sentiment_analysis_algorithm, 
+                                SentTokenizeToNP.s()))()
+
+
+
+                while celery_chain.status != "SUCCESS":
+                        pass    
+
+                clustering_result = Clustering.apply_async(args=[eatery_id, category, start_epoch, end_epoch, word_tokenization_algorithm,
+                        pos_tagging_algorithm, noun_phrases_algorithm, np_clustering_algorithm, total_noun_phrases])
+                
+                while clustering_result.status != "SUCCESS":
+                        pass
+                
+                return {"success": True,
+				"error": False,
+				"result": clustering_result.get(),
+                    }
                 """
                 celery_chain = (ReviewIdToSentTokenize.s(eatery_id, category, start_epoch, end_epoch, tag_analysis_algorithm, 
                     sentiment_analysis_algorithm)|  
@@ -583,6 +603,7 @@ class GetWordCloud(restful.Resource):
 				"error": False,
 				"result": clustering_result.get(),
                     }
+                """ 
 class TestWhole(restful.Resource):
 	@cors
 	@timeit
