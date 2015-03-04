@@ -235,7 +235,8 @@ class Clustering(celery.Task):
                         final_result.append({"name": key[0], "polarity": 1 if key[1] == 'positive' else 0 , "frequency": value}) 
            
                 sorted_result = sorted(final_result, reverse=True, key=lambda x: x.get("frequency"))
-                return sorted_result[0: number]
+                #return sorted_result[0: number]
+                return sorted_result
 
         def after_return(self, status, retval, task_id, args, kwargs, einfo):
 		#exit point of the task whatever is the state
