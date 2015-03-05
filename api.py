@@ -566,12 +566,14 @@ class GetWordCloud(restful.Resource):
                 while celery_chain.status != "SUCCESS":
                         pass    
 
-                """
-                for id in celery_chain.children[0]:    
-                        while id.status != "SUCCESS":
-                                pass
-                """
-                clustering_result = Clustering.apply_async(args=[eatery_id, category, start_epoch, end_epoch, word_tokenization_algorithm,
+		try:
+			for id in celery_chain.children[0]:    
+                        	while id.status != "SUCCESS":
+                                	pass
+                except IndexError as e:
+			pass
+
+		clustering_result = Clustering.apply_async(args=[eatery_id, category, start_epoch, end_epoch, word_tokenization_algorithm,
                         pos_tagging_algorithm, noun_phrases_algorithm, np_clustering_algorithm, total_noun_phrases])
                 
                 while clustering_result.status != "SUCCESS":
