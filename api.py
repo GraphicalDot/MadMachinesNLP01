@@ -64,10 +64,23 @@ from ProcessingCeleryTask import MappingList, SentTokenizeToNP, ReviewIdToSentTo
 from celery.result import AsyncResult
 from celery import chord
 
-connection = pymongo.Connection()
-db = connection.modified_canworks
-eateries = db.eatery
-reviews = db.review
+
+from GlobalConfigs import MONGO_REVIEWS_IP, MONGO_REVIEWS_PORT, MONGO_REVIEWS_DB,\
+        MONGO_REVIEWS_EATERIES_COLLECTION, MONGO_REVIEWS_REVIEWS_COLLECTION
+
+connection = pymongo.MongoClient(MONGO_REVIEWS_IP, MONGO_REVIEWS_PORT, tz_aware=True, w=1, 
+        j=True, max_pool_size=200, use_greenlets=True)
+
+
+eateries = eval("connection.{db_name}.{collection_name}".format(
+                                                        db_name=MONGO_REVIEWS_DB,
+                                                        collection_name=MONGO_REVIEWS_EATERIES_COLLECTION))
+
+
+reviews = eval("connection.{db_name}.{collection_name}".format(
+                                    db_name=MONGO_REVIEWS_DB,
+                                    collection_name=MONGO_REVIEWS_REVIEWS_COLLECTION))
+
 
 #This is for android apps, may not be required later
 android_db = connection.android_app
@@ -553,6 +566,11 @@ class GetWordCloud(restful.Resource):
                 while celery_chain.status != "SUCCESS":
                         pass    
 
+                """
+                for id in celery_chain.children[0]:    
+                        while id.status != "SUCCESS":
+                                pass
+                """
                 clustering_result = Clustering.apply_async(args=[eatery_id, category, start_epoch, end_epoch, word_tokenization_algorithm,
                         pos_tagging_algorithm, noun_phrases_algorithm, np_clustering_algorithm, total_noun_phrases])
                 
