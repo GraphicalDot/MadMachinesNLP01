@@ -337,6 +337,32 @@ class MongoForCeleryResults:
                                         upsert=True)
                         print "No noun phrases"
                 return                                                    
+        
+        @staticmethod
+        def post_review_ner_result(review_id, ner_result, ner_algorithm_name,
+                                                    pos_tagging_algorithm_name):
+                """
+                This method inserts the ner result of the setnences into the review to which they beong to,
+
+                """
+                bulk =  reviews_result_collection.initialize_ordered_bulk_op()
+                for __np in ner_result:
+                        for element in __ner:
+                                bulk.find({"review_id": review_id,}).upsert().update_one(
+                               {"$push": {
+                                    "ner.{0}.{1}".format(ner_algorithm_name, 
+                                        pos_tagging_algorithm_name): element}})
+                try:
+                        bulk.execute()
+                
+                except pymongo.errors.InvalidOperation  as e:
+                        reviews_result_collection.update({"review_id": review_id,}, 
+                               {"$push": {
+                                    "ner.{0}.{1}".format(ner_algorithm_name, 
+                                        pos_tagging_algorithm_name): (None, None)}}, 
+                                        upsert=True)
+                        print "No ner found for this sentence"
+                return                                                    
                 
 
 

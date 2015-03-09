@@ -11,7 +11,7 @@ import subprocess
 import warnings
 from nltk import ne_chunk
 from nltk.tag.stanford import NERTagger
-
+import nltk
 file_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(os.path.join(file_path)) 
 
@@ -35,6 +35,8 @@ class NERs:
                 st = NERTagger('{0}/stanford-ner-2015-01-30/classifiers/english.all.3class.distsim.crf.ser.gz'.format(base_file_path),
                                        '{0}/stanford-ner-2015-01-30/stanford-ner.jar'.format(base_file_path))
                 for __sentence in self.list_of_sentences:
+                        ##TODO: the passes list will be a pos tagged sentenc, make it to a simple sentence
+                        #__sentence = " ".join([element[0] for element in __sentence])
                         output = st.tag(__sentence.split())
                         chunked, pos, prev_tag = [], "", ""
                         for i, word_pos in enumerate(output): 
@@ -47,7 +49,7 @@ class NERs:
 
                         clean_chunked = [tuple([" ".join(wordpos[::2]), wordpos[-1]]) if len(wordpos)!=2 else wordpos for wordpos in chunked]
                         for element in clean_chunked:
-                            if element[1] == "LOCATION" or element[1] == "ORGANIZATION" or element[1] == "PERSON":
+                            if element[1] == "LOCATION" or element[1] == "ORGANIZATION":
                                 self.ners.append(element[0])
                 return
 
@@ -55,8 +57,7 @@ class NERs:
         def nltk_maxent_ner(self):
                 for __sentence in self.list_of_sentences:
                        tree =  ne_chunk(__sentence) 
-                       for subtree in tree.subtrees(filter = lambda t: t.label()=='ORGANIZATION' or t.label() == "LOCATION" or 
-                                                        t.label() == "PERSON"):
+                       for subtree in tree.subtrees(filter = lambda t: t.label()=='ORGANIZATION' or t.label() == "LOCATION"):
                                 self.ners.append(" ".join([e[0] for e in subtree.leaves()]))
 
 
@@ -75,5 +76,11 @@ class NERs:
 
 
 if __name__ == "__main__":
-        pp = NERs(["Alice went to the Museum of Natural History."])
-        print pp.ners
+        sentence = "I went to South Delhi last night"
+        pp = NERs([sentence])
+        p = NERs([nltk.pos_tag(nltk.wordpunct_tokenize(sentence))],  default_ner="nltk_maxent_ner")
+        print "From NLTK Maxent chunker"
+        print pp.ners, "\n"
+        print "From standford NER"
+        print p.ners, "\n"
+

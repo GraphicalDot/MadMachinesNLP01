@@ -294,6 +294,7 @@ class SentTokenizeToNP(celery.Task):
                 
                 """
                 print __sentence_dict
+                print ner_algorithm
                 self.start = time.time()
 
 
@@ -335,7 +336,8 @@ class SentTokenizeToNP(celery.Task):
                                                                             word_tokenization_algorithm, 
                                                                             pos_tagging_algorithm, 
                                                                             pos_tagging_algorithm_result)
-                """
+                
+                """        
                 if not ner_algorithm_result:
                         __ner_class = NERs(pos_tagging_algorithm_result, default_ner=ner_algorithm)
                         ner_result = __ner_class.ners.get(ner_algorithm)
@@ -362,7 +364,12 @@ class SentTokenizeToNP(celery.Task):
                                                                 pos_tagging_algorithm,
                                                                 noun_phrases_algorithm)
 
-
+                """
+                MongoForCeleryResults.post_review_ner_result(review_id, 
+                                                            ner_algorithm_result,
+                                                            ner_algorithm,
+                                                            pos_tagging_algorithm)
+                """
                 return 
 
         def after_return(self, status, retval, task_id, args, kwargs, einfo):
