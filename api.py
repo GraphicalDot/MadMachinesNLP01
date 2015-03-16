@@ -63,7 +63,7 @@ from ProcessingCeleryTask import MappingList, SentTokenizeToNP, ReviewIdToSentTo
                     Clustering, NoNounPhrasesReviews
 from celery.result import AsyncResult
 from celery import chord
-
+from heuristic_clustering import HeuristicClustering
 
 from GlobalConfigs import MONGO_REVIEWS_IP, MONGO_REVIEWS_PORT, MONGO_REVIEWS_DB,\
         MONGO_REVIEWS_EATERIES_COLLECTION, MONGO_REVIEWS_REVIEWS_COLLECTION
@@ -578,10 +578,14 @@ class GetWordCloud(restful.Resource):
                 
                 while clustering_result.status != "SUCCESS":
                         pass
-                
+               
+
+                result = clustering_result.get()
+                __result = HeuristicClustering(result)
+
                 return {"success": True,
 				"error": False,
-				"result": clustering_result.get(),
+                                "result": __result.result,
                     }
                 """
                 celery_chain = (ReviewIdToSentTokenize.s(eatery_id, category, start_epoch, end_epoch, tag_analysis_algorithm, 

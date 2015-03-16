@@ -453,7 +453,6 @@ class NoNounPhrasesReviews(celery.Task):
                 print final_list[0:2]
                 print "Length of the final list is %s"%len(final_list)
                 print "Length of the no_noun_phrases_reviews is %s"%len(no_noun_phrases_reviews)
-                print no_noun_phrases_reviews
                 return final_list
 
 

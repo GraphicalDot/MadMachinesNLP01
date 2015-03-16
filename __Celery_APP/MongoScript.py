@@ -41,6 +41,7 @@ reviews_result_collection = eval("connection.{db_name}.{collection_name}".format
 sentences_result_collection.ensure_index("sentence_id", unique=True)
 reviews_result_collection.ensure_index("review_id", unique=True)
 
+
 class MongoForCeleryResults:
         """
         This is the class which deals with the update, deletion and insertion of results
@@ -278,8 +279,15 @@ class MongoForCeleryResults:
                 if not bool(list(sentences_result_collection.find(
                                     {'review_id': review_id, 
                                     "tag.{0}".format(prediction_algorithm_name): {"$exists": True}}))):
+                        print "{start_color} Review with {review_id} has not been found {end_color}".format(
+                                            start_color = bcolors.FAIL,    
+                                            review_id= review_id,
+                                            end_color=bcolors.RESET,)
                         return False
-
+                print "{start_color} Review with {review_id} has already been found {end_color}".format(
+                                            start_color = bcolors.OKBLUE,    
+                                            review_id= review_id,
+                                            end_color=bcolors.RESET,)
                 return True
       
 
@@ -405,6 +413,12 @@ class MongoForCeleryResults:
         @staticmethod
         def review_result(review_id, prediction_algorithm_name):
                 def conversion(__object):
+                        print "{start_color} Sentence with {sentence_id} for the {review_id} has been found {end_color}".format(
+                                    start_color=bcolors.OKBLUE,
+                                    sentence_id = __object.get("sentence_id"),
+                                    review_id = __object.get("review_id"),
+                                    end_color=bcolors.FAIL,
+                                )
                         return [__object.get("review_id"), __object.get("sentence"), __object.get("sentence_id"), 
                                 __object.get("tag").get(prediction_algorithm_name), 
                                 __object.get("sentiment").get(prediction_algorithm_name)]
