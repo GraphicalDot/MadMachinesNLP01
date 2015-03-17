@@ -554,7 +554,33 @@ class GetWordCloud(restful.Resource):
                         total_noun_phrases, ner_algorithm
                
                 result = list()
-       
+      
+                if category == "cost":
+                        celery_chain = ReviewIdToSentTokenize.apply_async(args=[eatery_id, category, start_epoch, 
+                            end_epoch, tag_analysis_algorithm, sentiment_analysis_algorithm])
+
+                        sentences = [e[2] for e in celery_chain.get()]          
+                        review_ids = [e[1] for e in celery_chain.get()]
+
+                        
+                        file_path = os.path.dirname(os.path.abspath(__file__))
+                        classifier_path = "{0}/Text_Processing/PrepareClassifiers/InMemoryClassifiers/".format(file_path)
+                        classifier = joblib.load("{0}{1}".format(classifier_path, "svm_linear_kernel_classifier_cost.lib"))
+                        
+                        for k, v in Counter(classifier.predict(sentences)).items():
+                                if k == "null":
+                                        pass
+                                else:
+                                    result.append({"name": k,
+                                                    "positive": v,
+                                                    "negative": 0})
+
+                        return {"success": True,
+				"error": False,
+                                "result": result,
+                                }
+    
+
                 celery_chain = (ReviewIdToSentTokenize.s(eatery_id, category, start_epoch, end_epoch, tag_analysis_algorithm, 
                     sentiment_analysis_algorithm)| NoNounPhrasesReviews.s(category, word_tokenization_algorithm, 
                             pos_tagging_algorithm, noun_phrases_algorithm)| MappingList.s(ner_algorithm, word_tokenization_algorithm, 
@@ -567,8 +593,8 @@ class GetWordCloud(restful.Resource):
                         pass    
 
 		try:
-			for id in celery_chain.children[0]:    
-                        	while id.status != "SUCCESS":
+			for __id in celery_chain.children[0]:    
+                        	while __id.status != "SUCCESS":
                                 	pass
                 except IndexError as e:
 			pass

@@ -293,8 +293,6 @@ class SentTokenizeToNP(celery.Task):
                             Name of the algorithm that shall be used to do noun phrase extraction from the sentence
                 
                 """
-                print __sentence_dict
-                print ner_algorithm
                 self.start = time.time()
 
 
@@ -313,10 +311,6 @@ class SentTokenizeToNP(celery.Task):
                         noun_phrases_algorithm, ner_algorithm)
 
 
-                print word_tokenization_algorithm_result
-                print pos_tagging_algorithm_result
-                print noun_phrases_algorithm_result
-                print ner_algorithm_result
 
                 if not word_tokenization_algorithm_result:
                         word_tokenize = WordTokenize([sentence],  default_word_tokenizer= word_tokenization_algorithm)

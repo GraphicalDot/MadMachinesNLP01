@@ -18,6 +18,6 @@ from MainAlgorithms import InMemoryMainClassifier, timeit, cd, path_parent_dir, 
 
 class CostSubTagClassifier(InMemoryMainClassifier):
         def __init__(self):
-                tag_list = ["cheap", "vfm", "expensive"]
+                tag_list = ["cheap", "vfm", "expensive", "null"]
                 InMemoryMainClassifier.__init__(self, tag_list)
 

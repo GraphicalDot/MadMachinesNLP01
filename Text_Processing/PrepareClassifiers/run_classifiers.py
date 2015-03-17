@@ -62,6 +62,7 @@ class LoadClassifiers:
                 self.category_classifiers_to_load = category
                 
 
+                print "{0}.load_{1}_classifiers()".format("self", self.category_classifiers_to_load)
                 eval("{0}.load_{1}_classifiers()".format("self", self.category_classifiers_to_load)) 
                 return
 
@@ -76,7 +77,7 @@ class LoadClassifiers:
 
         def load_tag_classifiers(self):
                 instance = TagClassifier()
-                def load_classifiers(classifier, instance):
+                def load_classifiers(class_method, instance):
                         with cd("InMemoryClassifiers"):
                                 print "{0}.{1}()".format("instance", class_method)
                                 classifier = eval("{0}.{1}()".format("instance", class_method))
@@ -101,7 +102,7 @@ class LoadClassifiers:
 
         def load_sentiment_classifiers(self):
                 instance = SentimentClassifier()
-                def load_classifiers(classifier, instance):
+                def load_classifiers(class_method, instance):
                         with cd("InMemoryClassifiers"):
                                 classifier = eval("{0}.{1}()".format("instance", class_method))
                                 joblib_name_for_classifier = "{0}_sentiment.lib".format(class_method)
@@ -127,7 +128,7 @@ class LoadClassifiers:
                 This method will be used to load cost sub tags
                 """
                 instance = CostSubTagClassifier()
-                def load_classifiers(classifier, instance):
+                def load_classifiers(class_method, instance):
                         with cd("InMemoryClassifiers"):
                                 classifier = eval("{0}.{1}()".format("instance", class_method))
                                 joblib_name_for_classifier = "{0}_cost.lib".format(class_method)
@@ -163,7 +164,7 @@ class cd:
 
 
 if __name__ == "__main__":
-        __ = LoadClassifiers(category="sentiment", load="all") 
+        __ = LoadClassifiers(category="cost", load="svm_linear_kernel_classifier") 
 
 
 

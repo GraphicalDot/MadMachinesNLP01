@@ -16,6 +16,7 @@ import codecs
 import nltk
 from compiler.ast import flatten
 import time
+import progressbar
 from collections import Counter
 
 
@@ -162,7 +163,6 @@ class HeuristicClustering:
                 return {"name": result[0].get("name"), "positive": positive, "negative": negative}
 
 
-"""
 if __name__ == "__main__":
         payload = {'category': 'food',
              'eatery_id': '4571',
@@ -174,5 +174,4 @@ if __name__ == "__main__":
         r = requests.post("http://localhost:8000/get_word_cloud", data=payload)
         m = HeuristicClustering(r.json()["result"])
 
-"""
 
