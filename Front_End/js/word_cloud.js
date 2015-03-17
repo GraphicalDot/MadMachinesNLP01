@@ -158,7 +158,10 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 			$.each(this._data, function(i, __d){
 				newDataSet.push({"name": __d.name, 
 						"polarity": __d.polarity, 
-						"r": __d.frequency,
+						"positive": __d.positive,
+						"negative": __d.negative,
+
+						"r": __d.positive+__d.negative,
 						}); }); return newDataSet }
 			
 		if(LEVEL == 1){
@@ -343,7 +346,7 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 					html: true, 
 					title: function(){
 					//return  "<br>" + 'Name: ' +'  ' +'<span>' + this.__data__.name + '</span>' +"<br>" + 'Frequency: ' +  '<span>' + this.__data__.r + '</span>';}
-					return   '<span>' + convert_polarity(this.__data__.polarity) + '</span>' + "<br>" + 'Frequency: ' +  '<span>' + this.__data__.r + '</span>';}
+					return   '<span>' + 'Positive: ' + this.__data__.positive + '</span>' +  "<br>" + 'Negative: ' +  '<span>' + this.__data__.negative + '</span>';}
 				      });
 
 

@@ -581,11 +581,13 @@ class GetWordCloud(restful.Resource):
                
 
                 result = clustering_result.get()
-                __result = HeuristicClustering(result)
+                __result = HeuristicClustering(result, eatery_name)
 
+                for element in __result.result[0:20]:
+                        print element
                 return {"success": True,
 				"error": False,
-                                "result": __result.result,
+                                "result": __result.result[0: total_noun_phrases],
                     }
                 """
                 celery_chain = (ReviewIdToSentTokenize.s(eatery_id, category, start_epoch, end_epoch, tag_analysis_algorithm, 
