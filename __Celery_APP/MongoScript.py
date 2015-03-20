@@ -25,7 +25,7 @@ from GlobalConfigs import MONGO_NP_RESULTS_IP, MONGO_NP_RESULTS_PORT, MONGO_NP_R
 from Text_Processing import bcolors 
 
 connection = pymongo.MongoClient(MONGO_NP_RESULTS_IP, MONGO_NP_RESULTS_PORT, tz_aware=True, w=1, 
-                                            j=True, max_pool_size=200, use_greenlets=True)
+                                            j=True, max_pool_size=400, use_greenlets=True)
 
 
 #This will have results for sentences

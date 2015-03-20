@@ -568,7 +568,7 @@ class GetWordCloud(restful.Resource):
                         classifier = joblib.load("{0}{1}".format(classifier_path, "svm_linear_kernel_classifier_cost.lib"))
                         
                         for k, v in Counter(classifier.predict(sentences)).items():
-                                if k == "null":
+                                if k == "cost-null":
                                         pass
                                 else:
                                     result.append({"name": k,
