@@ -31,7 +31,12 @@ class HeuristicClustering:
                             {'positive': 8, 'negative': 10, 'name': u'main course'}, {'positive': 7, 'negative': 8, 'name': u'kylin'}]
                 """
                 
-                self.list_to_exclude = ["food", "service", "cost", "ambience", "delhi", "Delhi", "place", "Place", __eatery_name.lower().split()]
+                if __eatery_name:
+                        self.list_to_exclude = ["food", "service", "cost", "ambience", "delhi", "Delhi", 
+                                "place", "Place", __eatery_name.lower().split()]
+                else:
+                        self.list_to_exclude = ["food", "service", "cost", "ambience", "delhi", "Delhi", "place", "Place"]
+                
                 self.list_to_exclude = flatten(self.list_to_exclude)
                 self.data = __result
                 self.new_data = self.merge_similar_elements()

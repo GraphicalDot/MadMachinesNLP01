@@ -42,7 +42,7 @@ ALGORITHM_SENTIMENT = ""
 
 from GlobalConfigs import MONGO_REVIEWS_IP, MONGO_REVIEWS_PORT, MONGO_REVIEWS_EATERIES_COLLECTION,\
         MONGO_REVIEWS_REVIEWS_COLLECTION, MONGO_NP_RESULTS_IP,MONGO_NP_RESULTS_PORT, MONGO_NP_RESULTS_DB,\
-        MONGO_SENTENCES_NP_RESULTS_COLLECTION, MONGO_REVIEWS_NP_RESULTS_COLLECTION
+        MONGO_SENTENCES_NP_RESULTS_COLLECTION, MONGO_REVIEWS_NP_RESULTS_COLLECTION, MONGO_EATERY_NP_RESULTS_COLLECTION 
             
 
 from __Celery_APP.App import app
@@ -53,7 +53,9 @@ from Text_Processing import WordTokenize, PosTaggers, SentenceTokenizationOnRege
 file_path = os.path.dirname(os.path.abspath(__file__))
                 
                 
-#ReviewIdToSentTokenize Worker:  
+#ReviewIdToSentTokenize Worker:
+        #review_list
+
         #Check if noun phrase for review_id is present, break the list into no and yes lists for reviews
                 #case 1: Nothing is present for any review
                         #Step1: Tokenize all the reviews with data structures and sentence id and eatery id
@@ -256,6 +258,67 @@ class Clustering(celery.Task):
 		self.retry(exc=exc)
 
 
+@app.task()
+class StoreInEatery(celery.Task):
+	max_retries=3, 
+	acks_late=True
+	default_retry_delay = 5
+        def run(self, eatery_id, category, start_epoch, end_epoch, word_tokenization_algorithm_name, 
+                        pos_tagging_algorithm_name, noun_phrases_algorithm_name, clustering_algorithm_name):
+                """
+                Only executed after all the processing is been done, This stores the noun phrases for a particular 
+                review id into an eatery correponding the algorithms being called from api
+                
+                """
+                self.start = time.time()
+                if start_epoch and end_epoch:
+                        review_list = [post.get("review_id") for post in 
+                            reviews.find({"eatery_id" :eatery_id, "converted_epoch": {"$gt":  start_epoch, "$lt" : end_epoch}})]
+
+                else:
+                        review_list = [post.get("review_id") for post in 
+                            reviews.find({"eatery_id" :eatery_id})]
+                
+                
+                result = list()
+                for review_id in review_list:
+                        result.extend([review_id, MongoForCeleryResults.get_review_noun_phrases(review_id, category, word_tokenization_algorithm_name, pos_tagging_algorithm_name, noun_phrases_algorithm_name)])
+
+
+
+                #result will have the form, it will be a list of lists with wach list fo the form
+                """
+                ["3261061", [
+                                [u':-( dj', u'positive'],
+                                [u'good tracksnuce', u'positive'],
+                                [u'long time', u'positive'],
+                                [u'good hukka', u'positive'],
+                                [u'mumbai hukka r', u'positive'],
+                                                   ]]
+                """
+
+                MongoForCeleryResults.post_review_noun_phrases_to_eatery(eatery_id, result, category, word_tokenization_algorithm_name, 
+                                    pos_tagging_algorithm_name, noun_phrases_algorithm_name)
+                
+                return 
+
+
+        def after_return(self, status, retval, task_id, args, kwargs, einfo):
+		#exit point of the task whatever is the state
+		logger.info("{color} Ending --<{function_name}--> of task --<{task_name}>-- with time taken\
+                        --<{time}>-- seconds  {reset}".format(color=bcolors.OKBLUE,\
+                        function_name=inspect.stack()[0][3], task_name= self.__class__.__name__, 
+                            time=time.time() -self.start, reset=bcolors.RESET))
+		pass
+
+	def on_failure(self, exc, task_id, args, kwargs, einfo):
+		logger.info("{color} Ending --<{function_name}--> of task --<{task_name}>-- failed fucking\
+                        miserably {reset}".format(color=bcolors.OKBLUE,\
+                        function_name=inspect.stack()[0][3], task_name= self.__class__.__name__, reset=bcolors.RESET))
+                logger.info("{0}{1}".format(einfo, bcolors.RESET))
+		self.retry(exc=exc)
+
+
 
 
 @app.task()
@@ -382,90 +445,6 @@ class SentTokenizeToNP(celery.Task):
 		self.retry(exc=exc)
 
         
-@app.task()
-class NoNounPhrasesReviews(celery.Task):
-	max_retries=3, 
-	acks_late=True
-	default_retry_delay = 5
-        def run(self, result, category, word_tokenization_algorithm_name, pos_tagging_algorithm_name, noun_phrases_algorithm_name):
-                """
-                Args:
-                    result: A list of list in the form, all the sentences with review ids whether their noun phrases
-                    are present or not
-                    [[u'3393', u'3390921', u'food is really average quality .', u'b0d17d1a6a2a2ba44ca81f14e4b0cde6', u'food', u'neutral']
-                    [[eatery_id, review_id, sentence, sentence_id, tag, sentiment], [], ....]
-                    number: Maximum number of noun phrases required
-                #This will have category related sentence coming into it.
-                #So there might be two cases, One is some review ids has already have noun phrases into it
-                #which clearly implies that all the sentences fo this review id has noun phrases already done.
-
-                #The othe case is some review ids doesnt have noun phrases in it, which clearly implies that all 
-                #sentences which belongs to this review doesnt have noun phrases
-
-                #How it will be done,
-                #if MongoForCeleryResults.review_noun_phrases is False, No noun phrases are present for this
-                #review id
-
-                #It then appended to no_noun_phrases_reviews list
-
-                #next time a sentence is iterated, if its review id is present in the no_noun_phrases_reviews
-                #its already been extablished that this sentence doent have noun phrases, 
-                #so there is no need to check MongoForCeleryResults.review_noun_phrases again
-
-                """
-                self.start = time.time()
-
-                list_of_dictionaries = [{"eatery_id": __dsf_sentence[0],
-                                        "review_id": __dsf_sentence[1],
-                                        "sentence": __dsf_sentence[2],
-                                        "sentence_id": __dsf_sentence[3],
-                                        "tag": __dsf_sentence[4],
-                                        "sentiment": __dsf_sentence[5],
-                                        } for __dsf_sentence in result]
-                       
-
-                
-                no_noun_phrases_reviews = list()
-                final_list = list()
-                for __dsf_sentence in list_of_dictionaries:
-                        if __dsf_sentence.get("review_id") not in no_noun_phrases_reviews:
-                                result = MongoForCeleryResults.review_noun_phrases(__dsf_sentence.get("review_id"), 
-                                                            category, 
-                                                            word_tokenization_algorithm_name, 
-                                                            pos_tagging_algorithm_name,
-                                                            noun_phrases_algorithm_name)
-                                print result
-                                if not result:
-                                        print __dsf_sentence
-                                        no_noun_phrases_reviews.append(__dsf_sentence.get("review_id"))
-                                        final_list.append(__dsf_sentence)
-
-                        else:
-                                final_list.append(__dsf_sentence)
-                                       
-
-                print final_list[0:2]
-                print "Length of the final list is %s"%len(final_list)
-                print "Length of the no_noun_phrases_reviews is %s"%len(no_noun_phrases_reviews)
-                return final_list
-
-
-        def after_return(self, status, retval, task_id, args, kwargs, einfo):
-		#exit point of the task whatever is the state
-		logger.info("{color} Ending --<{function_name}--> of task --<{task_name}>-- with time taken\
-                        --<{time}>-- seconds  {reset}".format(color=bcolors.OKBLUE,\
-                        function_name=inspect.stack()[0][3], task_name= self.__class__.__name__, 
-                            time=time.time() -self.start, reset=bcolors.RESET))
-		pass
-
-	def on_failure(self, exc, task_id, args, kwargs, einfo):
-		logger.info("{color} Ending --<{function_name}--> of task --<{task_name}>-- failed fucking\
-                        miserably {reset}".format(color=bcolors.OKBLUE,\
-                        function_name=inspect.stack()[0][3], task_name= self.__class__.__name__, reset=bcolors.RESET))
-                logger.info("{0}{1}".format(einfo, bcolors.RESET))
-		self.retry(exc=exc)
-
-
 
 
 @app.task()
@@ -473,7 +452,8 @@ class ReviewIdToSentTokenize(celery.Task):
 	max_retries=3, 
 	acks_late=True
 	default_retry_delay = 5
-	def run(self, eatery_id, category, start_epoch, end_epoch, tag_analysis_algorithm, sentiment_analysis_algorithm,):
+	def run(self, eatery_id, category, start_epoch, end_epoch, tag_analysis_algorithm, sentiment_analysis_algorithm,
+                        word_tokenization_algorithm_name, pos_tagging_algorithm_name, noun_phrases_algorithm_name):
                 start = time.time()
                 """
                 Start This worker:
@@ -502,22 +482,45 @@ class ReviewIdToSentTokenize(celery.Task):
                 #review_list = [[review_id, review_text],[review_id, review_text], .....] 
                 predicted_reviews, not_predicted_reviews = list(), list()
 
+        
+        
                 for review in review_list:
+                        #If the sentences for this reviews is present in the database, and are classified according to the prediction 
+                        #algorithm given in the api call
+                        if not MongoForCeleryResults.get_review_noun_phrases_for_eatery(eatery_id, review[0], category, 
+                                word_tokenization_algorithm_name, pos_tagging_algorithm_name, noun_phrases_algorithm_name):
+                                
+                                not_predicted_reviews.append(review)
+                        
+                        """
                         if MongoForCeleryResults.if_review(review[0], prediction_algorithm_name):
                                 predicted_reviews.append(review)
+                        
+                        #if the entences for particular review is not present that means it need to be sentence tokenized
+                        #and then inserted into the database
                         else:
                                 not_predicted_reviews.append(review)
+                        """
+               
 
-                
+                #check which reviews are sntence tokenized already
+                not_already_tokenized_n_predicted = list()
+                already_predicted_list = list()
+                #not_already_tokenized have reviews which are noit yet sentence tokenized
+                for review in not_predicted_reviews:
+                        if not MongoForCeleryResults.check_if_prediction_algorithm_present_review(review[0], prediction_algorithm_name):
+                                not_already_tokenized_n_predicted.append(review)
+
+                        else:
+                                already_predicted_list.append(review)
                 #predicted_reviews = [[review_id, review_text],[review_id, review_text], .....] 
                 #not_predicted_reviews = [[review_id, review_text],[review_id, review_text], .....] 
                 
                 ##This for loop inserts all the sentences in the mongodb, independent of the category
                 ##they belongs to, 
 
-                new_predicted_list, already_predicted_list = list(), list()
-                if bool(not_predicted_reviews):
-                        for element in not_predicted_reviews:
+                if bool(not_already_tokenized_n_predicted):
+                        for element in not_already_tokenized_n_predicted:
                                 sentences = list()
                                 for __sentence in sent_tokenizer.tokenize(element[1]):
                                         ids_sentences.append(list(
@@ -528,6 +531,9 @@ class ReviewIdToSentTokenize(celery.Task):
                                         sentences.append([hashlib.md5(__sentence.encode("ascii", "xmlcharrefreplace")).hexdigest(),
                                                              __sentence.encode("ascii", "xmlcharrefreplace")])
                                 MongoForCeleryResults.update_review_sentence_ids(element[0], sentences)
+                                #After this operation every review_id reviews_result_collection will have a list 
+                                #sentence_ids of tokenize sentences present as elements in it
+
                                 #(eatery_id, review_id, sentence, sentence_id)
                         #MongoForCeleryResults.bulk_update_insert_sentence(eatery_id, ids_sentences)
                 
@@ -542,23 +548,24 @@ class ReviewIdToSentTokenize(celery.Task):
                         new_predicted_list =  zip(ids, sentences, sentences_ids, predicted_tags, predicted_sentiment) 
                         MongoForCeleryResults.bulk_insert_predictions(eatery_id, tag_analysis_algorithm.replace("_tag.lib", ""), 
                                         new_predicted_list)
-              
                         print "Length of the new_predicted_list is %s"%len(new_predicted_list)
                         print new_predicted_list[0]
 
-                if bool(predicted_reviews): #Only to run when predicted_reviews list is non empty
-                        for review in predicted_reviews:
-                                already_predicted_list.extend(
-                                        MongoForCeleryResults.review_result(review[0], prediction_algorithm_name))
-                        print "Length of the already_predicted_list is %s"%len(already_predicted_list)
-                        print already_predicted_list[0]
+                        MongoForCeleryResults.update_classification_algorithms_reviews(not_already_tokenized_n_predicted, prediction_algorithm_name)
 
-                aggregated = new_predicted_list +  already_predicted_list
 
                 
+                all_sentences = list()
+                for review in review_list:
+                        all_sentences.extend(MongoForCeleryResults.review_result(review[0], prediction_algorithm_name))
+               
+
                 result = list()
 
-                for __dsf_sentence in aggregated:
+                print all_sentences[0:2]
+                print "Length of all the sentences for this eatery %s"%len(all_sentences)
+
+                for __dsf_sentence in all_sentences:
                         if __dsf_sentence[3] == category:
                             __e = list(__dsf_sentence)
                             __e.insert(0, eatery_id)
@@ -566,8 +573,15 @@ class ReviewIdToSentTokenize(celery.Task):
 	        logger.info("{color} Length of the result is ---<{length}>--- with type --<{type}>--".format(color=bcolors.OKBLUE,\
                         length=len(result), type=type(result)))
                
-                print result[0]
-                return result
+                list_of_dictionaries = [{"eatery_id": eatery_id,
+                                        "review_id": __dsf_sentence[1],
+                                        "sentence": __dsf_sentence[2],
+                                        "sentence_id": __dsf_sentence[3],
+                                        "tag": __dsf_sentence[4],
+                                        "sentiment": __dsf_sentence[5],
+                                        } for __dsf_sentence in result]
+                print list_of_dictionaries[0]
+                return list_of_dictionaries
 
         def after_return(self, status, retval, task_id, args, kwargs, einfo):
 		logger.info("{color} Ending --<{function_name}--> of task --<{task_name}>-- with time taken\
@@ -634,4 +648,128 @@ class MappingList(celery.Task):
 		self.retry(exc=exc)
 
 
-                    
+
+
+"""
+ReviewIdToSentTokenize
+Tasks achieved
+    <<Task1>>: 
+            itertate over the concerned review ids
+                        #If the sentences for this reviews is present in the database, and are classified according to the prediction 
+                        #algorithm given in the api call
+            if senteces fo this review is present:
+                    predicted_reviews.append(review_id)
+
+            else:
+                    not_predicted_reviews.append(review_id)
+
+
+
+    <<Task2>>: Pushing tokenized sentences of the review_id to the reviews_result_collection for the review id into the list
+            sentence_ids
+            After this operation, every review id in the not_predicted_reviews, will have entry in reviews_result_collection
+            like mentioned below
+                        u'review_id': u'3261061',
+                                'sentence_ids': 
+                                        [
+                                        [u'78ab0df69d5a35a5b59e9b233acf8971','we reached on a sat night @ 9.30 pm 
+                                        and after entering realized we were the First one to enter'],
+                                        
+                                        [u'd41d8cd98f00b204e9800998ecf8427e', u''],
+                                        [u'd8575920feabdf646849a0729415a7bc', u':- ( dj was playing good tracksnuce 
+                                        dimly lit place , and after a long time had a good Hukka ( As in Mumbai Hukka 
+                                                                                    r banned ) Pizza was very oily ..'],
+                                        [u'5f38e4ff99eb21c9d353fb0e63fa4287', u'cottage Cheese Starter was okay okay ...'],
+                                        [u'00bd724c96e5ba203293342c1b064fb1', u"nothing Good or badand half of the stock listed 
+                                                                        in their Menu was not available that's a sad part ."],
+                                                                        
+                                        [u'681eeb8360875a6013392a5414330256', u'rude guys at reception so Beware ...'],
+                                        [u'ea35bf08199115cca8d324e66bd0829c', u"once u go out u can't enter back ...."],
+                                        [u'ce5b2b0810e6eba2a18415e450a4da8c', u'strange Rule ..'],
+                                        [u'7d3ab83ef752ce88b1c64e9ccf4dba5c', u'and a Turn offwould advice another place instead of this']]}
+                                        
+            A list was also created with all the sentences present in it for all the reviews                        
+            
+            ids_sentences.append(list(
+                                                            (element[0], 
+                                                            __sentence.encode("ascii", "xmlcharrefreplace"), 
+                                                            hashlib.md5(__sentence.encode("ascii", "xmlcharrefreplace")).hexdigest()))) 
+    
+    <<Task3>>:
+                Now a new list was created for every sentence which was made by tokenizing every review in 
+                    not_predicted_reviews
+
+                ids_sentences is now broken into seperated list for the purpose of being classified
+
+                ids = review_ids from which the sentences being generated after being tokenized
+    
+                ids, sentences, sentences_ids = map(list, zip(*ids_sentences))
+
+                predicted_tags = tag_classification(tag_analysis_algorithm, sentences)
+                predicted_sentiment = sentiment_classification(sentiment_analysis_algorithm, sentences)
+
+                #Inserting tag and sentiment correponding to senences ids
+                #right now tag_analysis_algorithm shall be same as sentiment_analysis_algorithm
+                
+                new_predicted_list =  zip(ids, sentences, sentences_ids, predicted_tags, predicted_sentiment) 
+                Inserting all the new sentences with their prediction algorithm name and their predictions into 
+                the sentences_result_collection
+
+                MongoForCeleryResults.bulk_insert_predictions(eatery_id, tag_analysis_algorithm.replace("_tag.lib", ""), 
+                                        new_predicted_list)
+                            
+                This operation now stores every sentence like mentioned below in sentences_result_collection
+                {u'_id': ObjectId('550bfb009f987a75f9931489'),
+                        'eatery_id': u'307036',
+                        'review_id': u'3261061',
+                        'sentence': u"once u go out u can't enter back ....",
+                        'sentence_id': u'ea35bf08199115cca8d324e66bd0829c',
+                        'sentiment': {u'svm_linear_kernel_classifier': u'positive'},
+                        'tag': {u'svm_linear_kernel_classifier': u'overall'}}
+
+    <<Task4>>: 
+            After the completion of the all the above three tasks. mongodb has all the sentences belonging to the
+            concerned reviews into it, with the prediction from prediction algorithm given to it.
+
+                                        
+                                        
+
+            the sentences for the reviews which were classified previously now being retrieved and then joined to the
+            new predicted list
+            for review in predicted_reviews:                                        
+                    already_predicted_list.extend(MongoForCeleryResults.review_result(review[0], 
+                    prediction_algorithm_name))
+
+            
+    <<Task4>>:
+            new_predicted_list (the list of the sentences which are being precited for the first time)
+
+            already_predicted_list (the list of the sentences which were predicted beforehand and were stored in db)
+
+            aggregated = new_predicted_list+ already_predicted_list
+
+    <<Task5>>:
+            the aggregated list is now being filtered for the category which is required for the this particular api call
+
+
+    Returns:
+            All the sentences whther they were already predicted of was predited jsut now, 
+            returns a list of lists of this form 
+            ["eatery_id", "review_id", "sentence", "sentence_id", "tag", "sentiment"]
+
+
+NoNounPhrasesReviews:
+        <<Task1>>: Made a list of dictionaries out of the list of lists given to it
+                list_of_dictionaries = [{"eatery_id": __dsf_[0],
+                                        "review_id": __dsf_sentence[1],
+                                        "sentence": __dsf_sentence[2],
+                                        "sentence_id": __dsf_sentence[3],
+                                        "tag": __dsf_sentence[4],
+                                        "sentiment": __dsf_sentence[5],
+                                        } for __dsf_sentence in result]
+                       
+
+        <<Task2>>:
+                
+
+"""

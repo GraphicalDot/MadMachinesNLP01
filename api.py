@@ -233,6 +233,9 @@ get_word_cloud_parser.add_argument('np_clustering_algorithm', type=np_clustering
 get_word_cloud_parser.add_argument('ner_algorithm', type=ner_algorithm,  required=False, location="form")
 
 
+##raw_text_processing_parser
+raw_text_processing_parser = reqparse.RequestParser()
+raw_text_processing_parser.add_argument('text', type=str,  required=True, location="form")
 
 
 
@@ -487,23 +490,23 @@ class GetWordCloud(restful.Resource):
                 
                 total_noun_phrases = (None, args["total_noun_phrases"])[args["total_noun_phrases"] != None]
                 
-                word_tokenization_algorithm = ("punkt_n_treebank", args["word_tokenization_algorithm"])[args["word_tokenization_algorithm"] != None]
+                word_tokenization_algorithm_name = ("punkt_n_treebank", args["word_tokenization_algorithm"])[args["word_tokenization_algorithm"] != None]
                 
                 
-                noun_phrases_algorithm = ("textblob_np_conll", args["noun_phrases_algorithm"])[args["noun_phrases_algorithm"] != None]
+                noun_phrases_algorithm_name = ("textblob_np_conll", args["noun_phrases_algorithm"])[args["noun_phrases_algorithm"] != None]
                 
                 
-                pos_tagging_algorithm = ("hunpos_pos_tagger", args["pos_tagging_algorithm"])[args["pos_tagging_algorithm"] != None]
+                pos_tagging_algorithm_name = ("hunpos_pos_tagger", args["pos_tagging_algorithm"])[args["pos_tagging_algorithm"] != None]
                 
-                tag_analysis_algorithm = ("svm_linear_kernel_classifier_tag.lib", 
+                tag_analysis_algorithm_name = ("svm_linear_kernel_classifier_tag.lib", 
                                                     "{0}_tag.lib".format(args["tag_analysis_algorithm"]))[args["tag_analysis_algorithm"] != None]
                 
-                sentiment_analysis_algorithm = ("svm_linear_kernel_classifier_sentiment.lib", 
+                sentiment_analysis_algorithm_name = ("svm_linear_kernel_classifier_sentiment.lib", 
                                     "{0}_sentiment.lib".format(args["sentiment_analysis_algorithm"]))[args["sentiment_analysis_algorithm"] != None]
 
-                np_clustering_algorithm = ("k_means", args["np_clustering_algorithm"])[args["np_clustering_algorithm"] != None]
+                np_clustering_algorithm_name = ("k_means", args["np_clustering_algorithm"])[args["np_clustering_algorithm"] != None]
                 
-                ner_algorithm = ("nltk_maxent_ner", args["ner_algorithm"])[args["ner_algorithm"] != None]
+                ner_algorithm_name = ("nltk_maxent_ner", args["ner_algorithm"])[args["ner_algorithm"] != None]
     
                 if args["start_date"] and ["end_date"]:
 		        try:
@@ -518,7 +521,7 @@ class GetWordCloud(restful.Resource):
                         start_epoch, end_epoch = None, None
 	
 
-                if tag_analysis_algorithm.replace("_tag.lib", "") != sentiment_analysis_algorithm.replace("_sentiment.lib", ""):
+                if tag_analysis_algorithm_name.replace("_tag.lib", "") != sentiment_analysis_algorithm_name.replace("_sentiment.lib", ""):
                         return {"error": True,
                                 "success": False,
                                 "error_messege": "Right now, only the same algortihm can be used for tag, sentiment and cost analysis,\
@@ -549,15 +552,15 @@ class GetWordCloud(restful.Resource):
         
                 
 
-                print eatery_id, category, start_epoch,  end_epoch, tag_analysis_algorithm, sentiment_analysis_algorithm,\
-                        word_tokenization_algorithm, pos_tagging_algorithm, noun_phrases_algorithm, np_clustering_algorithm,\
-                        total_noun_phrases, ner_algorithm
+                print eatery_id, category, start_epoch,  end_epoch, tag_analysis_algorithm_name, sentiment_analysis_algorithm_name,\
+                        word_tokenization_algorithm_name, pos_tagging_algorithm_name, noun_phrases_algorithm_name, np_clustering_algorithm_name,\
+                        total_noun_phrases, ner_algorithm_name
                
                 result = list()
       
                 if category == "cost":
                         celery_chain = ReviewIdToSentTokenize.apply_async(args=[eatery_id, category, start_epoch, 
-                            end_epoch, tag_analysis_algorithm, sentiment_analysis_algorithm])
+                            end_epoch, tag_analysis_algorithm_name, sentiment_analysis_algorithm_name])
 
                         sentences = [e[2] for e in celery_chain.get()]          
                         review_ids = [e[1] for e in celery_chain.get()]
@@ -581,10 +584,10 @@ class GetWordCloud(restful.Resource):
                                 }
     
 
-                celery_chain = (ReviewIdToSentTokenize.s(eatery_id, category, start_epoch, end_epoch, tag_analysis_algorithm, 
-                    sentiment_analysis_algorithm)| NoNounPhrasesReviews.s(category, word_tokenization_algorithm, 
-                            pos_tagging_algorithm, noun_phrases_algorithm)| MappingList.s(ner_algorithm, word_tokenization_algorithm, 
-                                pos_tagging_algorithm, noun_phrases_algorithm, tag_analysis_algorithm,  sentiment_analysis_algorithm, 
+                celery_chain = (ReviewIdToSentTokenize.s(eatery_id, category, start_epoch, end_epoch, tag_analysis_algorithm_name, 
+                    sentiment_analysis_algorithm_name, word_tokenization_algorithm_name, pos_tagging_algorithm_name, 
+                    noun_phrases_algorithm_name)| MappingList.s(ner_algorithm_name, word_tokenization_algorithm_name, 
+                                pos_tagging_algorithm_name, noun_phrases_algorithm_name, tag_analysis_algorithm_name,  sentiment_analysis_algorithm_name, 
                                 SentTokenizeToNP.s()))()
 
 
@@ -599,7 +602,16 @@ class GetWordCloud(restful.Resource):
                 except IndexError as e:
 			pass
 
-		clustering_result = Clustering.apply_async(args=[eatery_id, category, start_epoch, end_epoch, word_tokenization_algorithm,
+		
+                store_in_eatery_worker = StoreInEatery.apply_async(args=[eatery_id, category, start_epoch, end_epoch, 
+                    word_tokenization_algorithm_name, pos_tagging_algorithm_name, noun_phrases_algorithm_name, clustering_algorithm_name])
+                
+                while store_in_eatery_worker.status != "SUCCESS":
+                        pass
+                """         
+                
+                
+                clustering_result = Clustering.apply_async(args=[eatery_id, category, start_epoch, end_epoch, word_tokenization_algorithm,
                         pos_tagging_algorithm, noun_phrases_algorithm, np_clustering_algorithm, total_noun_phrases])
                 
                 while clustering_result.status != "SUCCESS":
@@ -607,6 +619,7 @@ class GetWordCloud(restful.Resource):
                
 
                 result = clustering_result.get()
+                
                 __result = HeuristicClustering(result, eatery_name)
 
                 for element in __result.result[0:20]:
@@ -656,6 +669,69 @@ class GetWordCloud(restful.Resource):
 				"result": clustering_result.get(),
                     }
                 """ 
+
+class RawTextParser(restful.Resource):
+        @cors
+        @timeit
+        def post(self):
+                result = list()
+
+                word_tokenization_algorithm = "punkt_n_treebank"
+                noun_phrases_algorithm = "textblob_np_conll"
+                pos_tagging_algorithm = "hunpos_pos_tagger"
+                
+                path = "/home/kaali/Programs/Python/Canworks/Canworks/Text_Processing/PrepareClassifiers/InMemoryClassifiers/"
+                args = raw_text_processing_parser.parse_args()    
+                text = args["text"]
+                
+                sent_tokenizer = SentenceTokenizationOnRegexOnInterjections()
+                tokenized_sentences = sent_tokenizer.tokenize(text)
+                tag_classifier = joblib.load("{0}{1}".format(path, "svm_linear_kernel_classifier_tag.lib"))
+                sentiment_classifier = joblib.load("{0}{1}".format(path, "svm_linear_kernel_classifier_sentiment.lib"))
+                for sentence in zip(tokenized_sentences, tag_classifier.predict(tokenized_sentences), 
+                        sentiment_classifier.predict(tokenized_sentences)):
+                        print sentence
+                        
+                        word_tokenize = WordTokenize([sentence[0]],  default_word_tokenizer= word_tokenization_algorithm)
+                        word_tokenization_algorithm_result = word_tokenize.word_tokenized_list.get(word_tokenization_algorithm)
+                        
+                        __pos_tagger = PosTaggers(word_tokenization_algorithm_result,  default_pos_tagger=pos_tagging_algorithm)
+                        pos_tagging_algorithm_result =  __pos_tagger.pos_tagged_sentences.get(pos_tagging_algorithm)
+
+                        __noun_phrases = NounPhrases(pos_tagging_algorithm_result, default_np_extractor=noun_phrases_algorithm)
+                        noun_phrases_algorithm_result =  __noun_phrases.noun_phrases.get(noun_phrases_algorithm)
+
+                        result.extend([[noun, sentence[2]] for noun in flatten(noun_phrases_algorithm_result)])
+
+
+                print result
+		
+                edited_result = list()
+                for element in result:
+                        if element[1].startswith("super"):
+                                edited_result.append((element[0], element[1].split("-")[1]))
+                                edited_result.append((element[0], element[1].split("-")[1]))
+                        else:
+                                edited_result.append(tuple(element)) 
+                print edited_result
+
+                final_result = list()
+                for key, value in Counter(edited_result).iteritems():
+                        final_result.append({"name": key[0], "polarity": 1 if key[1] == 'positive' else 0 , "frequency": value})
+                
+                sorted_result = sorted(final_result, reverse=True, key=lambda x: x.get("frequency"))
+                print sorted_result                                                             
+
+                __result = HeuristicClustering(sorted_result, None)
+
+                for element in __result.result:
+                    print element
+
+                return {"success": True,
+				"error": False,
+                                "result": __result.result,
+                    }
+
 class TestWhole(restful.Resource):
 	@cors
 	@timeit
@@ -704,6 +780,7 @@ api.add_resource(SuggestName, '/name_suggestion')
 api.add_resource(PostPicture, '/post_pic')
 api.add_resource(GetPics, '/get_pics')
 api.add_resource(GetStartDateForRestaurant, '/get_start_date_for_restaurant') 
+api.add_resource(RawTextParser, '/raw_text_processing') 
 api.add_resource(TestWhole, '/test') 
 
 if __name__ == '__main__':

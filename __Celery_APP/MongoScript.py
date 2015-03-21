@@ -16,11 +16,12 @@ on the reviews
 import os
 import sys
 import pymongo
+import hashlib
 file_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(file_path)
 
 from GlobalConfigs import MONGO_NP_RESULTS_IP, MONGO_NP_RESULTS_PORT, MONGO_NP_RESULTS_DB, MONGO_SENTENCES_NP_RESULTS_COLLECTION,\
-                        MONGO_REVIEWS_NP_RESULTS_COLLECTION
+                        MONGO_REVIEWS_NP_RESULTS_COLLECTION, MONGO_EATERY_NP_RESULTS_COLLECTION
 
 from Text_Processing import bcolors 
 
@@ -37,6 +38,15 @@ sentences_result_collection = eval("connection.{db_name}.{collection_name}".form
 reviews_result_collection = eval("connection.{db_name}.{collection_name}".format(
                                                                     db_name=MONGO_NP_RESULTS_DB,
                                                                     collection_name=MONGO_REVIEWS_NP_RESULTS_COLLECTION)) 
+
+
+eatery_result_collection = eval("connection.{db_name}.{collection_name}".format(
+                                                                    db_name=MONGO_NP_RESULTS_DB,
+                                                                    collection_name=MONGO_EATERY_NP_RESULTS_COLLECTION)) 
+
+
+
+
 
 sentences_result_collection.ensure_index("sentence_id", unique=True)
 reviews_result_collection.ensure_index("review_id", unique=True)
@@ -281,12 +291,12 @@ class MongoForCeleryResults:
                                     "tag.{0}".format(prediction_algorithm_name): {"$exists": True}}))):
                         print "{start_color} Review with {review_id} has not been found {end_color}".format(
                                             start_color = bcolors.FAIL,    
-                                            review_id= review_id,
+                                            review_id= hashlib.md5(review_id).hexdigest(),
                                             end_color=bcolors.RESET,)
                         return False
                 print "{start_color} Review with {review_id} has already been found {end_color}".format(
                                             start_color = bcolors.OKBLUE,    
-                                            review_id= review_id,
+                                            review_id= hashlib.md5(review_id).hexdigest(),
                                             end_color=bcolors.RESET,)
                 return True
       
@@ -298,10 +308,12 @@ class MongoForCeleryResults:
                             "sentence_id": __object[0],
                             "sentence": __object[1],
                                 } 
-                result = reviews_result_collection.find_one({'review_id': review_id}).get("sentence_ids")
+                try:
+                        result = reviews_result_collection.find_one({'review_id': review_id}).get("sentence_ids")
 
-                return map(conversion, result)
-
+                        return map(conversion, result)
+                except Exception:
+                        return False
 
         @staticmethod
         def update_review_sentence_ids(review_id, sentence_ids):
@@ -324,6 +336,54 @@ class MongoForCeleryResults:
 
         
         @staticmethod
+        def post_review_noun_phrases_to_eatery(eatery_id, result, category, word_tokenization_algorithm_name, 
+                                                    pos_tagging_algorithm_name, noun_phrases_algorithm_name):
+                
+                bulk =  eatery_result_collection.initialize_ordered_bulk_op()
+                for __data in result:
+                        bulk.find({"eatery_id": eatery_id,}).upsert().update_one(
+                               {"$set": {
+                                    "{0}.noun_phrases.{1}.{2}.{3}.{4}".format(__data[0], category, noun_phrases_algorithm_name,\
+                                            pos_tagging_algorithm_name, word_tokenization_algorithm_name): __data[1]}})
+                try:
+                        bulk.execute()
+                
+                except pymongo.errors.InvalidOperation  as e:
+                        print "{start_color} Something Terrible happened while storing noun_phrases --<<{noun_phrases}>>--\
+                                for eatery_id --<<{eatery_id}>>-- {end_color}".format(
+                                                        start_color = bcolors.FAIL,
+                                                        noun_phrases= result,
+                                                        eatery_id= eatery_id,
+                                                        end_color = bcolors.RESET,
+                                        )
+                return                                                    
+        
+        @staticmethod
+        def get_review_noun_phrases_for_eatery(eatery_id, review_id, category, word_tokenization_algorithm_name, 
+                                                    pos_tagging_algorithm_name, noun_phrases_algorithm_name):
+        
+                
+                if not bool(list(eatery_result_collection.find(
+                                {'eatery_id': eatery_id, "review_id": review_id, 
+                                    "noun_phrases.{0}.{1}.{2}.{3}".format(category, noun_phrases_algorithm_name,  
+                                         pos_tagging_algorithm_name, word_tokenization_algorithm_name) : {"$exists": True}}))):
+                        
+                                    
+                                    
+                        print "{start_color} Review with {review_id} has noun phrases found in eatery{end_color}".format(
+                                            start_color = bcolors.FAIL,    
+                                            review_id= hashlib.md5(review_id).hexdigest(),
+                                            end_color=bcolors.RESET,)
+                        return False
+                print "{start_color} Review with {review_id} has no noun phrases found {end_color}".format(
+                                            start_color = bcolors.OKBLUE,    
+                                            review_id= hashlib.md5(review_id).hexdigest(),
+                                            end_color=bcolors.RESET,)
+                return True
+                
+
+
+        @staticmethod
         def post_review_noun_phrases(review_id, tag, sentiment, noun_phrases, word_tokenization_algorithm_name, 
                                                     pos_tagging_algorithm_name, noun_phrases_algorithm_name):
                 
@@ -345,7 +405,11 @@ class MongoForCeleryResults:
                                         upsert=True)
                         print "No noun phrases"
                 return                                                    
-        
+       
+
+
+
+
         @staticmethod
         def post_review_ner_result(review_id, ner_result, ner_algorithm_name,
                                                     pos_tagging_algorithm_name):
@@ -416,7 +480,7 @@ class MongoForCeleryResults:
                         print "{start_color} Sentence with {sentence_id} for the {review_id} has been found {end_color}".format(
                                     start_color=bcolors.OKBLUE,
                                     sentence_id = __object.get("sentence_id"),
-                                    review_id = __object.get("review_id"),
+                                    review_id = hashlib.md5(__object.get("review_id")).hexdigest(),
                                     end_color=bcolors.FAIL,
                                 )
                         return [__object.get("review_id"), __object.get("sentence"), __object.get("sentence_id"), 
@@ -477,5 +541,38 @@ class MongoForCeleryResults:
                         """
                 return list((tag, sentiment))
 
+
+        @staticmethod
+        def update_classification_algorithms_reviews(not_already_tokenized_n_predicted, prediction_algorithm_name):
+                bulk =  reviews_result_collection.initialize_ordered_bulk_op()
+                for review in not_already_tokenized_n_predicted:
+                                review_id = review[0]
+                                bulk.find({"review_id": review_id,}).upsert().update_one(
+                               {"$push": {
+                                    "tag_classification_algorithm_name": prediction_algorithm_name}})
+                                
+                                bulk.find({"review_id": review_id,}).upsert().update_one(
+                               {"$push": {
+                                    "sentiment_classification_algorithm_name": prediction_algorithm_name}})
+                try:
+                        bulk.execute()
+                
+                except pymongo.errors.InvalidOperation  as e:
+                        print "{start_color} Error occured while update classification algorithms with error --<<{e}>>--\
+                                {end_color}".format(
+                                        start_color = bcolors.FAIL,
+                                        e = e,
+                                        end_color = bcolors.RESET,)
+                return                                                    
+       
+        @staticmethod
+        def check_if_prediction_algorithm_present_review(review_id, prediction_algorithm_name):
+                if reviews_result_collection.find_one({'tag_classification_algorithm_name': {"$in": [prediction_algorithm_name]}}, 
+                        {"review_id": review_id}):
+                        return True
+                return False
+                        
+
+                
 
 

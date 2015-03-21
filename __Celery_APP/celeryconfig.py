@@ -52,12 +52,18 @@ CELERY_QUEUES = (
 		Queue('NPClusteringQueue', Exchange('np_clusteringr', delivery_mode= 2),  routing_key='NPClusteringQueue.import'),
 		Queue('CleanResultBackEndQueue', Exchange('clean_backend', delivery_mode= 2),  routing_key='CleanResultBackEndQueue.import'),
 		Queue('NoNounPhrasesReviewsQueue', Exchange('no_noun_phrases_reviews', delivery_mode= 2),  routing_key='NoNounPhrasesReviewsQueue.import'),
+		Queue('StoreInEateryQueue', Exchange('store_in_eatery', delivery_mode= 2),  routing_key='StoreInEateryQueue.import'),
                     )
 
 
 #And your routes that will decide which task goes where:
 CELERY_ROUTES = {
-		'ProcessingCeleryTask.ReviewIdToSentTokenize': {
+		'ProcessingCeleryTask.StoreInEatery': {
+				'queue': 'StoreInEateryQueue',
+				'routing_key': 'StoreInEateryQueue.import',
+                        },		
+		
+                'ProcessingCeleryTask.ReviewIdToSentTokenize': {
 				'queue': 'ReviewIdToSentTokenizeQueue',
 				'routing_key': 'ReviewIdToSentTokenizeQueue.import',
                         },		
