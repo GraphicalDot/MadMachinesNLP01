@@ -60,7 +60,7 @@ import requests
 from PIL import Image
 import inspect
 from ProcessingCeleryTask import MappingList, SentTokenizeToNP, ReviewIdToSentTokenize, CleanResultBackEnd,\
-                    Clustering, NoNounPhrasesReviews
+                    Clustering, StoreInEatery, NoNounPhrasesReviews
 from celery.result import AsyncResult
 from celery import chord
 from heuristic_clustering import HeuristicClustering
@@ -560,11 +560,15 @@ class GetWordCloud(restful.Resource):
       
                 if category == "cost":
                         celery_chain = ReviewIdToSentTokenize.apply_async(args=[eatery_id, category, start_epoch, 
-                            end_epoch, tag_analysis_algorithm_name, sentiment_analysis_algorithm_name])
+                            end_epoch, tag_analysis_algorithm_name, sentiment_analysis_algorithm_name, 
+                            word_tokenization_algorithm_name, pos_tagging_algorithm_name, noun_phrases_algorithm_name])
 
-                        sentences = [e[2] for e in celery_chain.get()]          
-                        review_ids = [e[1] for e in celery_chain.get()]
 
+                        print celery_chain.get()
+                       
+
+                        review_ids, sentences = zip(*[(__e.get("review_id"), __e.get("sentence")) for __e in celery_chain.get()])
+                        
                         
                         file_path = os.path.dirname(os.path.abspath(__file__))
                         classifier_path = "{0}/Text_Processing/PrepareClassifiers/InMemoryClassifiers/".format(file_path)
@@ -577,7 +581,6 @@ class GetWordCloud(restful.Resource):
                                     result.append({"name": k,
                                                     "positive": v,
                                                     "negative": 0})
-
                         return {"success": True,
 				"error": False,
                                 "result": result,
@@ -586,9 +589,10 @@ class GetWordCloud(restful.Resource):
 
                 celery_chain = (ReviewIdToSentTokenize.s(eatery_id, category, start_epoch, end_epoch, tag_analysis_algorithm_name, 
                     sentiment_analysis_algorithm_name, word_tokenization_algorithm_name, pos_tagging_algorithm_name, 
-                    noun_phrases_algorithm_name)| MappingList.s(ner_algorithm_name, word_tokenization_algorithm_name, 
-                                pos_tagging_algorithm_name, noun_phrases_algorithm_name, tag_analysis_algorithm_name,  sentiment_analysis_algorithm_name, 
-                                SentTokenizeToNP.s()))()
+                    noun_phrases_algorithm_name)| NoNounPhrasesReviews.s( category, word_tokenization_algorithm_name, 
+                        pos_tagging_algorithm_name, noun_phrases_algorithm_name)| MappingList.s(ner_algorithm_name, 
+                            word_tokenization_algorithm_name, pos_tagging_algorithm_name, noun_phrases_algorithm_name, 
+                            tag_analysis_algorithm_name,  sentiment_analysis_algorithm_name, SentTokenizeToNP.s()))()
 
 
 
@@ -604,15 +608,14 @@ class GetWordCloud(restful.Resource):
 
 		
                 store_in_eatery_worker = StoreInEatery.apply_async(args=[eatery_id, category, start_epoch, end_epoch, 
-                    word_tokenization_algorithm_name, pos_tagging_algorithm_name, noun_phrases_algorithm_name, clustering_algorithm_name])
+                    word_tokenization_algorithm_name, pos_tagging_algorithm_name, noun_phrases_algorithm_name, np_clustering_algorithm_name])
                 
                 while store_in_eatery_worker.status != "SUCCESS":
                         pass
-                """         
                 
                 
-                clustering_result = Clustering.apply_async(args=[eatery_id, category, start_epoch, end_epoch, word_tokenization_algorithm,
-                        pos_tagging_algorithm, noun_phrases_algorithm, np_clustering_algorithm, total_noun_phrases])
+                clustering_result = Clustering.apply_async(args=[eatery_id, category, start_epoch, end_epoch, word_tokenization_algorithm_name,
+                        pos_tagging_algorithm_name, noun_phrases_algorithm_name, np_clustering_algorithm_name, total_noun_phrases])
                 
                 while clustering_result.status != "SUCCESS":
                         pass

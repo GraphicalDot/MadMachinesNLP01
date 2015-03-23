@@ -1,4 +1,4 @@
-#-*- coding: utf-8 -*-
+
 """
 Author: Kaali
 Dated: 25 February, 2015
@@ -334,52 +334,6 @@ class MongoForCeleryResults:
                 bulk.execute()
                 return                                                    
 
-        
-        @staticmethod
-        def post_review_noun_phrases_to_eatery(eatery_id, result, category, word_tokenization_algorithm_name, 
-                                                    pos_tagging_algorithm_name, noun_phrases_algorithm_name):
-                
-                bulk =  eatery_result_collection.initialize_ordered_bulk_op()
-                for __data in result:
-                        bulk.find({"eatery_id": eatery_id,}).upsert().update_one(
-                               {"$set": {
-                                    "{0}.noun_phrases.{1}.{2}.{3}.{4}".format(__data[0], category, noun_phrases_algorithm_name,\
-                                            pos_tagging_algorithm_name, word_tokenization_algorithm_name): __data[1]}})
-                try:
-                        bulk.execute()
-                
-                except pymongo.errors.InvalidOperation  as e:
-                        print "{start_color} Something Terrible happened while storing noun_phrases --<<{noun_phrases}>>--\
-                                for eatery_id --<<{eatery_id}>>-- {end_color}".format(
-                                                        start_color = bcolors.FAIL,
-                                                        noun_phrases= result,
-                                                        eatery_id= eatery_id,
-                                                        end_color = bcolors.RESET,
-                                        )
-                return                                                    
-        
-        @staticmethod
-        def get_review_noun_phrases_for_eatery(eatery_id, review_id, category, word_tokenization_algorithm_name, 
-                                                    pos_tagging_algorithm_name, noun_phrases_algorithm_name):
-        
-                
-                if not bool(list(eatery_result_collection.find(
-                                {'eatery_id': eatery_id, "review_id": review_id, 
-                                    "noun_phrases.{0}.{1}.{2}.{3}".format(category, noun_phrases_algorithm_name,  
-                                         pos_tagging_algorithm_name, word_tokenization_algorithm_name) : {"$exists": True}}))):
-                        
-                                    
-                                    
-                        print "{start_color} Review with {review_id} has noun phrases found in eatery{end_color}".format(
-                                            start_color = bcolors.FAIL,    
-                                            review_id= hashlib.md5(review_id).hexdigest(),
-                                            end_color=bcolors.RESET,)
-                        return False
-                print "{start_color} Review with {review_id} has no noun phrases found {end_color}".format(
-                                            start_color = bcolors.OKBLUE,    
-                                            review_id= hashlib.md5(review_id).hexdigest(),
-                                            end_color=bcolors.RESET,)
-                return True
                 
 
 
@@ -476,11 +430,12 @@ class MongoForCeleryResults:
         
         @staticmethod
         def review_result(review_id, prediction_algorithm_name):
+                print prediction_algorithm_name
                 def conversion(__object):
                         print "{start_color} Sentence with {sentence_id} for the {review_id} has been found {end_color}".format(
                                     start_color=bcolors.OKBLUE,
                                     sentence_id = __object.get("sentence_id"),
-                                    review_id = hashlib.md5(__object.get("review_id")).hexdigest(),
+                                    review_id = __object.get("review_id"),
                                     end_color=bcolors.FAIL,
                                 )
                         return [__object.get("review_id"), __object.get("sentence"), __object.get("sentence_id"), 
@@ -490,14 +445,9 @@ class MongoForCeleryResults:
             
             
                 result = map(conversion, list(sentences_result_collection.find({'review_id': review_id}, 
-                            fields= {"_id": False,
-                                    "review_id": True,
-                                    "sentence": True,
-                                    "tag.{0}".format(prediction_algorithm_name): True, 
-                                    "sentiment.{0}".format(prediction_algorithm_name): True,
-                                    "sentence_id": True
-                                    })))
-
+                            fields= {"_id": False, "review_id": True, "sentence": True, "sentence_id": True, 
+                                    "tag": True,  "sentiment" : True,})))
+                print result
                 return result
 
 
@@ -567,12 +517,83 @@ class MongoForCeleryResults:
        
         @staticmethod
         def check_if_prediction_algorithm_present_review(review_id, prediction_algorithm_name):
-                if reviews_result_collection.find_one({'tag_classification_algorithm_name': {"$in": [prediction_algorithm_name]}}, 
-                        {"review_id": review_id}):
+                if bool(list(reviews_result_collection.find({"review_id": review_id , 
+                    'tag_classification_algorithm_name': {"$in": [prediction_algorithm_name]}}))):
                         return True
                 return False
                         
+        @staticmethod
+        def post_review_noun_phrases_to_eatery(eatery_id, result, category, word_tokenization_algorithm_name, 
+                                                    pos_tagging_algorithm_name, noun_phrases_algorithm_name):
+                
+                bulk =  eatery_result_collection.initialize_ordered_bulk_op()
+                for __data in result:
+                        print __data[0], 
+                        print __data[1], "\n\n"
+                        bulk.find({"eatery_id": eatery_id,}).upsert().update_one(
+                               {"$set": {
+                                    "{0}.noun_phrases.{1}.{2}.{3}.{4}".format(__data[0], category, noun_phrases_algorithm_name,\
+                                            pos_tagging_algorithm_name, word_tokenization_algorithm_name): __data[1]}})
+                try:
+                        bulk.execute()
+                
+                except pymongo.errors.InvalidOperation  as e:
+                        print "{start_color} Something Terrible happened while storing noun_phrases --<<{noun_phrases}>>--\
+                                for eatery_id --<<{eatery_id}>>-- {end_color}".format(
+                                                        start_color = bcolors.FAIL,
+                                                        noun_phrases= result,
+                                                        eatery_id= eatery_id,
+                                                        end_color = bcolors.RESET,
+                                        )
+                return                                                    
+        
+        @staticmethod
+        def get_review_noun_phrases_for_eatery(eatery_id, review_id, category, word_tokenization_algorithm_name, 
+                                                    pos_tagging_algorithm_name, noun_phrases_algorithm_name):
+        
+                
+                if not eatery_result_collection.find_one(
+                                {'eatery_id': eatery_id, 
+                                    "{0}.noun_phrases.{1}.{2}.{3}.{4}".format(review_id, category, noun_phrases_algorithm_name,  
+                                         pos_tagging_algorithm_name, word_tokenization_algorithm_name) : {"$exists": True}}):
+                        
+                                    
+                                    
+                        print "{start_color} Review with {review_id} has noun phrases found in eatery --<<{eatery_id}>>--{end_color}".format(
+                                            start_color = bcolors.FAIL,    
+                                            #review_id= hashlib.md5(review_id).hexdigest(),
+                                            review_id= review_id,
+                                            eatery_id = eatery_id,
+                                            end_color=bcolors.RESET,)
+                        return False
+                
+
+                print "{start_color} Review with {review_id} has no noun phrases found for eatery_id --<<{eatery_id}>>--{end_color}".format(
+                                            start_color = bcolors.OKBLUE,    
+                                            #review_id= hashlib.md5(review_id).hexdigest(),
+                                            review_id= review_id,
+                                            eatery_id = eatery_id,
+                                            end_color=bcolors.RESET,)
+                return True
 
                 
+        @staticmethod
+        def noun_phrases_for_eatery(eatery_id, review_list, category, word_tokenization_algorithm_name, 
+                                                    pos_tagging_algorithm_name, noun_phrases_algorithm_name):
+    
+                """
+                Gets a review_list and returns the noun phrases for the eatery
+                correponding to the word_tokenization_algorithm_name, pos_tagging_algorithm_name, 
+                noun_phrases_algorithm_name
+                """
+                list_to_include = list()
+                for review_id in review_list:
+                        __string = "{0}.noun_phrases.{1}.{2}.{3}.{4}".format(review_id, 
+                                                    category, noun_phrases_algorithm_name,
+                                                    pos_tagging_algorithm_name, word_tokenization_algorithm_name)
+                        list_to_include.append(__string)
+
+
+                eatery_result_collection.find()
 
 
