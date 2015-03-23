@@ -352,6 +352,10 @@ class NoNounPhrasesReviews(celery.Task):
                 """
                 self.start = time.time()
 
+                if not list_of_dictionaries:
+                        return [] 
+
+
                 no_noun_phrases_reviews = list()
                 final_list = list()
                 for __dsf_sentence in list_of_dictionaries:
@@ -562,7 +566,6 @@ class ReviewIdToSentTokenize(celery.Task):
                 predicted_reviews, not_predicted_reviews = list(), list()
 
        
-                print "length of the review list is %s"%len(review_list) 
                 for review in review_list:
                         #If the sentences for this reviews is present in the database, and are classified according to the prediction 
                         #algorithm given in the api call
@@ -582,8 +585,8 @@ class ReviewIdToSentTokenize(celery.Task):
                         """
                 
                 print "length of the not_predicted_reviews is %s"%len(not_predicted_reviews) 
-               
-
+                print "not_predicted_reviews is %s"%not_predicted_reviews
+                
                 #check which reviews are sntence tokenized already
                 not_already_tokenized_n_predicted = list()
                 already_predicted_list = list()
@@ -641,8 +644,12 @@ class ReviewIdToSentTokenize(celery.Task):
                 
                 all_sentences = list()
 
+                if not bool(not_predicted_reviews):
+                            print "The list if fucking empyt"
+                            print "All review has been classified already"
+                            return None
 
-                for review in review_list:
+                for review in not_predicted_reviews:
                         all_sentences.extend(MongoForCeleryResults.review_result(review[0], prediction_algorithm_name))
                
 
@@ -671,6 +678,7 @@ class ReviewIdToSentTokenize(celery.Task):
                                         } for __dsf_sentence in result]
                 print list_of_dictionaries[0]
                 return list_of_dictionaries
+        
         
         def after_return(self, status, retval, task_id, args, kwargs, einfo):
 		logger.info("{color} Ending --<{function_name}--> of task --<{task_name}>-- with time taken\
@@ -737,6 +745,26 @@ class MappingList(celery.Task):
 		self.retry(exc=exc)
 
 
+
+def sub_categories(eatery_id, category, start_epoch, end_epoch, tag_classification_algorithm_name):
+
+        prediction_algorithm_name = tag_classification_algorithm_name.replace("_tag.lib", "")
+        if start_epoch and end_epoch:
+                review_list = [(post.get("review_id"), post.get("review_text")) for post in 
+                            reviews.find({"eatery_id" :eatery_id, "converted_epoch": {"$gt":  start_epoch, "$lt" : end_epoch}})]
+
+        else:
+                review_list = [(post.get("review_id"), post.get("review_text")) for post in 
+                            reviews.find({"eatery_id" :eatery_id})]
+                        
+        
+        all_sentences = list()
+        for review in review_list:
+                all_sentences.extend(MongoForCeleryResults.review_result(review[0], prediction_algorithm_name))
+
+        print all_sentences
+        print category
+        return [__dsf_sentence for __dsf_sentence in all_sentences if __dsf_sentence[3] == category]
 
 
 """

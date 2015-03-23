@@ -36,7 +36,7 @@ from bson.json_util import dumps
 from Text_Processing import NounPhrases, get_all_algorithms_result, RpRcClassifier, \
 		bcolors, CopiedSentenceTokenizer, SentenceTokenizationOnRegexOnInterjections, get_all_algorithms_result, \
 		path_parent_dir, path_trainers_file, path_in_memory_classifiers, timeit, cd, SentimentClassifier, \
-		TagClassifier, NERs, NpClustering
+		TagClassifier, NERs, NpClustering 
 
 from compiler.ast import flatten
 ##TODO run check_if_hunpos and check_if stanford fruntions for postagging and NERs and postagging
@@ -60,7 +60,7 @@ import requests
 from PIL import Image
 import inspect
 from ProcessingCeleryTask import MappingList, SentTokenizeToNP, ReviewIdToSentTokenize, CleanResultBackEnd,\
-                    Clustering, StoreInEatery, NoNounPhrasesReviews
+                    Clustering, StoreInEatery, NoNounPhrasesReviews, sub_categories
 from celery.result import AsyncResult
 from celery import chord
 from heuristic_clustering import HeuristicClustering
@@ -564,10 +564,10 @@ class GetWordCloud(restful.Resource):
                             word_tokenization_algorithm_name, pos_tagging_algorithm_name, noun_phrases_algorithm_name])
 
 
-                        print celery_chain.get()
                        
 
-                        review_ids, sentences = zip(*[(__e.get("review_id"), __e.get("sentence")) for __e in celery_chain.get()])
+                        __sentences = sub_categories(eatery_id, category, start_epoch, end_epoch, tag_analysis_algorithm_name)
+                        review_ids, sentences = zip(*[(__e[0], __e[1]) for __e in __sentences])
                         
                         
                         file_path = os.path.dirname(os.path.abspath(__file__))
@@ -576,6 +576,32 @@ class GetWordCloud(restful.Resource):
                         
                         for k, v in Counter(classifier.predict(sentences)).items():
                                 if k == "cost-null":
+                                        pass
+                                else:
+                                    result.append({"name": k,
+                                                    "positive": v,
+                                                    "negative": 0})
+                        return {"success": True,
+				"error": False,
+                                "result": result,
+                                }
+
+                if category == "ambience":
+                        celery_chain = ReviewIdToSentTokenize.apply_async(args=[eatery_id, category, start_epoch, 
+                            end_epoch, tag_analysis_algorithm_name, sentiment_analysis_algorithm_name, 
+                            word_tokenization_algorithm_name, pos_tagging_algorithm_name, noun_phrases_algorithm_name])
+
+
+                        __sentences = sub_categories(eatery_id, category, start_epoch, end_epoch, tag_analysis_algorithm_name)
+                        review_ids, sentences = zip(*[(__e[0], __e[1]) for __e in __sentences])
+                        
+                        
+                        file_path = os.path.dirname(os.path.abspath(__file__))
+                        classifier_path = "{0}/Text_Processing/PrepareClassifiers/InMemoryClassifiers/".format(file_path)
+                        classifier = joblib.load("{0}{1}".format(classifier_path, "svm_linear_kernel_classifier_ambience.lib"))
+                        
+                        for k, v in Counter(classifier.predict(sentences)).items():
+                                if k == "ambience-null":
                                         pass
                                 else:
                                     result.append({"name": k,

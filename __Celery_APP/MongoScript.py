@@ -430,7 +430,6 @@ class MongoForCeleryResults:
         
         @staticmethod
         def review_result(review_id, prediction_algorithm_name):
-                print prediction_algorithm_name
                 def conversion(__object):
                         print "{start_color} Sentence with {sentence_id} for the {review_id} has been found {end_color}".format(
                                     start_color=bcolors.OKBLUE,
@@ -438,6 +437,7 @@ class MongoForCeleryResults:
                                     review_id = __object.get("review_id"),
                                     end_color=bcolors.FAIL,
                                 )
+                        
                         return [__object.get("review_id"), __object.get("sentence"), __object.get("sentence_id"), 
                                 __object.get("tag").get(prediction_algorithm_name), 
                                 __object.get("sentiment").get(prediction_algorithm_name)]
@@ -447,7 +447,6 @@ class MongoForCeleryResults:
                 result = map(conversion, list(sentences_result_collection.find({'review_id': review_id}, 
                             fields= {"_id": False, "review_id": True, "sentence": True, "sentence_id": True, 
                                     "tag": True,  "sentiment" : True,})))
-                print result
                 return result
 
 
@@ -559,7 +558,7 @@ class MongoForCeleryResults:
                         
                                     
                                     
-                        print "{start_color} Review with {review_id} has noun phrases found in eatery --<<{eatery_id}>>--{end_color}".format(
+                        print "{start_color} Review with {review_id} has no noun phrases found in eatery --<<{eatery_id}>>--{end_color}".format(
                                             start_color = bcolors.FAIL,    
                                             #review_id= hashlib.md5(review_id).hexdigest(),
                                             review_id= review_id,
@@ -568,7 +567,7 @@ class MongoForCeleryResults:
                         return False
                 
 
-                print "{start_color} Review with {review_id} has no noun phrases found for eatery_id --<<{eatery_id}>>--{end_color}".format(
+                print "{start_color} Review with {review_id} has noun phrases found for eatery_id --<<{eatery_id}>>--{end_color}".format(
                                             start_color = bcolors.OKBLUE,    
                                             #review_id= hashlib.md5(review_id).hexdigest(),
                                             review_id= review_id,
