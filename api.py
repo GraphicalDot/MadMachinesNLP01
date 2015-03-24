@@ -599,6 +599,11 @@ class GetWordCloud(restful.Resource):
                         file_path = os.path.dirname(os.path.abspath(__file__))
                         classifier_path = "{0}/Text_Processing/PrepareClassifiers/InMemoryClassifiers/".format(file_path)
                         classifier = joblib.load("{0}{1}".format(classifier_path, "svm_linear_kernel_classifier_ambience.lib"))
+
+                        for e in  zip(sentences, classifier.predict(sentences)):
+                                print e
+
+                        """
                         
                         for k, v in Counter(classifier.predict(sentences)).items():
                                 if k == "ambience-null":
@@ -607,9 +612,10 @@ class GetWordCloud(restful.Resource):
                                     result.append({"name": k,
                                                     "positive": v,
                                                     "negative": 0})
+                        """
                         return {"success": True,
 				"error": False,
-                                "result": result,
+                           #     "result": result,
                                 }
     
 
