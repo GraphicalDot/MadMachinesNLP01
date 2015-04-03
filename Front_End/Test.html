@@ -42,6 +42,35 @@
 
 	</head>
 	<body>
+	<script type="text/x-mustache-template" id="root-row-template">
+                <div class="span8">
+                        <p style="text-align: center">{{sentence}}</p>
+                </div>
+                <div class="span2">
+                        <div class="btn-group">
+                                <select id="ddpFilter" class="btn btn-success dropdown-toggle btn-xs" data-toggle="dropdown" style="width: 98%">
+                                        <option value="1">food</option>
+                                        <option value="2">service</option>
+                                        <option value="3">ambience</option>
+                                        <option value="4">cost</option>
+                                        <option value="5">null</option>
+                                        <option value="6">overall</option>
+                                </select>
+                        </div>
+                        </div>
+                <div class="span2">
+                        <div class="btn-group">
+                                <select id="ddpFiltersentiment" class="btn btn-success dropdown-toggle btn-xs" data-toggle="dropdown" style="width: 98%">
+                                        <option value="1">super-positive</option>
+                                        <option value="2">positive</option>
+                                        <option value="3">neutral</option>
+                                        <option value="4">negative</option>
+                                        <option value="5">super-negative</option>
+                                        <option value="6">mixed</option>
+                                </select>
+                        </div>
+                        </div>
+	</script>
 		
 	<script type="text/x-mustache-template" id="see-word-cloud-date-selection-template">
 		<div class="control-group">

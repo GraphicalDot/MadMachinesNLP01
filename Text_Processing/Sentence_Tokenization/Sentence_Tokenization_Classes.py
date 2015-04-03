@@ -193,8 +193,26 @@ class SentenceTokenizationOnRegexOnInterjections:
 			if tagged_word.is_sent_end:
 				sentences[-1].append(tagged_word.value)
 				sentences.append(list())
-	
-			else:
+
+                        elif tagged_word.is_fuzzy_abbr:
+                                sentences[-1].append(tagged_word.value.split(".")[0])
+                                sentences.append(list())
+                                sentences[-1].append(tagged_word.value.split(".")[1])
+		
+                        elif tagged_word.is_fuzzy_type:
+                                try:
+                                        if re.match("^[A-Za-z0-9_-]*$", tagged_word.value):
+                                                token1, token2 = [re.findall(r"\d+", tagged_word.value)[0], 
+                                                            tagged_word.value.strip(re.findall(r"\d+", tagged_word.value)[0])]
+                                                sentences[-1].append(token1)
+                                                sentences.append(list())
+                                                sentences[-1].append(token2)
+                                        else:
+                                                sentences[-1].append(tagged_word.value)
+                                except Exception as e:
+                                        sentences[-1].append(tagged_word.value)
+                        
+                        else:
 				sentences[-1].append(tagged_word.value)
 		
 		split_on_interjection = self.splitting_on_interjections([" ".join(element) for element in sentences][0:-1])

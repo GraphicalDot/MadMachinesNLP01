@@ -8,6 +8,6 @@ $(document).ready(function(){
 	
 	//window.URL = "http://ec2-54-68-29-37.us-west-2.compute.amazonaws.com:8080/"
 	window.raw_text_processing = window.URL + "raw_text_processing";
-
+	window.update_sentence = window.URL + "change_tag_or_sentiment";
 
 });

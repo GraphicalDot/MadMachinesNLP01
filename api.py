@@ -82,6 +82,12 @@ reviews = eval("connection.{db_name}.{collection_name}".format(
                                     collection_name=MONGO_REVIEWS_REVIEWS_COLLECTION))
 
 
+
+
+training_db = connection.training_data
+training_sentiment_collection = training_db.training_sentiment_collection
+training_tag_collection = training_db.training_tag_collection
+
 #This is for android apps, may not be required later
 android_db = connection.android_app
 android_users = android_db.users
@@ -173,6 +179,8 @@ def ner_algorithm(algorithm_name):
         return algorithm_name
 
 
+def custom_string(__str):
+        return __str.encode("utf-8")
 
 
 #fb_login
@@ -235,9 +243,13 @@ get_word_cloud_parser.add_argument('ner_algorithm', type=ner_algorithm,  require
 
 ##raw_text_processing_parser
 raw_text_processing_parser = reqparse.RequestParser()
-raw_text_processing_parser.add_argument('text', type=str,  required=True, location="form")
+raw_text_processing_parser.add_argument('text', type=custom_string,  required=True, location="form")
 
 
+change_tag_or_sentiment_parser = reqparse.RequestParser()
+change_tag_or_sentiment_parser.add_argument('sentence', type=str,  required=True, location="form")
+change_tag_or_sentiment_parser.add_argument('value', type=str,  required=True, location="form")
+change_tag_or_sentiment_parser.add_argument('whether_allowed', type=str,  required=False, location="form")
 
 def cors(func, allow_origin=None, allow_headers=None, max_age=None):
 	if not allow_origin:
@@ -585,7 +597,7 @@ class GetWordCloud(restful.Resource):
 				"error": False,
                                 "result": result,
                                 }
-
+                """
                 if category == "ambience":
                         celery_chain = ReviewIdToSentTokenize.apply_async(args=[eatery_id, category, start_epoch, 
                             end_epoch, tag_analysis_algorithm_name, sentiment_analysis_algorithm_name, 
@@ -599,26 +611,47 @@ class GetWordCloud(restful.Resource):
                         file_path = os.path.dirname(os.path.abspath(__file__))
                         classifier_path = "{0}/Text_Processing/PrepareClassifiers/InMemoryClassifiers/".format(file_path)
                         classifier = joblib.load("{0}{1}".format(classifier_path, "svm_linear_kernel_classifier_ambience.lib"))
+                        classifier_sentiment = joblib.load("{0}{1}".format(classifier_path, "svm_linear_kernel_classifier_sentiment.lib"))
 
-                        for e in  zip(sentences, classifier.predict(sentences)):
-                                print e
 
-                        """
-                        
-                        for k, v in Counter(classifier.predict(sentences)).items():
-                                if k == "ambience-null":
-                                        pass
-                                else:
-                                    result.append({"name": k,
-                                                    "positive": v,
-                                                    "negative": 0})
-                        """
+                        result = list()
+                        __predicted_tuples = zip(classifier.predict(sentences), classifier_sentiment.predict(sentences))
+
+
+                        for __e in __predicted_tuples:
+                            if __e[0] == 'ambience-null':
+                                    pass
+                            elif __e[1].startswith("super"):
+                                result.append((__e[0], __e[1].split("-")[1]))
+                                result.append((__e[0], __e[1].split("-")[1]))
+                            elif __e[1] == "neutral":
+                                    pass
+                            else:
+                                result.append((__e[0], __e[1]))
+
+                        final_result = dict()
+                        result = Counter(result)
+                        for k, v in result.items():
+                                final_result.update({k[0]: {"positive": 0, "negative": 0}})
+                                
+                        for k, v in result.items():
+                                if final_result.get(k[0]):
+                                        __l = final_result.get(k[0])
+                                        __l.update({k[1]: v})
+                                        final_result.update({k[0]: __l})
+                                else:    
+                                        final_result.update({k[0]: {k[1]: v}})
+
+
+                        result = list()
+                        for k, v in final_result.items():
+                                result.append({"name": k, "positive": v.get("positive"), "negative": v.get("negative")})
                         return {"success": True,
 				"error": False,
-                           #     "result": result,
+                                 "result": result,
                                 }
     
-
+                """
                 celery_chain = (ReviewIdToSentTokenize.s(eatery_id, category, start_epoch, end_epoch, tag_analysis_algorithm_name, 
                     sentiment_analysis_algorithm_name, word_tokenization_algorithm_name, pos_tagging_algorithm_name, 
                     noun_phrases_algorithm_name)| NoNounPhrasesReviews.s( category, word_tokenization_algorithm_name, 
@@ -654,13 +687,16 @@ class GetWordCloud(restful.Resource):
                
 
                 result = clustering_result.get()
-                
+                for element in result:
+                        print element
+
+
                 __result = HeuristicClustering(result, eatery_name)
 
-                for element in __result.result[0:20]:
-                        print element
+
                 return {"success": True,
 				"error": False,
+                                
                                 "result": __result.result[0: total_noun_phrases],
                     }
                 """
@@ -705,6 +741,68 @@ class GetWordCloud(restful.Resource):
                     }
                 """ 
 
+
+class UpdateClassifier(restful.Resource):
+        @cors
+        @timeit
+        def post(self):
+                """
+                Update the classifier with new data into the InMemoryClassifiers folder
+                """
+                args = update_classifiers.parse_args()    
+                return
+
+
+
+class ChangeTagOrSentiment(restful.Resource):
+        @cors
+        @timeit
+        def post(self):
+                """
+                Updates a sentece with change tag or sentiment from the test.html,
+                as the sentences will have no review id, the review_id will be marked as misc and will be stored in 
+                training_sentiment_collection or training_tag_collection depending upon the tag or seniment being updated
+                """
+                args = change_tag_or_sentiment_parser.parse_args()    
+                sentence = args["sentence"]
+                value = args["value"]
+                whether_allowed = args["whether_allowed"]
+
+                if not whether_allowed:
+                        return {"success": False,
+                                "error": True,
+                                "messege": "Right now, Updating Tags or sentiments are not allowed",
+                                }
+
+
+                tag_list = ["food", "service", "cost", "null", "ambience", "overall"]
+                sentiment_list = ["positive", "super-positive", "neutral", "negative", "super-negative", "mixed"]
+
+                print value, sentence
+                if not value in (tag_list+sentiment_list):
+                        return {"success": False,
+                                "error": True,
+                                "messege": "Error occured",
+                                }
+
+                if value in ["food", "service", "cost", "null", "ambience", "overall"]:
+                        training_tag_collection.update({"sentence": sentence}, {"$set": {
+                                    "review_id": "misc",
+                                    "tag": value, }}, upsert=True)
+                        print "tag updated"
+
+                if value in ["positive", "super-positive", "neutral", "negative", "super-negative"]:
+                        training_sentiment_collection.update({"sentence": sentence}, {"$set": {
+                                    "review_id": "misc",
+                                    "sentiment": value,
+                            }}, upsert=True)
+                        print "sentiment updated"
+                return {"success": True,
+                        "error": False,
+                        "messege": "Updated!!!",
+                        }
+
+
 class RawTextParser(restful.Resource):
         @cors
         @timeit
@@ -719,13 +817,19 @@ class RawTextParser(restful.Resource):
                 args = raw_text_processing_parser.parse_args()    
                 text = args["text"]
                 
+
+                text = text.replace("\n", "")
+                sentiment_result = list()
                 sent_tokenizer = SentenceTokenizationOnRegexOnInterjections()
                 tokenized_sentences = sent_tokenizer.tokenize(text)
+                print tokenized_sentences
+
                 tag_classifier = joblib.load("{0}{1}".format(path, "svm_linear_kernel_classifier_tag.lib"))
                 sentiment_classifier = joblib.load("{0}{1}".format(path, "svm_linear_kernel_classifier_sentiment.lib"))
+                new_sentiment_classifier = joblib.load("{0}{1}".format(path, "svm_linear_kernel_classifier_sentiment_new_dataset.lib"))
                 for sentence in zip(tokenized_sentences, tag_classifier.predict(tokenized_sentences), 
-                        sentiment_classifier.predict(tokenized_sentences)):
-                        print sentence
+                        sentiment_classifier.predict(tokenized_sentences), new_sentiment_classifier.predict(tokenized_sentences)):
+                        print sentence, "\n"
                         
                         word_tokenize = WordTokenize([sentence[0]],  default_word_tokenizer= word_tokenization_algorithm)
                         word_tokenization_algorithm_result = word_tokenize.word_tokenized_list.get(word_tokenization_algorithm)
@@ -737,7 +841,7 @@ class RawTextParser(restful.Resource):
                         noun_phrases_algorithm_result =  __noun_phrases.noun_phrases.get(noun_phrases_algorithm)
 
                         result.extend([[noun, sentence[2]] for noun in flatten(noun_phrases_algorithm_result)])
-
+                        sentiment_result.append([sentence[0], sentence[1], sentence[3]])
 
                 print result
 		
@@ -755,17 +859,25 @@ class RawTextParser(restful.Resource):
                         final_result.append({"name": key[0], "polarity": 1 if key[1] == 'positive' else 0 , "frequency": value})
                 
                 sorted_result = sorted(final_result, reverse=True, key=lambda x: x.get("frequency"))
-                print sorted_result                                                             
+                for element in sorted_result:
+                    print sorted_result
 
                 __result = HeuristicClustering(sorted_result, None)
 
                 for element in __result.result:
                     print element
 
+                def convert_sentences(__object):
+                        return {"sentence": __object[0], 
+                                "tag": __object[1],
+                                "sentiment": __object[2], }
+
+
                 return {"success": True,
 				"error": False,
                                 "result": __result.result,
-                    }
+                                "sentences": map(convert_sentences, sentiment_result),
+                                }
 
 class TestWhole(restful.Resource):
 	@cors
@@ -816,6 +928,8 @@ api.add_resource(PostPicture, '/post_pic')
 api.add_resource(GetPics, '/get_pics')
 api.add_resource(GetStartDateForRestaurant, '/get_start_date_for_restaurant') 
 api.add_resource(RawTextParser, '/raw_text_processing') 
+api.add_resource(ChangeTagOrSentiment, '/change_tag_or_sentiment')
+
 api.add_resource(TestWhole, '/test') 
 
 if __name__ == '__main__':

@@ -77,6 +77,20 @@ class InMemoryMainClassifier(object):
 		
 		self.sent_tokenizer = SentenceTokenizationOnRegexOnInterjections()
 
+                """
+                for sentiment = ["positive", "negative", "super-positive", "super-negative", "neutral", "mixed"]
+                def new_conversion(__object):
+                        return [__object.get("sentence"), __object.get("sentiment")]
+                
+
+                __sentences = lambda name, tag: map(new_conversion, training_sentiment_collection.find({name: tag}, 
+                                                    fields={"_id": False, "review_id": False}))
+    
+
+                for tag in tag_list:
+                        self.whole_set.extend(__sentences(name, tag))
+
+                """
                 if from_files:
                         #This lambda function generates the training dataset from the manually_classified_ files
 		        self.data_lambda = lambda tag: np.array([(sent, tag) for sent in 

@@ -41,10 +41,16 @@ App.RootView = Backbone.View.extend({
 		text = $("#searchQuery").val()
 		var jqhr = $.post(window.raw_text_processing, {"text": text})
 
-		 jqhr.done(function(data){
+		jqhr.done(function(data){
 			 var subView = new App.WordCloudWith_D3({model: data.result});
 			 $(".loadingclass").modal("hide");
-		 });
+		 
+			 $.each(data.sentences, function(iter, sentence){
+			
+			var subView = new App.RootRowView({model: sentence});
+			$(".main-body").append(subView.render().el)
+				})
+			 });
 		jqhr.fail(function(){
 			bootbox.alert("Either the api or internet connection is not working, Try again later")
 			self.$el.removeClass("dvLoading"); 
@@ -56,6 +62,96 @@ App.RootView = Backbone.View.extend({
 
 
 });
+
+App.RootRowView = Backbone.View.extend({
+        tagName: "fieldset",
+        className: "well plan each_row",
+        template: window.template("root-row"),
+        tag: function(){return this.model.tag},
+        sentiment: function(){return this.model.sentiment},
+        sentence: function(){return this.model.sentence},
+
+        initialize: function(options){
+                var self = this;
+		
+                this.tags = {"food": 1, "service": 2, "ambience": 3, "cost": 4, "null": 5, "overall": 6};
+                this.sentiments = {"super-positive": 1, "positive": 2, "neutral": 3, "negative": 4, "super-negative": 5, "mixed": 6};
+		this.model = options.model;
+	},
+
+        render: function(){
+                this.$el.append(this.template(this));
+                this.$("#ddpFilter option[value='" + this.tags[this.tag()] + "']").attr("selected", "selected")
+                this.$("#ddpFiltersentiment option[value='" + this.sentiments[this.sentiment()] + "']").attr("selected", "selected")
+		return this;
+        },
+
+        events: {
+                    "change #ddpFilter" : "changeTag",
+                    "change #ddpFiltersentiment" : "changeSentiment",
+		    },
+
+
+	changeSentiment: function(event){
+                var self = this;
+                event.preventDefault()
+                sentence = self.sentence();
+                changed_polarity = self.$('#ddpFiltersentiment option:selected').text();
+                console.log(self.sentence())
+                console.log(changed_polarity)
+		var jqhr = $.post(window.update_sentence, {"sentence": sentence, "value": changed_polarity, "whether_allowed": false})
+                jqhr.done(function(data){
+                        console.log(data.success)
+                        if (data.success == true){
+                                bootbox.alert(data.messege)
+                                }
+                        else {
+                                bootbox.alert(data.messege)
+                                }
+                        })
+
+                jqhr.fail(function(){
+                        bootbox.alert("Either the api or internet connection is not working, Try again later")
+                                })
+        
+				},
+
+
+	changeTag: function(event){
+                var self = this;
+                event.preventDefault()
+                changed_tag = self.$('#ddpFilter option:selected').text();
+                sentence = self.sentence();
+
+                console.log(self.sentence())
+                console.log(changed_tag)
+		var jqhr = $.post(window.update_sentence, {"sentence": sentence, "value": changed_tag, "whether_allowed": false})
+                jqhr.done(function(data){
+                        if (data.success == true){
+                                bootbox.alert(data.messege)
+                        }
+                        else {
+                                bootbox.alert(data.messege)
+                                }
+                        })
+
+                jqhr.fail(function(){
+                                bootbox.alert("Either the api or internet connection is not working, Try again later")
+                        })
+        },
+
+
+
+
+
+
+
+});
+
+
+
+
+
 
 
 });

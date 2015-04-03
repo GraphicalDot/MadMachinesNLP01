@@ -39,12 +39,14 @@ class HeuristicClustering:
                 
                 self.list_to_exclude = flatten(self.list_to_exclude)
                 self.data = __result
+                print "Length of the old data after exclusion %s"%len(self.data)
+                
                 self.new_data = self.merge_similar_elements()
                 self.keys = self.new_data.keys()
-                self.similar_strings = list()
+                print "Length of the new data after merging similar elements  %s"%len(self.keys)
                 self.clusters = list()
                 self.result = list()
-
+                
                 self.filter_clusters()
                 self.without_clusters =  set.difference(set(range(0, len(self.keys))), set(flatten(self.clusters)))
         
@@ -94,7 +96,6 @@ class HeuristicClustering:
                                         "negative" if i.get("polarity") == 1 else "positive": 0,
                                         }})
 
-
                 return without_similar_elements
 
         def filter_clusters(self):
@@ -102,35 +103,40 @@ class HeuristicClustering:
 
             """
             X = np.zeros((len(self.new_data), len(self.new_data)), dtype=np.float)
-       
+      
+             
+            new_list = list()
+            
             for i in xrange(0, len(self.keys)):
                     for j in xrange(0, len(self.keys)):
-                            st = 'Levenshtein.ratio("{1}", "{0}")'.format(self.keys[i], self.keys[j])
-                            ratio = eval(st)
-                            X[i][j] = ratio
-                            if ratio >.8:
-                                    if i != j:
-                                            if [j ,i] not in self.similar_strings:
-                                                    self.similar_strings.append([i, j])
-                            
-                                            if not bool(self.clusters):
-                                                    self.clusters.append([i, j])
-                                            else:
-                                                    n = 0
-                                                    #print "This is i = %s and this is j = %s"%(i, j)
-                                                    found = False
-                                                    for __c in self.clusters:
-                                                            if i in __c or j in __c:
-                                                                    l = self.clusters[n]
-                                                                    l.extend([i, j])
-                                                                    self.clusters[n] = l  
-                                                                    found = True
-                                                                    break
-                                                            n += 1
-                                                    if not found:
-                                                            self.clusters.append([i, j])
+                            if X[i][j] == 0:
+                                    st = 'Levenshtein.ratio("{1}", "{0}")'.format(self.keys[i], self.keys[j])
+                                    ratio = eval(st)
+                                    X[i][j] = ratio
+                                    X[j][i] = ratio
+            
+            
+            #Making tuples of the indexes for the element in X where the rtion is greater than .76
+            indices = np.where(X > .76)
+            new_list = zip(indices[0], indices[1])
+            found = False
+            for e in new_list:
+                    for j in self.clusters:
+                            if bool(set.intersection(set(e), set(j))):
+                                    j.extend(e)
+                                    found = True
+                                    break
+                    if not found:    
+                            self.clusters.append(list(e))
+                            found = False
+                    found = False
+
             #Removing duplicate elements from clusters list
-            self.clusters = [list(set(element)) for element in self.clusters]
+            self.clusters = [list(set(element)) for element in self.clusters if len(element)> 2]
+            """
+            for element in self.clusters:
+                    print [self.keys[key] for key in element]
+            """
             return 
 
         def populate_result(self):
@@ -168,15 +174,161 @@ class HeuristicClustering:
                 return {"name": result[0].get("name"), "positive": positive, "negative": negative}
 
 
+        def check_if_shortform(self, str1, str2):
+                """
+                To identify if "bbq nation" is similar to "barbeque nation"
+
+                """
+                if bool(set.intersection(set(str1.split()), set(str2.split()))):
+
+                        if set.issubset(set(str1), set(str2)):
+                                return True
+
+                        if set.issubset(set(str2), set(str1)):
+                                return 
+
+                return False
+
 if __name__ == "__main__":
+        """
+        def transform(__object): 
+                __l = __object[1] 
+                __l.append(__object[0]) 
+                return list(set(__l))
+
+        __dict = {} 
+        for e in __list:
+                __dict.setdefault(min(e), []).append(max(e))
+        
+        return map(transform, __dict.keys())
+
+       [['non veg buffet', 'veg buffet', False],
+        ['mutton seekh', 'mutton seekh kababs', True],
+        ['mutton seekh', 'mutton seekh kabab', True],
+        ['mutton dum biryani', 'delicious mutton biryani', True],
+        ['main course', 'fabulous main course', True],
+        ['other bar nations', 'barbeque nation', True],
+        ['hot gulab jamun', 'da gulab jamun', True],
+        ['main course menu', 'main course', True],
+        ['unlimited tasty food', 'unlimited food', True],
+        ['coconut brownie', 'chocolate brownie', False],
+        ['neat experience', 'bad experience', True],
+        ['barbeque nation team', 'barbeque nation buffet', False],
+        ['chocolate cake', 'chocolate sauce', False],
+        ['great sauce', 'great place', False],
+        ['kadhai chicken', 'khatta chicken', False],
+        ['kadhai chicken', 'chicken', False],
+        ['kadhai chicken', 'peshawari chicken leg', False],
+        ['kadhai chicken', 'teriyaki chicken', False],
+        ['kadhai chicken', 'fish prawn chicken', False],
+        ['kadhai chicken', 'teriyaki chicken', False],
+        ['kadhai chicken', 'jerk chicken', False],
+        ['kadhai chicken', 'chicken', False],
+        ['bbq nation', 'barbque nation', True],
+        ['gud mutton seekh kbab', 'mutton seekh kebab', True]] 
+        
+        
         payload = {'category': 'food',
-             'eatery_id': '4571',
+             'eatery_id': '301489',
               'ner_algorithm': 'stanford_ner',
                'pos_tagging_algorithm': 'hunpos_pos_tagger',
                 'total_noun_phrases': 15,
                  'word_tokenization_algorithm': 'punkt_n_treebank'}
 
         r = requests.post("http://localhost:8000/get_word_cloud", data=payload)
-        m = HeuristicClustering(r.json()["result"])
+        result = r.json()["result"]
+        """
+        result = [{u'polarity': 1, u'frequency': 84, u'name': u'main course'},
+                {u'polarity': 0, u'frequency': 1, u'name': u'main course order'},
+                {u'polarity': 1, u'frequency': 2, u'name': u'other subway outlets'},
+                {u'polarity': 1, u'frequency': 2, u'name': u'best subway outlet'},
+                {u'polarity': 1, u'frequency': 1, u'name': u'good subway outlet'},
+                {u'polarity': 1, u'frequency': 1, u'name': u'other subway'},
+                
+                {u'polarity': 0, u'frequency': 7, u'name': u'dal makhani'},
+                {u'polarity': 0, u'frequency': 5, u'name': u'dal makhni'},
+                {u'polarity': 1, u'frequency': 2, u'name': u'love dal makhni'},
+                {u'polarity': 1, u'frequency': 2, u'name': u'daal makhni'},
+                {u'polarity': 1, u'frequency': 1, u'name': u'daal makhani creamy'},
+                {u'polarity': 1, u'frequency': 1, u'name': u'daal punjabi'},
+                {u'polarity': 1, u'frequency': 1, u'name': u'paneer lababdaar'},
+                {u'polarity': 1, u'frequency': 1, u'name': u"' dal makhani"},
+                {u'polarity': 0, u'frequency': 1, u'name': u'dal makhni'},
+                {u'polarity': 0, u'frequency': 1, u'name': u'dal makahani'},
+                {u'polarity': 0, u'frequency': 1, u'name': u'daal makhani'},
+
+
+                {u'polarity': 0, u'frequency': 5, u'name': u'paneer lababdar'},
+                {u'polarity': 1, u'frequency': 1, u'name': u'murg lababdar'},
+                {u'polarity': 1, u'frequency': 1, u'name': u'pannneer lababdar'},
+                {u'polarity': 1, u'frequency': 1, u'name': u'paaner lababdar'},
+                {u'polarity': 1, u'frequency': 1, u'name': u'panner laabaabdar'},
+
+
+                {u'polarity': 1, u'frequency': 3, u'name': u'parikrama restaurant'},
+                {u'polarity': 1, u'frequency': 3, u'name': u'parikarma restaurant'},
+                {u'polarity': 1, u'frequency': 1, u'name': u'parikrama drink'},
+                {u'polarity': 1, u'frequency': 1, u'name': u'parikrama hotel'},
+                {u'polarity': 1, u'frequency': 1, u'name': u'parikrama coz'},
+                
+                
+
+
+
+                {u'polarity': 0, u'frequency': 60, u'name': u'main course'},
+        {u'polarity': 1, u'frequency': 26, u'name': u'barbeque nation'},
+        {u'polarity': 0, u'frequency': 20, u'name': u'main course'},
+        {u'polarity': 1, u'frequency': 20, u'name': u'bbq nation'},
+        {u'polarity': 0, u'frequency': 14, u'name': u'barbeque nation'},
+        {u'polarity': 1, u'frequency': 13, u'name': u'good food'},
+        {u'polarity': 1, u'frequency': 13, u'name': u'ice cream'},
+        {u'polarity': 1, u'frequency': 12, u'name': u'chicken biryani'},
+        {u'polarity': 1, u'frequency': 12, u'name': u'barbecue nation'},
+        {u'polarity': 1, u'frequency': 10, u'name': u'great food'},
+        {u'polarity': 1, u'frequency': 9, u'name': u'chicken tikka'},
+        {u'polarity': 1, u'frequency': 9, u'name': u'good place'},
+        {u'polarity': 1, u'frequency': 84, u'name': u'main course'},
+        {u'polarity': 0, u'frequency': 60, u'name': u'main course'},
+        {u'polarity': 1, u'frequency': 26, u'name': u'barbeque nation'},
+        {u'polarity': 0, u'frequency': 20, u'name': u'main course'},
+        {u'polarity': 1, u'frequency': 20, u'name': u'bbq nation'},
+        {u'polarity': 0, u'frequency': 14, u'name': u'barbeque nation'},
+        {u'polarity': 1, u'frequency': 13, u'name': u'good food'},
+        {u'polarity': 1, u'frequency': 13, u'name': u'ice cream'},
+        {u'polarity': 1, u'frequency': 12, u'name': u'chicken biryani'},
+        {u'polarity': 1, u'frequency': 12, u'name': u'barbecue nation'},
+        {u'polarity': 1, u'frequency': 10, u'name': u'great food'},
+        {u'polarity': 1, u'frequency': 9, u'name': u'chicken tikka'},
+        {u'polarity': 1, u'frequency': 9, u'name': u'good place'},
+        {u'polarity': 1, u'frequency': 9, u'name': u'paneer tikka'},
+        {u'polarity': 1, u'frequency': 8, u'name': u'tasty food'},
+        {u'polarity': 1, u'frequency': 8, u'name': u'gulab jamun'},
+        {u'polarity': 0, u'frequency': 7, u'name': u'gulab jamun'},
+        {u'polarity': 0, u'frequency': 7, u'name': u'chicken tikka'},
+        {u'polarity': 0, u'frequency': 7, u'name': u'barbecue nation'},
+        {u'polarity': 0, u'frequency': 7, u'name': u'bbq nation'},
+        {u'polarity': 1, u'frequency': 4, u'name': u'dal makhani'},
+        {u'polarity': 1, u'frequency': 4, u'name': u'main course everything'},
+        {u'polarity': 1, u'frequency': 3, u'name': u'main course section'},
+        {u'polarity': 0, u'frequency': 2, u'name': u'bt main course'},
+        {u'polarity': 1, u'frequency': 2, u'name': u'main coursenot'},
+        {u'polarity': 1, u'frequency': 2, u'name': u'fabulous main course'}]
+
+        m = HeuristicClustering(result, 'Barbeque Nation')
+        for element in m.result:
+                print element
+
+        result = [[5, 10, 5, 11, 5, 24, 5, 28, 10, 5, 10, 11, 10, 24, 10, 28, 11, 5, 11, 10, 11, 24, 11, 28, 
+                24, 5, 24, 10, 24, 11, 24, 28, 28, 5, 28, 10, 28, 11, 28, 24], [6, 9, 6, 13, 6, 14, 6, 23, 
+                6, 30, 9, 6, 9, 13, 9, 14, 9, 23, 9, 30, 13, 6, 13, 9, 13, 14, 13, 23, 13, 30, 14, 6, 14, 9, 14, 
+                13, 14, 23, 14, 30, 23, 6, 23, 9, 23, 13, 23, 14, 23, 30, 30, 6, 30, 9, 30, 13, 30, 14, 30, 23], 
+                [15, 22, 15, 34, 22, 15, 34, 15], [31, 32, 32, 31]]
+
+        __list = [[10, 5], [11, 5], [24, 5], [28, 5], [9, 6], [13, 6], [14, 6], [23, 6], [30, 6], [6, 9], 
+                [13, 9], [14, 9], [23, 9], [30, 9], [5, 10], [11, 10], [24, 10], [28, 10], [5, 11], [10, 11], 
+                [24, 11], [28, 11], [6, 13], [9, 13], [14, 13], [23, 13], [30, 13], [6, 14], [9, 14], [13, 14], 
+                [23, 14], [30, 14], [22, 15], [34, 15], [15, 22], [6, 23], [9, 23], [13, 23], [14, 23], [30, 23], 
+                [5, 24], [10, 24], [11, 24], [28, 24], [5, 28], [10, 28], [11, 28], [24, 28], [6, 30], [9, 30], 
+                [13, 30], [14, 30], [23, 30], [32, 31], [31, 32], [15, 34]]
 
 
