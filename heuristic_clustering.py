@@ -202,30 +202,6 @@ if __name__ == "__main__":
         
         return map(transform, __dict.keys())
 
-       [['non veg buffet', 'veg buffet', False],
-        ['mutton seekh', 'mutton seekh kababs', True],
-        ['mutton seekh', 'mutton seekh kabab', True],
-        ['mutton dum biryani', 'delicious mutton biryani', True],
-        ['main course', 'fabulous main course', True],
-        ['other bar nations', 'barbeque nation', True],
-        ['hot gulab jamun', 'da gulab jamun', True],
-        ['main course menu', 'main course', True],
-        ['unlimited tasty food', 'unlimited food', True],
-        ['coconut brownie', 'chocolate brownie', False],
-        ['neat experience', 'bad experience', True],
-        ['barbeque nation team', 'barbeque nation buffet', False],
-        ['chocolate cake', 'chocolate sauce', False],
-        ['great sauce', 'great place', False],
-        ['kadhai chicken', 'khatta chicken', False],
-        ['kadhai chicken', 'chicken', False],
-        ['kadhai chicken', 'peshawari chicken leg', False],
-        ['kadhai chicken', 'teriyaki chicken', False],
-        ['kadhai chicken', 'fish prawn chicken', False],
-        ['kadhai chicken', 'teriyaki chicken', False],
-        ['kadhai chicken', 'jerk chicken', False],
-        ['kadhai chicken', 'chicken', False],
-        ['bbq nation', 'barbque nation', True],
-        ['gud mutton seekh kbab', 'mutton seekh kebab', True]] 
         
         
         payload = {'category': 'food',
@@ -314,9 +290,60 @@ if __name__ == "__main__":
         {u'polarity': 1, u'frequency': 2, u'name': u'main coursenot'},
         {u'polarity': 1, u'frequency': 2, u'name': u'fabulous main course'}]
 
+
+        """
         m = HeuristicClustering(result, 'Barbeque Nation')
         for element in m.result:
                 print element
+        for __dict1 in result:
+            for __dict2 in result:
+                    #if not __dict1.get("name") != __dict2.get("name"):
+                            st = 'Levenshtein.ratio("{1}", "{0}")'.format(__dict1.get("name"), __dict2.get("name"))
+                            print eval(st), "\t", __dict1.get("name"), __dict2.get("name")
+        """
+
+
+        test_data = [['non veg buffet', 'veg buffet', False],
+        ['mutton seekh', 'mutton seekh kababs', True],
+        ['mutton seekh', 'mutton seekh kabab', True],
+        ['mutton dum biryani', 'delicious mutton biryani', True],
+        ['main course', 'fabulous main course', True],
+        ['other bar nations', 'barbeque nation', True],
+        ['hot gulab jamun', 'da gulab jamun', True],
+        ['main course menu', 'main course', True],
+        ['unlimited tasty food', 'unlimited food', True],
+        ['coconut brownie', 'chocolate brownie', False],
+        ['neat experience', 'bad experience', True],
+        ['barbeque nation team', 'barbeque nation buffet', False],
+        ['chocolate cake', 'chocolate sauce', False],
+        ['great sauce', 'great place', False],
+        ['kadhai chicken', 'khatta chicken', False],
+        ['kadhai chicken', 'chicken', False],
+        ['kadhai chicken', 'peshawari chicken leg', False],
+        ['kadhai chicken', 'teriyaki chicken', False],
+        ['kadhai chicken', 'fish prawn chicken', False],
+        ['kadhai chicken', 'teriyaki chicken', False],
+        ['kadhai chicken', 'jerk chicken', False],
+        ['kadhai chicken', 'chicken', False],
+        ['bbq nation', 'barbque nation', True],
+        ['gud mutton seekh kbab', 'mutton seekh kebab', True]] 
+        
+        def longest_common_string(str1, str2):
+                break_strings = lambda __str: flatten([[e[0:i+1] for i in range(0, len(e))] for e in __str.split(" ")])
+               
+                common_strings = len(list(set.intersection(set(break_strings(str1)), set(break_strings(str2)))))
+
+                min_length = min(sum([len(e) for e in str1.split(" ")]), sum([len(e) for e in str2.split(" ")]))
+                max_length = max(sum([len(e) for e in str1.split(" ")]), sum([len(e) for e in str2.split(" ")]))
+                if min_length == min([len(e) for e in flatten([str1.split(" "), str2.split(" ")])]):
+                        
+				return float(common_strings)/max_length
+                return float(common_strings)/min_length
+
+      
+        for __e in test_data:
+                st = 'Levenshtein.ratio("{1}", "{0}")'.format(__e[0], __e[1])
+                print __e[0], "\t", __e[1], __e[2], "\t", True if longest_common_string(__e[0], __e[1]) > .75 else False
 
         result = [[5, 10, 5, 11, 5, 24, 5, 28, 10, 5, 10, 11, 10, 24, 10, 28, 11, 5, 11, 10, 11, 24, 11, 28, 
                 24, 5, 24, 10, 24, 11, 24, 28, 28, 5, 28, 10, 28, 11, 28, 24], [6, 9, 6, 13, 6, 14, 6, 23, 
