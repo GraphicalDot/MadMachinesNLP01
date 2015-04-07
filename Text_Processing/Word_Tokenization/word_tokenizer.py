@@ -57,9 +57,4 @@ class WordTokenize:
                         self.word_tokenized_list.append(TreebankWordTokenizer().tokenize(__sentence))
                 return
                 
-"""
-if __name__ == "__main__":
-        p = WordTokenize(["I went there to have chicken pizza"], default_word_tokenizer="treebank_tokenize")
-        print p.word_tokenized_list
-"""
 

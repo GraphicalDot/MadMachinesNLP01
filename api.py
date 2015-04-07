@@ -59,10 +59,6 @@ import base64
 import requests
 from PIL import Image
 import inspect
-from ProcessingCeleryTask import MappingList, SentTokenizeToNP, ReviewIdToSentTokenize, CleanResultBackEnd,\
-                    Clustering, StoreInEatery, NoNounPhrasesReviews, sub_categories
-from celery.result import AsyncResult
-from celery import chord
 from heuristic_clustering import HeuristicClustering
 
 from GlobalConfigs import MONGO_REVIEWS_IP, MONGO_REVIEWS_PORT, MONGO_REVIEWS_DB,\
@@ -570,18 +566,33 @@ class GetWordCloud(restful.Resource):
                
                 result = list()
       
+                if start_epoch and end_epoch:
+                        review_list = [(post.get("review_id"), post.get("review_text")) for post in 
+                            reviews.find({"eatery_id" :eatery_id, "converted_epoch": {"$gt":  start_epoch, "$lt" : end_epoch}})]
+                else:
+                        review_list = [(post.get("review_id"), post.get("review_text")) for post in reviews.find({"eatery_id" :eatery_id})] 
+
+                sent_tokenizer = SentenceTokenizationOnRegexOnInterjections()
+
+                sentences = list()
+                for review in review_list:
+                        for __sentence in sent_tokenizer.tokenize(to_unicode_or_bust(review[1])):
+                                    sentences.append([review[0], __sentence.encode("utf-8")])
+
+                review_ids, sentences = zip(*sentences)
+
+
+                tag_classifier = joblib.load("{0}/{1}".format(path_in_memory_classifiers, tag_analysis_algorithm_name))              
+                
+                predicted_tags = tag_classifier.predict(sentences)
+
+                filtered_list = list()
+
+
+
                 if category == "cost":
-                        celery_chain = ReviewIdToSentTokenize.apply_async(args=[eatery_id, category, start_epoch, 
-                            end_epoch, tag_analysis_algorithm_name, sentiment_analysis_algorithm_name, 
-                            word_tokenization_algorithm_name, pos_tagging_algorithm_name, noun_phrases_algorithm_name])
+                        filtered_list = [e for e in zip(review_ids, sentences, predicted_tags) if e[2] == "cost"]
 
-
-                       
-
-                        __sentences = sub_categories(eatery_id, category, start_epoch, end_epoch, tag_analysis_algorithm_name)
-                        review_ids, sentences = zip(*[(__e[0], __e[1]) for __e in __sentences])
-                        
-                        
                         file_path = os.path.dirname(os.path.abspath(__file__))
                         classifier_path = "{0}/Text_Processing/PrepareClassifiers/InMemoryClassifiers/".format(file_path)
                         classifier = joblib.load("{0}{1}".format(classifier_path, "svm_linear_kernel_classifier_cost.lib"))
@@ -597,149 +608,60 @@ class GetWordCloud(restful.Resource):
 				"error": False,
                                 "result": result,
                                 }
-                """
-                if category == "ambience":
-                        celery_chain = ReviewIdToSentTokenize.apply_async(args=[eatery_id, category, start_epoch, 
-                            end_epoch, tag_analysis_algorithm_name, sentiment_analysis_algorithm_name, 
-                            word_tokenization_algorithm_name, pos_tagging_algorithm_name, noun_phrases_algorithm_name])
-
-
-                        __sentences = sub_categories(eatery_id, category, start_epoch, end_epoch, tag_analysis_algorithm_name)
-                        review_ids, sentences = zip(*[(__e[0], __e[1]) for __e in __sentences])
-                        
-                        
-                        file_path = os.path.dirname(os.path.abspath(__file__))
-                        classifier_path = "{0}/Text_Processing/PrepareClassifiers/InMemoryClassifiers/".format(file_path)
-                        classifier = joblib.load("{0}{1}".format(classifier_path, "svm_linear_kernel_classifier_ambience.lib"))
-                        classifier_sentiment = joblib.load("{0}{1}".format(classifier_path, "svm_linear_kernel_classifier_sentiment.lib"))
-
-
-                        result = list()
-                        __predicted_tuples = zip(classifier.predict(sentences), classifier_sentiment.predict(sentences))
-
-
-                        for __e in __predicted_tuples:
-                            if __e[0] == 'ambience-null':
-                                    pass
-                            elif __e[1].startswith("super"):
-                                result.append((__e[0], __e[1].split("-")[1]))
-                                result.append((__e[0], __e[1].split("-")[1]))
-                            elif __e[1] == "neutral":
-                                    pass
-                            else:
-                                result.append((__e[0], __e[1]))
-
-                        final_result = dict()
-                        result = Counter(result)
-                        for k, v in result.items():
-                                final_result.update({k[0]: {"positive": 0, "negative": 0}})
-                                
-                        for k, v in result.items():
-                                if final_result.get(k[0]):
-                                        __l = final_result.get(k[0])
-                                        __l.update({k[1]: v})
-                                        final_result.update({k[0]: __l})
-                                else:    
-                                        final_result.update({k[0]: {k[1]: v}})
-
-
-                        result = list()
-                        for k, v in final_result.items():
-                                result.append({"name": k, "positive": v.get("positive"), "negative": v.get("negative")})
-                        return {"success": True,
-				"error": False,
-                                 "result": result,
-                                }
-    
-                """
-                celery_chain = (ReviewIdToSentTokenize.s(eatery_id, category, start_epoch, end_epoch, tag_analysis_algorithm_name, 
-                    sentiment_analysis_algorithm_name, word_tokenization_algorithm_name, pos_tagging_algorithm_name, 
-                    noun_phrases_algorithm_name)| NoNounPhrasesReviews.s( category, word_tokenization_algorithm_name, 
-                        pos_tagging_algorithm_name, noun_phrases_algorithm_name)| MappingList.s(ner_algorithm_name, 
-                            word_tokenization_algorithm_name, pos_tagging_algorithm_name, noun_phrases_algorithm_name, 
-                            tag_analysis_algorithm_name,  sentiment_analysis_algorithm_name, SentTokenizeToNP.s()))()
-
-
-
-                while celery_chain.status != "SUCCESS":
-                        pass    
-
-		try:
-			for __id in celery_chain.children[0]:    
-                        	while __id.status != "SUCCESS":
-                                	pass
-                except IndexError as e:
-			pass
-
-		
-                store_in_eatery_worker = StoreInEatery.apply_async(args=[eatery_id, category, start_epoch, end_epoch, 
-                    word_tokenization_algorithm_name, pos_tagging_algorithm_name, noun_phrases_algorithm_name, np_clustering_algorithm_name])
-                
-                while store_in_eatery_worker.status != "SUCCESS":
-                        pass
-                
-                
-                clustering_result = Clustering.apply_async(args=[eatery_id, category, start_epoch, end_epoch, word_tokenization_algorithm_name,
-                        pos_tagging_algorithm_name, noun_phrases_algorithm_name, np_clustering_algorithm_name, total_noun_phrases])
-                
-                while clustering_result.status != "SUCCESS":
-                        pass
                
 
-                result = clustering_result.get()
+                
+                sentiment_classifier = joblib.load("{0}/{1}".format(path_in_memory_classifiers, sentiment_analysis_algorithm_name))              
+                predicted_sentiment = sentiment_classifier.predict(sentences)
+                
+                
+                filtered_list = [e for e in zip(review_ids, sentences, predicted_tags, predicted_sentiment) if e[2] == category]
+                
+                
+                word_tokenize = WordTokenize(sentences,  default_word_tokenizer= word_tokenization_algorithm_name)
+                word_tokenization_algorithm_result = word_tokenize.word_tokenized_list.get(word_tokenization_algorithm_name)
+
+
+                __pos_tagger = PosTaggers(word_tokenization_algorithm_result,  default_pos_tagger=pos_tagging_algorithm_name)
+                pos_tagging_algorithm_result =  __pos_tagger.pos_tagged_sentences.get(pos_tagging_algorithm_name)
+
+
+                __noun_phrases = NounPhrases(pos_tagging_algorithm_result, default_np_extractor=noun_phrases_algorithm_name)
+                noun_phrases_algorithm_result =  __noun_phrases.noun_phrases.get(noun_phrases_algorithm_name)
+
+
+                result = [element for element in zip(predicted_sentiment, noun_phrases_algorithm_result) if element[1]]
+
+                edited_result = list()
                 for element in result:
-                        print element
+                        if element[0].startswith("super"):
+                                edited_result.append((element[1], element[0].split("-")[1]))
+                                edited_result.append((element[1], element[0].split("-")[1]))
+                        else:
+                                edited_result.append((element[1], element[0]))
 
 
-                __result = HeuristicClustering(result, eatery_name)
+                edited_result = list(itertools.chain(*[[(__k, __e[1]) for __k in __e[0]] for __e in edited_result]))
+                final_result = list()
+                for key, value in Counter(edited_result).iteritems():
+                        final_result.append({"name": key[0], "polarity": 1 if key[1] == 'positive' else 0 , "frequency": value})
+                
+                sorted_result = sorted(final_result, reverse=True, key=lambda x: x.get("frequency")) 
+                __result = HeuristicClustering(sorted_result, None)
 
+                result = list()
+                for k, v in __result.result.iteritems():
+                        result.append({"name": k, "positive": v.get("positive"), "negative": v.get("negative")})
 
+        
+            
+
+                result = sorted(result, reverse=True, key= lambda x: x.get("positive") + x.get("negative"))
+                print result
                 return {"success": True,
 				"error": False,
-                                
-                                "result": __result.result[0: total_noun_phrases],
+                                "result": result[0: 20],
                     }
-                """
-                celery_chain = (ReviewIdToSentTokenize.s(eatery_id, category, start_epoch, end_epoch, tag_analysis_algorithm, 
-                    sentiment_analysis_algorithm)|  
-                    MappingList.s(ner_algorithm, word_tokenization_algorithm, pos_tagging_algorithm, noun_phrases_algorithm, 
-                         tag_analysis_algorithm,  sentiment_analysis_algorithm, SentTokenizeToNP.s()))()
-                print celery_chain
-                ##Waitng for the ReviewIdToSentTokenize task to finish
-                while celery_chain.status != "SUCCESS":
-                        pass    
-
-                ##Waiting for the SentTokenizeToNP tasks to finish
-                for id in celery_chain.children[0]:    
-                        while id.status != "SUCCESS":
-                                pass
-
-                    
-                ##Te above code gurantees that all the SentTokenizeToNP has been finished and now we can gather reult of these
-                ##tasks
-                for id in celery_chain.children[0]:    
-                        result.append(id.get())
-                
-                ##Deleting all the results from the backends
-                ids =  [__id.id for __id in celery_chain.children[0]]
-                ids.extend([celery_chain.parent.id, celery_chain.id])
-               
-
-                result = list(itertools.chain.from_iterable(result))
-                clustering_result = Clustering.apply_async(args=[result, np_clustering_algorithm, total_noun_phrases])
-                
-                while clustering_result.status != "SUCCESS":
-                        pass
-
-                ids.append(clustering_result.id)
-                CleanResultBackEnd.apply_async(args=[ids])
-
-
-                return {"success": True,
-				"error": False,
-				"result": clustering_result.get(),
-                    }
-                """ 
 
 
 class UpdateClassifier(restful.Resource):
@@ -750,7 +672,20 @@ class UpdateClassifier(restful.Resource):
                 Update the classifier with new data into the InMemoryClassifiers folder
                 """
                 args = update_classifiers.parse_args()    
-                return
+                whether_allowed = False
+
+                if not whether_allowed:
+                        return {"success": False,
+                                "error": True,
+                                "messege": "Right now, Updating Tags or sentiments are not allowed",
+                                }
+
+
+                
+                return {"success": True,
+                        "error": False,
+                        "messege": "Updated!!!",
+                        }
 
 
 
@@ -766,7 +701,7 @@ class ChangeTagOrSentiment(restful.Resource):
                 args = change_tag_or_sentiment_parser.parse_args()    
                 sentence = args["sentence"]
                 value = args["value"]
-                whether_allowed = args["whether_allowed"]
+                whether_allowed = False
 
                 if not whether_allowed:
                         return {"success": False,
@@ -775,28 +710,7 @@ class ChangeTagOrSentiment(restful.Resource):
                                 }
 
 
-                tag_list = ["food", "service", "cost", "null", "ambience", "overall"]
-                sentiment_list = ["positive", "super-positive", "neutral", "negative", "super-negative", "mixed"]
-
-                print value, sentence
-                if not value in (tag_list+sentiment_list):
-                        return {"success": False,
-                                "error": True,
-                                "messege": "Error occured",
-                                }
-
-                if value in ["food", "service", "cost", "null", "ambience", "overall"]:
-                        training_tag_collection.update({"sentence": sentence}, {"$set": {
-                                    "review_id": "misc",
-                                    "tag": value, }}, upsert=True)
-                        print "tag updated"
-
-                if value in ["positive", "super-positive", "neutral", "negative", "super-negative"]:
-                        training_sentiment_collection.update({"sentence": sentence}, {"$set": {
-                                    "review_id": "misc",
-                                    "sentiment": value,
-                            }}, upsert=True)
-                        print "sentiment updated"
+                
                 return {"success": True,
                         "error": False,
                         "messege": "Updated!!!",
@@ -821,52 +735,59 @@ class RawTextParser(restful.Resource):
                 text = text.replace("\n", "")
                 sentiment_result = list()
                 sent_tokenizer = SentenceTokenizationOnRegexOnInterjections()
-                tokenized_sentences = sent_tokenizer.tokenize(text)
-                print tokenized_sentences
+                sentences = sent_tokenizer.tokenize(text)
 
                 tag_classifier = joblib.load("{0}{1}".format(path, "svm_linear_kernel_classifier_tag.lib"))
-                sentiment_classifier = joblib.load("{0}{1}".format(path, "svm_linear_kernel_classifier_sentiment.lib"))
                 new_sentiment_classifier = joblib.load("{0}{1}".format(path, "svm_linear_kernel_classifier_sentiment_new_dataset.lib"))
-                for sentence in zip(tokenized_sentences, tag_classifier.predict(tokenized_sentences), 
-                        sentiment_classifier.predict(tokenized_sentences), new_sentiment_classifier.predict(tokenized_sentences)):
-                        print sentence, "\n"
-                        
-                        word_tokenize = WordTokenize([sentence[0]],  default_word_tokenizer= word_tokenization_algorithm)
-                        word_tokenization_algorithm_result = word_tokenize.word_tokenized_list.get(word_tokenization_algorithm)
-                        
-                        __pos_tagger = PosTaggers(word_tokenization_algorithm_result,  default_pos_tagger=pos_tagging_algorithm)
-                        pos_tagging_algorithm_result =  __pos_tagger.pos_tagged_sentences.get(pos_tagging_algorithm)
-
-                        __noun_phrases = NounPhrases(pos_tagging_algorithm_result, default_np_extractor=noun_phrases_algorithm)
-                        noun_phrases_algorithm_result =  __noun_phrases.noun_phrases.get(noun_phrases_algorithm)
-
-                        result.extend([[noun, sentence[2]] for noun in flatten(noun_phrases_algorithm_result)])
-                        sentiment_result.append([sentence[0], sentence[1], sentence[3]])
-
-                print result
+                
 		
+                
+                predicted_tags = tag_classifier.predict(sentences)
+                predicted_sentiment = new_sentiment_classifier.predict(sentences)
+
+
+
+                
+                word_tokenize = WordTokenize(sentences,  default_word_tokenizer='punkt_n_treebank')
+                word_tokenization_algorithm_result = word_tokenize.word_tokenized_list.get('punkt_n_treebank')
+
+
+                __pos_tagger = PosTaggers(word_tokenization_algorithm_result,  default_pos_tagger='hunpos_pos_tagger')
+                pos_tagging_algorithm_result =  __pos_tagger.pos_tagged_sentences.get('hunpos_pos_tagger')
+
+
+                __noun_phrases = NounPhrases(pos_tagging_algorithm_result, default_np_extractor="textblob_np_conll")
+                noun_phrases_algorithm_result =  __noun_phrases.noun_phrases.get("textblob_np_conll")
+
+                result = [element for element in zip(predicted_sentiment, noun_phrases_algorithm_result) if element[1]]
+
                 edited_result = list()
                 for element in result:
-                        if element[1].startswith("super"):
-                                edited_result.append((element[0], element[1].split("-")[1]))
-                                edited_result.append((element[0], element[1].split("-")[1]))
+                        if element[0].startswith("super"):
+                                edited_result.append((element[1], element[0].split("-")[1]))
+                                edited_result.append((element[1], element[0].split("-")[1]))
                         else:
-                                edited_result.append(tuple(element)) 
-                print edited_result
+                                edited_result.append((element[1], element[0]))
 
+
+                edited_result = list(itertools.chain(*[[(__k, __e[1]) for __k in __e[0]] for __e in edited_result]))
                 final_result = list()
                 for key, value in Counter(edited_result).iteritems():
                         final_result.append({"name": key[0], "polarity": 1 if key[1] == 'positive' else 0 , "frequency": value})
                 
-                sorted_result = sorted(final_result, reverse=True, key=lambda x: x.get("frequency"))
-                for element in sorted_result:
-                    print sorted_result
 
+
+                sorted_result = sorted(final_result, reverse=True, key=lambda x: x.get("frequency")) 
                 __result = HeuristicClustering(sorted_result, None)
 
-                for element in __result.result:
-                    print element
+                result = list()
+                for k, v in __result.result.iteritems():
+                        result.append({"name": k, "positive": v.get("positive"), "negative": v.get("negative")})
 
+        
+            
+
+                result = sorted(result, reverse=True, key= lambda x: x.get("positive") + x.get("negative"))
                 def convert_sentences(__object):
                         return {"sentence": __object[0], 
                                 "tag": __object[1],
@@ -875,48 +796,10 @@ class RawTextParser(restful.Resource):
 
                 return {"success": True,
 				"error": False,
-                                "result": __result.result,
-                                "sentences": map(convert_sentences, sentiment_result),
+                                "result": result,
+                                "sentences": map(convert_sentences, zip(sentences, predicted_tags, predicted_sentiment)),
                                 }
 
-class TestWhole(restful.Resource):
-	@cors
-	@timeit
-        def post(self):
-                def solve_key_error_threading():
-                        if 'threading' in sys.modules:
-                                del sys.modules['threading']
-                        import gevent
-                        import gevent.socket
-                        import gevent.monkey
-                        gevent.monkey.patch_all()
-
-                #solve_key_error_threading()
-                args = test_whole_parser.parse_args()    
-                print args
-                """
-
-
-                review_text = [to_unicode_or_bust(post.get("review_text")) for post in reviews.find({"eatery_id": "4571"})]
-		
-                review_text = " .".join(review_text)
-                sent_tokenizer = SentenceTokenizationOnRegexOnInterjections()
-                __word_tokenize = WordTokenize(sent_tokenizer.tokenize(review_text)) #using punkt_n_treebank_tokenizer
-                word_tokenized_list =  __word_tokenize.word_tokenized_list
-               
-
-                __pos_tagger = PosTaggers(word_tokenized_list.get("punkt_n_treebank")[82:100]) #using default standford pos tagger
-                __pos_tagged_sentences =  __pos_tagger.pos_tagged_sentences
-                
-                print __pos_tagged_sentences
-                
-                __noun_phrases = NounPhrases(__pos_tagged_sentences.get("stan_pos_tagger"))
-                print __noun_phrases.noun_phrases
-                """
-                return   {"success": True,
-                            "error": False,
-                            "result": result.get(),
-                            }
 
 api.add_resource(EateriesList, '/eateries_list')
 api.add_resource(LimitedEateriesList, '/limited_eateries_list')
@@ -930,7 +813,6 @@ api.add_resource(GetStartDateForRestaurant, '/get_start_date_for_restaurant')
 api.add_resource(RawTextParser, '/raw_text_processing') 
 api.add_resource(ChangeTagOrSentiment, '/change_tag_or_sentiment')
 
-api.add_resource(TestWhole, '/test') 
 
 if __name__ == '__main__':
         app.run(port=8000, debug=True)

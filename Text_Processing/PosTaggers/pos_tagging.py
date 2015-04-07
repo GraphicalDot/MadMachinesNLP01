@@ -99,8 +99,11 @@ class PosTaggers:
         @need_word_tokenization(True)
         def hunpos_pos_tagger(self):
                 for __sentence in self.list_of_sentences:
-                        self.pos_tagged_sentences.append(self.hunpos_tagger.tag(__sentence))
-
+                        try:
+                            self.pos_tagged_sentences.append(self.hunpos_tagger.tag(__sentence))
+                        except Exception as e:
+                                print __sentence, e
+                                pass
                 return
 
         @need_word_tokenization(True)
