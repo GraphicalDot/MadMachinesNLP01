@@ -16,7 +16,6 @@ import codecs
 import nltk
 from compiler.ast import flatten
 import time
-import progressbar
 from collections import Counter
 
 

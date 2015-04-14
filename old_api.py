@@ -1,6 +1,18 @@
 #!/usr/bin/env python
 #-*- coding: utf-8 -*-
-            
+
+"""
+Author:Kaali
+Dated: 17 January, 2015
+Day: Saturday
+Description: This file has been written for the android developer, This will be used by minimum viable product implementation
+            on android 
+
+Comment: None
+"""
+
+
+from __future__ import absolute_import
 import copy
 import re
 import csv
@@ -20,11 +32,21 @@ import json
 import os
 import StringIO
 import difflib
+from textblob.np_extractors import ConllExtractor 
 from bson.json_util import dumps
-from Text_Processing import ProcessingWithBlob, PosTags, nltk_ngrams, get_all_algorithms_result, RpRcClassifier, \
+from Text_Processing import NounPhrases, get_all_algorithms_result, RpRcClassifier, \
 		bcolors, CopiedSentenceTokenizer, SentenceTokenizationOnRegexOnInterjections, get_all_algorithms_result, \
 		path_parent_dir, path_trainers_file, path_in_memory_classifiers, timeit, cd, SentimentClassifier, \
-		TagClassifier, ProcessingWithBlobInMemory
+		TagClassifier, NERs, NpClustering 
+
+from compiler.ast import flatten
+from topia.termextract import extract
+
+##TODO run check_if_hunpos and check_if stanford fruntions for postagging and NERs and postagging
+
+
+from Text_Processing import WordTokenize, PosTaggers, NounPhrases
+
 
 import time
 from datetime import timedelta
@@ -36,15 +58,40 @@ import random
 from sklearn.externals import joblib
 import numpy
 from multiprocessing import Pool
-from static_data import static_data
-from api_helpers import merging_similar_elements
+import base64
+import requests
+from PIL import Image
+import inspect
+from heuristic_clustering import HeuristicClustering
+
+from GlobalConfigs import MONGO_REVIEWS_IP, MONGO_REVIEWS_PORT, MONGO_REVIEWS_DB,\
+        MONGO_REVIEWS_EATERIES_COLLECTION, MONGO_REVIEWS_REVIEWS_COLLECTION
+
+connection = pymongo.MongoClient(MONGO_REVIEWS_IP, MONGO_REVIEWS_PORT, tz_aware=True, w=1, 
+        j=True, max_pool_size=200, use_greenlets=True)
+
+
+eateries = eval("connection.{db_name}.{collection_name}".format(
+                                                        db_name=MONGO_REVIEWS_DB,
+                                                        collection_name=MONGO_REVIEWS_EATERIES_COLLECTION))
+
+
+reviews = eval("connection.{db_name}.{collection_name}".format(
+                                    db_name=MONGO_REVIEWS_DB,
+                                    collection_name=MONGO_REVIEWS_REVIEWS_COLLECTION))
 
 
 
-connection = pymongo.Connection()
-db = connection.modified_canworks
-eateries = db.eatery
-reviews = db.review
+
+training_db = connection.training_data
+training_sentiment_collection = training_db.training_sentiment_collection
+training_tag_collection = training_db.training_tag_collection
+
+#This is for android apps, may not be required later
+android_db = connection.android_app
+android_users = android_db.users
+users_pic = android_db.pics
+#####
 
 
 app = Flask(__name__)
@@ -54,16 +101,11 @@ api = restful.Api(app,)
 
 
 
-def load_classifiers_in_memory():
-	instance = RpRcClassifier()
-	instance.loading_all_classifiers_in_memory()
-
-	#Loading all the classifiers in the memory for tags classification
-	instance = TagClassifier()
-	instance.loading_all_classifiers_in_memory()
-
-	instance = SentimentClassifier()
-	instance.loading_all_classifiers_in_memory()
+def encoding_help(obj):
+        if not isinstance(obj, unicode):
+                obj = unicode(obj)
+        obj = obj.encode("ascii", "xmlcharrefreplace")
+        return obj
 
 
 def to_unicode_or_bust(obj, encoding='utf-8'):
@@ -74,99 +116,145 @@ def to_unicode_or_bust(obj, encoding='utf-8'):
 
 
 
-##ProcessText
-different_algorithms_parser = reqparse.RequestParser()
-different_algorithms_parser.add_argument('text', type=to_unicode_or_bust, required=True, location="form")
-different_algorithms_parser.add_argument('sentences_with_classification', type=to_unicode_or_bust, required=True, location="form", action="append")
+def word_tokenization_algorithm(algorithm_name):
+        members = [member[0] for member in inspect.getmembers(WordTokenize, predicate=inspect.ismethod) if member[0] 
+                                            not in ["__init__", "to_unicode_or_bust"]]
+        
+        if algorithm_name not in members:
+                raise StandardError("The algorithm you are trying to use for word tokenization doesnt exists yet,\
+                                    please try from these algorithms {0}".format(members))
+        return algorithm_name
+
+def pos_tagging_algorithm(algorithm_name):
+        members = [member[0] for member in inspect.getmembers(PosTaggers, predicate=inspect.ismethod) if member[0] 
+                                            not in ["__init__", "to_unicode_or_bust"]]
+
+        if algorithm_name not in members:
+                raise StandardError("The algorithm you are trying to use for Pos Tagging  doesnt exists yet,\
+                                    please try from these algorithms {0}".format(members))
+        return algorithm_name
+
+def noun_phrases_algorithm(algorithm_name):
+        members = [member[0] for member in inspect.getmembers(NounPhrases, predicate=inspect.ismethod) if member[0] 
+                                            not in ["__init__", "to_unicode_or_bust"]]
+
+        if algorithm_name not in members:
+                raise StandardError("The algorithm you are trying to use for noun phrases doesnt exists yet,\
+                                    please try from these algorithms {0}".format(members))
+        return algorithm_name
 
 
 
 
-##ProcessText
-process_text_parser = reqparse.RequestParser()
-process_text_parser.add_argument('text', type=to_unicode_or_bust, required=True, location="form")
-process_text_parser.add_argument('algorithm', type=str, required=True, location="form")
+def tag_analysis_algorithm(algorithm_name):
+        members = [member[0] for member in inspect.getmembers(TagClassifier, predicate=inspect.ismethod) if member[0] 
+                                            not in ["__init__", "to_unicode_or_bust"]]
 
-##UpdateModel
-update_model_parser = reqparse.RequestParser()
-update_model_parser.add_argument('sentence', type=to_unicode_or_bust, required=True, location="form")
-update_model_parser.add_argument('tag', type=str, required=True, location="form")
-update_model_parser.add_argument('review_id', type=str, required=True, location="form")
+        if algorithm_name not in members:
+                raise StandardError("The algorithm you are trying to use for tag analysis doesnt exists yet,\
+                                    please try from these algorithms {0}".format(members))
+        return algorithm_name
 
-##UpdateReviewError
-update_review_error_parser = reqparse.RequestParser()
-update_review_error_parser.add_argument('sentence', type=to_unicode_or_bust, required=True, location="form")
-update_review_error_parser.add_argument('is_error', type=str, required=True, location="form")
-update_review_error_parser.add_argument('review_id', type=str, required=True, location="form")
-update_review_error_parser.add_argument('error_messege', type=str, required=True, location="form")
+def sentiment_analysis_algorithm(algorithm_name):
+        members = [member[0] for member in inspect.getmembers(SentimentClassifier, predicate=inspect.ismethod) if member[0] 
+                                            not in ["__init__", "to_unicode_or_bust"]]
 
+        if algorithm_name not in members:
+                raise StandardError("The algorithm you are trying to use for sentiment analysis doesnt exists yet,\
+                                    please try from these algorithms {0}".format(members))
+        return algorithm_name
 
-##UploadInterjectionError
-upload_interjection_error_parser = reqparse.RequestParser()
-upload_interjection_error_parser.add_argument('sentence', type=str,  required=True, location="form")
-upload_interjection_error_parser.add_argument('is_error', type=str,  required=True, location="form")
-upload_interjection_error_parser.add_argument('review_id', type=str,  required=True, location="form")
+def np_clustering_algorithm(algorithm_name):
+        members = [member[0] for member in inspect.getmembers(NpClustering, predicate=inspect.ismethod) if member[0] 
+                                            not in ["__init__",]]
 
-##UpdateCustomer
-update_customer_parser = reqparse.RequestParser()
-update_customer_parser.add_argument('sentence', type=str,  required=True, location="form")
-update_customer_parser.add_argument('option_value', type=str,  required=True, location="form")
-update_customer_parser.add_argument('option_text', type=str,  required=True, location="form")
-update_customer_parser.add_argument('review_id', type=str,  required=True, location="form")
-
-##EateriesList
-eateries_list_parser = reqparse.RequestParser()
-eateries_list_parser.add_argument('city', type=str,  required=True, location="form")
-	
-##EateriesDetails
-eateries_details_parser = reqparse.RequestParser()
-eateries_details_parser.add_argument('eatery_id', type=str,  required=True, location="form")
+        if algorithm_name not in members:
+                raise StandardError("The algorithm you are trying to use for noun phrase clustering doesnt exists yet,\
+                                    please try from these algorithms {0}".format(members))
+        return algorithm_name
 
 
-##UpdateReviewClassification
-update_review_classification_parser = reqparse.RequestParser()
-update_review_classification_parser.add_argument('review_id', type=str,  required=True, location="form")
+def ner_algorithm(algorithm_name):
+        members = [member[0] for member in inspect.getmembers(NERs, predicate=inspect.ismethod) if member[0] 
+                                            not in ["__init__",]]
 
-	
-##GetReviewDetails
-get_review_details_parser = reqparse.RequestParser()
-get_review_details_parser.add_argument('review_id', type=str,  required=True, location="form")
+        if algorithm_name not in members:
+                raise StandardError("The algorithm you are trying to use for ner extraction doesnt exists yet,\
+                                    please try from these algorithms {0}".format(members))
+        return algorithm_name
 
-##GetNgramsParser
-get_ngrams_parser = reqparse.RequestParser()
-get_ngrams_parser.add_argument('sentence', type=str,  required=True, location="form")
-get_ngrams_parser.add_argument('grams', type=str,  required=True, location="form")
 
-	
-##UploadNounPhrases
-upload_noun_phrases_parser = reqparse.RequestParser()
-upload_noun_phrases_parser.add_argument('noun_phrase', type=str,  required=True, location="form")
-upload_noun_phrases_parser.add_argument('review_id', type=str,  required=True, location="form")
-upload_noun_phrases_parser.add_argument('sentence', type=str,  required=True, location="form")
-	
+def custom_string(__str):
+        return __str.encode("utf-8")
+
+
+#fb_login
+fb_login_parser = reqparse.RequestParser()
+fb_login_parser.add_argument("fb_id", type=str, required=True, location="form")
+fb_login_parser.add_argument("email", type=str, required=False, location="form")
+fb_login_parser.add_argument("gender", type=str, required=True, location="form")
+fb_login_parser.add_argument("user_name", type=str, required=True, location="form")
+fb_login_parser.add_argument("date_of_birth", type=str, required=True, location="form")
+fb_login_parser.add_argument("location", type=str, required=True, location="form")
+fb_login_parser.add_argument("user_friends", type=str, required=False, location="form", action="append")
+
+
+
+#post_comment
+post_comment_parser = reqparse.RequestParser()
+post_comment_parser.add_argument("fb_id", type=str, required=True, location="form")
+post_comment_parser.add_argument("comment", type=str, required=True, location="form")
+
+
+#suggest_name
+suggest_name_parser = reqparse.RequestParser()
+suggest_name_parser.add_argument("fb_id", type=str, required=True, location="form")
+suggest_name_parser.add_argument("name_suggestion", type=str, required=True, location="form")
+
+
+#post_picture
+post_pic_parser = reqparse.RequestParser()
+post_pic_parser.add_argument("fb_id", type=str, required=True, location="form")
+post_pic_parser.add_argument("image_name", type=str, required=True, location="form")
+post_pic_parser.add_argument("image_string", type=str, required=True, location="form")
+
+
+#get_pics
+get_pics_parser = reqparse.RequestParser()
+get_pics_parser.add_argument("dish_name", type=str, required=True, location="args")
+
+
 ##GetStartDateForRestaurant
 get_start_date_for_restaurant_parser = reqparse.RequestParser()
 get_start_date_for_restaurant_parser.add_argument('eatery_id', type=str,  required=True, location="form")
-word_cloud_with_dates_parser = reqparse.RequestParser()
-
-
-##WordCloudWithDates
-word_cloud_with_dates_parser.add_argument('eatery_id', type=str,  required=True, location="form")
-word_cloud_with_dates_parser.add_argument('category', type=str,  required=True, location="form")
-word_cloud_with_dates_parser.add_argument('start_date', type=str,  required=True, location="form")
-word_cloud_with_dates_parser.add_argument('end_date', type=str,  required=True, location="form")
+word_cloud_with_dates_parser = reqparse.RequestParser() 
 
 
 ##GetWordCloud
 get_word_cloud_parser = reqparse.RequestParser()
 get_word_cloud_parser.add_argument('eatery_id', type=str,  required=True, location="form")
 get_word_cloud_parser.add_argument('category', type=str,  required=True, location="form")
-get_word_cloud_parser.add_argument('start_date', type=str,  required=True, location="form")
-get_word_cloud_parser.add_argument('end_date', type=str,  required=True, location="form")
+get_word_cloud_parser.add_argument('start_date', type=str,  required=False, location="form")
+get_word_cloud_parser.add_argument('end_date', type=str,  required=False, location="form") 
+get_word_cloud_parser.add_argument('total_noun_phrases', type=int,  required=False, location="form") 
+get_word_cloud_parser.add_argument('word_tokenization_algorithm', type=word_tokenization_algorithm,  required=False, location="form")
+get_word_cloud_parser.add_argument('noun_phrases_algorithm', type=noun_phrases_algorithm,  required=False, location="form")
+get_word_cloud_parser.add_argument('pos_tagging_algorithm', type=pos_tagging_algorithm,  required=False, location="form")
+get_word_cloud_parser.add_argument('tag_analysis_algorithm', type=tag_analysis_algorithm,  required=False, location="form")
+get_word_cloud_parser.add_argument('sentiment_analysis_algorithm', type=sentiment_analysis_algorithm,  required=False, location="form")
+get_word_cloud_parser.add_argument('np_clustering_algorithm', type=np_clustering_algorithm,  required=False, location="form")
+get_word_cloud_parser.add_argument('ner_algorithm', type=ner_algorithm,  required=False, location="form")
 
 
+##raw_text_processing_parser
+raw_text_processing_parser = reqparse.RequestParser()
+raw_text_processing_parser.add_argument('text', type=custom_string,  required=True, location="form")
 
 
+change_tag_or_sentiment_parser = reqparse.RequestParser()
+change_tag_or_sentiment_parser.add_argument('sentence', type=str,  required=True, location="form")
+change_tag_or_sentiment_parser.add_argument('value', type=str,  required=True, location="form")
+change_tag_or_sentiment_parser.add_argument('whether_allowed', type=str,  required=False, location="form")
 
 def cors(func, allow_origin=None, allow_headers=None, max_age=None):
 	if not allow_origin:
@@ -199,435 +287,176 @@ def cors(func, allow_origin=None, allow_headers=None, max_age=None):
 	return wrapper
 
 
-
-class AlgorithmsComparison(restful.Resource):
+class FBLogin(restful.Resource):
 	@cors
 	def post(self):
-		args = different_algorithms_parser.parse_args()
-		text = args["text"]
-		sentences_with_classification = args["sentences_with_classification"]
-	
-		print type(sentences_with_classification)
-		print len(sentences_with_classification)
-		sentences_with_classification = json.loads(sentences_with_classification[0])
-		sentences_with_classification = [(element[0].replace("\n", "").replace("\t", ""), element[1]) 
-								for element in sentences_with_classification[0: -1]]
-	
-		print sentences_with_classification
-		result = get_all_algorithms_result(text, sentences_with_classification)
-	
-		return{ 
-				"result": result,
-				"success": True,
-				"error": False,
-				}
+                """
+                If the length of the new user_friends pposted ont he api uis greater than the length
+                of the user_friends present in the database,
+                then the list of user_friends shall be updated in the database
 
-class OnlyAlgortihmsNames(restful.Resource):
+                """
+
+		args = fb_login_parser.parse_args()
+                print args
+                if not android_users.find_one({"fb_id": args["fb_id"]}):
+                        android_users.update({"fb_id": args["fb_id"]}, {"$set": {
+                                                "user_name": args["user_name"],
+                                                "email": args["email"],
+                                                "gender": args["gender"], 
+                                                "date_of_birth": args["date_of_birth"],
+                                                "location": args["location"],
+                                                "user_friends": args["user_friends"],}} , upsert=True) 
+                
+                        return {"error": False,
+                                "success": True,
+                                "error_code": 0,
+                                "messege": "The user with fb_id {0} and name {1} has been inserted correctly".
+                                                    format(args["fb_id"], args["user_name"] ),}
+                
+                
+                if android_users.find_one({"fb_id": args["fb_id"]}):
+                        if len(android_users.find_one({"fb_id": args["fb_id"]}).get("user_friends")) < len(args["user_friends"]):
+                                android_users.update({"fb_id": args["fb_id"]}, {"$set": {
+                                                "user_friends": args["user_friends"],}} , upsert=False) 
+                                
+                    
+                                return {"error": False,
+                                        "success": True,
+                                        "error_code": 0,
+                                        "messege": "The user with fb_id {0} and name {1} has been updated with new user_friends".
+                                                    format(args["fb_id"], args["user_name"] ),}
+                
+                        return {"error": True,
+                                "success": False,
+                                "error_code": 0, 
+                                "messege": "The user with fb_id {0} and name {1} already exists".
+                                                    format(args["fb_id"], args["user_name"] ),}
+                
+                return
+
+
+class PostComment(restful.Resource):
+	@cors
+	def post(self):
+                args = post_comment_parser.parse_args()
+                if not android_users.find_one({"fb_id": args["fb_id"]}):
+                        return {"error": True,
+                                "success": False,
+                                "messege": "Please register the user first before posting the comment",}
+                
+                android_users.update({"fb_id": args["fb_id"]}, {"$push": {
+                                                "comments": args["comment"],}}) 
+            
+                return {"error": False,
+                        "success": True,
+                        "messege": "The comment has been posted successfully",}
+                        
+
+
+
+class SuggestName(restful.Resource):
+	@cors
+	def post(self):
+                args = suggest_name_parser.parse_args()
+                if not android_users.find_one({"fb_id": args["fb_id"]}):
+                        return {"error": True,
+                                "success": False,
+                                "messege": "Please register the user first before posting the comment",}
+                
+                android_users.update({"fb_id": args["fb_id"]}, {"$push": {
+                                                "name_suggestion": args["name_suggestion"],}}) 
+            
+                return {"error": False,
+                        "success": True,
+                        "messege": "The suggestion for the name has been taken successfully",}
+
+
+
+            
+class PostPicture(restful.Resource):
+	@cors
+	def post(self):
+                args = post_pic_parser.parse_args()
+                if not android_users.find_one({"fb_id": args["fb_id"]}):
+                        return {"error": True,
+                                "success": False,
+                                "messege": "Please register the user first before posting the image",}
+
+                try:
+                        base64.decodestring(args["image_string"])
+
+                except Exception as e:
+                        return {"error": True,
+                                "success": False,
+                                "messege": "The pic cannot be posted because of the error {0}".format(e),}
+
+                
+                #md5 checksum of the base64 encoded image, to form its unique id
+                image_id = hashlib.md5(args["image_string"]).hexdigest() 
+
+
+                #to check whether the same user is going to upload the same pic again
+                if users_pic.find_one({"fb_id": args["fb_id"], "image_id": image_id }):
+                        return {"error": True,
+                                "success": False,
+                                "messege": "This pic for this user has already been posted",}
+                        
+
+
+                android_users.update({"fb_id": args["fb_id"]}, {"$push": {
+                                            "pics": image_id,}}) 
+                
+                users_pic.insert({"image_id": image_id, "image_name": args["image_name"], "fb_id": args["fb_id"], 
+                                "image_base64_encoded_string": args["image_string"]})
+
+
+                return {"error": False,
+                        "success": True,
+                        "messege": "The pic has been posted successfully",}
+
+
+                #do we have image name options to be selected from
+            
+class GetPics(restful.Resource):
 	@cors
 	def get(self):
-		result = get_all_algorithms_result(if_names=True)
-		return{ 
-				"result": result,
-				"success": True,
-				"error": False,
-				}
+                args = get_pics_parser.parse_args()
+                args["dish_name"]
+                return {"error": False,
+                        "success": True,
+                        "result": result,}
 
 
 
 
-class ProcessText(restful.Resource):
+
+
+
+
+class LimitedEateriesList(restful.Resource):
 	@cors
-	@timeit
-	def post(self):
-		"""
-		This api end point returns the text after processing or classfying with algorithm syupplied in the arguments.
-		The algorithms which is now implemented are 
-			HMM models
-			Maxent Models
-			Multinomial Naive bayes 
-			Logistic regression models
-			Support vector machines models
-		"""
-
-		start = time.time()
-
-		args = process_text_parser.parse_args()
-		text = args["text"]
-		algorithm = args["algorithm"]
-
-		print "this is the fucking algorithm name %s"%algorithm
-		if not bool(text):
-			return {
-				"error": True,
-				"success": False,
-				"error_code": 101,
-				"messege": "Text field cannot be left empty"
-				}
-
-		if not bool(algorithm):
-			return {
-				"error": True,
-				"success": False,
-				"error_code": 302,
-				"messege": "Algorithm field cannot be left empty"
-				}
-
-	
-		tokenizer = SentenceTokenizationOnRegexOnInterjections()
-		tokenized_sentences = tokenizer.tokenize(to_unicode_or_bust(text))
-		#predicted = classifier.predict(new_data)
+	def get(self):
+                """
+                This gives only the limited eatery list like the top on the basis of the reviews count
+                """
+                result = list(eateries.find({"eatery_area_or_city": "ncr"}, fields= {"eatery_id": True, "_id": False, "eatery_name": True}).limit(200).sort("eatery_total_reviews", -1))
 		
-		with cd(path_in_memory_classifiers):
-			tag_classifier = joblib.load('{0}_tag.lib'.format(algorithm))
-			sentiment_classifier = joblib.load('{0}_sentiment.lib'.format(algorithm))
-			rp_rc_classifier = joblib.load('{0}_rp_rc.lib'.format(algorithm))
-		
-		__predicted_tags = tag_classifier.predict(tokenized_sentences)
-		__predicted_sentiment = sentiment_classifier.predict(tokenized_sentences)
-		__predicted_customers = rp_rc_classifier.predict(tokenized_sentences)
-
-
-
-		noun_phrase, result = list(), list()
-			
-		print zip(tokenized_sentences, __predicted_tags, __predicted_sentiment, __predicted_customers)
-		
-		print "\n\n%s \n\n"%(time.time() - start)
-		instance = ProcessingWithBlobInMemory()
-		index = 0
-		for chunk in zip(tokenized_sentences, __predicted_tags, __predicted_sentiment, __predicted_customers):
-			nouns = instance.noun_phrase(to_unicode_or_bust(chunk[0]))
-			element = dict()
-			element["sentence"] = chunk[0]
-			element["polarity"] = {"name": chunk[2], "value": '0.0'}
-			element["noun_phrases"] = list(nouns)
-			element["tag"] = chunk[1]
-			element["customer_type"] = chunk[3]
-			result.append(element)
-			noun_phrase.extend(list(nouns))
-			index += 1
-	
-		return {
-				"result": result,
-				"success": True,
-				"error": False,
-				"overall_sentiment": '%.2f'%ProcessingWithBlob.new_blob_polarity(to_unicode_or_bust(text)),
-				"noun_phrase": noun_phrase,
-				}
-
-
-
-
-class UpdateModel(restful.Resource):
-	@cors
-	def post(self):
-		args = update_model_parser.parse_args()
-		sentence = args["sentence"]
-		tag = args["tag"]
-		review_id = args["review_id"]
-
-		path = (os.path.join(os.path.dirname(os.path.abspath(__file__)) + "/trainers/valid_%s.txt"%tag))
-	
-		if not os.path.exists(path):
-			return {"success": False,
-					"error": True,
-					"messege": "The tag {0} you mentioned doesnt exist in the learning model, ask admin to create this file".format(tag),
-					"error_code": 201,
-				}
-
-
-
-		reviews.update({"review_id": review_id}, {"$push": {tag: sentence}}, upsert=False)
-		with open(path, "a") as myfile:
-			myfile.write(sentence)
-			myfile.write("\n")
-	
-		return {"success":  True,
+                return {"success": True,
 			"error": False,
-			"messege": "The sentence --{0}-- with the changed tag --{1}-- with id --{2} has been uploaded".format(sentence, tag, review_id),
-			}
-	
-class UpdateReviewError(restful.Resource):
-	@cors
-	def post(self):
-		args = update_review_error_parser.parse_args()
-		sentence = args["sentence"]
-		error = args["is_error"]
-		review_id = args["review_id"]
-		error_messege = args["error_messege"]
-
-		if int(error) != 2:
-			return {"success": False,
-					"error": True,
-					"messege": "Only error sentences can be tagged, 'void' is an invalid tag",
-					"error_code": 207,
-				}
-	
-		path = (os.path.join(os.path.dirname(os.path.abspath(__file__)) + "/trainers/valid_%s.txt"%'error'))
-		if not os.path.exists(path):
-			return {"success": False,
-					"error": True,
-					"messege": "some error occurred",
-					"error_code": 210,
-				}
-	
-	
-	
-		reviews.update({"review_id": review_id}, {"$push": {"error": {"sentence": sentence, "error_messege": error_messege}}}, upsert=False)
-		with open(path, "a") as myfile:
-			myfile.write(sentence)
-			myfile.write("\n")
-	
-		return {"success":  True,
-			"error": False,
-			"messege": "The sentence --{0}-- with the error messege --{1}-- with id --{2} has been uploaded".format(sentence, error_messege, review_id),
-			}
-	
-
-class UploadInterjectionError(restful.Resource):
-	@cors
-	def post(self):
-		args = upload_interjection_error_parser.parse_args()
-		sentence = args["sentence"]
-		error = args["is_error"]
-		review_id = args["review_id"]
-		if int(error) != 3:
-			return {"success": False,
-					"error": True,
-					"messege": "Only interjection sentences can be tagged, 'void' is an invalid tag",
-					"error_code": 207,
-					}
-
-		path = (os.path.join(os.path.dirname(os.path.abspath(__file__)) + "/trainers/valid_%s.txt"%'interjection'))
-		if not os.path.exists(path):
-			return {"success": False,
-					"error": True,
-					"messege": "File doenst exists for interjection",
-					"error_code": 210,
-				}
-
-
-
-		reviews.update({"review_id": review_id}, {"$push": {"interjection": {"sentence": sentence}}}, upsert=False)
-		with open(path, "a") as myfile:
-			myfile.write(sentence)
-			myfile.write("\n")
-	
-		return {"success":  True,
-			"error": False,
-			"messege": "The sentence --{0}-- with id --{1} has been uploaded for interjection erros".format(sentence, review_id),
+			"result": result,
 			}
 
-
-class UpdateCustomer(restful.Resource):
-	@cors
-	def post(self):
-		args = update_customer_parser.parse_args()
-		sentence = args["sentence"]
-		option_value = args["option_value"]
-		option_text = "_".join(args["option_text"].split())
-		review_id = args["review_id"]
-
-		if int(option_value) != 2 and int(option_value) != 3:
-			return {"success": False,
-					"error": True,
-					"messege": "Only repeated customer or recommended customer sentences can be tagged, 'void' is an invalid tag",
-					"error_code": 206,
-				}
-	
-		path = (os.path.join(os.path.dirname(os.path.abspath(__file__)) + "/trainers/valid_%s.txt"%option_text))
-	
-		if not os.path.exists(path):
-			return {"success": False,
-					"error": True,
-					"messege": "File for {0} doesnt exists in the backend, Please contact your asshole admin".format(option_text),
-					"error_code": 205,
-				}
-
-
-
-		with open(path, "a") as myfile:
-			myfile.write(sentence)
-			myfile.write("\n")
-	
-	
-	
-		reviews.update({"review_id": review_id}, {"$push": {"{0}s".format(option_text): sentence}})
-		return {"success":  True,
-			"error": False,
-			"messege": "The sentence --{0}-- with review id --{1} has been uploaded for {2}".format(sentence, review_id, option_text),
-			}
-
-
-
+                
 class EateriesList(restful.Resource):
 	@cors
-	def post(self):
-		args = eateries_list_parser.parse_args()
-		city = args["city"]
-		result = list(eateries.find({"area_or_city": city }, fields= {"eatery_id": True, "_id": False, "eatery_name": True}))
-		return {"success": False,
-			"error": True,
-			"result": result,
-			}
-
-
-
-class EateriesDetails(restful.Resource):
-	@cors
-	def post(self):
-		args = eateries_details_parser.parse_args()
-		__id = args["eatery_id"]
-	
-		result = eateries.find_one({"eatery_id": __id}, fields= {"_id": False})
-		is_classified_reviews = list(reviews.find({"eatery_id": __id, "is_classified": True}, fields= {"_id": False}))
-		not_classified_reviews = list(reviews.find({"eatery_id": __id, "is_classified": False}, fields= {"_id": False}))
-	
-		return {"success": False,
-			"error": True,
-			"result": result,
-			"classified_reviews": is_classified_reviews,
-			"unclassified_reviews": not_classified_reviews,
-			}
-
-
-
-
-class UpdateReviewClassification(restful.Resource):
-	@cors
-	def post(self):
-		args = update_review_classification_parser.parse_args()
-		__id = args["review_id"]
-
-		if not reviews.find_one({'review_id': __id}):
-			return {"success": False,
-					"error": True,
-					"messege": "The review doesnt exists",
-			}
-
-		if reviews.find_one({'review_id': __id}).get("is_classified"):
-			return {"success": False,
-					"error": True,
-					"messege": "The reviews has already been marked classified, Please refresh the page",
-			}
-	
-	
-	
-		reviews.update({'review_id': __id}, {"$set":{ "is_classified": True, "classified_at": time.time()}}, upsert=False)
-		return {"success": True,
-					"error": False,
-					"messege": "The reviews has been marked classified",
-			}
-
-	
-	
-class GetReviewDetails(restful.Resource):
-	@cors
-	def post(self):
-		args = get_review_details_parser.parse_args()
-		__id = args["review_id"]
-
-		if not reviews.find_one({'review_id': __id}):
-			return {"success": False,
-					"error": True,
-					"messege": "The review doesnt exists",
-			}
-			
-		result = reviews.find_one({'review_id': __id}, fields={"_id": False})
-		return {"success": True,
-					"error": False,
-					"result": result,
-			}
-
-
-
-class GetNgramsParser(restful.Resource):
-	@cors
-	def post(self):
-		args = get_ngrams_parser.parse_args()
-		sentence = args["sentence"]
-		grams = args["grams"]
-		if not sentence:
-			return {"success": False,
-					"error": True,
-					"messege": "The text field cannot be left empty",
-			}
-		
-		if not grams:
-			return {"success": False,
-					"error": True,
-					"messege": "The grams field cannot be left empty",
-			}
-	
-		if grams == "void":
-			return {"success": False,
-					"error": True,
-					"messege": "The grams field cannot be equals to void",
-			}
-
-
-		return {"success": True,
-					"error": False,
-					"result": nltk_ngrams(sentence, grams),
-			}
-
-
-
-class UploadNounPhrases(restful.Resource):
-	@cors
-	def post(self):
-		args = upload_noun_phrases_parser.parse_args()
-		noun_phrase = args["noun_phrase"]
-		review_id = args["review_id"]
-		sentence = args["sentence"]
-		if not reviews.find_one({'review_id': review_id}):
-			return {"success": False,
-					"error": True,
-					"messege": "The review doesnt exists",
-			}
-	
-		if not noun_phrase:
-			return {"success": False,
-					"error": True,
-					"messege": "The Noun phrase field cannot be left empty",
-			}
-		
-		reviews.update({"review_id": review_id}, {"$push": {"noun_phrases": {"sentence": sentence, "phrase": noun_phrase}}}, upsert=False)
-		return {"success": True,
-					"error": False,
-					"messege": "noun phrase --{0}-- for sentence --{1}-- with review id --<{2}>--has been uploaded".format(noun_phrase, sentence, review_id),
-			}
-
-class GetReviewCount(restful.Resource):
-	@cors
 	def get(self):
-		"""
-		({(u'ncr', False): 20607, (u'mumbai', False): 14770, (u'bangalore', False): 12534, (u'kolkata', False): 10160, (u'chennai', False): 8283, (u'pune', False): 7107, (u'hyderabad', False): 6525, (u'ahmedabad', False): 5936, (u'chandigarh', False): 3446, (u'jaipur', False): 3269, (u'guwahati', False): 1244, (u'ncr', True): 1})
-	
-	
-		[{'city': 'ncr', 'classfied': 1, 'unclassfied': 20607}, {'city': 'mumbai', 'classfied': 0, 'unclassfied': 14770},
-		{'city': 'bangalore', 'classfied': 0, 'unclassfied': 12534}, {'city': 'kolkata', 'classfied': 0, 'unclassfied': 10160},
-		{'city': 'chennai', 'classfied': 0, 'unclassfied': 8283}, {'city': 'pune', 'classfied': 0, 'unclassfied': 7107},
-		{'city': 'hyderabad', 'classfied': 0, 'unclassfied': 6525}, {'city': 'ahmedabad', 'classfied': 0, 'unclassfied': 5936},
-		{'city': 'chandigarh', 'classfied': 0, 'unclassfied': 3446}, {'city': 'jaipur', 'classfied': 0, 'unclassfied': 3269},
-		{'city': 'guwahati', 'classfied': 0, 'unclassfied': 1244}]
-		"""
-		dictionary = Counter([(post.get("area_or_city"), post.get("is_classified")) for post in reviews.find(fields={"_id": False})])
-		cities = ['ncr', 'mumbai', 'bangalore', 'kolkata', 'chennai', 'pune', 'hyderabad', 'ahmedabad', 'chandigarh', 'jaipur', 'guwahati']	
-		result = [{"city": city, "classified": dictionary[(city, True)], "unclassified": dictionary[(city, False)]} for city in cities]
-	
-		total_classified = sum([entry.get("classified") for entry in result])
-		total_unclassified = sum([entry.get("unclassified") for entry in result])
-
-		result.append({"city": "Total", "classified": total_classified, "unclassified": total_unclassified})
-		return {"success": True,
-				"error": True,
-				"result": result,
-		}
-
-
-
-
+                result = list(eateries.find({"eatery_area_or_city": "ncr"}, fields= {"eatery_id": True, "_id": False, "eatery_name": True}).limit(200).sort("eatery_total_reviews", -1))
+		
+                return {"success": True,
+			"error": False,
+			"result": result,
+			}
 
 
 
@@ -653,228 +482,368 @@ class GetStartDateForRestaurant(restful.Resource):
 				"result": {"start": "{0}-{1}-{2}".format(start_year, start_month, start_date), 
 					"end": "{0}-{1}-{2}".format(end_year, end_month, end_date)},
 		}
-	
-
-
-
-class WordCloudWithDates(restful.Resource):
-	@cors
-	def post(self):
-		args = word_cloud_with_dates_parser.parse_args()
-		__format = '%Y-%m-%d'
-		eatery_id = args["eatery_id"]
-		category = args["category"].split("__")[1].lower()
-		start_epoch = time.mktime(time.strptime(args["start_date"], __format))
-		end_epoch = time.mktime(time.strptime(args["end_date"], __format))
-
-
-	
-		polarity=lambda x: "positive" if float(x)>= 0 else "negative"
-		
-	
-		review_result = list(reviews.find({"eatery_id" :eatery_id, "converted_epoch": {"$gt":  start_epoch, "$lt" : end_epoch}}))
-	
-		noun_phrases_dictionary = dict.fromkeys([review.get("review_time").split(" ")[0] for review in review_result], list())
-	
-		for review in review_result:
-			date = review.get("review_time").split(" ")[0]
-			text_classfication = Classifier(to_unicode_or_bust(review.get("review_text")))
-			filtered_tag_text = [text[0] for text in text_classfication.with_svm() if text[1] == category]
-			for text in filtered_tag_text:
-				instance = ProcessingWithBlob(to_unicode_or_bust(text))
-				#per_review.extend([(noun.lower(),  polarity(instance.sentiment_polarity())) for noun in instance.noun_phrase()])
-				noun_phrases_dictionary[date] = noun_phrases_dictionary[date] + [(noun.lower(),  polarity(instance.sentiment_polarity())) for noun in instance.noun_phrase()]
-	
-	
-	
-		#The abobve noun phrase dictionary is in the form of {"2014-9-10": ["phrases", "phrases", ....], ..., ... }
-		#This should be converted into the form of list of dictionaries with "Date" key corresponds to date and "[hrase" key corresponds to the 
-		#phrases asccociated with this date
-	
-		result = [{"date": key, "phrases": noun_phrases_dictionary[key]} for key in noun_phrases_dictionary.keys()]
-	
-		return {"success": True,
-				"error": True,
-				"result": result
-		}
 
 
 class GetWordCloud(restful.Resource):
 	@cors
 	@timeit
         def post(self):
-		start = time.time()
-
-
-		args = get_word_cloud_parser.parse_args()
+		"""
+                __test_eateries = [("7227", 232), ("4114", 50), ("154", 25), ("307799", 109), ("4815", 403), ("94286", 704)]
+                To test
+                    eatery_id = "4571"
+                    start_epoch = 1318185000.0
+                    end_epoch = 1420569000.0
+                    
+                    start_date = "2011-10-10"
+                    end_date = "2015-01-07"
+                    category = "food"
+                """ 
+                args = get_word_cloud_parser.parse_args()
+                start = time.time()
 		__format = '%Y-%m-%d'
 		eatery_id = args["eatery_id"]
-		category = args["category"].split("__")[1].lower()
-		
-		try:
-			start_epoch = time.mktime(time.strptime(args["start_date"], __format))
-			end_epoch = time.mktime(time.strptime(args["end_date"], __format))
-		except Exception:
-			return {"success": False,
-				"error": "Dude!!, Please wait for the dates to be updated",
-			}
-	
-		
-		
-		noun_phrases_list = list()
-
-
-                #This is mongodb query for the arguments given int he post request, And the result is a list of reviews
-		review_result = reviews.find({"eatery_id" :eatery_id, "converted_epoch": {"$gt":  start_epoch, "$lt" : end_epoch}})
-	
-            
-		review_text = [to_unicode_or_bust(post.get("review_text")) for post in review_result]
-		review_text = " .".join(review_text)
-
-		
-		with cd(path_in_memory_classifiers):
-			tag_classifier = joblib.load('svm_grid_search_classifier_tag.lib')
-			sentiment_classifier = joblib.load('svm_grid_search_classifier_sentiment.lib')
-		
-		noun_phrase = list()
-		result = list() 
-
-		sent_tokenizer = SentenceTokenizationOnRegexOnInterjections()
-		
-		
-		test_sentences = sent_tokenizer.tokenize(to_unicode_or_bust(review_text))
-
-		##with svm returns a list in the following form
-		##[(sentence, tag), (sentence, tag), ................]
-		#for chunk in text_classfication.with_svm():
-		
-		#Getting Sentiment analysis
-		__predicted_tags = tag_classifier.predict(test_sentences)
-		__predicted_sentiment = sentiment_classifier.predict(test_sentences)
-
-
-		index = 0
-
-		#classified_sentences = [('but in the afternoon , it is usually unoccupied .', 'null'),
-		#(u'the food is fine , hard - to - eat in some cases .', 'food')]
-
-		#__predicted_sentiment = ["null", "negative" ]
-
-		print "\n\n %s \n\n"%(time.time() - start)
-
-		new_time = time.time()
-		filtered_tag_text = [text for text in zip(test_sentences, __predicted_tags, __predicted_sentiment) if text[1] == category]
-	
-
-		instance = ProcessingWithBlobInMemory()
-		__k = lambda text: noun_phrases_list.extend([(noun.lower(),  text[2]) for noun in instance.noun_phrase(to_unicode_or_bust(text[0]))])	
-		
-		for text in filtered_tag_text:
-			noun_phrases_list.extend([(noun.lower(),  text[2]) for noun in instance.noun_phrase(to_unicode_or_bust(text[0]))])
-
-
-		
-		##Incresing and decrasing frequency of the noun phrases who are superpositive and supernegative and changing
-		##their tags to positive and negative
-		edited_result = list()
-		for __noun_phrase_dict in noun_phrases_list:
-			if __noun_phrase_dict[1] == "super-positive" or __noun_phrase_dict[1] == "super-negative":
-				edited_result.append((__noun_phrase_dict[0], __noun_phrase_dict[1].split("-")[1]))
-				#Added twice beacause super postive was given twice as weightage as positive and some goes for supernegative 
-				#and negative
-				edited_result.append((__noun_phrase_dict[0], __noun_phrase_dict[1].split("-")[1]))
-
-			else:
-				edited_result.append(__noun_phrase_dict)
-
-		result = list()
-
-		for key, value in Counter(edited_result).iteritems():
-			result.append({"name": key[0], "polarity": 1 if key[1] == 'positive' else 0 , "frequency": value}) 
-		
-
-		"""
-		with open("/home/k/word_cloud.csv", "wb") as csv_file:
-			writer = csv.writer(csv_file, delimiter=',')
-			for line in result:
-				writer.writerow([line.get("name").encode("utf-8"), line.get("polarity"), line.get("frequency")])
-		"""
-
-		sorted_result = sorted(result, reverse=True, key=lambda x: x.get("frequency"))
-
-		"""
-		#final_result = sorted(merging_similar_elements(sorted_result), reverse=True, key=lambda x: x.get("frequency"))
+		category = args["category"].lower()
                 
-                for element in final_result:
-                    print element 
+                total_noun_phrases = (None, args["total_noun_phrases"])[args["total_noun_phrases"] != None]
                 
+                word_tokenization_algorithm_name = ("punkt_n_treebank", args["word_tokenization_algorithm"])[args["word_tokenization_algorithm"] != None]
+                
+                
+                noun_phrases_algorithm_name = ("textblob_np_conll", args["noun_phrases_algorithm"])[args["noun_phrases_algorithm"] != None]
+                
+                
+                pos_tagging_algorithm_name = ("hunpos_pos_tagger", args["pos_tagging_algorithm"])[args["pos_tagging_algorithm"] != None]
+                
+                tag_analysis_algorithm_name = ("svm_linear_kernel_classifier_tag.lib", 
+                                                    "{0}_tag.lib".format(args["tag_analysis_algorithm"]))[args["tag_analysis_algorithm"] != None]
+                
+                sentiment_analysis_algorithm_name = ("svm_linear_kernel_classifier_sentiment.lib", 
+                                    "{0}_sentiment.lib".format(args["sentiment_analysis_algorithm"]))[args["sentiment_analysis_algorithm"] != None]
+
+                np_clustering_algorithm_name = ("k_means", args["np_clustering_algorithm"])[args["np_clustering_algorithm"] != None]
+                
+                ner_algorithm_name = ("nltk_maxent_ner", args["ner_algorithm"])[args["ner_algorithm"] != None]
+    
+                if args["start_date"] and ["end_date"]:
+		        try:
+		                start_epoch = time.mktime(time.strptime(args["start_date"], __format))
+			        end_epoch = time.mktime(time.strptime(args["end_date"], __format))
+		        except Exception:
+			        return {"success": False,
+                                        "error": True,
+                                        }
+
+                else:
+                        start_epoch, end_epoch = None, None
+	
+
+                if tag_analysis_algorithm_name.replace("_tag.lib", "") != sentiment_analysis_algorithm_name.replace("_sentiment.lib", ""):
+                        return {"error": True,
+                                "success": False,
+                                "error_messege": "Right now, only the same algortihm can be used for tag, sentiment and cost analysis,\
+                                        Make sure you are sending the same algortihm name for all the classification problems", 
+                                }
+                        
+
+
+
+
+		print "start epoch is -->%s and end_apoch is -->%s"%(start_epoch, end_epoch) 
+                if not reviews.find({"eatery_id": eatery_id}):
+                        return {"error": True,
+                                "success": False,
+                                "error_messege": "The eatery id  {0} is not present".format(eatery_id), 
+                                }
+
+
+
+                #name of the eatery
+                eatery_name = eateries.find_one({"eatery_id": eatery_id}).get("eatery_name")
+                print eatery_name
+                if category not in ["service", "food", "ambience", "null", "overall", "cost"]:
+                        return {"error": True,
+                                "success": False,
+                                "error_messege": "This is a n invalid tag %s"%category, 
+                                }
+        
+                
+
+                print eatery_id, category, start_epoch,  end_epoch, tag_analysis_algorithm_name, sentiment_analysis_algorithm_name,\
+                        word_tokenization_algorithm_name, pos_tagging_algorithm_name, noun_phrases_algorithm_name, np_clustering_algorithm_name,\
+                        total_noun_phrases, ner_algorithm_name
+               
+                result = list()
+      
+                if start_epoch and end_epoch:
+                        review_list = [(post.get("review_id"), post.get("review_text")) for post in 
+                            reviews.find({"eatery_id" :eatery_id, "converted_epoch": {"$gt":  start_epoch, "$lt" : end_epoch}})]
+                else:
+                        review_list = [(post.get("review_id"), post.get("review_text")) for post in reviews.find({"eatery_id" :eatery_id})] 
+
+                sent_tokenizer = SentenceTokenizationOnRegexOnInterjections()
+                
+                
+                sentences = list()
+                for review in review_list:
+                        for __sentence in sent_tokenizer.tokenize(review[1]):
+                                    __sentence = encoding_help(__sentence)
+                                    sentences.append([review[0], __sentence])
+
+                review_ids, sentences = zip(*sentences)
+
+
+                tag_classifier = joblib.load("{0}/{1}".format(path_in_memory_classifiers, tag_analysis_algorithm_name))              
+                predicted_tags = tag_classifier.predict(sentences)
+
+                filtered_list = list()
+
+
+
+                if category == "cost":
+                        filtered_list = [e for e in zip(review_ids, sentences, predicted_tags) if e[2] == "cost"]
+
+                        file_path = os.path.dirname(os.path.abspath(__file__))
+                        classifier_path = "{0}/Text_Processing/PrepareClassifiers/InMemoryClassifiers/".format(file_path)
+                        classifier = joblib.load("{0}{1}".format(classifier_path, "svm_linear_kernel_classifier_cost.lib"))
+                        
+                        for k, v in Counter(classifier.predict(sentences)).items():
+                                if k == "cost-null":
+                                        pass
+                                else:
+                                    result.append({"name": k,
+                                                    "positive": v,
+                                                    "negative": 0})
+                        return {"success": True,
+				"error": False,
+                                "result": result,
+                                }
+               
+
+                
+                from textblob.np_extractors import ConllExtractor 
+                extractor = extract.TermExtractor()
+                conll_extractor = ConllExtractor()
+                
+                def custom_noun_phrases(sentence):
+                        blob = TextBlob(sentence, np_extractor=conll_extractor)
+                        nouns = extractor(sentence)
+                        #print list(set.union(set(blob.noun_phrases), set([e[0] for e in nouns])))
+                        return list(set.union(set(blob.noun_phrases), set([e[0] for e in nouns])))
+
+                sentiment_classifier = joblib.load("{0}/{1}".format(path_in_memory_classifiers, sentiment_analysis_algorithm_name))              
+                predicted_sentiment = sentiment_classifier.predict(sentences)
+                
+               
+                
+                filtered_list = [e for e in zip(review_ids, sentences, predicted_tags, predicted_sentiment) if e[2] == category]
+                
+
+                review_ids, sentences, predicted_tags, predicted_sentiment = zip(*filtered_list)
+
+
+                __result = list(itertools.chain(*[[(__tuple_sentiment_nouns[0], e) for e in __tuple_sentiment_nouns[1]] for __tuple_sentiment_nouns in zip(predicted_sentiment, [custom_noun_phrases(sent) for sent in sentences])]))
+                
+
+
+                """filtered_list
+                word_tokenize = WordTokenize(sentences,  default_word_tokenizer= word_tokenization_algorithm_name)
+                word_tokenization_algorithm_result = word_tokenize.word_tokenized_list.get(word_tokenization_algorithm_name)
+
+
+                __pos_tagger = PosTaggers(word_tokenization_algorithm_result,  default_pos_tagger=pos_tagging_algorithm_name)
+                pos_tagging_algorithm_result =  __pos_tagger.pos_tagged_sentences.get(pos_tagging_algorithm_name)
+
+
+                __noun_phrases = NounPhrases(pos_tagging_algorithm_result, default_np_extractor=noun_phrases_algorithm_name)
+                noun_phrases_algorithm_result =  __noun_phrases.noun_phrases.get(noun_phrases_algorithm_name)
                 """
-                final_result = sorted(sorted_result, reverse=True, key=lambda x: x.get("frequency"))
 
-                for element in sorted(final_result, key=lambda x: x.get("name")):
-                    print element 
-		
+                #result = [element for element in zip(predicted_sentiment, noun_phrases_algorithm_result) if element[1]]
+                result = [element for element in __result if element[1]]
+
+                edited_result = list()
+                for element in result:
+                        if element[0].startswith("super"):
+                                edited_result.append((element[1], element[0].split("-")[1]))
+                                edited_result.append((element[1], element[0].split("-")[1]))
+                        else:
+                                edited_result.append((element[1], element[0]))
+
+
+                print eatery_name 
+                edited_result = [e for e in edited_result if not set.intersection(set(e[0].lower().split(" ")), set(["great", "good", "i", eatery_name.lower(), category]))]
+                final_result = list()
+                for key, value in Counter(edited_result).iteritems():
+                        final_result.append({"name": key[0], "polarity": 1 if key[1] == 'positive' else 0 , "frequency": value})
+                
+                sorted_result = sorted(final_result, reverse=True, key=lambda x: x.get("frequency")) 
+                
+                for e in sorted_result[0: 30]:
+                    print e
+                
+                __result = HeuristicClustering(sorted_result, None)
+
+        
+            
+
+                result = sorted(__result.result, reverse=True, key= lambda x: x.get("positive"))
+                
                 return {"success": True,
-				"error": True,
-				"result": final_result[0:30],
-		}
-	
-	
-class GetValidFilesCount(restful.Resource):
-	@timeit
-	@cors
-	def get(self):
-		"""
-		This function counts the number of lines present in the valid files
-		It checks how much updation has been done to the valid fieles by the canworks guys
-		"""
-		result = list()
-		file_list =  [os.path.join(file_path + "/" + file) for file in os.listdir(path_trainers_file)]
+				"error": False,
+                                "result": result[0: 30],
+                    }
+
+
+class UpdateClassifier(restful.Resource):
+        @cors
+        @timeit
+        def post(self):
+                """
+                Update the classifier with new data into the InMemoryClassifiers folder
+                """
+                args = update_classifiers.parse_args()    
+                whether_allowed = False
+
+                if not whether_allowed:
+                        return {"success": False,
+                                "error": True,
+                                "messege": "Right now, Updating Tags or sentiments are not allowed",
+                                }
+
+
+                
+                return {"success": True,
+                        "error": False,
+                        "messege": "Updated!!!",
+                        }
+
+
+
+class ChangeTagOrSentiment(restful.Resource):
+        @cors
+        @timeit
+        def post(self):
+                """
+                Updates a sentece with change tag or sentiment from the test.html,
+                as the sentences will have no review id, the review_id will be marked as misc and will be stored in 
+                training_sentiment_collection or training_tag_collection depending upon the tag or seniment being updated
+                """
+                args = change_tag_or_sentiment_parser.parse_args()    
+                sentence = args["sentence"]
+                value = args["value"]
+                whether_allowed = False
+
+                if not whether_allowed:
+                        return {"success": False,
+                                "error": True,
+                                "messege": "Right now, Updating Tags or sentiments are not allowed",
+                                }
+
+
+                
+                return {"success": True,
+                        "error": False,
+                        "messege": "Updated!!!",
+                        }
+
+
+class RawTextParser(restful.Resource):
+        @cors
+        @timeit
+        def post(self):
+                result = list()
+
+                word_tokenization_algorithm = "punkt_n_treebank"
+                noun_phrases_algorithm = "textblob_np_conll"
+                pos_tagging_algorithm = "hunpos_pos_tagger"
+                
+                path = "/home/kaali/Programs/Python/Canworks/Canworks/Text_Processing/PrepareClassifiers/InMemoryClassifiers/"
+                args = raw_text_processing_parser.parse_args()    
+                text = args["text"]
+                
+
+                text = text.replace("\n", "")
+                sentiment_result = list()
+                sent_tokenizer = SentenceTokenizationOnRegexOnInterjections()
+                sentences = sent_tokenizer.tokenize(text)
+
+                tag_classifier = joblib.load("{0}/{1}".format(path_in_memory_classifiers, "svm_linear_kernel_classifier_tag.lib"))
+                new_sentiment_classifier = joblib.load("{0}/{1}".format(path_in_memory_classifiers, "svm_linear_kernel_classifier_sentiment_new_dataset.lib"))
+                
 		
-		for file in file_list:
-			result.append((file, subprocess.check_output(["wc", "-l", file]).split(" ")[0]))
-		return {"success": True,
-				"error": True,
-				"result": result,
-		}
+                
+                predicted_tags = tag_classifier.predict(sentences)
+                predicted_sentiment = new_sentiment_classifier.predict(sentences)
 
 
 
-
-class OnePageApi(restful.Resource):
-	@cors
-	@timeit
-	def get(self):
-		return {"success": True,
-				"error": True,
-				"result": static_data,
-		}
-
-	
+                
+                word_tokenize = WordTokenize(sentences,  default_word_tokenizer='punkt_n_treebank')
+                word_tokenization_algorithm_result = word_tokenize.word_tokenized_list.get('punkt_n_treebank')
 
 
+                __pos_tagger = PosTaggers(word_tokenization_algorithm_result,  default_pos_tagger='hunpos_pos_tagger')
+                pos_tagging_algorithm_result =  __pos_tagger.pos_tagged_sentences.get('hunpos_pos_tagger')
 
-api.add_resource(ProcessText, '/process_text')
-api.add_resource(UpdateModel, '/update_model')
-api.add_resource(UpdateReviewError, '/update_review_error')
-api.add_resource(UploadInterjectionError, '/upload_interjection_error')
-api.add_resource(UpdateCustomer, '/update_customer')
+
+                __noun_phrases = NounPhrases(pos_tagging_algorithm_result, default_np_extractor="textblob_np_conll")
+                noun_phrases_algorithm_result =  __noun_phrases.noun_phrases.get("textblob_np_conll")
+
+                result = [element for element in zip(predicted_sentiment, noun_phrases_algorithm_result) if element[1]]
+
+                edited_result = list()
+                for element in result:
+                        if element[0].startswith("super"):
+                                edited_result.append((element[1], element[0].split("-")[1]))
+                                edited_result.append((element[1], element[0].split("-")[1]))
+                        else:
+                                edited_result.append((element[1], element[0]))
+
+
+                edited_result = list(itertools.chain(*[[(__k, __e[1]) for __k in __e[0]] for __e in edited_result]))
+                final_result = list()
+                for key, value in Counter(edited_result).iteritems():
+                        final_result.append({"name": key[0], "polarity": 1 if key[1] == 'positive' else 0 , "frequency": value})
+                
+
+
+                sorted_result = sorted(final_result, reverse=True, key=lambda x: x.get("frequency")) 
+                __result = HeuristicClustering(sorted_result, None)
+
+                result = list()
+                for k, v in __result.result.iteritems():
+                        result.append({"name": k, "positive": v.get("positive"), "negative": v.get("negative")})
+
+        
+            
+
+                result = sorted(result, reverse=True, key= lambda x: x.get("positive") + x.get("negative"))
+                def convert_sentences(__object):
+                        return {"sentence": __object[0], 
+                                "tag": __object[1],
+                                "sentiment": __object[2], }
+
+
+                return {"success": True,
+				"error": False,
+                                "result": result,
+                                "sentences": map(convert_sentences, zip(sentences, predicted_tags, predicted_sentiment)),
+                                }
+
+
 api.add_resource(EateriesList, '/eateries_list')
-api.add_resource(EateriesDetails, '/eateries_details')
-api.add_resource(UpdateReviewClassification, '/update_review_classification')
-api.add_resource(GetReviewDetails, '/get_review_details')
-api.add_resource(GetNgramsParser, '/get_ngrams')
-api.add_resource(UploadNounPhrases, '/upload_noun_phrases')
-api.add_resource(GetReviewCount, '/get_reviews_count')
-api.add_resource(GetStartDateForRestaurant, '/get_start_date_for_restaurant')
-api.add_resource(WordCloudWithDates, '/get_word_cloud_with_dates')
+api.add_resource(LimitedEateriesList, '/limited_eateries_list')
 api.add_resource(GetWordCloud, '/get_word_cloud')
-api.add_resource(GetValidFilesCount, '/get_valid_files_count')
-api.add_resource(AlgorithmsComparison, '/compare_algorithms')
-api.add_resource(OnlyAlgortihmsNames, '/get_all_algorithms_name')
-api.add_resource(OnePageApi, '/one_page_api')
+api.add_resource(FBLogin, '/fb_login')
+api.add_resource(PostComment, '/post_comment')
+api.add_resource(SuggestName, '/name_suggestion')
+api.add_resource(PostPicture, '/post_pic')
+api.add_resource(GetPics, '/get_pics')
+api.add_resource(GetStartDateForRestaurant, '/get_start_date_for_restaurant') 
+api.add_resource(RawTextParser, '/raw_text_processing') 
+api.add_resource(ChangeTagOrSentiment, '/change_tag_or_sentiment')
 
 
 if __name__ == '__main__':
-        #load_classifiers_in_memory()
-	app.run(port=8000, debug=True)
+        app.run(port=8000, debug=True)
