@@ -47,7 +47,7 @@ from topia.termextract import extract
 
 from Text_Processing import WordTokenize, PosTaggers, NounPhrases
 
-
+import decimal
 import time
 from datetime import timedelta
 import pymongo
@@ -100,6 +100,7 @@ api = restful.Api(app,)
 
 
 
+decimal.getcontext().prec = 2
 
 def encoding_help(obj):
         if not isinstance(obj, unicode):
@@ -618,9 +619,26 @@ class GetWordCloud(restful.Resource):
 				"error": False,
                                 "result": result,
                                 }
+                if category == "ambience":
+                        filtered_list = [e for e in zip(review_ids, sentences, predicted_tags) if e[2] == "cost"]
+
+                        file_path = os.path.dirname(os.path.abspath(__file__))
+                        classifier_path = "{0}/Text_Processing/PrepareClassifiers/InMemoryClassifiers/".format(file_path)
+                        classifier = joblib.load("{0}{1}".format(classifier_path, "svm_linear_kernel_classifier_ambience.lib"))
+                        
+                        for k, v in Counter(classifier.predict(sentences)).items():
+                                if k == "ambience-null":
+                                        pass
+                                else:
+                                    result.append({"name": k,
+                                                    "positive": v,
+                                                    "negative": 0})
+                        return {"success": True,
+				"error": False,
+                                "result": result,
+                                }
                
 
-                
                 from textblob.np_extractors import ConllExtractor 
                 extractor = extract.TermExtractor()
                 conll_extractor = ConllExtractor()
@@ -631,7 +649,7 @@ class GetWordCloud(restful.Resource):
                         #print list(set.union(set(blob.noun_phrases), set([e[0] for e in nouns])))
                         return list(set.union(set(blob.noun_phrases), set([e[0] for e in nouns])))
 
-                sentiment_classifier = joblib.load("{0}/{1}".format(path_in_memory_classifiers, sentiment_analysis_algorithm_name))              
+                sentiment_classifier = joblib.load("{0}/{1}".format(path_in_memory_classifiers, "svm_linear_kernel_classifier_sentiment_new_dataset.lib"))              
                 predicted_sentiment = sentiment_classifier.predict(sentences)
                 
                
@@ -670,9 +688,11 @@ class GetWordCloud(restful.Resource):
                         else:
                                 edited_result.append((element[1], element[0]))
 
+                #list_to_be_excluded = flatten(['great', 'good', 'i', category, eatery_name.lower().split()])
 
-                print eatery_name 
-                edited_result = [e for e in edited_result if not set.intersection(set(e[0].lower().split(" ")), set(["great", "good", "i", eatery_name.lower(), category]))]
+                #__edited_result = [e for e in edited_result if not set.intersection(set(e[0].lower().split(" ")), set(list_to_be_excluded))]
+                
+                
                 final_result = list()
                 for key, value in Counter(edited_result).iteritems():
                         final_result.append({"name": key[0], "polarity": 1 if key[1] == 'positive' else 0 , "frequency": value})
@@ -682,17 +702,34 @@ class GetWordCloud(restful.Resource):
                 for e in sorted_result[0: 30]:
                     print e
                 
-                __result = HeuristicClustering(sorted_result, None)
+                __result = HeuristicClustering(sorted_result, sentences, None)
 
         
             
 
-                result = sorted(__result.result, reverse=True, key= lambda x: x.get("positive"))
+                result = sorted(__result.result, reverse=True, key= lambda x: x.get("positive")+x.get("negative"))
+                
+                __positive = sum([e.get("positive") for e in result])
+                __negative = sum([e.get("negative") for e in result])
+
+                
+                def converting_to_percentage(__object):
+                        i = (__object.get("positive")*__positive + __object.get("negative")*__negative)/(__positive+__negative)
+                        __object.update({"likeness": '%.2f'%i})
+                        return __object
+
+                def convert_sentences(__object):
+                        return {"sentence": __object[0],
+                                "sentiment": __object[1]}
+                                
+                print map(converting_to_percentage, result)[0:30],
                 
                 return {"success": True,
 				"error": False,
-                                "result": result[0: 30],
-                    }
+                                "result": map(converting_to_percentage, result)[0:30],
+                                "sentences": map(convert_sentences, zip(sentences, predicted_sentiment)),
+                                
+                                }
 
 
 class UpdateClassifier(restful.Resource):
@@ -732,8 +769,10 @@ class ChangeTagOrSentiment(restful.Resource):
                 args = change_tag_or_sentiment_parser.parse_args()    
                 sentence = args["sentence"]
                 value = args["value"]
-                whether_allowed = False
+                whether_allowed = True
 
+
+                print sentence, value
                 if not whether_allowed:
                         return {"success": False,
                                 "error": True,
@@ -741,7 +780,10 @@ class ChangeTagOrSentiment(restful.Resource):
                                 }
 
 
-                
+                __collection = connection.training_data.training_sentiment_collection
+                print __collection.count()
+                __collection.insert({"review_id": "misc", "sentence": sentence, "sentiment": value})
+                print __collection.count()
                 return {"success": True,
                         "error": False,
                         "messege": "Updated!!!",

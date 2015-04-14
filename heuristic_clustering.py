@@ -21,7 +21,7 @@ from collections import Counter
 
 
 class HeuristicClustering:
-        def __init__(self, __result, __eatery_name):
+        def __init__(self, __result, __sentences, __eatery_name):
                 """
                 Args:
                     __result
@@ -31,13 +31,19 @@ class HeuristicClustering:
                 """
                 
                 if __eatery_name:
-                        self.list_to_exclude = ["food", "service", "cost", "ambience", "delhi", "Delhi", 
-                                "place", "Place", __eatery_name.lower().split()]
+                        self.list_to_exclude = flatten(["food", "service", "cost", "ambience", "place", "Place", 
+                            "great", "good", __eatery_name.lower().split(), "rs"])
+                        #self.list_to_exclude = ["food", "service", "cost", "ambience", "delhi", "Delhi", 
+                        #       "place", "Place", __eatery_name.lower().split()]
                 else:
-                        self.list_to_exclude = ["food", "service", "cost", "ambience", "delhi", "Delhi", "place", "Place"]
+                        self.list_to_exclude = ["food", "i", "service", "cost", "ambience", "delhi", "Delhi", "place", "Place"]
                 
                 self.list_to_exclude = flatten(self.list_to_exclude)
                 self.data = __result
+
+                self.sentences = __sentences
+                self.NERs = self.ner()
+                
                 print "Length of the old data after exclusion %s"%len(self.data)
                 
                 self.new_data = self.merge_similar_elements()
@@ -52,6 +58,19 @@ class HeuristicClustering:
                 self.populate_result()
                 self.result = sorted(self.result, reverse=True, key= lambda x: x.get("positive") + x.get("negative"))
 
+
+        def ner(self):
+                __list = list()
+                for sent in self.sentences:
+                        tree = nltk.ne_chunk(nltk.pos_tag(nltk.word_tokenize(sent.encode("ascii", "xmlcharrefreplace"))))
+                        for subtree in tree.subtrees(filter = lambda t: t.label()=='GPE'):
+                                __list.append(" ".join([e[0] for e in subtree.leaves()]).lower())
+                
+                print __list
+                return __list
+
+
+
         def merge_similar_elements(self):
                 """
                 Merging noun phrases who have exact similar spellings with each other and return a dictionary in the form
@@ -60,9 +79,14 @@ class HeuristicClustering:
                 u'icelolly': {'positive': 0, 'negative', 1},
                 }
                 """
-        
+                
                 without_similar_elements = dict()
                 for i in self.data:
+                        """
+                        if i.get("name") in list(set(self.NERs)):
+                                print "This noun_phrase belongs to ner {0}".format(i.get("name"))
+                                pass
+                        """
                         if bool(set.intersection(set(i.get("name").split(" ")),  set(self.list_to_exclude))):
                                 pass    
 
@@ -149,7 +173,8 @@ class HeuristicClustering:
 
                 for cluster_list in self.clusters:
                         __dict = self.maximum_frequency(cluster_list)
-                        self.result.append(__dict)
+                        if __dict:
+                                self.result.append(__dict)
 
                 return
 
@@ -157,9 +182,17 @@ class HeuristicClustering:
                 """
                 Returning name with maximum frequency in a cluster, by joining all the frequencies
                 """
+                """
+                if set.intersection(set([self.keys[__e] for __e in cluster_list]), set(self.NERs)):
+                        print "Match found"
+                        print set.intersection(set([self.keys[__e] for __e in cluster_list]), set(self.NERs))
+                        print cluster_list
+                        return False
+                """
                 result = list()
                 positive, negative = int(), int()
                 positive_name, negative_name = str(), str()
+                print [self.keys[element] for element in cluster_list]
                 for element in cluster_list:
                         name = self.keys[element]    
                         new_dict = self.new_data[name]
@@ -170,6 +203,7 @@ class HeuristicClustering:
         
         
                 result = sorted(result, reverse= True, key=lambda x: x.get("positive"))
+                print "THE name chosen is %s"%result[0].get("name"), "\n"
                 return {"name": result[0].get("name"), "positive": positive, "negative": negative}
 
 
@@ -357,4 +391,4 @@ if __name__ == "__main__":
                 [5, 24], [10, 24], [11, 24], [28, 24], [5, 28], [10, 28], [11, 28], [24, 28], [6, 30], [9, 30], 
                 [13, 30], [14, 30], [23, 30], [32, 31], [31, 32], [15, 34]]
 
-
+        [[u'philadelphia rolls', 'Philadelphia rolls', u'philadelphia', u'veg philadelphia rolls'], [u'amazing gastronomic experience', 'gastronomic experience'], ['nut chocolate', 'chocolate', u'chunky nut chocolate'], ['Yuzu Miso Sauce', 'Japanese miso soup', 'Japanese Yuzu miso sauce', u'yuzu miso sauce', u'japanese yuzu miso sauce'], [u'fried cream spring rolls', u'kylin special fried ice cream spring rolls', 'spring rolls', 'cream spring rolls', 'Fried Ice cream spring rolls', 'ice cream spring rolls', u'fried ice cream spring rolls'], ['Chicken Teriyaki', u'chicken teriyaki', u'chicken tepiniyaki dish', u'chicken teppanyaki'], ['Italian Smooch', u'italian smooch', ':- 1. italian smooch'], ['Spicy Salmon roll', 'salmon rolls', u'spicy salmon rolls', 'salmon maki', u'spicy salmon roll', 'Salmon Roll', u'salmon roll', u'spicy salmon maki'], [u'mango breeze drink', 'Mango breeze', u'mango breeze', 'mango Breeze drink'], ['Japanese Restaurant', u'authentic japanese restaurant', u'japanese restaurant', u'japanese 5 star restaurants', 'Japanese 5 star Restaurants', 'Japanese restaurant']]

@@ -119,6 +119,91 @@ App.AppendRestaurants = Backbone.View.extend({
 
 });
 
+App.RootRowView = Backbone.View.extend({
+        tagName: "fieldset",
+        className: "well plan each_row",
+        template: window.template("root-row"),
+        sentiment: function(){return this.model.sentiment},
+        sentence: function(){return this.model.sentence},
+
+        initialize: function(options){
+                var self = this;
+		
+                this.sentiments = {"super-positive": 1, "positive": 2, "neutral": 3, "negative": 4, "super-negative": 5, "mixed": 6};
+		this.model = options.model;
+	},
+
+        render: function(){
+                this.$el.append(this.template(this));
+                this.$("#ddpFiltersentiment option[value='" + this.sentiments[this.sentiment()] + "']").attr("selected", "selected")
+		return this;
+        },
+
+        events: {
+                    "change #ddpFilter" : "changeTag",
+                    "change #ddpFiltersentiment" : "changeSentiment",
+		    },
+
+
+	changeSentiment: function(event){
+                var self = this;
+                event.preventDefault()
+                sentence = self.sentence();
+                changed_polarity = self.$('#ddpFiltersentiment option:selected').text();
+                console.log(self.sentence())
+                console.log(changed_polarity)
+		var jqhr = $.post(window.update_sentence, {"sentence": sentence, "value": changed_polarity, "whether_allowed": false})
+                jqhr.done(function(data){
+                        console.log(data.success)
+                        if (data.success == true){
+                                bootbox.alert(data.messege)
+                                }
+                        else {
+                                bootbox.alert(data.messege)
+                                }
+                        })
+
+                jqhr.fail(function(){
+                        bootbox.alert("Either the api or internet connection is not working, Try again later")
+                                })
+        
+				},
+
+
+	changeTag: function(event){
+                var self = this;
+                event.preventDefault()
+                changed_tag = self.$('#ddpFilter option:selected').text();
+                sentence = self.sentence();
+
+                console.log(self.sentence())
+                console.log(changed_tag)
+		var jqhr = $.post(window.update_sentence, {"sentence": sentence, "value": changed_tag, "whether_allowed": false})
+                jqhr.done(function(data){
+                        if (data.success == true){
+                                bootbox.alert(data.messege)
+                        }
+                        else {
+                                bootbox.alert(data.messege)
+                                }
+                        })
+
+                jqhr.fail(function(){
+                                bootbox.alert("Either the api or internet connection is not working, Try again later")
+                        })
+        },
+
+
+
+
+
+
+
+});
+
+
+
+
 
 });
 

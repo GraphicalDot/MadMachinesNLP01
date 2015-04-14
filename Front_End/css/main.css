@@ -7,6 +7,12 @@
 
 /*This segment deals with the vertical scroll of the table elementof the 
  * bootstrap */
+
+.well {
+	  margin-bottom: 5px;
+	  margin-top: 5px;
+  }
+
 table.scroll {
 	    /* width: 100%; */ /* Optional */
 	    /* border-collapse: collapse; */

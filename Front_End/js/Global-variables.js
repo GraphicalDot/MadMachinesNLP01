@@ -10,6 +10,6 @@ $(document).ready(function(){
 	window.get_start_date_for_restaurant = window.URL + "get_start_date_for_restaurant";
 	window.limited_eateries_list = window.URL + "limited_eateries_list";
 	window.get_word_cloud = window.URL + "get_word_cloud";
-
+	window.update_sentence = window.URL + "change_tag_or_sentiment";
 
 });

@@ -94,6 +94,12 @@ App.SeeWordCloudDateSelectionView = Backbone.View.extend({
 		jqhr.done(function(data){
 			var subView = new App.WordCloudWith_D3({model: data.result});
 			$(".loadingclass").modal("hide");
+			
+
+			$.each(data.sentences, function(iter, sentence){
+				var subView = new App.RootRowView({model: sentence}); 
+				$(".sentences").append(subView.render().el)
+			})
 			});
 
 		//In case the jquery post request fails
@@ -160,7 +166,7 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 						"polarity": __d.polarity, 
 						"positive": __d.positive,
 						"negative": __d.negative,
-
+						"Likeness": __d.likeness,
 						"r": __d.positive+__d.negative,
 						}); }); return newDataSet }
 			
@@ -346,7 +352,7 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 					html: true, 
 					title: function(){
 					//return  "<br>" + 'Name: ' +'  ' +'<span>' + this.__data__.name + '</span>' +"<br>" + 'Frequency: ' +  '<span>' + this.__data__.r + '</span>';}
-					return   '<span>' + 'Positive: ' + this.__data__.positive + '</span>' +  "<br>" + 'Negative: ' +  '<span>' + this.__data__.negative + '</span>';}
+					return   '<span>' + 'Positive: ' + this.__data__.positive + '</span>' +  "<br>" + 'Likeness: ' +  '<span>' + this.__data__.Likeness + '</span>';}
 				      });
 
 
