@@ -92,7 +92,7 @@ class GetWordCloudApiHelper:
                 """
                 allowed_kwargs = ['reviews', 'eatery_name', 'category', 'total_noun_phrases', 'word_tokenization_algorithm_name', 
                         'noun_phrases_algorithm_name', 'pos_tagging_algorithm_name', 'tag_analysis_algorithm_name', 
-                        'sentiment_analysis_algorithm_name', 'np_clustering_algorithm_name', 'ner_algorithm_name']
+                        'sentiment_analysis_algorithm_name', 'np_clustering_algorithm_name', 'ner_algorithm_name', 'with_celery']
                 self.__dict__.update(kwargs)
                 for kwarg in allowed_kwargs:
                         assert eval("self.{0}".format(kwarg)) != None

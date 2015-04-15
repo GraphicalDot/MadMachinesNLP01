@@ -577,7 +577,8 @@ class GetWordCloud(restful.Resource):
                                     noun_phrases_algorithm_name= noun_phrases_algorithm_name, 
                                     np_clustering_algorithm_name=np_clustering_algorithm_name,
                                     total_noun_phrases = total_noun_phrases,
-                                    ner_algorithm_name = ner_algorithm_name)
+                                    ner_algorithm_name = ner_algorithm_name,
+                                    with_celery= False)
                
                 
                 print __instance.run()
