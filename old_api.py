@@ -62,10 +62,12 @@ import base64
 import requests
 from PIL import Image
 import inspect
-from heuristic_clustering import HeuristicClustering
 
 from GlobalConfigs import MONGO_REVIEWS_IP, MONGO_REVIEWS_PORT, MONGO_REVIEWS_DB,\
         MONGO_REVIEWS_EATERIES_COLLECTION, MONGO_REVIEWS_REVIEWS_COLLECTION
+
+from FoodDomainApiHandlers.get_word_cloud import GetWordCloudApiHelper
+
 
 connection = pymongo.MongoClient(MONGO_REVIEWS_IP, MONGO_REVIEWS_PORT, tz_aware=True, w=1, 
         j=True, max_pool_size=200, use_greenlets=True)
@@ -507,25 +509,16 @@ class GetWordCloud(restful.Resource):
 		category = args["category"].lower()
                 
                 total_noun_phrases = (None, args["total_noun_phrases"])[args["total_noun_phrases"] != None]
-                
                 word_tokenization_algorithm_name = ("punkt_n_treebank", args["word_tokenization_algorithm"])[args["word_tokenization_algorithm"] != None]
-                
-                
-                noun_phrases_algorithm_name = ("textblob_np_conll", args["noun_phrases_algorithm"])[args["noun_phrases_algorithm"] != None]
-                
-                
+                noun_phrases_algorithm_name = ("topia_n_textblob", args["noun_phrases_algorithm"])[args["noun_phrases_algorithm"] != None]
                 pos_tagging_algorithm_name = ("hunpos_pos_tagger", args["pos_tagging_algorithm"])[args["pos_tagging_algorithm"] != None]
-                
                 tag_analysis_algorithm_name = ("svm_linear_kernel_classifier_tag.lib", 
                                                     "{0}_tag.lib".format(args["tag_analysis_algorithm"]))[args["tag_analysis_algorithm"] != None]
                 
                 sentiment_analysis_algorithm_name = ("svm_linear_kernel_classifier_sentiment.lib", 
                                     "{0}_sentiment.lib".format(args["sentiment_analysis_algorithm"]))[args["sentiment_analysis_algorithm"] != None]
-
                 np_clustering_algorithm_name = ("k_means", args["np_clustering_algorithm"])[args["np_clustering_algorithm"] != None]
-                
                 ner_algorithm_name = ("nltk_maxent_ner", args["ner_algorithm"])[args["ner_algorithm"] != None]
-    
                 if args["start_date"] and ["end_date"]:
 		        try:
 		                start_epoch = time.mktime(time.strptime(args["start_date"], __format))
@@ -570,18 +563,27 @@ class GetWordCloud(restful.Resource):
         
                 
 
-                print eatery_id, category, start_epoch,  end_epoch, tag_analysis_algorithm_name, sentiment_analysis_algorithm_name,\
-                        word_tokenization_algorithm_name, pos_tagging_algorithm_name, noun_phrases_algorithm_name, np_clustering_algorithm_name,\
-                        total_noun_phrases, ner_algorithm_name
-               
-                result = list()
-      
                 if start_epoch and end_epoch:
                         review_list = [(post.get("review_id"), post.get("review_text")) for post in 
                             reviews.find({"eatery_id" :eatery_id, "converted_epoch": {"$gt":  start_epoch, "$lt" : end_epoch}})]
                 else:
                         review_list = [(post.get("review_id"), post.get("review_text")) for post in reviews.find({"eatery_id" :eatery_id})] 
-
+                
+                __instance = GetWordCloudApiHelper(reviews= review_list, eatery_name=eatery_name, category=category, 
+                                    tag_analysis_algorithm_name=tag_analysis_algorithm_name, 
+                                    sentiment_analysis_algorithm_name= sentiment_analysis_algorithm_name,
+                                    word_tokenization_algorithm_name=word_tokenization_algorithm_name, 
+                                    pos_tagging_algorithm_name=pos_tagging_algorithm_name, 
+                                    noun_phrases_algorithm_name= noun_phrases_algorithm_name, 
+                                    np_clustering_algorithm_name=np_clustering_algorithm_name,
+                                    total_noun_phrases = total_noun_phrases,
+                                    ner_algorithm_name = ner_algorithm_name)
+               
+                
+                print __instance.run()
+                result = list()
+      
+                """
                 sent_tokenizer = SentenceTokenizationOnRegexOnInterjections()
                 
                 
@@ -663,8 +665,6 @@ class GetWordCloud(restful.Resource):
                 __result = list(itertools.chain(*[[(__tuple_sentiment_nouns[0], e) for e in __tuple_sentiment_nouns[1]] for __tuple_sentiment_nouns in zip(predicted_sentiment, [custom_noun_phrases(sent) for sent in sentences])]))
                 
 
-
-                """filtered_list
                 word_tokenize = WordTokenize(sentences,  default_word_tokenizer= word_tokenization_algorithm_name)
                 word_tokenization_algorithm_result = word_tokenize.word_tokenized_list.get(word_tokenization_algorithm_name)
 
@@ -675,7 +675,6 @@ class GetWordCloud(restful.Resource):
 
                 __noun_phrases = NounPhrases(pos_tagging_algorithm_result, default_np_extractor=noun_phrases_algorithm_name)
                 noun_phrases_algorithm_result =  __noun_phrases.noun_phrases.get(noun_phrases_algorithm_name)
-                """
 
                 #result = [element for element in zip(predicted_sentiment, noun_phrases_algorithm_result) if element[1]]
                 result = [element for element in __result if element[1]]
@@ -730,7 +729,7 @@ class GetWordCloud(restful.Resource):
                                 "sentences": map(convert_sentences, zip(sentences, predicted_sentiment)),
                                 
                                 }
-
+                """
 
 class UpdateClassifier(restful.Resource):
         @cors
