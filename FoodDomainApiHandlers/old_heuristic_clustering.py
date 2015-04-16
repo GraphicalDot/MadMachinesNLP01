@@ -35,49 +35,43 @@ u'positive',
 """
 
 class HeuristicClustering:
-        def __init__(self, sent_sentiment_nps, __eatery_name):
-         
+        def __init__(self, __result, __sentences, __eatery_name):
+                """
+                Args:
+                    __result
+                            type: list of dictionaries
+                            example: [{'positive': 20, 'name': u'teppanyaki grill', 'negative': 12}, 
+                            {'positive': 8, 'negative': 10, 'name': u'main course'}, {'positive': 7, 'negative': 8, 'name': u'kylin'}]
+                """
+                
                 if __eatery_name:
-                        self.list_to_exclude = flatten(["food", "service", "cost", "ambience", "place", "Place", "i", 
+                        self.list_to_exclude = flatten(["food", "service", "cost", "ambience", "place", "Place", 
                             "great", "good", __eatery_name.lower().split(), "rs"])
                         #self.list_to_exclude = ["food", "service", "cost", "ambience", "delhi", "Delhi", 
                         #       "place", "Place", __eatery_name.lower().split()]
                 else:
                         self.list_to_exclude = ["food", "i", "service", "cost", "ambience", "delhi", "Delhi", "place", "Place"]
                 
-
-
-                self.sent_sentiment_nps = sent_sentiment_nps
-                print "Length of the old data after exclusion %s"%len(self.sent_sentiment_nps)
-                self.np_sentiment_sent_dict = self.merge_similar_elements()
-                
-                print "To check Whether there ae any duplicate elements after merging similar element"
-                assert(set(Counter(self.np_sentiment_sent_dict.keys()).values()) == {1}),\
-                                    "merge_similar_elements method has an error as all the keys are not unique"
-                new_list = list()
-
-                
-                
-                __sorted = sorted(self.np_sentiment_sent_dict.keys())
                 self.list_to_exclude = flatten(self.list_to_exclude)
-                #self.NERs = self.ner()
-                
-                self.keys = self.np_sentiment_sent_dict.keys()
+                self.data = __result
 
+                self.sentences = __sentences
+                self.NERs = self.ner()
+                
+                print "Length of the old data after exclusion %s"%len(self.data)
+                
+                self.new_data = self.merge_similar_elements()
+                self.keys = self.new_data.keys()
                 print "Length of the new data after merging similar elements  %s"%len(self.keys)
                 self.clusters = list()
                 self.result = list()
-               
-                print "\n\n\n\n\n"
-                self.filter_clusters()
                 
+                self.filter_clusters()
                 self.without_clusters =  set.difference(set(range(0, len(self.keys))), set(flatten(self.clusters)))
         
                 self.populate_result()
-                
-                self.result = sorted(self.result, reverse=True, key= lambda x: x.get("positive") + x.get("negative")+ x.get("neutral"))
-                for e in self.result[0:20]:
-                        print e.get("name"), e.get("positive"), e.get("neutral"), e.get("negative"), len(e.get("sentences")), "\n\n"
+                self.result = sorted(self.result, reverse=True, key= lambda x: x.get("positive") + x.get("negative"))
+
 
         def ner(self):
                 __list = list()
@@ -101,85 +95,101 @@ class HeuristicClustering:
                 """
                 
                 without_similar_elements = dict()
-                for (sentence, sentiment, noun_phrases) in self.sent_sentiment_nps:
-                        for __np in noun_phrases:
-                                """
-                                if i.get("name") in list(set(self.NERs)):
+                for i in self.data:
+                        """
+                        if i.get("name") in list(set(self.NERs)):
                                 print "This noun_phrase belongs to ner {0}".format(i.get("name"))
                                 pass
-                                """
-                                if bool(set.intersection(set(__np.split(" ")),  set(self.list_to_exclude))):
-                                        pass    
+                        """
+                        if bool(set.intersection(set(i.get("name").split(" ")),  set(self.list_to_exclude))):
+                                pass    
 
-                                elif without_similar_elements.get(__np):
-                                        result = without_similar_elements.get(__np)
-                                        positive, negative, neutral, sentences = result.get("positive"), result.get("negative"),\
-                                                result.get("neutral"), result.get("sentences")
-                                        
+                        elif without_similar_elements.get(i.get("name")):
+                                result = without_similar_elements.get(i.get("name"))
+                                polarity = "negative" if i.get("polarity") == 0 else "positive"
+                        
+                                if polarity == "negative":
+                                        new_frequency_negative = result.get("negative") + i.get("frequency")
+                                else:
+                                        new_frequency_negative = result.get("negative")
 
-                                        new_frequency_negative = (negative, negative+1)[sentiment == "negative"]
-                                        new_frequency_positive = (positive, positive+1)[sentiment == "positive"]
-                                        new_frequency_neutral = (neutral, neutral+1)[sentiment == "neutral"]
-                                        new_sentences = sentences.append((sentence, sentiment))
+
+                                if polarity == "positive":
+                                        new_frequency_positive = result.get("positive") + i.get("frequency")
+                                else:
+                                        new_frequency_positive = result.get("positive")
                                 
-                                        without_similar_elements.update(
-                                            {__np: 
-                                                {"negative": new_frequency_negative, "positive": new_frequency_positive,
-                                                "neutral": new_frequency_neutral, "sentences": sentences,
-                                            }})
+                                without_similar_elements.update(
+                                    {i.get("name"): 
+                                        {"negative": new_frequency_negative,
+                                        "positive": new_frequency_positive,
+                                        }})
 
                 
-                                else:
-                                    without_similar_elements.update(
-                                    {__np: 
-                                        {"negative": (0, 1)[sentiment=="negative"], "positive": (0, 1)[sentiment=="positive"],
-                                            "neutral": (0, 1)[sentiment=="neutral"], "sentences": [(sentence, sentiment)]}})
+                        else:
+                                without_similar_elements.update(
+                                    {i.get("name"): 
+                                        {"negative" if i.get("polarity") == 0 else "positive": i.get("frequency"),
+                                        "negative" if i.get("polarity") == 1 else "positive": 0,
+                                        }})
+
                 return without_similar_elements
 
         def filter_clusters(self):
-                X = np.zeros((len(self.keys), len(self.keys)), dtype=np.float)
-            
-                for i in xrange(0, len(self.keys)):
-                        for j in xrange(0, len(self.keys)):
-                                if X[i][j] == 0:
-                                        st = 'Levenshtein.ratio("{1}", "{0}")'.format(self.keys[i], self.keys[j])
-                                        ratio = eval(st)
-                                        X[i][j] = ratio
-                                        X[j][i] = ratio
-            
-            
-                #Making tuples of the indexes for the element in X where the rtion is greater than .76
-                indices = np.where(X > .75)
-                new_list = zip(indices[0], indices[1])
-                found = False
-                for e in new_list:
-                        for j in self.clusters:
-                                if bool(set.intersection(set(e), set(j))):
-                                        j.extend(e)
-                                        found = True
-                                        break
-                        if not found:    
-                                self.clusters.append(list(e))
-                                found = False
-                        found = False
+            """
 
-                #Removing duplicate elements from clusters list
-                self.clusters = [list(set(element)) for element in self.clusters if len(element)> 2]
-                for element in self.clusters:
-                        print [self.keys[key] for key in element]
-                return 
+            """
+            X = np.zeros((len(self.new_data), len(self.new_data)), dtype=np.float)
+      
+             
+            new_list = list()
+            
+            for i in xrange(0, len(self.keys)):
+                    for j in xrange(0, len(self.keys)):
+                            if X[i][j] == 0:
+                                    st = 'Levenshtein.ratio("{1}", "{0}")'.format(self.keys[i], self.keys[j])
+                                    ratio = eval(st)
+                                    X[i][j] = ratio
+                                    X[j][i] = ratio
+            
+            
+            #Making tuples of the indexes for the element in X where the rtion is greater than .76
+            indices = np.where(X > .76)
+            new_list = zip(indices[0], indices[1])
+            found = False
+            for e in new_list:
+                    for j in self.clusters:
+                            if bool(set.intersection(set(e), set(j))):
+                                    j.extend(e)
+                                    found = True
+                                    break
+                    if not found:    
+                            self.clusters.append(list(e))
+                            found = False
+                    found = False
+
+            #Removing duplicate elements from clusters list
+            self.clusters = [list(set(element)) for element in self.clusters if len(element)> 2]
+            """
+            for element in self.clusters:
+                    print [self.keys[key] for key in element]
+            """
+            return 
 
         def populate_result(self):
+        
                 for __int_key in self.without_clusters:
                         new_dict = dict()
                         name = self.keys[__int_key]
-                        new_dict = self.np_sentiment_sent_dict[name]
+                        new_dict = self.new_data[name]
                         new_dict.update({"name": name})
                         self.result.append(new_dict)
-                
+
                 for cluster_list in self.clusters:
                         __dict = self.maximum_frequency(cluster_list)
-                        self.result.append(__dict)
+                        if __dict:
+                                self.result.append(__dict)
+
                 return
 
         def maximum_frequency(self, cluster_list):
@@ -194,22 +204,21 @@ class HeuristicClustering:
                         return False
                 """
                 result = list()
-                positive, negative, neutral, sentences = int(), int(), int(), list()
+                positive, negative = int(), int()
+                positive_name, negative_name = str(), str()
                 print [self.keys[element] for element in cluster_list]
                 for element in cluster_list:
                         name = self.keys[element]    
-                        new_dict = self.np_sentiment_sent_dict[name]
+                        new_dict = self.new_data[name]
                         new_dict.update({"name": name})
                         result.append(new_dict)        
-                        positive = positive +  self.np_sentiment_sent_dict[name].get("positive") 
-                        negative = negative +  self.np_sentiment_sent_dict[name].get("negative") 
-                        neutral = neutral +  self.np_sentiment_sent_dict[name].get("neutral") 
-                        sentences.extend(new_dict.get("sentences"))
+                        positive = positive +  self.new_data[name].get("positive") 
+                        negative = negative +  self.new_data[name].get("negative") 
         
-                result = sorted(result, reverse= True, key=lambda x: x.get("positive")+x.get("negative") + x.get("neutral"))
-                print "The name chosen is %s"%result[0].get("name"), "\n"
-                return {"name": result[0].get("name"), "positive": positive, "negative": negative, "neutral": neutral, 
-                            "sentences": sentences}
+        
+                result = sorted(result, reverse= True, key=lambda x: x.get("positive"))
+                print "THE name chosen is %s"%result[0].get("name"), "\n"
+                return {"name": result[0].get("name"), "positive": positive, "negative": negative}
 
 
         def check_if_shortform(self, str1, str2):

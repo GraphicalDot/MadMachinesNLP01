@@ -509,16 +509,22 @@ class GetWordCloud(restful.Resource):
 		category = args["category"].lower()
                 
                 total_noun_phrases = (None, args["total_noun_phrases"])[args["total_noun_phrases"] != None]
-                word_tokenization_algorithm_name = ("punkt_n_treebank", args["word_tokenization_algorithm"])[args["word_tokenization_algorithm"] != None]
-                noun_phrases_algorithm_name = ("topia_n_textblob", args["noun_phrases_algorithm"])[args["noun_phrases_algorithm"] != None]
-                pos_tagging_algorithm_name = ("hunpos_pos_tagger", args["pos_tagging_algorithm"])[args["pos_tagging_algorithm"] != None]
-                tag_analysis_algorithm_name = ("svm_linear_kernel_classifier_tag.lib", 
-                                                    "{0}_tag.lib".format(args["tag_analysis_algorithm"]))[args["tag_analysis_algorithm"] != None]
+                word_tokenization_algorithm_name = ("punkt_n_treebank", args["word_tokenization_algorithm"])\
+                                                                [args["word_tokenization_algorithm"] != None]
                 
-                sentiment_analysis_algorithm_name = ("svm_linear_kernel_classifier_sentiment.lib", 
-                                    "{0}_sentiment.lib".format(args["sentiment_analysis_algorithm"]))[args["sentiment_analysis_algorithm"] != None]
+                noun_phrases_algorithm_name = ("topia_n_textblob", args["noun_phrases_algorithm"])\
+                                                                        [args["noun_phrases_algorithm"] != None]
+                pos_tagging_algorithm_name = ("hunpos_pos_tagger", args["pos_tagging_algorithm"])\
+                        [args["pos_tagging_algorithm"] != None]
+                
+                tag_analysis_algorithm_name = ("svm_linear_kernel_classifier_tag.lib", "{0}_tag.lib".format(
+                                                        args["tag_analysis_algorithm"]))[args["tag_analysis_algorithm"] != None]
+                
+                sentiment_analysis_algorithm_name = ("svm_linear_kernel_classifier_sentiment.lib", "{0}_sentiment.lib".format(
+                                                args["sentiment_analysis_algorithm"]))[args["sentiment_analysis_algorithm"] != None]
                 np_clustering_algorithm_name = ("k_means", args["np_clustering_algorithm"])[args["np_clustering_algorithm"] != None]
                 ner_algorithm_name = ("nltk_maxent_ner", args["ner_algorithm"])[args["ner_algorithm"] != None]
+                
                 if args["start_date"] and ["end_date"]:
 		        try:
 		                start_epoch = time.mktime(time.strptime(args["start_date"], __format))
@@ -530,7 +536,6 @@ class GetWordCloud(restful.Resource):
 
                 else:
                         start_epoch, end_epoch = None, None
-	
 
                 if tag_analysis_algorithm_name.replace("_tag.lib", "") != sentiment_analysis_algorithm_name.replace("_sentiment.lib", ""):
                         return {"error": True,
@@ -539,11 +544,6 @@ class GetWordCloud(restful.Resource):
                                         Make sure you are sending the same algortihm name for all the classification problems", 
                                 }
                         
-
-
-
-
-		print "start epoch is -->%s and end_apoch is -->%s"%(start_epoch, end_epoch) 
                 if not reviews.find({"eatery_id": eatery_id}):
                         return {"error": True,
                                 "success": False,
@@ -554,15 +554,12 @@ class GetWordCloud(restful.Resource):
 
                 #name of the eatery
                 eatery_name = eateries.find_one({"eatery_id": eatery_id}).get("eatery_name")
-                print eatery_name
                 if category not in ["service", "food", "ambience", "null", "overall", "cost"]:
                         return {"error": True,
                                 "success": False,
                                 "error_messege": "This is a n invalid tag %s"%category, 
                                 }
         
-                
-
                 if start_epoch and end_epoch:
                         review_list = [(post.get("review_id"), post.get("review_text")) for post in 
                             reviews.find({"eatery_id" :eatery_id, "converted_epoch": {"$gt":  start_epoch, "$lt" : end_epoch}})]
@@ -580,139 +577,8 @@ class GetWordCloud(restful.Resource):
                                     ner_algorithm_name = ner_algorithm_name,
                                     with_celery= False)
                
-                
-                print __instance.run()
-                result = list()
-      
-                """
-                sent_tokenizer = SentenceTokenizationOnRegexOnInterjections()
-                
-                
-                sentences = list()
-                for review in review_list:
-                        for __sentence in sent_tokenizer.tokenize(review[1]):
-                                    __sentence = encoding_help(__sentence)
-                                    sentences.append([review[0], __sentence])
-
-                review_ids, sentences = zip(*sentences)
-
-
-                tag_classifier = joblib.load("{0}/{1}".format(path_in_memory_classifiers, tag_analysis_algorithm_name))              
-                predicted_tags = tag_classifier.predict(sentences)
-
-                filtered_list = list()
-
-
-
-                if category == "cost":
-                        filtered_list = [e for e in zip(review_ids, sentences, predicted_tags) if e[2] == "cost"]
-
-                        file_path = os.path.dirname(os.path.abspath(__file__))
-                        classifier_path = "{0}/Text_Processing/PrepareClassifiers/InMemoryClassifiers/".format(file_path)
-                        classifier = joblib.load("{0}{1}".format(classifier_path, "svm_linear_kernel_classifier_cost.lib"))
-                        
-                        for k, v in Counter(classifier.predict(sentences)).items():
-                                if k == "cost-null":
-                                        pass
-                                else:
-                                    result.append({"name": k,
-                                                    "positive": v,
-                                                    "negative": 0})
-                        return {"success": True,
-				"error": False,
-                                "result": result,
-                                }
-                if category == "ambience":
-                        filtered_list = [e for e in zip(review_ids, sentences, predicted_tags) if e[2] == "cost"]
-
-                        file_path = os.path.dirname(os.path.abspath(__file__))
-                        classifier_path = "{0}/Text_Processing/PrepareClassifiers/InMemoryClassifiers/".format(file_path)
-                        classifier = joblib.load("{0}{1}".format(classifier_path, "svm_linear_kernel_classifier_ambience.lib"))
-                        
-                        for k, v in Counter(classifier.predict(sentences)).items():
-                                if k == "ambience-null":
-                                        pass
-                                else:
-                                    result.append({"name": k,
-                                                    "positive": v,
-                                                    "negative": 0})
-                        return {"success": True,
-				"error": False,
-                                "result": result,
-                                }
-               
-
-                from textblob.np_extractors import ConllExtractor 
-                extractor = extract.TermExtractor()
-                conll_extractor = ConllExtractor()
-                
-                def custom_noun_phrases(sentence):
-                        blob = TextBlob(sentence, np_extractor=conll_extractor)
-                        nouns = extractor(sentence)
-                        #print list(set.union(set(blob.noun_phrases), set([e[0] for e in nouns])))
-                        return list(set.union(set(blob.noun_phrases), set([e[0] for e in nouns])))
-
-                sentiment_classifier = joblib.load("{0}/{1}".format(path_in_memory_classifiers, "svm_linear_kernel_classifier_sentiment_new_dataset.lib"))              
-                predicted_sentiment = sentiment_classifier.predict(sentences)
-                
-               
-                
-                filtered_list = [e for e in zip(review_ids, sentences, predicted_tags, predicted_sentiment) if e[2] == category]
-                
-
-                review_ids, sentences, predicted_tags, predicted_sentiment = zip(*filtered_list)
-
-
-                __result = list(itertools.chain(*[[(__tuple_sentiment_nouns[0], e) for e in __tuple_sentiment_nouns[1]] for __tuple_sentiment_nouns in zip(predicted_sentiment, [custom_noun_phrases(sent) for sent in sentences])]))
-                
-
-                word_tokenize = WordTokenize(sentences,  default_word_tokenizer= word_tokenization_algorithm_name)
-                word_tokenization_algorithm_result = word_tokenize.word_tokenized_list.get(word_tokenization_algorithm_name)
-
-
-                __pos_tagger = PosTaggers(word_tokenization_algorithm_result,  default_pos_tagger=pos_tagging_algorithm_name)
-                pos_tagging_algorithm_result =  __pos_tagger.pos_tagged_sentences.get(pos_tagging_algorithm_name)
-
-
-                __noun_phrases = NounPhrases(pos_tagging_algorithm_result, default_np_extractor=noun_phrases_algorithm_name)
-                noun_phrases_algorithm_result =  __noun_phrases.noun_phrases.get(noun_phrases_algorithm_name)
-
-                #result = [element for element in zip(predicted_sentiment, noun_phrases_algorithm_result) if element[1]]
-                result = [element for element in __result if element[1]]
-
-                edited_result = list()
-                for element in result:
-                        if element[0].startswith("super"):
-                                edited_result.append((element[1], element[0].split("-")[1]))
-                                edited_result.append((element[1], element[0].split("-")[1]))
-                        else:
-                                edited_result.append((element[1], element[0]))
-
-                #list_to_be_excluded = flatten(['great', 'good', 'i', category, eatery_name.lower().split()])
-
-                #__edited_result = [e for e in edited_result if not set.intersection(set(e[0].lower().split(" ")), set(list_to_be_excluded))]
-                
-                
-                final_result = list()
-                for key, value in Counter(edited_result).iteritems():
-                        final_result.append({"name": key[0], "polarity": 1 if key[1] == 'positive' else 0 , "frequency": value})
-                
-                sorted_result = sorted(final_result, reverse=True, key=lambda x: x.get("frequency")) 
-                
-                for e in sorted_result[0: 30]:
-                    print e
-                
-                __result = HeuristicClustering(sorted_result, sentences, None)
-
-        
-            
-
-                result = sorted(__result.result, reverse=True, key= lambda x: x.get("positive")+x.get("negative"))
-                
-                __positive = sum([e.get("positive") for e in result])
-                __negative = sum([e.get("negative") for e in result])
-
-                
+                result = __instance.run() 
+                """ 
                 def converting_to_percentage(__object):
                         i = (__object.get("positive")*__positive + __object.get("negative")*__negative)/(__positive+__negative)
                         __object.update({"likeness": '%.2f'%i})
@@ -721,17 +587,13 @@ class GetWordCloud(restful.Resource):
                 def convert_sentences(__object):
                         return {"sentence": __object[0],
                                 "sentiment": __object[1]}
-                                
-                print map(converting_to_percentage, result)[0:30],
+                """                                
                 
                 return {"success": True,
 				"error": False,
-                                "result": map(converting_to_percentage, result)[0:30],
-                                "sentences": map(convert_sentences, zip(sentences, predicted_sentiment)),
+                                "result": __result,
                                 
                                 }
-                """
-
 class UpdateClassifier(restful.Resource):
         @cors
         @timeit

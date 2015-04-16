@@ -255,7 +255,7 @@ class NounPhrases:
                         blob = TextBlob(__sentence, np_extractor=self.conll_extractor)
                         nouns = self.topia_extractor(__sentence)
                         #print list(set.union(set(blob.noun_phrases), set([e[0] for e in nouns])))
-                        self.noun_phrases.append(list(set.union(set(blob.noun_phrases), set([e[0] for e in nouns])))) 
+                        self.noun_phrases.append(list(set.union(set([np.lower() for np in blob.noun_phrases]), set([e[0].lower() for e in nouns])))) 
 
 
 

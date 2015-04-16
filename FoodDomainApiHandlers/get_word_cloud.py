@@ -8,6 +8,7 @@ Purpose:
     get_word_cloud api
 
 """
+import time
 import os
 from sys import path
 import itertools
@@ -109,6 +110,7 @@ class GetWordCloudApiHelper:
                 self.normalized_noun_phrases = list()
                 self.non_duplicate_nps, sorted_non_duplicate_nps = list(), list()
                 self.clustered_nps = list()
+                self.normalized_sent_sentiment_nps = list()
         
         def get_args(self):
                 print self.__dict__
@@ -163,13 +165,25 @@ class GetWordCloudApiHelper:
                 self.extract_noun_phrases() #makes self.noun_phrases
                 self.normalize_sentiments() #makes self.normalized_noun_phrases
                 
-                self.merging_duplicate_occurences() #makes self.non_duplicate_nps, sorted_non_duplicate_nps
                 self.do_clustering() #makes self.clustered_nps
-                print self.clustered_nps        
+                return self.clustered_nps
+
+        def print_execution(func):
+                "This decorator dumps out the arguments passed to a function before calling it"
+                argnames = func.func_code.co_varnames[:func.func_code.co_argcount]
+                fname = func.func_name
+                def wrapper(*args,**kwargs):
+                        start_time = time.time()
+                        print "{0} Now {1} have started executing {2}".format(bcolors.OKBLUE, func.func_name, bcolors.RESET)
+                        result = func(*args, **kwargs)
+                        print "{0} Total time taken by {1} for execution is --<<{2}>>--{3}\n".format(bcolors.OKGREEN, func.func_name, 
+                                (time.time() - start_time), bcolors.RESET)
+                        
+                        return result
+                return wrapper
 
 
-
-
+        @print_execution
         def sent_tokenize_reviews(self):
                 sentences = list()
                 for review in self.reviews:
@@ -180,14 +194,17 @@ class GetWordCloudApiHelper:
                 self.review_ids, self.sentences = zip(*sentences)
                 return 
                         
+        @print_execution
         def predict_tags(self):
                 self.predicted_tags = self.tag_classifier.predict(self.sentences)
                 return self.predicted_tags
 
+        @print_execution
         def predict_sentiment(self):
                 self.predicted_sentiment = self.sentiment_classifier.predict(self.sentences)
                 return self.predicted_sentiment
-
+        
+        @print_execution
         def category_sentences(self):
                 """
                 break self.filtered_list which is the tuples specific to categories
@@ -197,19 +214,22 @@ class GetWordCloudApiHelper:
                 self.c_review_ids, self.c_sentences, self.c_predicted_tags, self.c_predicted_sentiment = zip(*self.filtered_list)
 
 
+        @print_execution
         def extract_noun_phrases(self):
                 """
-                self.noun_phrases = [["ferror rocher shake", "positive"], ["basil sauce", "super-negative"], ...]
+                self.sent_sentiment_nps = [('the only good part was the coke , thankfully it was outsourced ', 
+                                            u'positive', [u'good part']), ...]
                 """
 
                 __nouns = NounPhrases(self.c_sentences, default_np_extractor=self.noun_phrases_algorithm_name)
 
+                self.sent_sentiment_nps = [__tuple for __tuple in 
+                        zip(self.c_sentences, self.c_predicted_sentiment, __nouns.noun_phrases[self.noun_phrases_algorithm_name])
+                        if __tuple[2]]
 
-                self.noun_phrases = list(itertools.chain(*[[(__tuple_sentiment_nouns[0], e) for e in __tuple_sentiment_nouns[1]] 
-                    for __tuple_sentiment_nouns in zip(self.c_predicted_sentiment, __nouns.noun_phrases[self.noun_phrases_algorithm_name])]))
-                
-                return self.noun_phrases 
-
+                return self.sent_sentiment_nps 
+        
+        @print_execution
         def normalize_sentiments(self, ignore_super=False):
                 """
                 self.noun_phrases = [["ferror rocher shake", "positive"], ["basil sauce", "super-negative"], ...]
@@ -223,7 +243,6 @@ class GetWordCloudApiHelper:
                                         so for example: ["ferror rocher shake", "super-positive"]
                                         will have ["ferror rocher shake", "super-positive", "ferror rocher shake", "super-positive"]
                                         in new list
-                """
                 for element in self.noun_phrases:
                         if element[0].startswith("super"):
                                 self.normalized_noun_phrases.append((element[1], element[0].split("-")[1]))
@@ -233,23 +252,31 @@ class GetWordCloudApiHelper:
                                 self.normalized_noun_phrases.append((element[1], element[0]))
 
                 return self.normalized_noun_phrases
-
-
-        def merging_duplicate_occurences(self):
-                        
-                for (noun_phrase, sentiment), freq in Counter(self.normalized_noun_phrases).iteritems():
-                        self.non_duplicate_nps.append({"name": noun_phrase, "polarity": 1 if 
-                                                                sentiment == 'positive' else 0 , "frequency": freq})
+                """
+                for (sentence, sentiment, noun_phrases) in self.sent_sentiment_nps:
+                        __nouns = list()
+                        if sentiment.startswith("super"):
+                                sentiment = sentiment.split("-")[1]
+                                __nouns.extend(noun_phrases)
+                                if not ignore_super:
+                                        __nouns.extend(noun_phrases)
+                        else:
+                                __nouns.extend(noun_phrases)
+                        self.normalized_sent_sentiment_nps.append([sentence, sentiment, __nouns ])
                 
-                self.sorted_non_duplicate_nps = sorted(self.non_duplicate_nps, reverse=True, key=lambda x: x.get("frequency")) 
-                return self.sorted_non_duplicate_nps
+                return self.normalized_sent_sentiment_nps
 
+
+
+
+        @print_execution
         def do_clustering(self):
-                __result = HeuristicClustering(self.sorted_non_duplicate_nps, self.c_sentences, self.eatery_name)
+                __result = HeuristicClustering(self.normalized_sent_sentiment_nps, self.eatery_name)
                 self.clustered_nps = sorted(__result.result, reverse=True, key= lambda x: x.get("positive")+x.get("negative"))
                 return self.clustered_nps
 
 
+        @print_execution
         def scores(self):
                 __positive = sum([e.get("positive") for e in result])
                 __negative = sum([e.get("negative") for e in result])
@@ -259,6 +286,7 @@ class GetWordCloudApiHelper:
                         __object.update({"likeness": '%.2f'%i})
                         return __object
                 
+        @print_execution
         def convert_sentences(__object):
                 return {"sentence": __object[0],
                         "sentiment": __object[1]}
