@@ -139,6 +139,7 @@ class GetWordCloudApiHelper:
                                         self.cost_result.append({"name": cost_sub_category,
                                                     "positive": frequency,
                                                     "negative": 0})
+                        self.clustered_nps =  self.cost_result
                         return self.cost_result
 
                 if self.category == "ambience":
@@ -153,6 +154,8 @@ class GetWordCloudApiHelper:
                                         self.ambience_result.append({"name": ambience_sub_category,
                                                     "positive": frequency,
                                                     "negative": 0})
+                        
+                        self.clustered_nps = self.ambience_result
                         return self.ambience_result
                         
 

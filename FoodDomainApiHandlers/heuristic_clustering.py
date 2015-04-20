@@ -33,6 +33,29 @@ u'positive',
 [u'good part']]]
 
 """
+class SimilarityMatrices:
+        
+        @staticmethod
+        def levenshtein_ratio(__str1, __str2):
+                ratio = 'Levenshtein.ratio("{1}", "{0}")'.format(__str1, __str2)
+                return eval(ratio)
+
+
+        @staticmethod
+        def check_if_shortform(self, str1, str2):
+                """
+                To identify if "bbq nation" is similar to "barbeque nation"
+
+                """
+                if bool(set.intersection(set(str1.split()), set(str2.split()))):
+
+                        if set.issubset(set(str1), set(str2)):
+                                return True
+
+                        if set.issubset(set(str2), set(str1)):
+                                return 
+
+                return False
 
 class HeuristicClustering:
         def __init__(self, sent_sentiment_nps, __eatery_name):
@@ -49,28 +72,28 @@ class HeuristicClustering:
 
                 self.sent_sentiment_nps = sent_sentiment_nps
                 print "Length of the old data after exclusion %s"%len(self.sent_sentiment_nps)
-                self.np_sentiment_sent_dict = self.merge_similar_elements()
+                self.merged_sent_sentiment_nps = self.merge_similar_elements()
                 
                 print "To check Whether there ae any duplicate elements after merging similar element"
-                assert(set(Counter(self.np_sentiment_sent_dict.keys()).values()) == {1}),\
+                assert(set(Counter(self.merged_sent_sentiment_nps.keys()).values()) == {1}),\
                                     "merge_similar_elements method has an error as all the keys are not unique"
                 new_list = list()
 
                 
                 
-                __sorted = sorted(self.np_sentiment_sent_dict.keys())
+                __sorted = sorted(self.merged_sent_sentiment_nps.keys())
                 self.list_to_exclude = flatten(self.list_to_exclude)
                 #self.NERs = self.ner()
                 
-                self.keys = self.np_sentiment_sent_dict.keys()
+                self.keys = self.merged_sent_sentiment_nps.keys()
 
                 print "Length of the new data after merging similar elements  %s"%len(self.keys)
                 self.clusters = list()
                 self.result = list()
                
-                print "\n\n\n\n\n"
                 self.filter_clusters()
                 
+                #The noun phrases who were not at all in the self.clusters
                 self.without_clusters =  set.difference(set(range(0, len(self.keys))), set(flatten(self.clusters)))
         
                 self.populate_result()
@@ -86,7 +109,6 @@ class HeuristicClustering:
                         for subtree in tree.subtrees(filter = lambda t: t.label()=='GPE'):
                                 __list.append(" ".join([e[0] for e in subtree.leaves()]).lower())
                 
-                print __list
                 return __list
 
 
@@ -134,24 +156,34 @@ class HeuristicClustering:
                                     {__np: 
                                         {"negative": (0, 1)[sentiment=="negative"], "positive": (0, 1)[sentiment=="positive"],
                                             "neutral": (0, 1)[sentiment=="neutral"], "sentences": [(sentence, sentiment)]}})
+                
                 return without_similar_elements
 
         def filter_clusters(self):
+                """
+                self.sent_sentiment_nps gave rise to merged_sent_sentiment_nps
+                outputs:
+                    self.clusters which will have list of lists 
+                    with each list having index numbers of the elements who were found to be similar
+                """
+
                 X = np.zeros((len(self.keys), len(self.keys)), dtype=np.float)
             
                 for i in xrange(0, len(self.keys)):
                         for j in xrange(0, len(self.keys)):
                                 if X[i][j] == 0:
-                                        st = 'Levenshtein.ratio("{1}", "{0}")'.format(self.keys[i], self.keys[j])
-                                        ratio = eval(st)
+                                        #st = 'Levenshtein.ratio("{1}", "{0}")'.format(self.keys[i], self.keys[j])
+                                        #ratio = eval(st)
+                                        ratio = SimilarityMatrices.levenshtein_ratio(self.keys[i], self.keys[j])
                                         X[i][j] = ratio
                                         X[j][i] = ratio
             
             
                 #Making tuples of the indexes for the element in X where the rtion is greater than .76
-                indices = np.where(X > .75)
+                indices = np.where((X > .75) & (X < 1))
                 new_list = zip(indices[0], indices[1])
                 found = False
+                
                 for e in new_list:
                         for j in self.clusters:
                                 if bool(set.intersection(set(e), set(j))):
@@ -165,16 +197,19 @@ class HeuristicClustering:
 
                 #Removing duplicate elements from clusters list
                 self.clusters = [list(set(element)) for element in self.clusters if len(element)> 2]
-                for element in self.clusters:
-                        print [self.keys[key] for key in element]
                 return 
 
         def populate_result(self):
+                """
+                without_clusters will have index numbers of the noun phrases for whom no other similar
+                noun_phrases were found
+                """
                 for __int_key in self.without_clusters:
                         new_dict = dict()
-                        name = self.keys[__int_key]
-                        new_dict = self.np_sentiment_sent_dict[name]
+                        name = self.keys[__int_key] #name of the noun phrase corresponding to this index number
+                        new_dict = self.merged_sent_sentiment_nps[name]
                         new_dict.update({"name": name})
+                        new_dict.update({"similar": list()})
                         self.result.append(new_dict)
                 
                 for cluster_list in self.clusters:
@@ -195,37 +230,26 @@ class HeuristicClustering:
                 """
                 result = list()
                 positive, negative, neutral, sentences = int(), int(), int(), list()
-                print [self.keys[element] for element in cluster_list]
+                
+               
+                cluster_names = [self.keys[element] for element in cluster_list]
+                
                 for element in cluster_list:
                         name = self.keys[element]    
-                        new_dict = self.np_sentiment_sent_dict[name]
+                        new_dict = self.merged_sent_sentiment_nps[name]
                         new_dict.update({"name": name})
                         result.append(new_dict)        
-                        positive = positive +  self.np_sentiment_sent_dict[name].get("positive") 
-                        negative = negative +  self.np_sentiment_sent_dict[name].get("negative") 
-                        neutral = neutral +  self.np_sentiment_sent_dict[name].get("neutral") 
+                        positive = positive +  self.merged_sent_sentiment_nps[name].get("positive") 
+                        negative = negative +  self.merged_sent_sentiment_nps[name].get("negative") 
+                        neutral = neutral +  self.merged_sent_sentiment_nps[name].get("neutral") 
                         sentences.extend(new_dict.get("sentences"))
         
                 result = sorted(result, reverse= True, key=lambda x: x.get("positive")+x.get("negative") + x.get("neutral"))
                 print "The name chosen is %s"%result[0].get("name"), "\n"
                 return {"name": result[0].get("name"), "positive": positive, "negative": negative, "neutral": neutral, 
-                            "sentences": sentences}
+                            "sentences": sentences, "similar": cluster_names}
 
 
-        def check_if_shortform(self, str1, str2):
-                """
-                To identify if "bbq nation" is similar to "barbeque nation"
-
-                """
-                if bool(set.intersection(set(str1.split()), set(str2.split()))):
-
-                        if set.issubset(set(str1), set(str2)):
-                                return True
-
-                        if set.issubset(set(str2), set(str1)):
-                                return 
-
-                return False
 
 if __name__ == "__main__":
         """

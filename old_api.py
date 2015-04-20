@@ -577,22 +577,35 @@ class GetWordCloud(restful.Resource):
                                     ner_algorithm_name = ner_algorithm_name,
                                     with_celery= False)
                
-                result = __instance.run() 
+                
+                __instance.run()
+                print __instance.clustered_nps
+                
+                result =  [{"name": __dict.get("name"), "positive": __dict.get("positive"), 
+                              "negative": __dict.get("negative"), "neutral": __dict.get("neutral")} for __dict in __instance.clustered_nps]
+                
+                print "\n\n\n"
+                #print result
                 """ 
                 def converting_to_percentage(__object):
                         i = (__object.get("positive")*__positive + __object.get("negative")*__negative)/(__positive+__negative)
                         __object.update({"likeness": '%.2f'%i})
                         return __object
-
+                """
                 def convert_sentences(__object):
                         return {"sentence": __object[0],
                                 "sentiment": __object[1]}
-                """                                
+                
+            
+                print __instance.clustered_nps[0], "\n"
+                [__dict.update({"sentences": map(convert_sentences, __dict.get("sentences"))}) for __dict in  __instance.clustered_nps]
+                
+                result =  __instance.clustered_nps
                 
                 return {"success": True,
 				"error": False,
-                                "result": __result,
-                                
+                                "result": result[0: 25],
+                                "sentences": list(), 
                                 }
 class UpdateClassifier(restful.Resource):
         @cors
@@ -657,13 +670,11 @@ class RawTextParser(restful.Resource):
         @timeit
         def post(self):
                 result = list()
+                from Text_Processing.PosTaggers.pos_tagging import PosTaggers
 
-                word_tokenization_algorithm = "punkt_n_treebank"
-                noun_phrases_algorithm = "textblob_np_conll"
-                pos_tagging_algorithm = "hunpos_pos_tagger"
                 
                 path = "/home/kaali/Programs/Python/Canworks/Canworks/Text_Processing/PrepareClassifiers/InMemoryClassifiers/"
-                args = raw_text_processing_parser.parse_args()    
+                args = raw_text_processing_parser.parse_args()
                 text = args["text"]
                 
 
@@ -677,34 +688,37 @@ class RawTextParser(restful.Resource):
                 
 		
                 
-                predicted_tags = tag_classifier.predict(sentences)
                 predicted_sentiment = new_sentiment_classifier.predict(sentences)
 
 
+                noun_phrases_algorithm_name = "topia_n_textblob"
+                __nouns = NounPhrases(sentences, default_np_extractor=noun_phrases_algorithm_name)
+                result  = [__tuple for __tuple in zip(sentences, predicted_sentiment, 
+                      __nouns.noun_phrases[noun_phrases_algorithm_name]) if __tuple[2]]
+                
+                print result
 
                 
-                word_tokenize = WordTokenize(sentences,  default_word_tokenizer='punkt_n_treebank')
-                word_tokenization_algorithm_result = word_tokenize.word_tokenized_list.get('punkt_n_treebank')
-
-
-                __pos_tagger = PosTaggers(word_tokenization_algorithm_result,  default_pos_tagger='hunpos_pos_tagger')
-                pos_tagging_algorithm_result =  __pos_tagger.pos_tagged_sentences.get('hunpos_pos_tagger')
-
-
-                __noun_phrases = NounPhrases(pos_tagging_algorithm_result, default_np_extractor="textblob_np_conll")
-                noun_phrases_algorithm_result =  __noun_phrases.noun_phrases.get("textblob_np_conll")
-
-                result = [element for element in zip(predicted_sentiment, noun_phrases_algorithm_result) if element[1]]
 
                 edited_result = list()
-                for element in result:
-                        if element[0].startswith("super"):
-                                edited_result.append((element[1], element[0].split("-")[1]))
-                                edited_result.append((element[1], element[0].split("-")[1]))
+                for (sent, sentiment, noun_phrases) in result:
+                        __nouns = list()
+                        if sentiment.startswith("super"):
+                                sentiment = sentiment.split("-")[1]
+                                __nouns.extend(noun_phrases)
+                                __nouns.extend(noun_phrases)
                         else:
-                                edited_result.append((element[1], element[0]))
+                            __nouns.extend(noun_phrases)
+                        edited_result.append([sent, sentiment,  __nouns ])
+                print edited_result
+
+                from FoodDomainApiHandlers.heuristic_clustering import HeuristicClustering
 
 
+                __result = HeuristicClustering(edited_result, None)
+                result = sorted(__result.result, reverse=True, key= lambda x: x.get("positive")+x.get("negative"))
+                print result
+                """
                 edited_result = list(itertools.chain(*[[(__k, __e[1]) for __k in __e[0]] for __e in edited_result]))
                 final_result = list()
                 for key, value in Counter(edited_result).iteritems():
@@ -723,18 +737,23 @@ class RawTextParser(restful.Resource):
             
 
                 result = sorted(result, reverse=True, key= lambda x: x.get("positive") + x.get("negative"))
-                def convert_sentences(__object):
-                        return {"sentence": __object[0], 
-                                "tag": __object[1],
-                                "sentiment": __object[2], }
+                """
+                sentences, sentiments = zip(*list(set(itertools.chain(*[__object.get("sentences") for __object in result]))))
+                
+                predicted_tags = tag_classifier.predict(sentences)
+
+                def convert_np(__object):
+                        return {"positive": __object.get("positive"), 
+                                "negative": __object.get("negative"),
+                                "name": __object.get("name"), }
 
 
+                print zip(sentences, predicted_tags, sentiments)
                 return {"success": True,
 				"error": False,
-                                "result": result,
-                                "sentences": map(convert_sentences, zip(sentences, predicted_tags, predicted_sentiment)),
+                                "result": map(convert_np, result),
+                                "sentences": zip(sentences, predicted_tags, sentiments),
                                 }
-
 
 api.add_resource(EateriesList, '/eateries_list')
 api.add_resource(LimitedEateriesList, '/limited_eateries_list')

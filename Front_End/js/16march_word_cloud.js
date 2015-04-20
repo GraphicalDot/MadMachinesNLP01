@@ -166,10 +166,8 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 						"polarity": __d.polarity, 
 						"positive": __d.positive,
 						"negative": __d.negative,
-						"neutral": __d.neutral,
-						"sentences": __d.sentences,
-						"similar": __d.similar,
-						"r": __d.positive+__d.negative + __d.neutral,
+						"Likeness": __d.likeness,
+						"r": __d.positive+__d.negative,
 						}); }); return newDataSet }
 			
 		if(LEVEL == 1){
@@ -354,7 +352,7 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 					html: true, 
 					title: function(){
 					//return  "<br>" + 'Name: ' +'  ' +'<span>' + this.__data__.name + '</span>' +"<br>" + 'Frequency: ' +  '<span>' + this.__data__.r + '</span>';}
-					return   '<span>' + 'Positive: ' + this.__data__.positive + '</span>' +  "<br>" + 'Negative: ' +  '<span>' + this.__data__.negative + '</span>' + '<span>' +  "<br>" + 'Neutral: ' +  '<span>'+ this.__data__.neutral + '</span>';}
+					return   '<span>' + 'Positive: ' + this.__data__.positive + '</span>' +  "<br>" + 'Likeness: ' +  '<span>' + this.__data__.Likeness + '</span>';}
 				      });
 
 
@@ -434,25 +432,11 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 
 
 		function OnDBLClick(d){
-			/*
 			LEVEL = LEVEL+1
 			console.log(DATA(d.name, LEVEL))
 			drawNodes(DATA(d.name, LEVEL))
 			console.log(d)
 			console.log(LEVEL)
-			*/
-			$(".sentences").empty()
-			$.each(d.similar, function(iter, __data){
-				__html = '<button class="btn btn-small btn-primary" type="button" style="margin: 10px">' + __data + '</button>';
-				$('.sentences').append(__html)
-			})
-			$.each(d.sentences, function(iter, __sent){
-				var subView = new App.RootRowView({model: __sent}); 
-				$(".sentences").append(subView.render().el)
-
-			})			
-			console.log(d)
-			console.log(d.similar)
 		
 		};
 
@@ -460,6 +444,10 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 		drawNodes(DATA(null, LEVEL))
 		//drawNodes(data())
 	},
+
+
+
+
 
 
 
