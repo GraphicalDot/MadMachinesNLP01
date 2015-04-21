@@ -17,7 +17,9 @@ import nltk
 from compiler.ast import flatten
 import time
 from collections import Counter
-
+import re
+import math
+import jaro
 """
 ['ah and of course how can i forget the wasabi paste which was shaped and plonked on the platters with the same bare hands .', 
 u'positive', 
@@ -42,6 +44,69 @@ class SimilarityMatrices:
 
 
         @staticmethod
+        def ngram_ratio(__str1, __str2):
+                __str1, __str2 = __str1.replace(" ", ""), __str2.replace(" ", "")
+                __ngrams = lambda __str: ["".join(e) for e in list(nltk.ngrams(__str, 2))]
+                __l = len(set.intersection(set(__ngrams(__str1)), set(__ngrams(__str2))))
+                total = len(__ngrams(__str1)) + len(__ngrams(__str2))
+                try:
+                    return  float(__l*2)/total
+                except Exception as e:
+                    print e
+                    print __str1, __str2
+                    return 0
+
+        @staticmethod
+        def get_cosine(__str1, __str2):
+                """
+                Returns 0.0 if both string doesnt have any word common
+                for example
+                In[#]: get_cosine(text_to_vector('uttappams'), text_to_vector('appams'))
+                Out[#]: 0.0
+                
+                In[#]: get_cosine(text_to_vector('love masala dosai'), text_to_vector('onion rawa masala dosa'))
+                Out[#]: 0.288
+                
+                In[#]: get_cosine(text_to_vector('awesme tast'), text_to_vector('good taste'))
+                Out[#]: 0.0
+                
+                In[#]: get_cosine(text_to_vector('awesme taste'), text_to_vector('good taste'))
+                Out[#]: 0.5
+                """
+                vector1 = text_to_vector(__str1)
+                vector2 = text_to_vector(__str2)
+
+                WORD = re.compile(r'\w+')
+
+                def text_to_vector(text):
+                        words = WORD.findall(text)
+                        return Counter(words)
+                
+                intersection = set(vector1.keys()) & set(vector2.keys())
+                numerator = sum([vector1[x] * vector2[x] for x in intersection])
+                
+                sum1 = sum([vec1[x]**2 for x in vector1.keys()])
+                sum2 = sum([vec2[x]**2 for x in vector2.keys()])
+                denominator = math.sqrt(sum1) * math.sqrt(sum2)
+                
+                if not denominator:
+                        return 0.0
+                else:
+                        return float(numerator) / denominator
+
+
+        @staticmethod
+        def jaro_winkler(__str1, __str2):
+                def to_unicode(__str):
+                        if isinstance(__str, unicode):
+                                return __str
+                        return unicode(__str)
+
+                return jaro.jaro_winkler_metric(to_unicode(__str1), to_unicode(__str2))
+
+
+
+        @staticmethod
         def check_if_shortform(self, str1, str2):
                 """
                 To identify if "bbq nation" is similar to "barbeque nation"
@@ -58,7 +123,7 @@ class SimilarityMatrices:
                 return False
 
 class HeuristicClustering:
-        def __init__(self, sent_sentiment_nps, __eatery_name):
+        def __init__(self, sent_sentiment_nps, sentences, __eatery_name):
          
                 if __eatery_name:
                         self.list_to_exclude = flatten(["food", "service", "cost", "ambience", "place", "Place", "i", 
@@ -69,7 +134,7 @@ class HeuristicClustering:
                         self.list_to_exclude = ["food", "i", "service", "cost", "ambience", "delhi", "Delhi", "place", "Place"]
                 
 
-
+                self.sentences = sentences
                 self.sent_sentiment_nps = sent_sentiment_nps
                 print "Length of the old data after exclusion %s"%len(self.sent_sentiment_nps)
                 self.merged_sent_sentiment_nps = self.merge_similar_elements()
@@ -99,8 +164,7 @@ class HeuristicClustering:
                 self.populate_result()
                 
                 self.result = sorted(self.result, reverse=True, key= lambda x: x.get("positive") + x.get("negative")+ x.get("neutral"))
-                for e in self.result[0:20]:
-                        print e.get("name"), e.get("positive"), e.get("neutral"), e.get("negative"), len(e.get("sentences")), "\n\n"
+                print self.ner()
 
         def ner(self):
                 __list = list()
@@ -109,8 +173,14 @@ class HeuristicClustering:
                         for subtree in tree.subtrees(filter = lambda t: t.label()=='GPE'):
                                 __list.append(" ".join([e[0] for e in subtree.leaves()]).lower())
                 
-                return __list
-
+                ners = Counter(__list)
+                print ners
+                print "Length of the ners is --> %s"%len(ners.keys())
+                print "Top 10 ners is --> %s"%sorted(ners.items(), reverse=True, key=lambda x: x[1])[0:10]
+                print "Length of ners is %s"%len(ners)
+                print "Length of sentences is %s"%len(self.sentences)
+                print "Percentage with sentences %.2f"%(float(len(ners))/len(self.sentences))
+                print "Percentage with noun phrases %.2f"%(float(len(ners))/len(self.result))
 
 
         def merge_similar_elements(self):
@@ -167,6 +237,7 @@ class HeuristicClustering:
                     with each list having index numbers of the elements who were found to be similar
                 """
 
+
                 X = np.zeros((len(self.keys), len(self.keys)), dtype=np.float)
             
                 for i in xrange(0, len(self.keys)):
@@ -174,16 +245,23 @@ class HeuristicClustering:
                                 if X[i][j] == 0:
                                         #st = 'Levenshtein.ratio("{1}", "{0}")'.format(self.keys[i], self.keys[j])
                                         #ratio = eval(st)
-                                        ratio = SimilarityMatrices.levenshtein_ratio(self.keys[i], self.keys[j])
+                                        #ratio = SimilarityMatrices.levenshtein_ratio(self.keys[i], self.keys[j])
+                                        ratio = SimilarityMatrices.ngram_ratio(self.keys[i], self.keys[j])
                                         X[i][j] = ratio
                                         X[j][i] = ratio
             
             
                 #Making tuples of the indexes for the element in X where the rtion is greater than .76
-                indices = np.where((X > .75) & (X < 1))
+                #indices = np.where((X > .75) & (X < 1))
+                indices = np.where(X > .75)
                 new_list = zip(indices[0], indices[1])
+
+                for e in new_list:
+                        print self.keys[e[0]], '<-->', self.keys[e[1]], '<-->', SimilarityMatrices.levenshtein_ratio(self.keys[e[0]], self.keys[e[1]])
+
                 found = False
-                
+                test_new_list = list()
+
                 for e in new_list:
                         for j in self.clusters:
                                 if bool(set.intersection(set(e), set(j))):
@@ -245,6 +323,8 @@ class HeuristicClustering:
                         sentences.extend(new_dict.get("sentences"))
         
                 result = sorted(result, reverse= True, key=lambda x: x.get("positive")+x.get("negative") + x.get("neutral"))
+                print sentences
+                print cluster_names
                 print "The name chosen is %s"%result[0].get("name"), "\n"
                 return {"name": result[0].get("name"), "positive": positive, "negative": negative, "neutral": neutral, 
                             "sentences": sentences, "similar": cluster_names}

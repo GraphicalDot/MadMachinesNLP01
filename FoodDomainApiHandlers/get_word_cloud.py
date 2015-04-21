@@ -274,7 +274,7 @@ class GetWordCloudApiHelper:
 
         @print_execution
         def do_clustering(self):
-                __result = HeuristicClustering(self.normalized_sent_sentiment_nps, self.eatery_name)
+                __result = HeuristicClustering(self.normalized_sent_sentiment_nps, self.c_sentences, self.eatery_name)
                 self.clustered_nps = sorted(__result.result, reverse=True, key= lambda x: x.get("positive")+x.get("negative"))
                 return self.clustered_nps
 

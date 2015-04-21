@@ -169,6 +169,8 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 						"neutral": __d.neutral,
 						"sentences": __d.sentences,
 						"similar": __d.similar,
+						"o_likeness": __d.o_likeness,
+						"i_likeness": __d.i_likeness,
 						"r": __d.positive+__d.negative + __d.neutral,
 						}); }); return newDataSet }
 			
@@ -354,7 +356,7 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 					html: true, 
 					title: function(){
 					//return  "<br>" + 'Name: ' +'  ' +'<span>' + this.__data__.name + '</span>' +"<br>" + 'Frequency: ' +  '<span>' + this.__data__.r + '</span>';}
-					return   '<span>' + 'Positive: ' + this.__data__.positive + '</span>' +  "<br>" + 'Negative: ' +  '<span>' + this.__data__.negative + '</span>' + '<span>' +  "<br>" + 'Neutral: ' +  '<span>'+ this.__data__.neutral + '</span>';}
+					return   '<span>' + this.__data__.name + '</span>' + '<br>'+ '<span>' + 'Positive: ' + this.__data__.positive + '</span>' +  "<br>" + 'Negative: ' +  '<span>' + this.__data__.negative + '</span>' + '<span>' +  "<br>" + 'Neutral: ' +  '<span>'+ this.__data__.neutral + '</span>'+ '<br>'+ '<span>' + 'I_Likeness: '+ this.__data__.i_likeness + '</span>' + '<br>'+ '<span>'+ 'O_Likeness: ' + this.__data__.o_likeness + '</span>';}
 				      });
 
 
@@ -453,6 +455,8 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 			})			
 			console.log(d)
 			console.log(d.similar)
+			console.log(d.i_likeness)
+			console.log(d.o_likeness)
 		
 		};
 

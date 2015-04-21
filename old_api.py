@@ -579,7 +579,6 @@ class GetWordCloud(restful.Resource):
                
                 
                 __instance.run()
-                print __instance.clustered_nps
                 
                 result =  [{"name": __dict.get("name"), "positive": __dict.get("positive"), 
                               "negative": __dict.get("negative"), "neutral": __dict.get("neutral")} for __dict in __instance.clustered_nps]
@@ -595,13 +594,30 @@ class GetWordCloud(restful.Resource):
                 def convert_sentences(__object):
                         return {"sentence": __object[0],
                                 "sentiment": __object[1]}
+
+                total_positive = sum([__dict.get("positive") for __dict in  __instance.clustered_nps])
+                total_negative = sum([__dict.get("negative") for __dict in  __instance.clustered_nps])
+                total = total_positive + total_negative
+
+                def make_result(__dict):
+                        __dict.update({"sentences": map(convert_sentences, __dict.get("sentences"))})
+                        try:
+                            i_likeness = "%.2f"%(float(__dict.get("positive"))/ __dict.get("negative"))
+                        except ZeroDivisionError:
+                            i_likeness = '100'
+
+                        o_likeness =  "%.2f"%(float(__dict.get("positive")*total_positive + __dict.get("negative")*total_negative)/total)
+                        __dict.update({"i_likeness": i_likeness})
+                        __dict.update({"o_likeness": o_likeness})
+
+
+                #[__dict.update({"sentences": map(convert_sentences, __dict.get("sentences"))}) for __dict in  __instance.clustered_nps]
                 
-            
-                print __instance.clustered_nps[0], "\n"
-                [__dict.update({"sentences": map(convert_sentences, __dict.get("sentences"))}) for __dict in  __instance.clustered_nps]
-                
+                map(make_result, __instance.clustered_nps)
                 result =  __instance.clustered_nps
-                
+               
+                print "\n\n\n\n"
+                print result[0]
                 return {"success": True,
 				"error": False,
                                 "result": result[0: 25],
