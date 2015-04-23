@@ -10,7 +10,8 @@ from colored_print import bcolors
 from TagAnalysis import TagClassifier
 from MainAlgorithms import get_all_algorithms_result, path_parent_dir, path_trainers_file, path_in_memory_classifiers, timeit, cd
 from Word_Tokenization import WordTokenize
-from PosTaggers import PosTaggers
+from PosTaggers import PosTaggers, PosTaggerDirPath, HunPosModelPath, HunPosTagPath
 from PrepareClassifiers import LoadClassifiers
 from NER import NERs
 from NPClustering import NpClustering
+

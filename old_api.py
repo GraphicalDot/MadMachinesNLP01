@@ -615,7 +615,8 @@ class GetWordCloud(restful.Resource):
                 
                 map(make_result, __instance.clustered_nps)
                 result =  __instance.clustered_nps
-               
+              
+
                 print "\n\n\n\n"
                 print result[0]
                 return {"success": True,
@@ -673,7 +674,8 @@ class ChangeTagOrSentiment(restful.Resource):
 
                 __collection = connection.training_data.training_sentiment_collection
                 print __collection.count()
-                __collection.insert({"review_id": "misc", "sentence": sentence, "sentiment": value})
+                __collection.insert({"review_id": "misc", "sentence": sentence, "sentiment": value, "epoch_time": time.time(), 
+                                "h_r_time": time.asctime()})
                 print __collection.count()
                 return {"success": True,
                         "error": False,

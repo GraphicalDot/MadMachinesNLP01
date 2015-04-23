@@ -49,7 +49,7 @@ App.SeeWordCloudDateSelectionView = Backbone.View.extend({
 		$(".data_selection").modal("hide");
 		bootbox.dialog({ 
 			closeButton: false, 
-			message: "<img src='css/images/loading__a.gif'>",
+			message: "<img src='css/images/y4RRIFJ.jpg'>",
 			className: "loadingclass",
 		});
 	},

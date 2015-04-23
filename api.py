@@ -446,7 +446,7 @@ class LimitedEateriesList(restful.Resource):
 class EateriesList(restful.Resource):
 	@cors
 	def get(self):
-                result = list(eateries.find({"eatery_area_or_city": "ncr"}, fields= {"eatery_id": True, "_id": False, "eatery_name": True}).limit(200).sort("eatery_total_reviews", -1))
+                result = list(eateries.find(fields= {"eatery_id": True, "_id": False, "eatery_name": True}).limit(300).sort("eatery_total_reviews", -1))
 		
                 return {"success": True,
 			"error": False,

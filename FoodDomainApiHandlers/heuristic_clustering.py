@@ -20,6 +20,15 @@ from collections import Counter
 import re
 import math
 import jaro
+import os
+import sys
+from nltk.tag.hunpos import HunposTagger
+this_file_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(this_file_path)
+from Text_Processing.PosTaggers import PosTaggerDirPath, HunPosModelPath, HunPosTagPath
+
+
+
 """
 ['ah and of course how can i forget the wasabi paste which was shaped and plonked on the platters with the same bare hands .', 
 u'positive', 
@@ -44,7 +53,7 @@ class SimilarityMatrices:
 
 
         @staticmethod
-        def ngram_ratio(__str1, __str2):
+        def modified_dice_cofficient(__str1, __str2):
                 __str1, __str2 = __str1.replace(" ", ""), __str2.replace(" ", "")
                 __ngrams = lambda __str: ["".join(e) for e in list(nltk.ngrams(__str, 2))]
                 __l = len(set.intersection(set(__ngrams(__str1)), set(__ngrams(__str2))))
@@ -163,6 +172,8 @@ class HeuristicClustering:
         
                 self.populate_result()
                 
+                self.result = self.filter_on_basis_pos_tag()
+                
                 self.result = sorted(self.result, reverse=True, key= lambda x: x.get("positive") + x.get("negative")+ x.get("neutral"))
                 print self.ner()
 
@@ -239,14 +250,14 @@ class HeuristicClustering:
 
 
                 X = np.zeros((len(self.keys), len(self.keys)), dtype=np.float)
-            
+                print self.keys 
                 for i in xrange(0, len(self.keys)):
                         for j in xrange(0, len(self.keys)):
                                 if X[i][j] == 0:
                                         #st = 'Levenshtein.ratio("{1}", "{0}")'.format(self.keys[i], self.keys[j])
                                         #ratio = eval(st)
                                         #ratio = SimilarityMatrices.levenshtein_ratio(self.keys[i], self.keys[j])
-                                        ratio = SimilarityMatrices.ngram_ratio(self.keys[i], self.keys[j])
+                                        ratio = SimilarityMatrices.modified_dice_cofficient(self.keys[i], self.keys[j])
                                         X[i][j] = ratio
                                         X[j][i] = ratio
             
@@ -328,6 +339,25 @@ class HeuristicClustering:
                 print "The name chosen is %s"%result[0].get("name"), "\n"
                 return {"name": result[0].get("name"), "positive": positive, "negative": negative, "neutral": neutral, 
                             "sentences": sentences, "similar": cluster_names}
+
+        def filter_on_basis_pos_tag(self):
+                """
+                pos tagging of noun phrases will be done, and if the noun phrases contains some adjectives or RB, 
+                it will be removed from the total noun_phrases list
+                """
+                hunpos_tagger = HunposTagger(HunPosModelPath, HunPosTagPath)
+                filtered_list = list()
+                for __e in self.result:
+                        __list = [pos_tag for (np, pos_tag) in hunpos_tagger.tag(nltk.wordpunct_tokenize(__e.get("name")))]
+                        if "RB" == __list[0] or  "CD" in __list:
+                                print __e.get("name"), __list
+
+                        else:
+                                filtered_list.append(__e)
+
+                return filtered_list
+
+
 
 
 
@@ -442,7 +472,6 @@ if __name__ == "__main__":
                     #if not __dict1.get("name") != __dict2.get("name"):
                             st = 'Levenshtein.ratio("{1}", "{0}")'.format(__dict1.get("name"), __dict2.get("name"))
                             print eval(st), "\t", __dict1.get("name"), __dict2.get("name")
-        """
 
 
         test_data = [['non veg buffet', 'veg buffet', False],
@@ -501,3 +530,7 @@ if __name__ == "__main__":
                 [13, 30], [14, 30], [23, 30], [32, 31], [31, 32], [15, 34]]
 
         [[u'philadelphia rolls', 'Philadelphia rolls', u'philadelphia', u'veg philadelphia rolls'], [u'amazing gastronomic experience', 'gastronomic experience'], ['nut chocolate', 'chocolate', u'chunky nut chocolate'], ['Yuzu Miso Sauce', 'Japanese miso soup', 'Japanese Yuzu miso sauce', u'yuzu miso sauce', u'japanese yuzu miso sauce'], [u'fried cream spring rolls', u'kylin special fried ice cream spring rolls', 'spring rolls', 'cream spring rolls', 'Fried Ice cream spring rolls', 'ice cream spring rolls', u'fried ice cream spring rolls'], ['Chicken Teriyaki', u'chicken teriyaki', u'chicken tepiniyaki dish', u'chicken teppanyaki'], ['Italian Smooch', u'italian smooch', ':- 1. italian smooch'], ['Spicy Salmon roll', 'salmon rolls', u'spicy salmon rolls', 'salmon maki', u'spicy salmon roll', 'Salmon Roll', u'salmon roll', u'spicy salmon maki'], [u'mango breeze drink', 'Mango breeze', u'mango breeze', 'mango Breeze drink'], ['Japanese Restaurant', u'authentic japanese restaurant', u'japanese restaurant', u'japanese 5 star restaurants', 'Japanese 5 star Restaurants', 'Japanese restaurant']]
+
+
+        """
+
