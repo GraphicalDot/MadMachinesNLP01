@@ -26,7 +26,7 @@ from nltk.tag.hunpos import HunposTagger
 this_file_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(this_file_path)
 from Text_Processing.PosTaggers import PosTaggerDirPath, HunPosModelPath, HunPosTagPath
-
+from Text_Processing.colored_print import bcolors
 
 
 """
@@ -136,19 +136,24 @@ class HeuristicClustering:
          
                 if __eatery_name:
                         self.list_to_exclude = flatten(["food", "service", "cost", "ambience", "place", "Place", "i", 
-                            "great", "good", __eatery_name.lower().split(), "rs"])
+                            "great", "good", __eatery_name.lower().split(), "rs", "delhi", "india", "indian"])
                         #self.list_to_exclude = ["food", "service", "cost", "ambience", "delhi", "Delhi", 
                         #       "place", "Place", __eatery_name.lower().split()]
                 else:
-                        self.list_to_exclude = ["food", "i", "service", "cost", "ambience", "delhi", "Delhi", "place", "Place"]
+                        self.list_to_exclude = ["food", "i", "service", "cost", "ambience", "delhi", "Delhi", "place", "Place", "india", "indian"]
                 
 
                 self.sentences = sentences
                 self.sent_sentiment_nps = sent_sentiment_nps
-                print "Length of the old data after exclusion %s"%len(self.sent_sentiment_nps)
                 self.merged_sent_sentiment_nps = self.merge_similar_elements()
                 
-                print "To check Whether there ae any duplicate elements after merging similar element"
+                print "\n\n"
+                print "self.sentences"
+                print self.sentences[0:2], 
+                print "\n\n"
+                print "self.sent_Sentiment_nps"
+                print self.sent_sentiment_nps[0:2]
+                print "\n\n"
                 assert(set(Counter(self.merged_sent_sentiment_nps.keys()).values()) == {1}),\
                                     "merge_similar_elements method has an error as all the keys are not unique"
                 new_list = list()
@@ -161,7 +166,6 @@ class HeuristicClustering:
                 
                 self.keys = self.merged_sent_sentiment_nps.keys()
 
-                print "Length of the new data after merging similar elements  %s"%len(self.keys)
                 self.clusters = list()
                 self.result = list()
                
@@ -172,11 +176,55 @@ class HeuristicClustering:
         
                 self.populate_result()
                 
+                print self.result[0]
+
+
+                self.common_ners = list(set.intersection(set([e[0] for e in self.ner()]), set([e[0] for e in self.custom_ner()])))
+                
                 self.result = self.filter_on_basis_pos_tag()
                 
                 self.result = sorted(self.result, reverse=True, key= lambda x: x.get("positive") + x.get("negative")+ x.get("neutral"))
-                print self.ner()
 
+
+        def print_execution(func):
+                "This decorator dumps out the arguments passed to a function before calling it"
+                argnames = func.func_code.co_varnames[:func.func_code.co_argcount]
+                fname = func.func_name
+                def wrapper(*args,**kwargs):
+                        start_time = time.time()
+                        print "{0} Now {1} have started executing {2}".format(bcolors.OKBLUE, func.func_name, bcolors.RESET)
+                        result = func(*args, **kwargs)
+                        print "{0} Total time taken by {1} for execution is --<<{2}>>--{3}\n".format(bcolors.OKGREEN, func.func_name,
+                                (time.time() - start_time), bcolors.RESET)
+
+                        return result
+                return wrapper
+
+
+        @print_execution
+        def custom_ner(self):
+                ner = list()
+                regexp_grammer = r"NER:{<IN><NN.*><NN.*>?}"
+                __parser = nltk.RegexpParser(regexp_grammer)
+
+                hunpos_tagger = HunposTagger(HunPosModelPath, HunPosTagPath)
+                for __sentence in self.sentences:
+                        try:
+                                tagged = hunpos_tagger.tag(nltk.word_tokenize(__sentence.encode("utf-8")))
+                        except Exception as e:    
+                                hunpos_tagger = HunposTagger(HunPosModelPath, HunPosTagPath)
+                                tagged = hunpos_tagger.tag(nltk.word_tokenize(__sentence.encode("utf-8")))
+                        tree = __parser.parse(tagged)
+                        for subtree in tree.subtrees(filter = lambda t: t.label()=='NER'):
+                                l = " ".join([e[0] for e in subtree.leaves() if e[1] == 'NNP' or e[1] == 'NNS' or e[1] == 'NN'])
+                                ner.append(l.lower())
+
+                result = sorted(Counter(ner).items(), reverse=True, key=lambda x: x[1])
+                return result
+
+
+
+        @print_execution
         def ner(self):
                 __list = list()
                 for sent in self.sentences:
@@ -185,15 +233,11 @@ class HeuristicClustering:
                                 __list.append(" ".join([e[0] for e in subtree.leaves()]).lower())
                 
                 ners = Counter(__list)
-                print ners
-                print "Length of the ners is --> %s"%len(ners.keys())
-                print "Top 10 ners is --> %s"%sorted(ners.items(), reverse=True, key=lambda x: x[1])[0:10]
-                print "Length of ners is %s"%len(ners)
-                print "Length of sentences is %s"%len(self.sentences)
-                print "Percentage with sentences %.2f"%(float(len(ners))/len(self.sentences))
-                print "Percentage with noun phrases %.2f"%(float(len(ners))/len(self.result))
+                result = sorted(ners.items(), reverse=True, key=lambda x: x[1])
+                return result
 
 
+        @print_execution
         def merge_similar_elements(self):
                 """
                 Merging noun phrases who have exact similar spellings with each other and return a dictionary in the form
@@ -211,10 +255,10 @@ class HeuristicClustering:
                                 print "This noun_phrase belongs to ner {0}".format(i.get("name"))
                                 pass
                                 """
-                                if bool(set.intersection(set(__np.split(" ")),  set(self.list_to_exclude))):
-                                        pass    
+                                #if bool(set.intersection(set(__np.split(" ")),  set(self.list_to_exclude))):
+                                #       pass    
 
-                                elif without_similar_elements.get(__np):
+                                if without_similar_elements.get(__np):
                                         result = without_similar_elements.get(__np)
                                         positive, negative, neutral, sentences = result.get("positive"), result.get("negative"),\
                                                 result.get("neutral"), result.get("sentences")
@@ -240,6 +284,7 @@ class HeuristicClustering:
                 
                 return without_similar_elements
 
+        @print_execution
         def filter_clusters(self):
                 """
                 self.sent_sentiment_nps gave rise to merged_sent_sentiment_nps
@@ -250,7 +295,6 @@ class HeuristicClustering:
 
 
                 X = np.zeros((len(self.keys), len(self.keys)), dtype=np.float)
-                print self.keys 
                 for i in xrange(0, len(self.keys)):
                         for j in xrange(0, len(self.keys)):
                                 if X[i][j] == 0:
@@ -267,9 +311,10 @@ class HeuristicClustering:
                 indices = np.where(X > .75)
                 new_list = zip(indices[0], indices[1])
 
+                """
                 for e in new_list:
                         print self.keys[e[0]], '<-->', self.keys[e[1]], '<-->', SimilarityMatrices.levenshtein_ratio(self.keys[e[0]], self.keys[e[1]])
-
+                """
                 found = False
                 test_new_list = list()
 
@@ -288,10 +333,12 @@ class HeuristicClustering:
                 self.clusters = [list(set(element)) for element in self.clusters if len(element)> 2]
                 return 
 
+        @print_execution
         def populate_result(self):
                 """
                 without_clusters will have index numbers of the noun phrases for whom no other similar
                 noun_phrases were found
+                self.result will be populated after execution of this method
                 """
                 for __int_key in self.without_clusters:
                         new_dict = dict()
@@ -306,6 +353,7 @@ class HeuristicClustering:
                         self.result.append(__dict)
                 return
 
+        @print_execution
         def maximum_frequency(self, cluster_list):
                 """
                 Returning name with maximum frequency in a cluster, by joining all the frequencies
@@ -334,24 +382,46 @@ class HeuristicClustering:
                         sentences.extend(new_dict.get("sentences"))
         
                 result = sorted(result, reverse= True, key=lambda x: x.get("positive")+x.get("negative") + x.get("neutral"))
-                print sentences
-                print cluster_names
-                print "The name chosen is %s"%result[0].get("name"), "\n"
+                #print sentences
+                #print cluster_names
+                #print "The name chosen is %s"%result[0].get("name"), "\n"
                 return {"name": result[0].get("name"), "positive": positive, "negative": negative, "neutral": neutral, 
                             "sentences": sentences, "similar": cluster_names}
 
+        @print_execution
         def filter_on_basis_pos_tag(self):
                 """
-                pos tagging of noun phrases will be done, and if the noun phrases contains some adjectives or RB, 
+                pos tagging of noun phrases will be done, and if the noun phrases contains some adjectives or RB or FW, 
                 it will be removed from the total noun_phrases list
+
+                Any Noun phrases when split, if present in self.list_to_exclude will not be included in the final result
+                for Example: 
+                self.list_to_exclude = ["food", "i", "service", "cost", "ambience", "delhi", "Delhi", "place", "Place"]
+                noun_phrase = "great place"
+                
                 """
+                print "{0} These noun phrases will be removed from the noun phrases {1}".format(bcolors.OKBLUE, bcolors.RESET)
+                print "{0} List To Exclude {1}".format(bcolors.OKBLUE, bcolors.RESET)
+                print self.list_to_exclude
+                print "\n"
+                print "{0} Common name entities  {1}".format(bcolors.OKBLUE, bcolors.RESET)
+                print self.common_ners
+                print "\n"
                 hunpos_tagger = HunposTagger(HunPosModelPath, HunPosTagPath)
                 filtered_list = list()
                 for __e in self.result:
                         __list = [pos_tag for (np, pos_tag) in hunpos_tagger.tag(nltk.wordpunct_tokenize(__e.get("name")))]
-                        if "RB" == __list[0] or  "CD" in __list:
-                                print __e.get("name"), __list
-
+                        
+                        
+                        if bool(set.intersection(set(__e.get("name").split(" ")),  set(self.list_to_exclude))):
+                                print __e.get("name")
+                                pass    
+                        
+                        #elif __e.get("name") in self.common_ners:
+                        #        pass
+                        
+                        elif "RB" == __list[0] or  "CD" in __list or "FW" in __list:
+                                pass
                         else:
                                 filtered_list.append(__e)
 

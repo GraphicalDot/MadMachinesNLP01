@@ -602,7 +602,7 @@ class GetWordCloud(restful.Resource):
                 def make_result(__dict):
                         __dict.update({"sentences": map(convert_sentences, __dict.get("sentences"))})
                         try:
-                            i_likeness = "%.2f"%(float(__dict.get("positive"))/ __dict.get("negative"))
+                            i_likeness = "%.2f"%(float(__dict.get("positive")*100)/( __dict.get("negative") + __dict.get("positive")))
                         except ZeroDivisionError:
                             i_likeness = '100'
 
@@ -617,8 +617,6 @@ class GetWordCloud(restful.Resource):
                 result =  __instance.clustered_nps
               
 
-                print "\n\n\n\n"
-                print result[0]
                 return {"success": True,
 				"error": False,
                                 "result": result[0: 25],
@@ -733,8 +731,9 @@ class RawTextParser(restful.Resource):
                 from FoodDomainApiHandlers.heuristic_clustering import HeuristicClustering
 
 
-                __result = HeuristicClustering(edited_result, None)
+                __result = HeuristicClustering(edited_result, sentences, None)
                 result = sorted(__result.result, reverse=True, key= lambda x: x.get("positive")+x.get("negative"))
+                print "\n\n"
                 print result
                 """
                 edited_result = list(itertools.chain(*[[(__k, __e[1]) for __k in __e[0]] for __e in edited_result]))
@@ -755,7 +754,6 @@ class RawTextParser(restful.Resource):
             
 
                 result = sorted(result, reverse=True, key= lambda x: x.get("positive") + x.get("negative"))
-                """
                 sentences, sentiments = zip(*list(set(itertools.chain(*[__object.get("sentences") for __object in result]))))
                 
                 predicted_tags = tag_classifier.predict(sentences)
@@ -767,10 +765,10 @@ class RawTextParser(restful.Resource):
 
 
                 print zip(sentences, predicted_tags, sentiments)
+                """
                 return {"success": True,
 				"error": False,
-                                "result": map(convert_np, result),
-                                "sentences": zip(sentences, predicted_tags, sentiments),
+                                "result": result,
                                 }
 
 api.add_resource(EateriesList, '/eateries_list')
