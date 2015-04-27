@@ -27,7 +27,7 @@ this_file_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(this_file_path)
 from Text_Processing.PosTaggers import PosTaggerDirPath, HunPosModelPath, HunPosTagPath
 from Text_Processing.colored_print import bcolors
-
+from GlobalConfigs import DEBUG
 
 """
 ['ah and of course how can i forget the wasabi paste which was shaped and plonked on the platters with the same bare hands .', 
@@ -192,10 +192,34 @@ class HeuristicClustering:
                 fname = func.func_name
                 def wrapper(*args,**kwargs):
                         start_time = time.time()
-                        print "{0} Now {1} have started executing {2}".format(bcolors.OKBLUE, func.func_name, bcolors.RESET)
+                        if DEBUG["PRINT_DOCS"]:
+                                print "\n" 
+                                print "{0} DOC of the function {1}{2}".format(bcolors.OKBLUE, func.func_name, bcolors.RESET)
+                                print "{0} DOC of the function {1}{2}".format(bcolors.OKBLUE, func.__doc__, bcolors.RESET)
+                                print "\n" 
+
+
+                        if DEBUG["EXECUTION_TIME"]:
+                                print "{0} Now {1} have started executing {2}".format(bcolors.OKBLUE, func.func_name, bcolors.RESET)
                         result = func(*args, **kwargs)
-                        print "{0} Total time taken by {1} for execution is --<<{2}>>--{3}\n".format(bcolors.OKGREEN, func.func_name,
-                                (time.time() - start_time), bcolors.RESET)
+                        if DEBUG["RESULTS"]:
+                                print "{0} The result for {1}{2}".format(bcolors.OKBLUE, func.func_name, bcolors.RESET)
+                                print "{0} The result is of type {1}{2}".format(bcolors.OKBLUE, type(result), bcolors.RESET)
+                                if type(result) == dict:
+                                        print "{0} The First ten keys of the result".format(bcolors.OKBLUE,)
+                                        for k, v in list(result.iteritems())[10]:
+                                                print k, v
+                                
+                                if type(result) == list:
+                                        print "{0} The First element of the result {1}{2}".format(bcolors.OKBLUE, 
+                                                result[0], bcolors.RESET)
+                                        
+                                
+                        
+                        if DEBUG["EXECUTION_TIME"]:
+                                print "{0} Total time taken by {1} for execution is --<<{2}>>--{3}\n".format(bcolors.OKGREEN, 
+                                        func.func_name, (time.time() - start_time), bcolors.RESET)
+                                print "\n" 
 
                         return result
                 return wrapper

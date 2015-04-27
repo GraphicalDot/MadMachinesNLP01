@@ -62,11 +62,15 @@ import base64
 import requests
 from PIL import Image
 import inspect
+from Text_Processing.Sentence_Tokenization.Sentence_Tokenization_Classes import SentenceTokenizationOnRegexOnInterjections
+
 
 from GlobalConfigs import MONGO_REVIEWS_IP, MONGO_REVIEWS_PORT, MONGO_REVIEWS_DB,\
-        MONGO_REVIEWS_EATERIES_COLLECTION, MONGO_REVIEWS_REVIEWS_COLLECTION
+        MONGO_REVIEWS_EATERIES_COLLECTION, MONGO_REVIEWS_REVIEWS_COLLECTION, DEBUG
 
-from FoodDomainApiHandlers.get_word_cloud import GetWordCloudApiHelper
+from FoodDomainApiHandlers.food_word_cloud import FoodWordCloudApiHelper
+from FoodDomainApiHandlers.ambience_word_cloud import AmbienceWordCloudApiHelper
+from FoodDomainApiHandlers.cost_word_cloud import CostWordCloudApiHelper
 
 
 connection = pymongo.MongoClient(MONGO_REVIEWS_IP, MONGO_REVIEWS_PORT, tz_aware=True, w=1, 
@@ -566,8 +570,50 @@ class GetWordCloud(restful.Resource):
                 else:
                         review_list = [(post.get("review_id"), post.get("review_text")) for post in reviews.find({"eatery_id" :eatery_id})] 
                 
-                __instance = GetWordCloudApiHelper(reviews= review_list, eatery_name=eatery_name, category=category, 
-                                    tag_analysis_algorithm_name=tag_analysis_algorithm_name, 
+
+
+                if category == "cost":
+                        __instance = CostWordCloudApiHelper(reviews= review_list, eatery_name=eatery_name, 
+                                    category=category, tag_analysis_algorithm_name=tag_analysis_algorithm_name, 
+                                    sentiment_analysis_algorithm_name= sentiment_analysis_algorithm_name,
+                                    word_tokenization_algorithm_name=word_tokenization_algorithm_name, 
+                                    pos_tagging_algorithm_name=pos_tagging_algorithm_name, 
+                                    noun_phrases_algorithm_name= noun_phrases_algorithm_name, 
+                                    np_clustering_algorithm_name=np_clustering_algorithm_name,
+                                    total_noun_phrases = total_noun_phrases,
+                                    ner_algorithm_name = ner_algorithm_name,
+                                    with_celery= False)
+                        
+                        __instance.run()
+                        return {"success": True,
+				"error": False,
+                                "result": __instance.result,
+                                "sentences": list(), 
+                                }
+               
+                if category == "ambience":
+                        __instance = AmbienceWordCloudApiHelper(reviews= review_list, eatery_name=eatery_name, 
+                                    category=category, tag_analysis_algorithm_name=tag_analysis_algorithm_name, 
+                                    sentiment_analysis_algorithm_name= sentiment_analysis_algorithm_name,
+                                    word_tokenization_algorithm_name=word_tokenization_algorithm_name, 
+                                    pos_tagging_algorithm_name=pos_tagging_algorithm_name, 
+                                    noun_phrases_algorithm_name= noun_phrases_algorithm_name, 
+                                    np_clustering_algorithm_name=np_clustering_algorithm_name,
+                                    total_noun_phrases = total_noun_phrases,
+                                    ner_algorithm_name = ner_algorithm_name,
+                                    with_celery= False)
+                        
+                        __instance.run()
+                        return {"success": True,
+				"error": False,
+                                "result": __instance.result,
+                                "sentences": list(), 
+                                }
+               
+
+                if category == "food":
+                            __instance = FoodWordCloudApiHelper(reviews= review_list, eatery_name=eatery_name, 
+                                    category=category, tag_analysis_algorithm_name=tag_analysis_algorithm_name, 
                                     sentiment_analysis_algorithm_name= sentiment_analysis_algorithm_name,
                                     word_tokenization_algorithm_name=word_tokenization_algorithm_name, 
                                     pos_tagging_algorithm_name=pos_tagging_algorithm_name, 
@@ -578,23 +624,39 @@ class GetWordCloud(restful.Resource):
                                     with_celery= False)
                
                 
-                __instance.run()
+                            __instance.run()
+                                
+                            return {"success": True,
+				    "error": False,
+                                    "result": __instance.result[0 : 25],
+                                    "sentences": list(), 
+                                }
+
+                """
                 
+                        
+                if category == "ambience":
+                        return {"success": True,
+			    	"error": False,
+                                "result": __instance.clustered_nps,
+                                "sentences": list(), 
+                                }
+                
+                        
+                        
                 result =  [{"name": __dict.get("name"), "positive": __dict.get("positive"), 
                               "negative": __dict.get("negative"), "neutral": __dict.get("neutral")} for __dict in __instance.clustered_nps]
                 
                 print "\n\n\n"
                 #print result
-                """ 
                 def converting_to_percentage(__object):
                         i = (__object.get("positive")*__positive + __object.get("negative")*__negative)/(__positive+__negative)
                         __object.update({"likeness": '%.2f'%i})
                         return __object
-                """
+
                 def convert_sentences(__object):
                         return {"sentence": __object[0],
                                 "sentiment": __object[1]}
-
                 total_positive = sum([__dict.get("positive") for __dict in  __instance.clustered_nps])
                 total_negative = sum([__dict.get("negative") for __dict in  __instance.clustered_nps])
                 total = total_positive + total_negative
@@ -615,13 +677,10 @@ class GetWordCloud(restful.Resource):
                 
                 map(make_result, __instance.clustered_nps)
                 result =  __instance.clustered_nps
-              
+             
+                print result[3]
+                """
 
-                return {"success": True,
-				"error": False,
-                                "result": result[0: 25],
-                                "sentences": list(), 
-                                }
 class UpdateClassifier(restful.Resource):
         @cors
         @timeit

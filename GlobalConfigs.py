@@ -32,3 +32,11 @@ CELERY_REDIS_BROKER_IP = "localhost"
 CELERY_REDIS_BROKER_PORT = 6379
 CELERY_REDIS_BROKER_DB_NUMBER = 0 
 
+DEBUG = {"ALL": True,
+        "RESULTS": False, 
+        "EXECUTION_TIME": True,
+        "PRINT_DOCS": False,
+        }
+
+
+
