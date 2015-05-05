@@ -61,7 +61,12 @@ App.SeeWordCloudDateSelectionView = Backbone.View.extend({
 		this.$el.addClass("dvLoading");
 	
 		window.word_cloud_category =  $("#wordCloudCategory").find("option:selected").val();
-		
+	
+		if (window.wordCloudCategory == "service"){
+			bootbox.alert("The service word cloud has not been implemented yet !!");
+			return 
+		}
+
 		this.loading_bootbox()
 		if ($('#startDate').val() > $('#selectStartDate').val()){
 			bootbox.alert("Genius the start date selected should be greater then start date").find('.modal-content').addClass("bootbox-modal-custom-class");

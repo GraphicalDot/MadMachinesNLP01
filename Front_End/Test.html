@@ -2,8 +2,8 @@
 "http://www.w3.org/TR/html4/loose.dtd">
 <html>
 	<head>
-		<title img=>Mad Machines NLP01 Test</title>
-		<meta name="description" content="Mad Machines NLP01 POC">
+		<title img=>Mad Machines REProE Test</title>
+		<meta name="description" content="Mad Machines REProE POC">
 		<meta charset="UTF-8">
 		<link href="css/bootstrap.css" rel="stylesheet">
 		<link href="css/main.css" rel="stylesheet">
@@ -127,13 +127,36 @@
 			
 			<tr>
 					
-				<td colspan="11">	
-					<textarea type="text" id="searchQuery" class="input-xlarge span12" rows="6" required="required" placeholder="enter the review to be processed" ></textarea>
+				<td colspan="12">	
+					<textarea type="text" id="searchQuery" class="input-xlarge span12" rows="8" required="required" placeholder="enter the review to be processed" ></textarea>
 				</td>
-				
-				<td colspan="1">
-					<button type="submit" id="submit" class="btn btn-primary">Submit</button>
-				</td>
+		
+				<td style="width: 20%">
+				<table class="table">
+					<tbody>
+					<tr>	
+						<td colspan="1">
+							<button type="submit" id="submit-food" class="btn btn-small btn-primary btn-block">Food Cloud</button>
+						</td>
+					</tr>
+					<tr>	
+						<td colspan="1">
+							<button type="submit" id="submit-cost" class="btn btn-small btn-block btn-primary">Cost Cloud</button>
+						</td>
+					</tr>
+					<tr>	
+						<td colspan="1">
+							<button type="submit" id="submit-ambience" class="btn btn-small btn-primary btn-block">Ambience Cloud</button>
+						</td>
+					</tr>
+					<tr>	
+						<td colspan="1">
+							<button type="submit" id="submit-service" class="btn btn-small btn-primary btn-block">Service Cloud</button>
+						</td>
+					</tr>
+					</tbody>
+				</table>
+				</td>	
 			</tr>
 		</tbody>
     </script>
@@ -328,7 +351,7 @@
                 
 		    <div class="navbar">
 			    <div class="page-header panel panel-default">
-			<h3 style="font-size: 30px">Mad Machines NLP01<span class="label label-default" id="version">version 2.0</span></h3>       
+			<h4>Mad Machines REProE<span class="label label-default" id="version">version 3.00</span></h4>       
 			</div>
             </div>
         </div>

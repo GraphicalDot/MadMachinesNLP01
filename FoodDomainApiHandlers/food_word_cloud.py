@@ -37,14 +37,20 @@ class FoodWordCloudApiHelper:
         def __init__(self, **kwargs):
                 allowed_kwargs = ['reviews', 'eatery_name', 'category', 'total_noun_phrases', 'word_tokenization_algorithm_name', 
                         'noun_phrases_algorithm_name', 'pos_tagging_algorithm_name', 'tag_analysis_algorithm_name', 
-                        'sentiment_analysis_algorithm_name', 'np_clustering_algorithm_name', 'ner_algorithm_name', 'with_celery']
+                        'sentiment_analysis_algorithm_name', 'np_clustering_algorithm_name', 'ner_algorithm_name', 'with_celery', 
+                        "do_sub_classification"]
                 self.__dict__.update(kwargs)
                 for kwarg in allowed_kwargs:
                         assert eval("self.{0}".format(kwarg)) != None
                 
                 self.tag_classifier = joblib.load("{0}/{1}".format(path_in_memory_classifiers, self.tag_analysis_algorithm_name))              
+                
+                #self.sub_tag_classifier = joblib.load("{0}/{1}".format(path_in_memory_classifiers, "svm_linear_kernel_classifier_food_sub_tags.lib"))
+                self.sub_tag_classifier = joblib.load("{0}/{1}".format(path_in_memory_classifiers,\
+                        "svm_linear_kernel_classifier_food_sub_tags_5May.lib"))
+                
                 self.sentiment_classifier = joblib.load("{0}/{1}".format(path_in_memory_classifiers,\
-                                                        "svm_linear_kernel_classifier_sentiment_new_dataset.lib"))              
+                                                       "svm_linear_kernel_classifier_sentiment_new_dataset_30April.lib"))              
                 
                 self.sent_tokenizer = SentenceTokenizationOnRegexOnInterjections()
 
@@ -73,11 +79,24 @@ class FoodWordCloudApiHelper:
                 """
                 It returns the result
                 """
+                print "The value of the self.do_sub_classification paramtere for this class %s"%self.do_sub_classification
+
+
                 self.sent_tokenize_reviews() #Tokenize reviews, makes self.reviews_ids, self.sentences
                 self.predict_tags()          #Predict tags, makes self.predict_tags
                         
                 self.filtered_list = [e for e in zip(self.review_ids, self.sentences, self.predicted_tags) 
                                                                                 if e[2] == self.category]
+
+                if self.do_sub_classification:
+                        """
+                        Classify food sentences into furthur these categories
+                        'dishes', 'food-null', 'menu-food', 'null-food', 'overall-food', 'place-food', 'sub-food'
+                        """
+                        self.review_ids, self.sentences, self.predicted_tags = zip(*self.filtered_list)
+                        self.food_sub_tag_classification()
+                        self.filtered_list = [e for e in zip(self.review_ids, self.sentences, self.predicted_sub_tags) 
+                                                                                if e[2] == "dishes"]
 
 
                 self.c_review_ids, self.c_sentences, self.c_predicted_tags = zip(*self.filtered_list)
@@ -90,6 +109,15 @@ class FoodWordCloudApiHelper:
                 self.do_clustering() #makes self.clustered_nps
                 self.result = self.make_result()
                 
+
+        @print_execution
+        def food_sub_tag_classification(self):
+                """
+                This deals with the sub classification of fodd sub tags
+                """
+                self.predicted_sub_tags = self.sub_tag_classifier.predict(self.sentences)
+                return self.predicted_sub_tags
+
 
 
 

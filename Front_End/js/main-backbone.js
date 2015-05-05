@@ -193,18 +193,7 @@ App.RootRowView = Backbone.View.extend({
                         })
         },
 
-
-
-
-
-
-
 });
-
-
-
-
-
 });
 
 

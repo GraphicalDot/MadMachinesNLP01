@@ -27,7 +27,7 @@ from Text_Processing.MainAlgorithms.Algorithms_Helpers import get_all_algorithms
 from Text_Processing.MainAlgorithms.In_Memory_Main_Classification import timeit, cd
 from encoding_helpers import SolveEncoding
 from heuristic_clustering import HeuristicClustering
-
+from global_methods import print_execution
     
 from sklearn.externals import joblib
 from collections import Counter
@@ -73,7 +73,6 @@ class CostWordCloudApiHelper:
         
         def get_args(self):
                 print self.__dict__
-        
         
         def sent_tokenize_reviews(self):
                 sentences = list()

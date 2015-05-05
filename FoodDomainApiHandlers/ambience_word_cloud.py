@@ -27,6 +27,7 @@ from Text_Processing.MainAlgorithms.Algorithms_Helpers import get_all_algorithms
 from Text_Processing.MainAlgorithms.In_Memory_Main_Classification import timeit, cd
 from encoding_helpers import SolveEncoding
 from heuristic_clustering import HeuristicClustering
+from global_methods import print_execution
 
     
 from sklearn.externals import joblib
@@ -55,26 +56,10 @@ class AmbienceWordCloudApiHelper:
                 self.sentences = list()
                 self.clustered_nps = list()
         
-        def print_execution(func):
-                "This decorator dumps out the arguments passed to a function before calling it"
-                argnames = func.func_code.co_varnames[:func.func_code.co_argcount]
-                fname = func.func_name
-                def wrapper(*args,**kwargs):
-                        start_time = time.time()
-                        print "{0} Now {1} have started executing {2}".format(bcolors.OKBLUE, func.func_name, bcolors.RESET)
-                        result = func(*args, **kwargs)
-                        print "{0} Total time taken by {1} for execution is --<<{2}>>--{3}\n".format(bcolors.OKGREEN, func.func_name, 
-                                (time.time() - start_time), bcolors.RESET)
-                        
-                        return result
-                return wrapper
-
-
-        
         def get_args(self):
                 print self.__dict__
         
-        
+        @print_execution 
         def sent_tokenize_reviews(self):
                 sentences = list()
                 for review in self.reviews:

@@ -24,13 +24,36 @@ App.RootView = Backbone.View.extend({
 	events: {
 	
 
-		"click #submit": "submit",
+		"click #submit-food": "submitFood",
+		"click #submit-service": "submitService",
+		"click #submit-cost": "submitCost",
+		"click #submit-ambience": "submitAmbience",
 		},
 
-
-	submit: function(event){
+	submitFood: function(event){
 		$(".main-body").empty()
 		event.preventDefault();
+		this.submit("food");
+	},
+	submitService: function(event){
+		$(".main-body").empty()
+		event.preventDefault();
+		bootbox.alert("This word cloud has not been implemented yet!!");
+		//this.submit("service");
+	},
+	submitCost: function(event){
+		$(".main-body").empty()
+		event.preventDefault();
+		this.submit("cost");
+	},
+	submitAmbience: function(event){
+		$(".main-body").empty()
+		event.preventDefault();
+		this.submit("ambience");
+	},
+
+	submit: function(tag){
+		console.log("Thus button has been clicked" + tag);	
 		bootbox.dialog({
 			closeButton: false, 
 			message: "<img src='css/images/loading__a.gif'>",
@@ -39,7 +62,7 @@ App.RootView = Backbone.View.extend({
 
 		console.log("submit button cliked")
 		text = $("#searchQuery").val()
-		var jqhr = $.post(window.raw_text_processing, {"text": text})
+		var jqhr = $.post(window.raw_text_processing, {"text": text, "tag": tag})
 
 		jqhr.done(function(data){
 			 var subView = new App.WordCloudWith_D3({model: data.result});
@@ -58,7 +81,7 @@ App.RootView = Backbone.View.extend({
 		});
 		//var algorithm = $("#appendAlgorithms").find("option:selected").val()
 		//this.processText(algorithm)
-	},
+		},
 
 
 });
