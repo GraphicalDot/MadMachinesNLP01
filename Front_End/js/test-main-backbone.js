@@ -5,7 +5,7 @@ App.RootView = Backbone.View.extend({
 	//tagName: "fieldset",
 	//className: "well-lg plan",
 	tagName: "table",
-	className: "table table-striped root-table",
+	className: "no-border",
 	template: window.template("root"),
 	
 	initialize: function(){
@@ -22,8 +22,6 @@ App.RootView = Backbone.View.extend({
 	},
 	
 	events: {
-	
-
 		"click #submit-food": "submitFood",
 		"click #submit-service": "submitService",
 		"click #submit-cost": "submitCost",
