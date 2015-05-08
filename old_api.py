@@ -73,8 +73,8 @@ from FoodDomainApiHandlers.ambience_word_cloud import AmbienceWordCloudApiHelper
 from FoodDomainApiHandlers.cost_word_cloud import CostWordCloudApiHelper
 
 
-connection = pymongo.MongoClient(MONGO_REVIEWS_IP, MONGO_REVIEWS_PORT, tz_aware=True, w=1, 
-        j=True, max_pool_size=200, use_greenlets=True)
+#connection = pymongo.MongoClient(MONGO_REVIEWS_IP, MONGO_REVIEWS_PORT, tz_aware=True, w=1,j=False, max_pool_size=200, use_greenlets=True)
+connection = pymongo.MongoClient(MONGO_REVIEWS_IP, MONGO_REVIEWS_PORT)
 
 
 eateries = eval("connection.{db_name}.{collection_name}".format(
@@ -448,8 +448,12 @@ class LimitedEateriesList(restful.Resource):
                 """
                 This gives only the limited eatery list like the top on the basis of the reviews count
                 """
-                result = list(eateries.find({"eatery_area_or_city": "ncr"}, fields= {"eatery_id": True, "_id": False, "eatery_name": True}).limit(200).sort("eatery_total_reviews", -1))
-		
+                result = list(eateries.find(fields= {"eatery_id": True, "_id": False, "eatery_name": True}).limit(25).sort("eatery_total_reviews", -1))
+	
+                for element in result:
+                        eatery_id = element.get("eatery_id")
+                        element.update({"reviews": reviews.find({"eatery_id": eatery_id}).count()})
+                print result
                 return {"success": True,
 			"error": False,
 			"result": result,
@@ -571,9 +575,109 @@ class GetWordCloud(restful.Resource):
                 else:
                         review_list = [(post.get("review_id"), post.get("review_text")) for post in reviews.find({"eatery_id" :eatery_id})] 
                 
+                
 
+
+                def insert_into_db(eatery_id, tag, result, sentiment_analysis_algorithm_name, 
+                                    tag_analysis_algorithm_name):
+                        results_db = connection.NLP_NP_RESULTS_DB.EATERY_NP_RESULTS_COLLECTION
+
+
+                        for noun_phrase in result:
+                                try:
+                                        sentences_list = noun_phrase.pop("sentences")
+                                        noun_phrase_name = noun_phrase.get("name")
+
+                                        sentences_ids = insert_sentences(sentences_list, 
+                                                        sentiment_analysis_algorithm_name, 
+                                                        tag_analysis_algorithm_name, tag)
+
+                                        noun_phrase.update({"sentences_ids": sentences_ids})
+                                        results_db.update({"eatery_id": eatery_id}, {"$set": 
+                                            {
+                                                "{0}.{1}".format(tag, noun_phrase_name): noun_phrase}}, 
+                                            upsert=True)
+                                except Exception as e:
+                                        print noun_phrase
+                                        pass
+                        return 
+
+                def insert_sentences(sentences_list, sentiment_analysis_algorithm_name, tag_analysis_algorithm_name, tag):
+                        """
+                        Each element:
+                                u'sentence': u'death chicken wings ..', u'sentiment': u'neutral'},
+                        """
+                        sentences_result_collection = connection.NLP_NP_RESULTS_DB.SENTENCES_NP_RESULTS_COLLECTION
+                        bulk = sentences_result_collection.initialize_ordered_bulk_op()
+                        sentence_ids = list()
+                        for __sentence in sentences_list:
+                                __sentence_id = hashlib.md5(__sentence.get("sentence")).hexdigest()
+                                bulk.find({"sentence_id": __sentence_id,}).upsert().update_one(
+                                            {"$set": {
+                                                "sentence": __sentence.get("sentence"),
+                                                "sentiment.{0}".format(sentiment_analysis_algorithm_name.replace("_sentiment.lib", "")):
+                                                                                __sentence.get("sentiment"),
+                                                "tag.{0}".format(tag_analysis_algorithm_name.replace("_tag.lib", "")): tag,
+                                                }})
+                                sentence_ids.append(__sentence_id)
+                        bulk.execute()
+                        return sentence_ids
+                                
+                
+
+
+                def retrive_sentences(sentence_ids, sentiment_analysis_algorithm_name, 
+                                    tag_analysis_algorithm_name):
+    
+                        tag_analysis_algorithm_name = tag_analysis_algorithm_name.replace("_tag.lib", "")                    
+                        sentiment_analysis_algorithm_name = sentiment_analysis_algorithm_name.replace("_sentiment.lib", "")
+                        sentences_result_collection = connection.NLP_NP_RESULTS_DB.SENTENCES_NP_RESULTS_COLLECTION
+                        sentences = list()
+                        try:
+                            for sentence_id in sentence_ids:
+                                sentence = sentences_result_collection.find_one({"sentence_id": sentence_id})
+                                sentences.append({"sentence": sentence.get("sentence"),
+                                                "sentiment": sentence.get("sentiment").get(sentiment_analysis_algorithm_name),
+                                    })
+                        except Exception as e:
+                                print 
+                        return sentences
+                
+                def check_if_exists(eatery_id, tag, sentiment_analysis_algorithm_name, 
+                                        tag_analysis_algorithm_name):
+                        results_db = connection.NLP_NP_RESULTS_DB.EATERY_NP_RESULTS_COLLECTION
+                        result_list = list()
+                       
+                        if bool(list(results_db.find({"eatery_id": eatery_id, tag: {"$exists": True}}))):
+                                print "result found"
+                                print eatery_id
+                                print tag
+                                for noun, noun_dict in results_db.find_one({"eatery_id": eatery_id}).get(tag).iteritems():
+                                        try:
+                                                sentences = retrive_sentences(noun_dict.get("sentences_ids"), sentiment_analysis_algorithm_name, 
+                                                            tag_analysis_algorithm_name)
+                                                noun_dict.update({"sentences": sentences})
+                                                noun_dict.pop("sentences_ids")
+                                                result_list.append(noun_dict)
+                                        except Exception as e:
+                                                print e
+                                                pass
+                                return result_list
+                        return False
 
                 if category == "cost":
+                        result = check_if_exists(eatery_id, "cost", sentiment_analysis_algorithm_name, 
+                                            tag_analysis_algorithm_name)
+                        if result:
+                                try:
+                                        return {"success": True,
+				        "error": False,
+                                        "result": result,
+                                        "sentences": list(), 
+                                    }
+                                except Exception as e:
+                                        raise StandardError("{0}It Seems the data for this eatery werent inserted properly before\
+                                                    \nTry flushing your database{1}".format(bcolors.FAIL, bcolors.RESET))
                         __instance = CostWordCloudApiHelper(reviews= review_list, eatery_name=eatery_name, 
                                     category=category, tag_analysis_algorithm_name=tag_analysis_algorithm_name, 
                                     sentiment_analysis_algorithm_name= sentiment_analysis_algorithm_name,
@@ -586,13 +690,30 @@ class GetWordCloud(restful.Resource):
                                     with_celery= False)
                         
                         __instance.run()
+                        insert_into_db(eatery_id, category, __instance.result, sentiment_analysis_algorithm_name, 
+                                                                            tag_analysis_algorithm_name)
+                        for element in __instance.result:
+                                print element, "\n\n"
+                        
                         return {"success": True,
 				"error": False,
                                 "result": __instance.result,
                                 "sentences": list(), 
-                                }
+                        }
                
                 if category == "ambience":
+                        result = check_if_exists(eatery_id, "ambience", sentiment_analysis_algorithm_name, 
+                                            tag_analysis_algorithm_name)
+                        if result:
+                                try:
+                                        return {"success": True,
+				        "error": False,
+                                        "result": result,
+                                        "sentences": list(), 
+                                    }
+                                except Exception as e:
+                                        raise StandardError("{0}It Seems the data for this eatery werent inserted properly before\
+                                                    \nTry flushing your database{1}".format(bcolors.FAIL, bcolors.RESET))
                         __instance = AmbienceWordCloudApiHelper(reviews= review_list, eatery_name=eatery_name, 
                                     category=category, tag_analysis_algorithm_name=tag_analysis_algorithm_name, 
                                     sentiment_analysis_algorithm_name= sentiment_analysis_algorithm_name,
@@ -605,15 +726,39 @@ class GetWordCloud(restful.Resource):
                                     with_celery= False)
                         
                         __instance.run()
+                        __result = __instance.result
+                        print len(__result)
+                        for element in __instance.result:
+                                print element, "\n\n"
+
+
+                        
+                        insert_into_db(eatery_id, category, __result, sentiment_analysis_algorithm_name, 
+                                                                            tag_analysis_algorithm_name)
                         return {"success": True,
 				"error": False,
-                                "result": __instance.result,
+                                "result": __result,
                                 "sentences": list(), 
                                 }
-               
 
                 if category == "food":
-                            __instance = FoodWordCloudApiHelper(reviews= review_list, eatery_name=eatery_name, 
+                        result = check_if_exists(eatery_id, "food", sentiment_analysis_algorithm_name, 
+                                            tag_analysis_algorithm_name)
+                        print result
+                        if result:
+                                try:
+                                        return {"success": True,
+				        "error": False,
+                                        "result": sorted(result, reverse=True,
+                                                        key= lambda x: x.get("positive")+x.get("negative")+x.get("neutral"))[0: 25],
+                                        "sentences": list(), 
+                                    }
+                                except Exception as e:
+                                        print e
+                                        raise StandardError("{0}It Seems the data for this eatery werent inserted properly before\
+                                                    \nTry flushing your database{1}".format(bcolors.FAIL, bcolors.RESET))
+
+                        __instance = FoodWordCloudApiHelper(reviews= review_list, eatery_name=eatery_name, 
                                     category=category, tag_analysis_algorithm_name=tag_analysis_algorithm_name, 
                                     sentiment_analysis_algorithm_name= sentiment_analysis_algorithm_name,
                                     word_tokenization_algorithm_name=word_tokenization_algorithm_name, 
@@ -623,16 +768,20 @@ class GetWordCloud(restful.Resource):
                                     total_noun_phrases = total_noun_phrases,
                                     ner_algorithm_name = ner_algorithm_name,
                                     with_celery= False, 
-                                    do_sub_classification = False)
+                                    do_sub_classification = True)
+
                
+                        __instance.run()
+                        print __instance.result[0]
+                        insert_into_db(eatery_id, category, __instance.result, sentiment_analysis_algorithm_name, 
+                                                                            tag_analysis_algorithm_name)
+
+                        return {"success": True,
+				"error": False,
+                                "result": __instance.result[0:25],
+                                "sentences": list(), 
+                        }
                 
-                            __instance.run()
-                                
-                            return {"success": True,
-				    "error": False,
-                                    "result": __instance.result[0 : 25],
-                                    "sentences": list(), 
-                                }
 
                 """
                 

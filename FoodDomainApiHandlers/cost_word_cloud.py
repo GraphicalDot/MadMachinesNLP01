@@ -149,17 +149,15 @@ class CostWordCloudApiHelper:
                                         normalized_sentiments.append(__e)
                                 
                                 
-                                sentiments = Counter(normalized_sentiments)
-                                print __category
-                                print sentiments, "\n\n"
-                                self.clustered_nps.append({
+                        sentiments = Counter(normalized_sentiments)
+                        self.clustered_nps.append({
                                         "name": __category,
                                         "sentences": self.sentences_dict[__category]["sentences"],
                                         "similar": [],
                                         "positive": (0, sentiments.get("positive"))[sentiments.get("positive") != None],
                                         "negative": (0, sentiments.get("negative"))[sentiments.get("negative") != None],
                                         "neutral": (0, sentiments.get("neutral"))[sentiments.get("neutral") != None],
-                                        })
+                        })
 
 
         @print_execution

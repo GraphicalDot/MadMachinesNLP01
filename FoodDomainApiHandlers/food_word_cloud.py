@@ -46,8 +46,8 @@ class FoodWordCloudApiHelper:
                 self.tag_classifier = joblib.load("{0}/{1}".format(path_in_memory_classifiers, self.tag_analysis_algorithm_name))              
                 
                 #self.sub_tag_classifier = joblib.load("{0}/{1}".format(path_in_memory_classifiers, "svm_linear_kernel_classifier_food_sub_tags.lib"))
-                self.sub_tag_classifier = joblib.load("{0}/{1}".format(path_in_memory_classifiers,\
-                        "svm_linear_kernel_classifier_food_sub_tags_5May.lib"))
+                self.sub_tag_classifier = joblib.load("{0}/{1}".format(path_in_memory_classifiers, 
+                    "svm_linear_kernel_classifier_food_sub_tags_8May.lib"))
                 
                 self.sentiment_classifier = joblib.load("{0}/{1}".format(path_in_memory_classifiers,\
                                                        "svm_linear_kernel_classifier_sentiment_new_dataset_30April.lib"))              

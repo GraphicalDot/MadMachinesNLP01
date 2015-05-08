@@ -36,6 +36,10 @@ from collections import Counter
 
 class AmbienceWordCloudApiHelper:
         def __init__(self, **kwargs):
+                """
+                reviews of the form [(review_id, review), (review_id, review), .........]
+
+                """
                 allowed_kwargs = ['reviews', 'eatery_name', 'category', 'total_noun_phrases', 'word_tokenization_algorithm_name', 
                         'noun_phrases_algorithm_name', 'pos_tagging_algorithm_name', 'tag_analysis_algorithm_name', 
                         'sentiment_analysis_algorithm_name', 'np_clustering_algorithm_name', 'ner_algorithm_name', 'with_celery']
@@ -120,6 +124,9 @@ class AmbienceWordCloudApiHelper:
                                                         "similar": None,
                                                         "sentiment": sentiment,
                                                 }})
+                
+                for key, value in self.sentences_dict.iteritems():
+                        print key, value, "\n\n"
                 return 
                     
 
@@ -135,17 +142,17 @@ class AmbienceWordCloudApiHelper:
                                         normalized_sentiments.append(__e)
                                 
                                 
-                                sentiments = Counter(normalized_sentiments)
-                                print __category
-                                print sentiments, "\n\n"
-                                self.clustered_nps.append({
+                        sentiments = Counter(normalized_sentiments)
+                        print __category
+                        print sentiments, "\n\n"
+                        self.clustered_nps.append({
                                         "name": __category,
                                         "sentences": self.sentences_dict[__category]["sentences"],
                                         "similar": [],
                                         "positive": (0, sentiments.get("positive"))[sentiments.get("positive") != None],
                                         "negative": (0, sentiments.get("negative"))[sentiments.get("negative") != None],
                                         "neutral": (0, sentiments.get("neutral"))[sentiments.get("neutral") != None],
-                                        })
+                        })
 
 
         @print_execution
