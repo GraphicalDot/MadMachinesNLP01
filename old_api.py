@@ -448,15 +448,24 @@ class LimitedEateriesList(restful.Resource):
                 """
                 This gives only the limited eatery list like the top on the basis of the reviews count
                 """
-                result = list(eateries.find(fields= {"eatery_id": True, "_id": False, "eatery_name": True}).limit(25).sort("eatery_total_reviews", -1))
+                result = list(eateries.find(fields= {"eatery_id": True, "_id": False, "eatery_name": True, "area_or_city": True}).limit(14).sort("eatery_total_reviews", -1))
 	
                 for element in result:
                         eatery_id = element.get("eatery_id")
                         element.update({"reviews": reviews.find({"eatery_id": eatery_id}).count()})
                 print result
+
+                custom = [{'reviews': 249, u'area_or_city': u'ncr', u'eatery_id': u'303960', u'eatery_name': u'Manhattan Craft Brewery'}, 
+                {'reviews': 248, u'area_or_city': u'hyderabad', u'eatery_id': u'90034', u'eatery_name': u'Bikanervala'}, 
+                {'reviews': 201, u'area_or_city': u'chennai', u'eatery_id': u'68632', u'eatery_name': u'Barbeque Factory'}, 
+                {'reviews': 200, u'area_or_city': u'ncr', u'eatery_id': u'300656', u'eatery_name': u'Smoke House Deli'},
+                {'reviews': 151, u'area_or_city': u'ncr', u'eatery_id': u'3406', u'eatery_name': u'Amici'}, 
+                {'reviews': 150, u'area_or_city': u'hyderabad', u'eatery_id': u'94814', u'eatery_name': u'The Pasta Bar Veneto'},] 
+                
+                
                 return {"success": True,
 			"error": False,
-			"result": result,
+			"result": result +custom,
 			}
 
                 
@@ -692,8 +701,6 @@ class GetWordCloud(restful.Resource):
                         __instance.run()
                         insert_into_db(eatery_id, category, __instance.result, sentiment_analysis_algorithm_name, 
                                                                             tag_analysis_algorithm_name)
-                        for element in __instance.result:
-                                print element, "\n\n"
                         
                         return {"success": True,
 				"error": False,
@@ -727,9 +734,6 @@ class GetWordCloud(restful.Resource):
                         
                         __instance.run()
                         __result = __instance.result
-                        print len(__result)
-                        for element in __instance.result:
-                                print element, "\n\n"
 
 
                         
@@ -744,7 +748,6 @@ class GetWordCloud(restful.Resource):
                 if category == "food":
                         result = check_if_exists(eatery_id, "food", sentiment_analysis_algorithm_name, 
                                             tag_analysis_algorithm_name)
-                        print result
                         if result:
                                 try:
                                         return {"success": True,
@@ -772,7 +775,6 @@ class GetWordCloud(restful.Resource):
 
                
                         __instance.run()
-                        print __instance.result[0]
                         insert_into_db(eatery_id, category, __instance.result, sentiment_analysis_algorithm_name, 
                                                                             tag_analysis_algorithm_name)
 

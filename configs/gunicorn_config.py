@@ -3,8 +3,7 @@
 import multiprocessing
 import os
 
-path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))) + "/applogs")
-print path
+path = "/Data/applogs"
 
 bind = "0.0.0.0:8000"
 workers = multiprocessing.cpu_count() * 2 + 1

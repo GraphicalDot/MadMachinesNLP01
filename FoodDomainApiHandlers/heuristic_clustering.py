@@ -61,8 +61,6 @@ class SimilarityMatrices:
                 try:
                     return  float(__l*2)/total
                 except Exception as e:
-                    print e
-                    print __str1, __str2
                     return 0
 
         @staticmethod
@@ -147,13 +145,8 @@ class HeuristicClustering:
                 self.sent_sentiment_nps = sent_sentiment_nps
                 self.merged_sent_sentiment_nps = self.merge_similar_elements()
                 
-                print "\n\n"
-                print "self.sentences"
                 print self.sentences[0:2], 
-                print "\n\n"
-                print "self.sent_Sentiment_nps"
                 print self.sent_sentiment_nps[0:2]
-                print "\n\n"
                 assert(set(Counter(self.merged_sent_sentiment_nps.keys()).values()) == {1}),\
                                     "merge_similar_elements method has an error as all the keys are not unique"
                 new_list = list()
@@ -176,7 +169,6 @@ class HeuristicClustering:
         
                 self.populate_result()
                 
-                print self.result[0]
 
 
                 self.common_ners = list(set.intersection(set([e[0] for e in self.ner()]), set([e[0] for e in self.custom_ner()])))
@@ -225,7 +217,7 @@ class HeuristicClustering:
                 return wrapper
 
 
-        @print_execution
+        #@print_execution
         def custom_ner(self):
                 ner = list()
                 regexp_grammer = r"NER:{<IN><NN.*><NN.*>?}"
@@ -248,7 +240,7 @@ class HeuristicClustering:
 
 
 
-        @print_execution
+        #@print_execution
         def ner(self):
                 __list = list()
                 for sent in self.sentences:
@@ -261,7 +253,7 @@ class HeuristicClustering:
                 return result
 
 
-        @print_execution
+        #@print_execution
         def merge_similar_elements(self):
                 """
                 Merging noun phrases who have exact similar spellings with each other and return a dictionary in the form
@@ -308,7 +300,7 @@ class HeuristicClustering:
                 
                 return without_similar_elements
 
-        @print_execution
+        #@print_execution
         def filter_clusters(self):
                 """
                 self.sent_sentiment_nps gave rise to merged_sent_sentiment_nps
@@ -357,7 +349,7 @@ class HeuristicClustering:
                 self.clusters = [list(set(element)) for element in self.clusters if len(element)> 2]
                 return 
 
-        @print_execution
+        #@print_execution
         def populate_result(self):
                 """
                 without_clusters will have index numbers of the noun phrases for whom no other similar
@@ -377,7 +369,7 @@ class HeuristicClustering:
                         self.result.append(__dict)
                 return
 
-        @print_execution
+        #@print_execution
         def maximum_frequency(self, cluster_list):
                 """
                 Returning name with maximum frequency in a cluster, by joining all the frequencies
@@ -412,7 +404,7 @@ class HeuristicClustering:
                 return {"name": result[0].get("name"), "positive": positive, "negative": negative, "neutral": neutral, 
                             "sentences": sentences, "similar": cluster_names}
 
-        @print_execution
+        #@print_execution
         def filter_on_basis_pos_tag(self):
                 """
                 pos tagging of noun phrases will be done, and if the noun phrases contains some adjectives or RB or FW, 

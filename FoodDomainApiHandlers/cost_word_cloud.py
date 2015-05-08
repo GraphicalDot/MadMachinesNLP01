@@ -102,7 +102,7 @@ class CostWordCloudApiHelper:
                 return 
 
 
-        @print_execution
+        #@print_execution
         def make_sentences_dict(self):
                 """
                 Makes sentences_dict from self.c_sentences, self.predicted_sentiment, self.ambience_tags
@@ -137,7 +137,7 @@ class CostWordCloudApiHelper:
                 return 
                     
 
-        @print_execution
+        #@print_execution
         def normalize_sentiments(self):
                 for __category in self.sentences_dict.keys():
                         normalized_sentiments = list()
@@ -160,7 +160,7 @@ class CostWordCloudApiHelper:
                         })
 
 
-        @print_execution
+        #@print_execution
         def convert_sentences(self, __object):
                 return {"sentence": __object[0],
                         "sentiment": __object[1]}
@@ -179,7 +179,7 @@ class CostWordCloudApiHelper:
                 __dict.update({"o_likeness": o_likeness})
 
 
-        @print_execution
+        #@print_execution
         def make_result(self):
                 self.total_positive = sum([__dict.get("positive") for __dict in  self.clustered_nps])
                 self.total_negative = sum([__dict.get("negative") for __dict in  self.clustered_nps])

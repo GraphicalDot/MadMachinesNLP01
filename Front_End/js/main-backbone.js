@@ -107,6 +107,7 @@ App.AppendRestaurants = Backbone.View.extend({
 	eatery_name: function(){return this.model.eatery.eatery_name},
 	eatery_id: function(){return this.model.eatery.eatery_id},
 	reviews: function(){return this.model.eatery.reviews},
+	area: function(){return this.model.eatery.area_or_city},
 	initialize: function(options){
 		this.model = this.options;
 		console.log(this.eatery_name());
@@ -116,7 +117,10 @@ App.AppendRestaurants = Backbone.View.extend({
 	render: function(){
 		this.$el.append(this.template(this));
 		this.$(".change_eatery_id").hovercard({
-			detailsHTML: '<p>' + this.reviews() + '</p>',
+			detailsHTML: '<p><b>' + "Reviews:" + this.reviews() + '</b>'+ '<br>'+ '<b> City: '+ this.area() + '</b></p>',
+			width: 90,
+			openOnTop: true,
+			height: 30,
 		});
 		return this;	
 	
