@@ -746,6 +746,7 @@ class GetWordCloud(restful.Resource):
                                 }
 
                 if category == "food":
+                        """
                         result = check_if_exists(eatery_id, "food", sentiment_analysis_algorithm_name, 
                                             tag_analysis_algorithm_name)
                         if result:
@@ -753,13 +754,14 @@ class GetWordCloud(restful.Resource):
                                         return {"success": True,
 				        "error": False,
                                         "result": sorted(result, reverse=True,
-                                                        key= lambda x: x.get("positive")+x.get("negative")+x.get("neutral"))[0: 25],
+                                                        key= lambda x: x.get("positive")+x.get("negative")+x.get("neutral"))[0: 35],
                                         "sentences": list(), 
                                     }
                                 except Exception as e:
                                         print e
                                         raise StandardError("{0}It Seems the data for this eatery werent inserted properly before\
                                                     \nTry flushing your database{1}".format(bcolors.FAIL, bcolors.RESET))
+                        """
 
                         __instance = FoodWordCloudApiHelper(reviews= review_list, eatery_name=eatery_name, 
                                     category=category, tag_analysis_algorithm_name=tag_analysis_algorithm_name, 
@@ -775,12 +777,13 @@ class GetWordCloud(restful.Resource):
 
                
                         __instance.run()
+                        """
                         insert_into_db(eatery_id, category, __instance.result, sentiment_analysis_algorithm_name, 
                                                                             tag_analysis_algorithm_name)
-
+                        """
                         return {"success": True,
 				"error": False,
-                                "result": __instance.result[0:25],
+                                "result": __instance.result[0:35],
                                 "sentences": list(), 
                         }
                 
@@ -985,7 +988,8 @@ class RawTextParser(restful.Resource):
                         sentences = [encoding_help(e[0]) for e in zip(sentences, sub_tag_classifier.predict(sentences)) if e[1] == "dishes"]
                         predicted_sentiment = new_sentiment_classifier.predict(sentences)
                         
-                        noun_phrases_algorithm_name = "topia_n_textblob"
+                        #noun_phrases_algorithm_name = "topia_n_textblob"
+                        noun_phrases_algorithm_name = "topia"
                         __nouns = NounPhrases(sentences, default_np_extractor=noun_phrases_algorithm_name)
                         result  = [__tuple for __tuple in zip(sentences, predicted_sentiment, 
                                 __nouns.noun_phrases[noun_phrases_algorithm_name]) if __tuple[2]]

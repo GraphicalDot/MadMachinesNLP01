@@ -257,6 +257,25 @@ class NounPhrases:
                         #print list(set.union(set(blob.noun_phrases), set([e[0] for e in nouns])))
                         self.noun_phrases.append(list(set.union(set([np.lower() for np in blob.noun_phrases]), set([e[0].lower() for e in nouns])))) 
 
+        
+        @need_pos_tagged(False)
+        def topia(self):
+                """
+                if_postagged:
+                        Default: False
+                        if false, that means a list of sentences who are not postagged being provided to
+                        this method
+                """
+
+                if self.if_postagged:
+		        self.list_of_sentences = [" ".join([_word[0] for _word in __sentence]) for __sentence in self.list_of_sentences]
+                
+
+                for __sentence in self.list_of_sentences:
+                        nouns = self.topia_extractor(__sentence)
+                        #print list(set.union(set(blob.noun_phrases), set([e[0] for e in nouns])))
+                        self.noun_phrases.append([e[0].lower() for e in nouns]) 
+
 
 
 if __name__ == "__main__":

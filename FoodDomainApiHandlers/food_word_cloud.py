@@ -161,6 +161,7 @@ class FoodWordCloudApiHelper:
                 [('the only good part was the coke , thankfully it was outsourced ', 
                                             u'positive', [u'good part']), ...]
                 """
+                self.noun_phrases_algorithm_name = "topia"
                 __nouns = NounPhrases(self.c_sentences, default_np_extractor=self.noun_phrases_algorithm_name)
 
                 self.sent_sentiment_nps = [__tuple for __tuple in 
