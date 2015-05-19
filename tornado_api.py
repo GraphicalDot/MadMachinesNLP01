@@ -18,13 +18,11 @@ import re
 import csv
 import codecs
 from textblob import TextBlob 
-from flask import Flask
-from flask import request, jsonify
-from flask.ext import restful
-from flask.ext.restful import reqparse
-from flask import make_response, request, current_app
-from functools import update_wrapper
-from flask import jsonify
+import tornado.escape
+import tornado.ioloop
+import tornado.web
+import tornado.autoreload
+from tornado.httpclient import AsyncHTTPClient
 import hashlib
 import subprocess
 import shutil
@@ -40,12 +38,7 @@ from Text_Processing import NounPhrases, get_all_algorithms_result, RpRcClassifi
 		TagClassifier, NERs, NpClustering
 from compiler.ast import flatten
 from topia.termextract import extract
-
-##TODO run check_if_hunpos and check_if stanford fruntions for postagging and NERs and postagging
-
-
 from Text_Processing import WordTokenize, PosTaggers, NounPhrases
-
 import decimal
 import time
 from datetime import timedelta
@@ -61,12 +54,10 @@ import base64
 import requests
 from PIL import Image
 import inspect
+import functools
+import tornado.httpserver
 from Text_Processing.Sentence_Tokenization.Sentence_Tokenization_Classes import SentenceTokenizationOnRegexOnInterjections
-
-
-from GlobalConfigs import MONGO_REVIEWS_IP, MONGO_REVIEWS_PORT, MONGO_REVIEWS_DB,\
-        MONGO_REVIEWS_EATERIES_COLLECTION, MONGO_REVIEWS_REVIEWS_COLLECTION, DEBUG, \
-        MONGO_YELP_DB, MONGO_YELP_EATERIES, MONGO_YELP_REVIEWS
+from GlobalConfigs import connection, eateries, reviews, yelp_eateries, yelp_reviews
          
 from FoodDomainApiHandlers.food_word_cloud import FoodWordCloudApiHelper
 from FoodDomainApiHandlers.ambience_word_cloud import AmbienceWordCloudApiHelper
@@ -74,242 +65,32 @@ from FoodDomainApiHandlers.cost_word_cloud import CostWordCloudApiHelper
 from FoodDomainApiHandlers.service_word_cloud import ServiceWordCloudApiHelper
 
 
-#connection = pymongo.MongoClient(MONGO_REVIEWS_IP, MONGO_REVIEWS_PORT, tz_aware=True, w=1,j=False, max_pool_size=200, use_greenlets=True)
-connection = pymongo.MongoClient(MONGO_REVIEWS_IP, MONGO_REVIEWS_PORT)
-
-
-eateries = eval("connection.{db_name}.{collection_name}".format(
-                                                        db_name=MONGO_REVIEWS_DB,
-                                                        collection_name=MONGO_REVIEWS_EATERIES_COLLECTION))
-
-
-reviews = eval("connection.{db_name}.{collection_name}".format(
-                                    db_name=MONGO_REVIEWS_DB,
-                                    collection_name=MONGO_REVIEWS_REVIEWS_COLLECTION))
-
-
-yelp_eateries = eval("connection.{db_name}.{collection_name}".format(
-                                                        db_name=MONGO_YELP_DB,
-                                                        collection_name=MONGO_YELP_EATERIES))
-yelp_reviews = eval("connection.{db_name}.{collection_name}".format(
-                                                        db_name=MONGO_YELP_DB,
-                                                        collection_name=MONGO_YELP_REVIEWS))
-
 
 training_db = connection.training_data
 training_sentiment_collection = training_db.training_sentiment_collection
 training_tag_collection = training_db.training_tag_collection
 
-#This is for android apps, may not be required later
-android_db = connection.android_app
-android_users = android_db.users
-users_pic = android_db.pics
-#####
 
-
-app = Flask(__name__)
-app.config['DEBUG'] = True
-api = restful.Api(app,)
-
-
-
-decimal.getcontext().prec = 2
-
-def encoding_help(obj):
-        if not isinstance(obj, unicode):
-                obj = unicode(obj)
-        obj = obj.encode("ascii", "xmlcharrefreplace")
-        return obj
-
-
-def to_unicode_or_bust(obj, encoding='utf-8'):
-	if isinstance(obj, basestring):
-		if not isinstance(obj, unicode):
-			obj = unicode(obj, encoding)
-	return obj
+def cors(f):
+        @functools.wraps(f) # to preserve name, docstring, etc.
+        def wrapper(self, *args, **kwargs): # **kwargs for compability with functions that use them
+                self.set_header("Access-Control-Allow-Origin",  "*")
+                self.set_header("Access-Control-Allow-Headers", "content-type, accept")
+                self.set_header("Access-Control-Max-Age", 60)
+                return f(self, *args, **kwargs)
+        return wrapper
+                                                        
 
 
 
-def word_tokenization_algorithm(algorithm_name):
-        members = [member[0] for member in inspect.getmembers(WordTokenize, predicate=inspect.ismethod) if member[0] 
-                                            not in ["__init__", "to_unicode_or_bust"]]
-        
-        if algorithm_name not in members:
-                raise StandardError("The algorithm you are trying to use for word tokenization doesnt exists yet,\
-                                    please try from these algorithms {0}".format(members))
-        return algorithm_name
-
-def pos_tagging_algorithm(algorithm_name):
-        members = [member[0] for member in inspect.getmembers(PosTaggers, predicate=inspect.ismethod) if member[0] 
-                                            not in ["__init__", "to_unicode_or_bust"]]
-
-        if algorithm_name not in members:
-                raise StandardError("The algorithm you are trying to use for Pos Tagging  doesnt exists yet,\
-                                    please try from these algorithms {0}".format(members))
-        return algorithm_name
-
-def noun_phrases_algorithm(algorithm_name):
-        members = [member[0] for member in inspect.getmembers(NounPhrases, predicate=inspect.ismethod) if member[0] 
-                                            not in ["__init__", "to_unicode_or_bust"]]
-
-        if algorithm_name not in members:
-                raise StandardError("The algorithm you are trying to use for noun phrases doesnt exists yet,\
-                                    please try from these algorithms {0}".format(members))
-        return algorithm_name
-
-
-
-
-def tag_analysis_algorithm(algorithm_name):
-        members = [member[0] for member in inspect.getmembers(TagClassifier, predicate=inspect.ismethod) if member[0] 
-                                            not in ["__init__", "to_unicode_or_bust"]]
-
-        if algorithm_name not in members:
-                raise StandardError("The algorithm you are trying to use for tag analysis doesnt exists yet,\
-                                    please try from these algorithms {0}".format(members))
-        return algorithm_name
-
-def sentiment_analysis_algorithm(algorithm_name):
-        members = [member[0] for member in inspect.getmembers(SentimentClassifier, predicate=inspect.ismethod) if member[0] 
-                                            not in ["__init__", "to_unicode_or_bust"]]
-
-        if algorithm_name not in members:
-                raise StandardError("The algorithm you are trying to use for sentiment analysis doesnt exists yet,\
-                                    please try from these algorithms {0}".format(members))
-        return algorithm_name
-
-def np_clustering_algorithm(algorithm_name):
-        members = [member[0] for member in inspect.getmembers(NpClustering, predicate=inspect.ismethod) if member[0] 
-                                            not in ["__init__",]]
-
-        if algorithm_name not in members:
-                raise StandardError("The algorithm you are trying to use for noun phrase clustering doesnt exists yet,\
-                                    please try from these algorithms {0}".format(members))
-        return algorithm_name
-
-
-def ner_algorithm(algorithm_name):
-        members = [member[0] for member in inspect.getmembers(NERs, predicate=inspect.ismethod) if member[0] 
-                                            not in ["__init__",]]
-
-        if algorithm_name not in members:
-                raise StandardError("The algorithm you are trying to use for ner extraction doesnt exists yet,\
-                                    please try from these algorithms {0}".format(members))
-        return algorithm_name
-
-
-def custom_string(__str):
-        return __str.encode("utf-8")
-
-
-#fb_login
-fb_login_parser = reqparse.RequestParser()
-fb_login_parser.add_argument("fb_id", type=str, required=True, location="form")
-fb_login_parser.add_argument("email", type=str, required=False, location="form")
-fb_login_parser.add_argument("gender", type=str, required=True, location="form")
-fb_login_parser.add_argument("user_name", type=str, required=True, location="form")
-fb_login_parser.add_argument("date_of_birth", type=str, required=True, location="form")
-fb_login_parser.add_argument("location", type=str, required=True, location="form")
-fb_login_parser.add_argument("user_friends", type=str, required=False, location="form", action="append")
-
-
-
-#post_comment
-post_comment_parser = reqparse.RequestParser()
-post_comment_parser.add_argument("fb_id", type=str, required=True, location="form")
-post_comment_parser.add_argument("comment", type=str, required=True, location="form")
-
-
-#suggest_name
-suggest_name_parser = reqparse.RequestParser()
-suggest_name_parser.add_argument("fb_id", type=str, required=True, location="form")
-suggest_name_parser.add_argument("name_suggestion", type=str, required=True, location="form")
-
-
-#post_picture
-post_pic_parser = reqparse.RequestParser()
-post_pic_parser.add_argument("fb_id", type=str, required=True, location="form")
-post_pic_parser.add_argument("image_name", type=str, required=True, location="form")
-post_pic_parser.add_argument("image_string", type=str, required=True, location="form")
-
-
-#get_pics
-get_pics_parser = reqparse.RequestParser()
-get_pics_parser.add_argument("dish_name", type=str, required=True, location="args")
-
-
-##GetStartDateForRestaurant
-get_start_date_for_restaurant_parser = reqparse.RequestParser()
-get_start_date_for_restaurant_parser.add_argument('eatery_id', type=str,  required=True, location="form")
-word_cloud_with_dates_parser = reqparse.RequestParser() 
-
-
-##GetWordCloud
-get_word_cloud_parser = reqparse.RequestParser()
-get_word_cloud_parser.add_argument('eatery_id', type=str,  required=True, location="form")
-get_word_cloud_parser.add_argument('category', type=str,  required=True, location="form")
-get_word_cloud_parser.add_argument('start_date', type=str,  required=False, location="form")
-get_word_cloud_parser.add_argument('end_date', type=str,  required=False, location="form") 
-get_word_cloud_parser.add_argument('total_noun_phrases', type=int,  required=False, location="form") 
-get_word_cloud_parser.add_argument('word_tokenization_algorithm', type=word_tokenization_algorithm,  required=False, location="form")
-get_word_cloud_parser.add_argument('noun_phrases_algorithm', type=noun_phrases_algorithm,  required=False, location="form")
-get_word_cloud_parser.add_argument('pos_tagging_algorithm', type=pos_tagging_algorithm,  required=False, location="form")
-get_word_cloud_parser.add_argument('tag_analysis_algorithm', type=tag_analysis_algorithm,  required=False, location="form")
-get_word_cloud_parser.add_argument('sentiment_analysis_algorithm', type=sentiment_analysis_algorithm,  required=False, location="form")
-get_word_cloud_parser.add_argument('np_clustering_algorithm', type=np_clustering_algorithm,  required=False, location="form")
-get_word_cloud_parser.add_argument('ner_algorithm', type=ner_algorithm,  required=False, location="form")
-
-
-##raw_text_processing_parser
-raw_text_processing_parser = reqparse.RequestParser()
-raw_text_processing_parser.add_argument('text', type=custom_string,  required=True, location="form")
-raw_text_processing_parser.add_argument('tag', type=custom_string,  required=True, location="form")
-
-
-change_tag_or_sentiment_parser = reqparse.RequestParser()
-change_tag_or_sentiment_parser.add_argument('sentence', type=str,  required=True, location="form")
-change_tag_or_sentiment_parser.add_argument('value', type=str,  required=True, location="form")
-change_tag_or_sentiment_parser.add_argument('whether_allowed', type=str,  required=False, location="form")
-
-def cors(func, allow_origin=None, allow_headers=None, max_age=None):
-	if not allow_origin:
-                allow_origin = "*"
-                		
-	if not allow_headers:
-		allow_headers = "content-type, accept"
-		
-	if not max_age:
-		max_age = 60
-
-	@wraps(func)
-	def wrapper(*args, **kwargs):
-		response = func(*args, **kwargs)
-		cors_headers = {
-				"Access-Control-Allow-Origin": allow_origin,
-				"Access-Control-Allow-Methods": func.__name__.upper(),
-				"Access-Control-Allow-Headers": allow_headers,
-				"Access-Control-Max-Age": max_age,
-				}
-		if isinstance(response, tuple):
-			if len(response) == 3:
-				headers = response[-1]
-			else:
-				headers = {}
-			headers.update(cors_headers)
-			return (response[0], response[1], headers)
-		else:
-			return response, 200, cors_headers
-	return wrapper
-
-
-class FBLogin(restful.Resource):
+class FBLogin(tornado.web.RequestHandler):
 	@cors
+	@tornado.gen.coroutine
 	def post(self):
                 """
                 If the length of the new user_friends pposted ont he api uis greater than the length
                 of the user_friends present in the database,
                 then the list of user_friends shall be updated in the database
-
                 """
 
 		args = fb_login_parser.parse_args()
@@ -351,9 +132,11 @@ class FBLogin(restful.Resource):
                 return
 
 
-class PostComment(restful.Resource):
+class PostComment(tornado.web.RequestHandler):
 	@cors
-	def post(self):
+	
+	@tornado.gen.coroutine
+        def post(self):
                 args = post_comment_parser.parse_args()
                 if not android_users.find_one({"fb_id": args["fb_id"]}):
                         return {"error": True,
@@ -370,8 +153,9 @@ class PostComment(restful.Resource):
 
 
 
-class SuggestName(restful.Resource):
+class SuggestName(tornado.web.RequestHandler):
 	@cors
+	@tornado.gen.coroutine
 	def post(self):
                 args = suggest_name_parser.parse_args()
                 if not android_users.find_one({"fb_id": args["fb_id"]}):
@@ -389,9 +173,10 @@ class SuggestName(restful.Resource):
 
 
             
-class PostPicture(restful.Resource):
+class PostPicture(tornado.web.RequestHandler):
 	@cors
-	def post(self):
+	@tornado.gen.coroutine
+        def post(self):
                 args = post_pic_parser.parse_args()
                 if not android_users.find_one({"fb_id": args["fb_id"]}):
                         return {"error": True,
@@ -433,8 +218,9 @@ class PostPicture(restful.Resource):
 
                 #do we have image name options to be selected from
             
-class GetPics(restful.Resource):
+class GetPics(tornado.web.RequestHandler):
 	@cors
+	@tornado.gen.coroutine
 	def get(self):
                 args = get_pics_parser.parse_args()
                 args["dish_name"]
@@ -449,9 +235,10 @@ class GetPics(restful.Resource):
 
 
 
-class LimitedEateriesList(restful.Resource):
+class LimitedEateriesList(tornado.web.RequestHandler):
 	@cors
-	def get(self):
+	@tornado.gen.coroutine
+        def get(self):
                 """
                 This gives only the limited eatery list like the top on the basis of the reviews count
                 """
@@ -460,135 +247,64 @@ class LimitedEateriesList(restful.Resource):
                 for element in result:
                         eatery_id = element.get("eatery_id")
                         element.update({"reviews": reviews.find({"eatery_id": eatery_id}).count()})
-                print result
 
-                custom = [{'reviews': 249, u'area_or_city': u'ncr', u'eatery_id': u'303960', u'eatery_name': u'Manhattan Craft Brewery'}, 
-                {'reviews': 248, u'area_or_city': u'hyderabad', u'eatery_id': u'90034', u'eatery_name': u'Bikanervala'}, 
-                {'reviews': 201, u'area_or_city': u'chennai', u'eatery_id': u'68632', u'eatery_name': u'Barbeque Factory'}, 
-                {'reviews': 200, u'area_or_city': u'ncr', u'eatery_id': u'300656', u'eatery_name': u'Smoke House Deli'},
-                {'reviews': 151, u'area_or_city': u'ncr', u'eatery_id': u'3406', u'eatery_name': u'Amici'}, 
-                {'reviews': 150, u'area_or_city': u'hyderabad', u'eatery_id': u'94814', u'eatery_name': u'The Pasta Bar Veneto'},] 
-                
                 yelp_result = list(yelp_eateries.find(fields= {"eatery_id": True, "_id": False, "eatery_name": True, "area_or_city": True}).limit(5).sort("eatery_total_reviews", -1))
                 
                 for element in yelp_result:
                         eatery_id = element.get("eatery_id")
                         element.update({"reviews": yelp_reviews.find({"eatery_id": eatery_id}).count()})
-                return {"success": True,
+                self.write({"success": True,
 			"error": False,
-			"result": result +custom + yelp_result,
-			}
+			"result": result +  yelp_result,
+			})
+
 
                 
-class EateriesList(restful.Resource):
+                
+class GetWordCloud(tornado.web.RequestHandler):
 	@cors
-	def get(self):
-                result = list(eateries.find({"eatery_area_or_city": "ncr"}, fields= {"eatery_id": True, "_id": False, "eatery_name": True}).limit(200).sort("eatery_total_reviews", -1))
-		
-                return {"success": True,
-			"error": False,
-			"result": result,
-			}
-
-
-
-class GetStartDateForRestaurant(restful.Resource):
-	@cors
-	def post(self):
-		args = get_start_date_for_restaurant_parser.parse_args()
-		eatery_id = args["eatery_id"]
-		sorted_list_by_epoch = list(reviews.find({"eatery_id" :eatery_id}).sort("converted_epoch", 1))
-		start_date = sorted_list_by_epoch[0].get('readable_review_day')
-		start_month = sorted_list_by_epoch[0].get('readable_review_month')
-		start_year = sorted_list_by_epoch[0].get('readable_review_year')
-		
-		end_date = sorted_list_by_epoch[-1].get('readable_review_day')
-		end_month = sorted_list_by_epoch[-1].get('readable_review_month')
-		end_year = sorted_list_by_epoch[-1].get('readable_review_year')
-		
-		
-		
-		
-		return {"success": True,
-				"error": True,
-				"result": {"start": "{0}-{1}-{2}".format(start_year, start_month, start_date), 
-					"end": "{0}-{1}-{2}".format(end_year, end_month, end_date)},
-		}
-
-
-class GetWordCloud(restful.Resource):
-	@cors
-	@timeit
+	@tornado.gen.coroutine
         def post(self):
-		"""
-                __test_eateries = [("7227", 232), ("4114", 50), ("154", 25), ("307799", 109), ("4815", 403), ("94286", 704)]
-                To test
-                    eatery_id = "4571"
-                    start_epoch = 1318185000.0
-                    end_epoch = 1420569000.0
-                    
-                    start_date = "2011-10-10"
-                    end_date = "2015-01-07"
-                    category = "food"
-                """ 
-                args = get_word_cloud_parser.parse_args()
-                start = time.time()
-		__format = '%Y-%m-%d'
-		eatery_id = args["eatery_id"]
-		category = args["category"].lower()
-               
-                print "getting word cloud for category %s"%category
-                total_noun_phrases = (None, args["total_noun_phrases"])[args["total_noun_phrases"] != None]
-                word_tokenization_algorithm_name = ("punkt_n_treebank", args["word_tokenization_algorithm"])\
-                                                                [args["word_tokenization_algorithm"] != None]
-                
-                noun_phrases_algorithm_name = ("topia_n_textblob", args["noun_phrases_algorithm"])\
-                                                                        [args["noun_phrases_algorithm"] != None]
-                pos_tagging_algorithm_name = ("hunpos_pos_tagger", args["pos_tagging_algorithm"])\
-                        [args["pos_tagging_algorithm"] != None]
-                
-                tag_analysis_algorithm_name = ("svm_linear_kernel_classifier_tag.lib", "{0}_tag.lib".format(
-                                                        args["tag_analysis_algorithm"]))[args["tag_analysis_algorithm"] != None]
-                
-                sentiment_analysis_algorithm_name = ("svm_linear_kernel_classifier_sentiment.lib", "{0}_sentiment.lib".format(
-                                                args["sentiment_analysis_algorithm"]))[args["sentiment_analysis_algorithm"] != None]
-                np_clustering_algorithm_name = ("k_means", args["np_clustering_algorithm"])[args["np_clustering_algorithm"] != None]
-                ner_algorithm_name = ("nltk_maxent_ner", args["ner_algorithm"])[args["ner_algorithm"] != None]
-                
-                if args["start_date"] and ["end_date"]:
-		        try:
-		                start_epoch = time.mktime(time.strptime(args["start_date"], __format))
-			        end_epoch = time.mktime(time.strptime(args["end_date"], __format))
-		        except Exception:
-			        return {"success": False,
-                                        "error": True,
-                                        }
-
-                else:
-                        start_epoch, end_epoch = None, None
-
-                if tag_analysis_algorithm_name.replace("_tag.lib", "") != sentiment_analysis_algorithm_name.replace("_sentiment.lib", ""):
+                def Error(arg):
                         return {"error": True,
                                 "success": False,
-                                "error_messege": "Right now, only the same algortihm can be used for tag, sentiment and cost analysis,\
-                                        Make sure you are sending the same algortihm name for all the classification problems", 
+                                "messege": "{0} is required in the form".format(arg),
                                 }
+
+
+                eatery_id = self.get_argument("eatery_id")
+                if not eatery_id: self.finish(Error("eatery_id"))
+                
+                category = self.get_argument("category")
+                if not category: self.finish(Error("category"))
+                
+
+                total_noun_phrases = self.get_argument("total_noun_phrases", None)
+                word_tokenization_algorithm_name = self.get_argument("word_tokenization_algorithm_name", "punkt_n_treebank")
+                noun_phrases_algorithm_name = self.get_argument("noun_phrases_algorithm_name", "topia_n_textblob")
+                pos_tagging_algorithm_name = self.get_argument("pos_tagging_algorithm_name", "hunpos_pos_tagger")
+                tag_analysis_algorithm_name = self.get_argument("tag_analysis_algorithm_name", "svm_linear_kernel_classifier_tag.lib")
+                sentiment_analysis_algorithm_name = self.get_argument("sentiment_analysis_algorithm_name", \
+                                                                    "svm_linear_kernel_classifier_sentiment.lib")
+                np_clustering_algorithm_name = self.get_argument("np_clustering_algorithm_name", "k_means")
+                ner_algorithm_name = self.get_argument("ner_algorithm_name", "nltk_maxent_ner")
+               
+                start_date = self.get_argument("start_date", None)
+                end_date = self.get_argument("end_date", None)
+
+		start_epoch = time.mktime(time.strptime(start_date, '%Y-%m-%d'))
+		end_epoch = time.mktime(time.strptime(end_date, '%Y-%m-%d'))
+
                         
                 if not reviews.find({"eatery_id": eatery_id}):
-                        return {"error": True,
-                                "success": False,
-                                "error_messege": "The eatery id  {0} is not present".format(eatery_id), 
-                                }
+                        self.finish({"error": True, "success": False, "error_messege": "The eatery id  {0} is not present".format(eatery_id),})
 
 
 
                 #name of the eatery
                 eatery_name = eateries.find_one({"eatery_id": eatery_id}).get("eatery_name")
-                if category not in ["service", "food", "ambience", "null", "overall", "cost"]:
-                        return {"error": True,
-                                "success": False,
-                                "error_messege": "This is a n invalid tag %s"%category, 
-                                }
+                if category not in ["service", "food", "ambience", "cost"]:
+                        self.finish({"error": True, "success": False, "error_messege": "This is a n invalid tag %s"%category,})
         
                 if start_epoch and end_epoch:
                         review_list = [(post.get("review_id"), post.get("review_text")) for post in 
@@ -825,12 +541,11 @@ class GetWordCloud(restful.Resource):
                                                                             tag_analysis_algorithm_name)
                         return {"success": True,
 				"error": False,
-                                "result": __instance.result[0:20],
+                                "result": __instance.result[0:35],
                                 "sentences": list(), 
                         }
                 
 
-                """
                 
                         
                 if category == "ambience":
@@ -877,18 +592,16 @@ class GetWordCloud(restful.Resource):
                 result =  __instance.clustered_nps
              
                 print result[3]
-                """
 
-class UpdateClassifier(restful.Resource):
+class UpdateClassifier(tornado.web.RequestHandler):
         @cors
         @timeit
         def post(self):
                 """
                 Update the classifier with new data into the InMemoryClassifiers folder
-                """
                 args = update_classifiers.parse_args()    
                 whether_allowed = False
-
+                """
                 if not whether_allowed:
                         return {"success": False,
                                 "error": True,
@@ -904,7 +617,7 @@ class UpdateClassifier(restful.Resource):
 
 
 
-class ChangeTagOrSentiment(restful.Resource):
+class ChangeTagOrSentiment(tornado.web.RequestHandler):
         @cors
         @timeit
         def post(self):
@@ -938,7 +651,7 @@ class ChangeTagOrSentiment(restful.Resource):
                         }
 
 
-class RawTextParser(restful.Resource):
+class RawTextParser(tornado.web.RequestHandler):
         @cors
         @timeit
         def post(self):
@@ -1078,18 +791,23 @@ class RawTextParser(restful.Resource):
                                 "result": result,
                                 }
 
-api.add_resource(EateriesList, '/eateries_list')
-api.add_resource(LimitedEateriesList, '/limited_eateries_list')
-api.add_resource(GetWordCloud, '/get_word_cloud')
-api.add_resource(FBLogin, '/fb_login')
-api.add_resource(PostComment, '/post_comment')
-api.add_resource(SuggestName, '/name_suggestion')
-api.add_resource(PostPicture, '/post_pic')
-api.add_resource(GetPics, '/get_pics')
-api.add_resource(GetStartDateForRestaurant, '/get_start_date_for_restaurant') 
-api.add_resource(RawTextParser, '/raw_text_processing') 
-api.add_resource(ChangeTagOrSentiment, '/change_tag_or_sentiment')
+
+class Application(tornado.web.Application):
+        def __init__(self):
+                handlers = [
+                    (r"/limited_eateries_list", LimitedEateriesList),
+                    (r"/get_word_cloud", GetWordCloud),
+                        ]
+                settings = dict(cookie_secret="__TODO:_GENERATE_YOUR_OWN_RANDOM_VALUE_HERE__",)
+                tornado.web.Application.__init__(self, handlers, **settings)
+
+def main():
+        http_server = tornado.httpserver.HTTPServer(Application())
+        tornado.autoreload.start()
+        http_server.listen("8000")
+        tornado.ioloop.IOLoop.current().start()
+
 
 
 if __name__ == '__main__':
-        app.run(port=8000, debug=True)
+    main()

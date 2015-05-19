@@ -58,9 +58,11 @@ class SimilarityMatrices:
                 __ngrams = lambda __str: ["".join(e) for e in list(nltk.ngrams(__str, 2))]
                 __l = len(set.intersection(set(__ngrams(__str1)), set(__ngrams(__str2))))
                 total = len(__ngrams(__str1)) + len(__ngrams(__str2))
+                """
                 if len(set.intersection(set(__str1.split(" ")), set(__str2.split(" ")))) >= min(len(__str1.split(" ")), len(__str2.split(" "))):
                         print "New matric found  beyween %s and %s\n"%(__str1, __str2)
                         return 0.9
+                """
                 try:
                     return  float(__l*2)/total
                 except Exception as e:

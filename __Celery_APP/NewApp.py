@@ -18,13 +18,11 @@ import re
 import csv
 import codecs
 from textblob import TextBlob 
-from flask import Flask
-from flask import request, jsonify
-from flask.ext import restful
-from flask.ext.restful import reqparse
-from flask import make_response, request, current_app
-from functools import update_wrapper
-from flask import jsonify
+import tornado.escape
+import tornado.ioloop
+import tornado.web
+import tornado.autoreload
+from tornado.httpclient import AsyncHTTPClient
 import hashlib
 import subprocess
 import shutil
@@ -40,12 +38,7 @@ from Text_Processing import NounPhrases, get_all_algorithms_result, RpRcClassifi
 		TagClassifier, NERs, NpClustering
 from compiler.ast import flatten
 from topia.termextract import extract
-
-##TODO run check_if_hunpos and check_if stanford fruntions for postagging and NERs and postagging
-
-
 from Text_Processing import WordTokenize, PosTaggers, NounPhrases
-
 import decimal
 import time
 from datetime import timedelta
@@ -62,8 +55,6 @@ import requests
 from PIL import Image
 import inspect
 from Text_Processing.Sentence_Tokenization.Sentence_Tokenization_Classes import SentenceTokenizationOnRegexOnInterjections
-
-
 from GlobalConfigs import MONGO_REVIEWS_IP, MONGO_REVIEWS_PORT, MONGO_REVIEWS_DB,\
         MONGO_REVIEWS_EATERIES_COLLECTION, MONGO_REVIEWS_REVIEWS_COLLECTION, DEBUG, \
         MONGO_YELP_DB, MONGO_YELP_EATERIES, MONGO_YELP_REVIEWS
@@ -825,7 +816,7 @@ class GetWordCloud(restful.Resource):
                                                                             tag_analysis_algorithm_name)
                         return {"success": True,
 				"error": False,
-                                "result": __instance.result[0:20],
+                                "result": __instance.result[0:35],
                                 "sentences": list(), 
                         }
                 

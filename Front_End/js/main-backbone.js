@@ -13,6 +13,7 @@ App.RootView = Backbone.View.extend({
 		var jqhr = $.get(window.limited_eateries_list)	
 		
 		jqhr.done(function(data){
+			console.log(data)
 			console.log(data.result)
 			if (data.error == false){
 				$.each(data.result, function(iter, eatery){

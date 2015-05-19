@@ -65,6 +65,7 @@ App.SeeWordCloudDateSelectionView = Backbone.View.extend({
 		window.word_cloud_category =  $("#wordCloudCategory").find("option:selected").val();
 
 		console.log("This is the category selected" + window.word_cloud_category);	
+		/*
 		if (window.word_cloud_category == "Service"){
 			bootbox.alert("The service word cloud has not been implemented yet !!");
 			$(".loadingclass").modal("hide");
@@ -75,6 +76,7 @@ App.SeeWordCloudDateSelectionView = Backbone.View.extend({
 			return 
 		}
 
+		*/
 		this.loading_bootbox()
 		/*
 		if ($('#startDate').val() > $('#selectStartDate').val()){
@@ -117,8 +119,8 @@ App.SeeWordCloudDateSelectionView = Backbone.View.extend({
 			});
 
 		//In case the jquery post request fails
-		jqhr.fail(function(){
-				bootbox.alert("Either the api or internet connection is not working, Try again later")
+		jqhr.fail(function(data){
+				bootbox.alert(data.messege)
 				self.$el.removeClass("dvLoading");
 				event.stopPropagation();
 		});
