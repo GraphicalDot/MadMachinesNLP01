@@ -30,8 +30,11 @@ from Text_Processing.colored_print import bcolors
 from Text_Processing.MainAlgorithms.Algorithms_Helpers import get_all_algorithms_result
 from Text_Processing.MainAlgorithms.In_Memory_Main_Classification import timeit, cd
 from encoding_helpers import SolveEncoding
-from heuristic_clustering import HeuristicClustering
+from heuristic_clustering_without_sentences import HeuristicClustering 
 
+
+
+from GlobalAlgorithmNames import TAGS
 #Algortihms of the form .lib
 from GlobalAlgorithmNames import TAG_CLASSIFIER, SENTI_CLASSIFIER, FOOD_SB_TAG_CLASSIFIER,\
         COST_SB_TAG_CLASSIFIER, SERV_SB_TAG_CLASSIFIER, AMBI_SB_TAG_CLASSIFIER 
@@ -313,11 +316,9 @@ class PerReview:
         
         @print_execution
         def __update_review_result(self):
-                """
-                
-                """
                 MongoScripts.update_review_result_collection(
                         review_id = self.review_id, 
+                        eatery_id = self.eatery_id, 
                         food = self.food,
                         cost = self.cost,
                         ambience = self.ambience,
@@ -328,25 +329,266 @@ class PerReview:
                         service_result = self.all_service, 
                         cost_result = self.all_cost, 
                         ambience_result = self.all_ambience, ) 
-
                 return 
 
-        """
-        #@print_execution
-        def do_clustering(self):
-            
-                __result = HeuristicClustering(self.normalized_sent_sentiment_nps, self.c_sentences, self.eatery_name)
-                self.clustered_nps = sorted(__result.result, reverse=True, key= lambda x: x.get("positive")+x.get("negative"))
-                return self.clustered_nps
-        """
 
-        #@print_execution
-        def convert_sentences(self, __object):
+class DoClusters(object):
+        """
+        Does heuristic clustering for the all reviews
+        """
+        def __init__(self, eatery_id, category, with_sentences=False):
+                self.eatery_id = eatery_id
+                self.mongo_instance = MongoScriptsDoClusters(self.eatery_id)
+                self.category = category
+
+
+        def run(self):
+                """
+                Two cases:
+                    Case 1:Wither first time the clustering is being run, The old_considered_ids list
+                    is empty
+                        case food:
+
+                        case ["ambience", "cost", "service"]:
+                            instance.fetch_reviews(__category) fetch a list of this kind
+                            let say for ambience [["positive", "ambience-null"], ["negative", "decor"], 
+                            ["positive", "decor"]...]
+                            
+                            DoClusters.make_cluster returns a a result of the form 
+                                [{"name": "ambience-null", "positive": 1, "negative": 2}, ...]
+
+                            After completing it for all categories updates the old_considered_ids of 
+                            the eatery with the reviews
+
+                    Case 2: None of processed_reviews and old_considered_ids are empty
+                        calculates the intersection of processed_reviews and old_considered_ids
+                        which implies that some review_ids in old_considered_ids are not being 
+                        considered for total noun phrases
+                        
+                        Then fecthes the review_ids of reviews who are not being considered for total
+                        noun phrases 
+
+                        instance.fetch_reviews(__categoryi, review_ids) fetch a list of this kind
+                            let say for ambience [["positive", "ambience-null"], ["negative", "decor"], 
+                            ["positive", "decor"]...]
+
+                """
+
+                old_considered_ids = self.mongo_instance.old_considered_ids()
+                if not old_considered_ids:
+                        #That clustering is running for the first time
+                        warnings.warn("No clustering of noun phrases has been done yet")
+                        instance = MongoScriptsDoClusters(self.eatery_id)
+                        
+                        __nps_food = instance.fetch_reviews("food")
+                        sub_tag_dict = DoClusters.unmingle_food_sub(__nps_food)
+                        dishes_result = DoClusters.clustering(sub_tag_dict.get("dishes"))
+                        
+                        #Result corresponding to the place-food tag
+                        place_food_result = DoClusters.clustering(sub_tag_dict.get("place-food"))
+                        
+                        #REsult corresponding to the sub-food tag
+                        sub_food_result = DoClusters.clustering(sub_tag_dict.get("sub-food"))
+
+                        #REsult corresponding to the menu-food tag
+                        menu_result = DoClusters.aggregation(sub_tag_dict.get("menu-food"))
+                        
+                        #REsult corresponding to the overall-food tag
+                        overall_result = DoClusters.aggregation(sub_tag_dict.get("overall-food"))
+
+
+
+                        for __category in ["ambience", "service", "cost"]:
+                                __nps = instance.fetch_reviews(__category)
+                                __whle_nps = DoClusters.make_cluster(__nps)
+                                self.mongo_instance.update_nps(__category, __whle_nps)
+                        
+                        self.mongo_instance.update_considered_ids()
+                else:
+                        
+                        pocessed_reviews = self.mongo_instance.processed_reviews()
+                        reviews_ids = list(set.symmetric_difference(set(old_considered_ids), \
+                                set(processed_reviews)))
+
+                        __nps_food = instance.fetch_reviews("food", reviews_ids)
+                                        
+
+                        for __category in ["ambience", "service", "cost"]:
+                                __nps = instance.fetch_reviews(__category, reviews_ids)
+                                __nps_new_result = DoClusters.make_cluster(__nps)
+
+                                __nps_old_result = self.mongo_instance.fetch_nps_frm_eatery(__category)
+                                __whle_nps = DoClusters.adding_new_old_nps(__nps_old_result, __nps_new_result)
+
+                                self.mongo_instance.update_nps(__category, __whle_nps)
+                        
+                        self.mongo_instance.update_considered_ids(review_list=reviews_ids)
+
+
+
+
+
+
+        @staticmethod
+        def clustering(__dishes_list):
+                """
+                Args __dishes_list:
+                    [[u'positive',[u'paneer chilli pepper starter']], [u'positive', []],
+                    [u'positive', [u'friday night']], [u'positive', []],
+                    [u'super-positive', [u'garlic flavours', u'penne alfredo pasta']]],
+                """
+                
+                ##Removing (sentiment, nps) with empyt noun phrases
+                __dishes_list = [(sentiment, nps) for (sentiment, sent, nps) in __dishes_list if nps]
+                __sentences = [sent for (sentiment, sent, nps) in __dishes_list if nps]
+
+                ##Do heuritstic clustering
+
+
+        @staticmethod
+        def aggregation(__list):
+                """
+                __list can be either menu-food, overall-food,
+                as these two lists doesnt require clustering but only aggreation of sentiment analysis
+                Args:
+                    [[u'negative', []], [u'negative', [u'i haven']], [u'negative', []], [u'neutral', []],
+                    [u'negative', []], [u'neutral', []]]
+
+                Result:
+                    {u'negative': 4, u'neutral': 2}
+                """
+                sentiment_dict = list()
+                for sentiment, frequency in Counter([sentiment for (sentiment, nps) in __list]).iteritems():
+                        sentiment_dict.update({sentiment, frequency})
+                return sentiment_dict
+
+   
+
+
+        @staticmethod
+        def unmingle_food_sub(__list):
+                """
+                __list = [u'the panner chilly was was a must try for the vegetarians from the menu .', 
+                u'food', u'positive', u'menu-food',[]],
+                [u'and the Penne Alfredo pasta served hot and good with lots of garlic flavours which 
+                we absolute love .', u'food',cu'super-positive',u'dishes', [u'garlic flavours', 
+                u'penne alfredo pasta']],
+
+                result:
+                    {u'dishes': [[u'positive', [u'paneer chilli pepper starter']],
+                                [u'positive', []],
+                                [u'positive', [u'friday night']],
+                                [u'positive', []],
+                                [u'positive', []],
+                                [u'super-positive', [u'garlic flavours', u'penne alfredo pasta']]],
+                    u'menu-food': [[u'positive', []]],
+                    u'null-food': [[u'negative', []],
+                                [u'super-positive', []],
+                                [u'super-positive', []],
+                                [u'negative', []],
+                                }
+                """
+                __sub_tag_dict = dict()
+                for (sent, tag, sentiment, sub_tag, nps)  in __list:
+                        if not __sub_tag_dict.has_key(sub_tag):
+                                __sub_tag_dict.update({sub_tag: [[sentiment, sent, nps]]})
+                        
+                        else:
+                            __old = __sub_tag_dict.get(sub_tag)
+                            __old.append([sentiment, sent, nps])
+                            __sub_tag_dict.update({sub_tag: __old})
+
+                return __sub_tag_dict
+
+        @staticmethod
+        def make_cluster(__nps):
+                """
+                args:
+                    __nps: [[sentiment, sent, sub_tag], [sentiment, sent, sub_tag] , ...]
+                return:
+                        [{'name': u'ambience-null', u'positive': 1},
+                        {'name': u'ambience-overall', u'neutral': 1, u'super-positive': 2}]
+                    
+                """
+                nps_dict = DoClusters.make_sentences_dict(__nps)
+                result = [DoClusters.flattening_dict(key, value) for key, value in nps_dict.iteritems()]
+                return result
+
+        @staticmethod
+        def adding_new_old_nps(__new, __old):
+                """
+                __new: [{'name': u'decor', u'super-positive': 1, "negative": 3}, {'name': u'ambience-null', u'positive': 1}, 
+                __old: [{'name': u'music', u'super-positive': 1}, {'name': u'ambience-null', u'neutral': 1, "super-negative": 10}, 
+                {'name': u'ambience-overall', u'neutral': 1, u'super-positive': 2},
+                """
+                aggregated_list = list()
+                def make_dict(__list):
+                        new_dict = dict()
+                        for __dict in __list:
+                                name = __dict.get("name")
+                                __dict.pop("name")
+                                new_dict.update({name: __dict})
+                        return new_dict
+
+                __new_dict = make_dict(__new)
+                __old_dict = make_dict(__old)
+
+                keys = set.union(set(__old_dict.keys()), set(__new_dict.keys()))
+                for key in keys:
+                        a = Counter(__new_dict.get(key))
+                        b = Counter(__old_dict.get(key))
+                        sentiments = dict(a+b)
+                        sentiments.update({"name": key})
+                        aggregated_dict.append(sentiments)
+
+                return aggregated_dict
+
+        @staticmethod
+        def flattening_dict(key, value):
+                """
+                key: ambience-overall 
+                value: {'sentiment': [u'super-positive', u'super-positive', u'neutral']}
+
+                Output: {"name": ambience-overall, u'super-positive': 2, u'neutral': 1}
+                """
+                __dict = dict(Counter(value.get("sentiment")))
+                __dict.update({"name": key})
+                return __dict
+
+
+        @staticmethod
+        def make_sentences_dict(noun_phrases):
+                """
+                Makes sentences_dict from self.c_sentences, self.predicted_sentiment, self.ambience_tags
+                of the form
+                { "ambience-null": {"sentences": [(__sent, __sentiment), (__sent, __sentiment), .. ],
+                    "similar": None,
+                    "sentiment": ["positive", "negative", "super-positive", ]},
+
+                "decor": { }, }
+
+                """
+                sentences_dict = dict()
+                for __sentiment, sent, __category in noun_phrases:
+                        if not sentences_dict.has_key(__category):
+                                sentences_dict.update({__category: {"sentiment": [__sentiment]}})
+
+                        else:
+                                sentiment = sentences_dict.get(__category).get("sentiment")
+                                sentiment.append(__sentiment)
+
+                                sentences_dict.update({
+                                            __category: {"sentiment": sentiment,}})
+                return sentences_dict
+
+
+
+def convert_sentences(self, __object):
                 return {"sentence": __object[0],
                         "sentiment": __object[1]}
-                                
 
-        #@print_execution
+
+        @print_execution
         def result_lambda(self, __dict):
                 __dict.update({"sentences": map(self.convert_sentences, __dict.get("sentences"))})
                 try:
@@ -357,50 +599,18 @@ class PerReview:
                 o_likeness =  "%.2f"%(float(__dict.get("positive")*self.total_positive + __dict.get("negative")*self.total_negative)/self.total)
                 __dict.update({"i_likeness": i_likeness})
                 __dict.update({"o_likeness": o_likeness})
-                
-                
-        #@print_execution
-        def make_result(self):
+
+
+ def make_result(self):
                 self.total_positive = sum([__dict.get("positive") for __dict in  self.clustered_nps])
                 self.total_negative = sum([__dict.get("negative") for __dict in  self.clustered_nps])
                 self.total = self.total_positive + self.total_negative
-                
+
                 map(self.result_lambda, self.clustered_nps)
-                final_result = sorted(self.clustered_nps, reverse= True, 
+                final_result = sorted(self.clustered_nps, reverse= True,
                                             key=lambda x: x.get("negative")+ x.get("positive") + x.get("neutral"))
-                
+
                 return final_result
-
-
-
-                """
-                word_tokenize = WordTokenize(sentences,  default_word_tokenizer= word_tokenization_algorithm_name)
-                word_tokenization_algorithm_result = word_tokenize.word_tokenized_list.get(word_tokenization_algorithm_name)
-
-
-                __pos_tagger = PosTaggers(word_tokenization_algorithm_result,  default_pos_tagger=pos_tagging_algorithm_name)
-                pos_tagging_algorithm_result =  __pos_tagger.pos_tagged_sentences.get(pos_tagging_algorithm_name)
-
-
-                __noun_phrases = NounPhrases(pos_tagging_algorithm_result, default_np_extractor=noun_phrases_algorithm_name)
-                noun_phrases_algorithm_result =  __noun_phrases.noun_phrases.get(noun_phrases_algorithm_name)
-
-                #result = [element for element in zip(predicted_sentiment, noun_phrases_algorithm_result) if element[1]]
-                result = [element for element in __result if element[1]]
-                """
-
-class DoClusters(object):
-        def __init__(self, eatery_id, category, with_sentences=False):
-                self.eatery_id = eatery_id
-                self.mongo_instance = MongoScriptsDoClusters(self.eatery_id)
-                self.category = category
-
-
-        def run():
-                if not self.mongo_instance.old_considered_ids():
-                        warnings.warn("No clustering of noun phrases has been done yet")
-                
-
 
 
 

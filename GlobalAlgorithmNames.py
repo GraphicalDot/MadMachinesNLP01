@@ -2,6 +2,19 @@
 from Text_Processing.MainAlgorithms.paths import path_parent_dir, path_in_memory_classifiers 
 from sklearn.externals import joblib
 
+TAGS = ["food", "service", "cost", "ambience", "null", "overall"]
+FOOD_SUB_TAGS = ['dishes', 'menu-food', 'null-food', 'overall-food', 'place-food', 'sub-food']
+COST_SUB_TAGS = ['cheap', 'cost-null', 'expensive', 'not worth', 'value for money']
+SERV_SUB_TAGS = ['booking', 'management', 'presentation', 'service-null', 'service-overall',\
+        'staff', 'waiting-hours']
+
+AMBI_SUB_TAGS = [u'ambience-null', 'ambience-overall', 'crowd', 'dancefloor', 'decor', \
+        'in-seating', 'music', 'open-area', 'romantic', 'smoking-zone', 'sports', 'sports-screens', 'view']
+
+
+SENTIMENT_TAGS = ["super-positive", "super-negative", "neutral", "positive", "negative"]
+
+
 TAG_CLASSIFIER = "svm_linear_kernel_classifier_tag.lib"
 SENTI_CLASSIFIER = "svm_linear_kernel_classifier_sentiment_new_dataset_30April.lib"
 FOOD_SB_TAG_CLASSIFIER = "svm_linear_kernel_classifier_food_sub_tags_8May.lib"

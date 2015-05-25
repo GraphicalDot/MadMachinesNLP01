@@ -8,6 +8,8 @@ import pymongo
 import os
 import sys
 import warnings
+import itertools
+
 file_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(file_path)
 from GlobalConfigs import reviews, eateries, reviews_results_collection, \
@@ -26,6 +28,7 @@ from GlobalAlgorithmNames import TAG_CLASSIFIER_LIB, SENTI_CLASSIFIER_LIB, FOOD_
         COST_SB_TAG_CLASSIFIER_LIB , SERV_SB_TAG_CLASSIFIER_LIB, AMBI_SB_TAG_CLASSIFIER_LIB
 
 
+from GlobalAlgorithmNames import FOOD_SUB_TAGS, COST_SUB_TAGS, SERV_SUB_TAGS, AMBI_SUB_TAGS
 
 
 
@@ -48,7 +51,7 @@ class MongoScriptsReviews(object):
 
         @staticmethod
         def return_all_reviews_with_text(eatery_id):
-                review_list = [(post.get("review_id"), post.get("review_text")) for post \
+                review_list = [(post.get("review_id"), post.get("review_text"), post.get("review_time")) for post \
                         in reviews.find({"eatery_id" :eatery_id})]
                 return review_list
 
@@ -57,8 +60,9 @@ class MongoScriptsReviews(object):
         def reviews_with_text(reviews_ids):
                 review_list = list()
                 for review_id in reviews_ids:
-                        review_text = reviews.find_one({"review_id": review_id}).get("review_text")
-                        review_list.append((review_id, review_text))
+                        review = reviews.find_one({"review_id": review_id})
+                        review_text, review_time = review.get("review_text"), review.get("review_time")
+                        review_list.append((review_id, review_text, review_time))
                 return review_list
 
 
@@ -66,6 +70,7 @@ class MongoScriptsReviews(object):
 class MongoScriptsEateries(object):
         def __init__(self, eatery_id):
                     self.eatery_id = eatery_id
+                    self.eatery_name = eateries.find_one({"eatery_id": self.eatery_id}).get("eatery_name")
 
         def check_algorithms(self):
                 
@@ -108,6 +113,7 @@ class MongoScriptsEateries(object):
         def set_new_algorithms(self):
                 
                 eateries_results_collection.update({"eatery_id": self.eatery_id}, {"$set": {
+                    "eatery_name": self.eatery_name,
                     "tag_anlysis_algorithm_name": TAG_CLASSIFY_ALG_NME,
                     "sentiment_analysis_algorithm_name": SENTI_CLSSFY_ALG_NME,
                     "food_classification_algorithm_name": FOOD_SB_CLSSFY_ALG_NME,
@@ -125,7 +131,16 @@ class MongoScriptsEateries(object):
                 result = eateries_results_collection.find_one({"eatery_id": self.eatery_id}, {"_id": False, 
                                     "processed_reviews": True})
     
-                return result.get("processed_reviews")
+                if result.get("processed_reviews"):
+                        return result.get("processed_reviews")
+                return list()
+
+        def get_noun_phrases(self, category, number_of_nps):
+                result = eateries_results_collection.find_one({"eatery_id": self.eatery_id})
+                if category == "food":
+                        return result["food"]["dishes"][0: number_of_nps]
+                else:
+                        return result[category]
 
 
 class MongoScripts:
@@ -136,7 +151,7 @@ class MongoScripts:
         @staticmethod
         def get_review_result(review_id):
                 result = dict()
-
+                print "this is review id %s"%review_id
                 #Everything has to be changed because now sentiments has to be changed
                 if not bool(list(reviews_results_collection.find({'review_id': review_id, 
                     "classification.{0}.{1}".format(TAG_CLASSIFY_ALG_NME, SENTI_CLSSFY_ALG_NME)\
@@ -241,6 +256,7 @@ class MongoScripts:
         @staticmethod
         def update_review_result_collection(**kwargs):
                 review_id = kwargs["review_id"]
+                eatery_id = kwargs["eatery_id"]
                 food_sentences = kwargs["food"]
                 cost_sentences = kwargs["cost"]
                 service_sentences = kwargs["service"]
@@ -260,7 +276,7 @@ class MongoScripts:
                     {"food": food_sentences, "cost": cost_sentences, "ambience": ambience_sentences, \
                             "service": service_sentences, "null": null_sentences, "overall": overall_sentences, 
                             "review_text": review.get("review_text"), "review_time": review.get("review_time"), 
-                    
+                            "eatery_id": eatery_id, 
                     "classification.{0}.{1}.food.{2}.{3}".format(TAG_CLASSIFY_ALG_NME, 
                         SENTI_CLSSFY_ALG_NME, FOOD_SB_CLSSFY_ALG_NME, NOUN_PHSE_ALGORITHM_NAME):
                             food_result,
@@ -282,9 +298,9 @@ class MongoScripts:
 class MongoScriptsDoClusters(object):
         def __init__(self, eatery_id):
                 self.eatery_id = eatery_id
-                
+                self.eatery_name = eateries.find_one({"eatery_id": self.eatery_id}).get("eatery_name")
 
-        def processed_clusters():
+        def processed_clusters(self):
                 """
                 This returns all the noun phrases that already have been processed for
                 teh eatery id 
@@ -292,7 +308,7 @@ class MongoScriptsDoClusters(object):
                 return eateries_results_collection.find_one({"eatery_id": self.eatery_id}, 
                             {"_id": False, noun_phrases: True}).get("noun_phrases")
 
-        def old_considered_ids(eatery_id):
+        def old_considered_ids(self):
                 """
                 Returns review_ids whose noun_phrases has already been taken into account, 
                 which means Clusteirng algorithms has already been done on the noun phrases 
@@ -303,9 +319,100 @@ class MongoScriptsDoClusters(object):
                             "old_considered_ids": True}).get("old_considered_ids")
 
 
-        def processed_reviews(eatery_id)
+        def processed_reviews(self):
                 return eateries_results_collection.find_one({"eatery_id": self.eatery_id}, {"_id": False, 
                             "processed_reviews": True}).get("processed_reviews")
+
+        def fetch_reviews(self, category, review_list=None):
+                if not review_list:
+                        review_list = eateries_results_collection.find_one({"eatery_id": \
+                                self.eatery_id}).get("processed_reviews")
+
+
+                if category == "food":
+                        food = [reviews_results_collection.find_one({"review_id": review_id})\
+                            ["classification"][TAG_CLASSIFY_ALG_NME][SENTI_CLSSFY_ALG_NME]\
+                            ["food"][FOOD_SB_CLSSFY_ALG_NME][NOUN_PHSE_ALGORITHM_NAME] for review_id in  review_list]
+                        flatten_food = list(itertools.chain(*food))
+                        
+                        ##Checks if the food sub classification tab has beenchanged or not
+                        if set.difference(set([e[3] for e in flatten_food]), set(FOOD_SUB_TAGS)):
+                                print set.symmetric_difference(set([e[3] for e in flatten_food]), set(FOOD_SUB_TAGS))
+                                raise StandardError("Food sub classification has been changed,\
+                                            Do something about it fuckerrrr, One way to solve this problem\
+                                            is to flush whole database with food category, also food noun\
+                                            phrases stored in the eatery")
+
+
+                        return flatten_food          
+                        
+                        
+       
+                    
+                result = [reviews_results_collection.find_one({"review_id": review_id})["classification"][
+                    TAG_CLASSIFY_ALG_NME][SENTI_CLSSFY_ALG_NME][category]\
+                        [eval("{0}_SB_CLSSFY_ALG_NME".format(category.upper()[0:4]))] for review_id in \
+                        review_list]
+                
+                result = list(itertools.chain(*result))
+                if set.difference(set([e[3] for e in result]), set(eval("{0}_SUB_TAGS".format(category.upper()[0:4])))):
+                        raise StandardError("{0} sub classification has been changed,\
+                                            Do something about it fuckerrrr, One way to solve this problem\
+                                            is to flush whole database with {0} category".format(category))
+
+               
+                #[[u'super-positive', u'ambience-overall'], [u'super-positive', u'ambience-overall'], 
+                #[u'neutral', u'ambience-overall']]
+                return [[sentiment, sub_tag, review_time] for (sent, tag, sentiment, sub_tag, review_time) in result]
+
+
+        def update_food_sub_nps(self, np_result, food_sub_category):
+                try:    
+                    eateries_results_collection.update({"eatery_id": self.eatery_id}, {"$set": {
+                        "food.{0}".format(food_sub_category): np_result}}, upsert=False)
+                except Exception as e:
+                        raise StandardError(e)
+                return 
+        
+        def fetch_nps_frm_eatery(self, category, sub_category=None):
+                if category == "food":
+                        if not sub_category:
+                                raise StandardError("Food Category shall be provided to fecth nps")
+                        return eateries_results_collection.find_one({"eatery_id": self.eatery_id}).get(category).get(sub_category)
+                        
+                return eateries_results_collection.find_one({"eatery_id": self.eatery_id}).get(category)
+
+        def update_considered_ids(self, review_list=None):
+                """
+                Updating considered ids, Adding review ids to eateries considered_ids list, Thre reviews ids
+                for which the noun phrases of all categories has been added to respective lists in eateries
+                
+                if reviews_list is not present updated old_considered_ids with all the ids present 
+                in processed_reviews list of the eatery
+                """
+                if not review_list:
+                        review_list = eateries_results_collection.find_one({"eatery_id":\
+                                    self.eatery_id}).get("processed_reviews")
+                
+                print "This is the fucking review list %s"%review_list
+                try:
+                        eateries_results_collection.update({"eatery_id": self.eatery_id}, {"$push": \
+                                {"old_considered_ids": {"$each": review_list }}}, upsert=False)
+
+                except Exception as e:
+                        raise StandardError(e)
+                return
+
+        def update_nps(self, category, category_nps):
+                """
+                Update new noun phrases to the eatery category list
+                """
+                try:
+                    eateries_results_collection.update({"eatery_id": self.eatery_id}, {"$set": {category:
+                    category_nps}}, upsert=False)
+                except Exception as e:
+                    raise StandardError(e)
+                return 
 
 
 
