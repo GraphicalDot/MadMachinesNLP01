@@ -190,7 +190,7 @@ class EachEateryWorker(celery.Task):
                 start = time.time()
                 """
                 Start This worker:
-                celery -A ProcessingCeleryTask  worker -n EachEateryWorker -Q EachEateryQueue --concurrency=4\
+                celery yA ProcessingCeleryTask  worker -n EachEateryWorker -Q EachEateryQueue --concurrency=4\
                         -P gevent  --loglevel=info --autoreload
                
                 """ 
@@ -199,19 +199,21 @@ class EachEateryWorker(celery.Task):
 
 @app.task()
 class MappingListWorker(celery.Task):
-	max_retries=3, 
+	max_retries=0, 
 	acks_late=True
 	default_retry_delay = 5
         
-        def run(self, args, eatery_id, callback):
+        def run(self, args, __eatery_id, __callback):
                 """
                 celery -A ProcessingCeleryTask  worker -n MappingListWorker -Q MappingListQueue --concurrency=4 -P \
                         gevent  --loglevel=info --autoreload
                 """
                 self.start = time.time()
-                callback = subtask(callback)
+                callback = subtask(__callback)
 	        
-                return group(callback.clone([arg, eatery_id]) for arg in args)()
+                print args
+                print __eatery_id
+                return group(callback.clone([arg, __eatery_id]) for arg in args)()
 
         
         def after_return(self, status, retval, task_id, args, kwargs, einfo):

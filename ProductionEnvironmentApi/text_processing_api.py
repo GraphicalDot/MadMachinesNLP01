@@ -427,6 +427,12 @@ class DoClusters(object):
 
                         print "These are the review ids required to be considered %s"%reviews_ids
 
+                        if not bool(reviews_ids):
+                                warnings.warn("{0} All the noun phrases has already been processed {1}".format(\
+                                    bcolors.OKBLUE, bcolors.RESET))
+                                
+
+                        MongoScriptsDoClusters.reviews_with_time(reviews_ids)
                         __nps_food = self.mongo_instance.fetch_reviews("food", reviews_ids)
                             
                             
@@ -758,19 +764,35 @@ class DoClusters(object):
                 return sentences_dict
 
 
-"""
 if __name__ == "__main__":
+        """
+        14 599
+        1 3239
+        4 309576
+        5 5586
+        98 9784
+        42 3425
+        47 303574
+        62 307801
+        820 218cdcf7214b3ea1ba6ce89e7d37ef9a
+        84 8511e15af9b6379ba951b627a323a0eb
+        """
         review_id = '3320891'
         review_text = "Visited the place for a friend's birthday bash. Lots of people have written detailed reviews about this place. So am giving a quick short review:1. Ambience is great. They have divided the place into fine dining, disc, and outdoor lounge area. However the outdoor area is still covered by a makeshift tent like a large pavilion with numerous ACs running to keep the place cool.2. Food is average. Can't say I tasted anything that I haven't had before. However, expect good food and you won't be disappointed. Do try their Paneer Chilli Pepper starter. Pizzas and risotto too was good.3. Drinks - here is an interesting (read weird) fact..even through they have numerous drinks in the menu, on a Friday night (when I visited the place) they were serving only specific brands of liquor. And way above even twice the MRP per bottle. So do make sure you carry a fat wallet if you are gonna drink.4. Service was good. A little slow but still everything came hot (except for the drinks of course!! ;)...but I guess the slow speed was due to the crowd present on a Friday night.And finally, if you are now planning to go (which I wouldn't say no to) do ensure you make a reservation. They DO NOT entertain without a reservation.Hope this was useful. Bon Appetit! :))"
         review_time = '2014-09-19 06:56:42'
 
-        ins = EachEatery(eatery_id="308322")
-        
-        for review_id, review_text, review_time in ins.return_non_processed_reviews():
-                per_review_instance = PerReview(review_id, review_text, review_time, "308322")
-                per_review_instance.run()
 
-        do_cluster_ins = DoClusters(eatery_id="308322")
+        eatery_id = "8511e15af9b6379ba951b627a323a0eb"
+        ins = EachEatery(eatery_id=eatery_id)
+    
+        try:
+                for review_id, review_text, review_time in ins.return_non_processed_reviews():
+                        per_review_instance = PerReview(review_id, review_text, review_time, eatery_id)
+                        per_review_instance.run()
+        except Exception:
+                print "No review to be processed"
+                pass
+
+        do_cluster_ins = DoClusters(eatery_id=eatery_id)
         do_cluster_ins.run()
 
-"""

@@ -1,3 +1,6 @@
+
+
+
 #!/usr/bin/env python
 
 from __future__ import with_statement
@@ -10,6 +13,7 @@ from fabric.utils import error
 import os
 import time
 
+"""
 env.use_ssh_config = True
 env.hosts = ["52.24.208.205"] ##For t2 medium
 #env.hosts = ["ec2-54-186-203-98.us-west-2.compute.amazonaws.com"] ##For m3.large
@@ -17,7 +21,6 @@ env.user = "ubuntu"
 env.key_filename = "/home/kaali/Programs/Python/MadMachinesNLP01/MadMachines.pem"
 env.warn_only = True
 
-"""
 This is the file which remotely makes an ec2 instance for the use of this repository
 """
 
@@ -54,6 +57,7 @@ def basic_setup():
 	#Dependicies to install hunpostagger
 	run("sudo apt-get install -y ocaml-nox")
 	run("sudo apt-get install -y mercurial")
+	run("sudo apt-get install -y libpq-dev")
 
 
 

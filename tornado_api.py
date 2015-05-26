@@ -300,9 +300,7 @@ class GetWordCloud(tornado.web.RequestHandler):
                 """
                 print "Processing word cloud"
 
-                celery_chain = (EachEateryWorker.s(eatery_id, category, start_epoch, end_epoch)
-                            | MappingList.s(eatery_id, SentTokenizeToNP.s()))()
-
+                celery_chain = (EachEateryWorker.s(eatery_id)| MappingListWorker.s(eatery_id, PerReviewWorker.s()))()
 
 
                 while celery_chain.status != "SUCCESS":
@@ -316,6 +314,7 @@ class GetWordCloud(tornado.web.RequestHandler):
                         pass
 
 
+                DoClustersWorker.apply_async(args=[eatery_id])
 
 
                 ins = EachEatery(eatery_id=eatery_id)

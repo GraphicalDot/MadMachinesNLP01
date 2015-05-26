@@ -300,6 +300,12 @@ class MongoScriptsDoClusters(object):
                 self.eatery_id = eatery_id
                 self.eatery_name = eateries.find_one({"eatery_id": self.eatery_id}).get("eatery_name")
 
+        @staticmethod
+        def reviews_with_time(review_list):
+                for review_id in review_list:
+                    result = reviews.find_one({"review_id": review_id}, {"_id": False, "review_time": True})
+                    print "The review_id --<<{0}>>-- with review time --<<{1}>>--".format(review_id, result.get("review_time")), "\n"
+
         def processed_clusters(self):
                 """
                 This returns all the noun phrases that already have been processed for

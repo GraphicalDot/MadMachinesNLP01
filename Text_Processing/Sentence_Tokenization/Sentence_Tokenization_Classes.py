@@ -197,7 +197,7 @@ class SentenceTokenizationOnRegexOnInterjections:
                         elif tagged_word.is_fuzzy_abbr:
                                 sentences[-1].append(tagged_word.value.split(".")[0])
                                 sentences.append(list())
-                                sentences[-1].append(tagged_word.value.split(".")[1])
+                                sentences[-2].append(tagged_word.value.split(".")[1])
 		
                         elif tagged_word.is_fuzzy_type:
                                 try:
