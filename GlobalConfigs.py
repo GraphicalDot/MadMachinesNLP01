@@ -7,6 +7,9 @@ Purpose: This file has all the config variables stored in it,
 import pymongo
 
 
+##2014-07-22 20:49:11
+
+TIME_FORMAT = "%Y-%m-%D %H:%M:%S"
 #MONGO_REVIEWS_IP = "192.168.1.11"
 MONGO_REVIEWS_IP = "localhost"
 MONGO_REVIEWS_PORT = 27017

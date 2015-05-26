@@ -1,9 +1,11 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
 "http://www.w3.org/TR/html4/loose.dtd">
 <html>
+
+
 	<head>
-		<title img=>Canworks</title>
-		<meta name="description" content="canworks proof of concept">
+		<title img=>Mad Machines REProE</title>
+		<meta name="description" content="Mad Machines REProEPOC">
 		<meta charset="UTF-8">
 		<link href="css/bootstrap.css" rel="stylesheet">
 		<link href="css/main.css" rel="stylesheet">
@@ -39,50 +41,58 @@
 		<script type="text/javascript" src="js/libs/cola.v3.min.js"></script>
 		<script type="text/javascript" src="js/libs/d3.tip.v0.6.3.js"></script>
 		<script type="text/javascript" src="js/libs/jquery.vegas.min.js"></script>
+		<script type="text/javascript" src="js/hovercard.js"></script>
 
 	</head>
 	<body>
-		
-	<script type="text/x-mustache-template" id="see-word-cloud-date-selection-template">
-		<div class="control-group">
-					<label disabled class="control-label">Start Date</label>
-					<div class="controls">
-						<input type="date" id="startDate" disabled>
-					</div>
-			</div>
-		<div class="control-group">
-			
-					<label for="selectStartDate" class="control-label">Select Start Date</label>
-					<div class="controls">
-						<input type="date" id="selectStartDate">
-					</div>
-			</div>
 
-		<div class="control-group">
-					<label disabled class="control-label">End Date</label>
-					<div class="controls">
-						<input type="date" id="endDate" disabled>
-					</div>
-					
-		</div>
-		<div class="control-group">
-				<label  for="selectEndDate"  class="control-label">Select End Date</label>
-					<div class="controls">
-						<input type="date" id="selectEndDate">
-					</div>
-		</div>
-		
+	<script type="text/x-mustache-template" id="fb-login-template">
+		window.fbAsyncInit = function(){
+				FB.init({
+				appId : '767935519986527',
+				xfbml : true,
+				version : 'v2.3'});
+				};
+
+		(function(d, s, id){
+			var js, fjs = d.getElementsByTagName(s)[0];
+			if (d.getElementById(id)) {return;}
+			js = d.createElement(s); js.id = id;
+			js.src = "//connect.facebook.net/en_US/sdk.js";
+			fjs.parentNode.insertBefore(js, fjs);
+			}(document, 'script', 'facebook-jssdk'));
+
+	</script>
+	<script type="text/x-mustache-template" id="root-row-template">
+                <div class="span8">
+                        <p style="text-align: center">{{sentence}}</p>
+                </div>
+                
+		<div class="span2">
+                        <div class="btn-group">
+                                <select id="ddpFiltersentiment" class="btn btn-success dropdown-toggle btn-xs" data-toggle="dropdown" style="width: 98%">
+                                        <option value="1" disabled>super-positive</option>
+                                        <option value="2" disabled>positive</option>
+                                        <option value="3" disabled>neutral</option>
+                                        <option value="4" disabled>negative</option>
+                                        <option value="5" disabled>super-negative</option>
+                                        <option value="6" disabled>mixed</option>
+                                </select>
+                        </div>
+                        </div>
+	</script>
+
+
+	<script type="text/x-mustache-template" id="see-word-cloud-date-selection-template">
 		<div class="control-group">
 				<label  class="control-label">Word Cloud Category</label>
 					<div class="controls">
 						<select id="wordCloudCategory">
 							<ul id="wordCloudCategory" class="dropdown-menu">
-								<option>__Food__</option>
-								<option>__Service__</option>
-								<option>__Ambience__</option>
-								<option>__Cost__</option>
-								<option>__Null__</option>
-								<option>__Overall__</option>
+								<option>Food</option>
+								<option>Service</option>
+								<option>Ambience</option>
+								<option>Cost</option>
 							</ul>	
 						</select>
 					</div>
@@ -94,309 +104,56 @@
 		
 	</script>	
 	<script type="text/x-mustache-template" id="root-template">
-		 <tbody>
-			 <tr>
-				<th colspan="3">Cities</th>
+		<caption><b>Restaurants</b></caption>	
+		 <tbody class="append_eatery" >
 
-				<th colspan="3">Restaurant name</th>
-
-				<th colspan="3">Unclassfied Reviews</th>
-			 
-				<th colspan="3">Classfied reviews</th>
-				       
-			</tr>
-			 <tr>
-				<td colspan="3">
-					<select id="citiesList">
-						<ul id="citiesList" class="dropdown-menu">
-							<option>ncr</option>
-							<option>mumbai</option>
-							<option>bangalore</option>
-							<option>kolkata</option>
-							<option>chennai</option>
-							<option>pune</option> 
-							<option>hyderabad</option>
-							<option>ahmedabad</option>
-							<option>chandigarh</option>
-							<option>jaipur</option>
-							<option>guwahati</option>
-					</select>
-				</td>
-
-				<td colspan="3">
-					<select id="eateriesList">
-						<ul id="eateriesList" class="dropdown-menu">
-					</select>		
-				</td>
-
-				<td colspan="3">
-					<select id="unclassified_reviews">
-						</select>		
-				</td>
-			 
-				<td colspan="3">
-					<select id="classified_reviews">
-					</select>		
-				</td>
-				       
-			</tr>
-		
-			<tr>
-				<td colspan="3">
-					<button id="loadReview" class="btn">Load Review</button>
-				</td>
-				
-				<td colspan="3">
-					<button id="updateReview" class="btn">Update Review</button>
-				</td>
-				
-				<td colspan="3">
-					<button id="countReviews" class="btn">Count Review</button>
-				</td>
-				
-				<td colspan="3">
-					<button id="seeWordCloud" class="btn">See word Cloud</button>
-				</td>
-			</tr>
 			
-			<tr>
-				
-				<td colspan="11">	
-					<textarea type="text" id="searchQuery" class="input-xlarge span10" rows="6" required="required" placeholder="enter the review to be processed" style="width: 100%; margin-top: .5%; margin-bottom: .5%; margin-right: 0; margin-left: 0" ></textarea>
-				</td>
-				
-				<td colspan="1">
-					<form class="form-horizontal">
-						<div class="control-group" style="width: 100%; margin-top: .5%; margin-bottom: .5%; margin-right: 0; margin-left: 0">
-							<div class="controls">
-							 <select id="appendAlgorithms">
-							<select>	
-							</div>	
-						</div>
-						<div class="control-group" style="width: 100%; margin-top: .5%; margin-bottom: .5%; margin-right: 0; margin-left: 0">
-							<div class="controls">
-								<button type="submit" id="submitAlgorithm" class="btn btn-primary" style="text-align: center; width: 100%; margin-top: .5%; margin-bottom: 0; margin-right: 0">Submit Algorithm</button>
-							</div>
-						</div>
-						
-						<div class="control-group" style="width: 100%; margin-top: .5%; margin-bottom: .5%; margin-right: 0">
-							<div class="controls">
-								<button type="submit" id="submitCompareAlgorithms" class="btn btn-primary" style="width: 100%; margin-top: .5%; margin-bottom: 0; margin-right: 0">Compare Algorithms</button>
-							</div>
-						</div>
-					</form>
-					
-				</td>
-			</tr>
-		</tbody>
-    </script>
-
-	<script type="text/x-mustache-template" id="append-algorithm-template">
-		{{algorithm_name}}
-	</script>
-	<script type="text/x-mustache-template" id="reviews-count-parent-template">
-		 <tbody id="reviewsCount">
-			 <tr>
-				<th colspan="4">Cities</th>
-				<th colspan="4">Number of Classified Reviews</th>
-				<th colspan="4">Number of Unclassfied Reviews</th>
-			</tr>
-		</tbody>
-	</script>
-	<script type="text/x-mustache-template" id="reviews-count-child-template">
-			<td colspan="4">{{city}}</td>
-			<td colspan="4">{{classified}}</td>
-			<td colspan="4">{{unclassified}}</td>
-	</script>
-
-
-
-
-	<script type="text/x-mustache-template" id="ngram-template">
-		<div class="span2">
-			<button type="submit" id="submitCloud" class="btn btn-info blocks" >{{noun_phrase}}</button>
-		</div>
-		</div>		
-	</script>
-	<script type="text/x-mustache-template" id="each-eatery-template">
-			{{eatery_name}}
-	</script>
-	
-	<script type="text/x-mustache-template" id="classified-reviews-template" class="scrollable-menu">
-			{{review_text}}
-	</script>
-	
-	<script type="text/x-mustache-template" id="unclassified-reviews-template" class="scrollable-menu">
-			{{review_text}}
-	</script>
-
-	<script type="text/x-mustache-template" id="root-top-template">
-		<div class="span3">
-			<p style="text-align: center">overall sentiment   {{sentiment}}</p>
-		</div>
-		<div class="span9">
-			<div id="tagcloud">
-			</div>
-		</div>
-
-	</script>
-	<script type="text/x-mustache-template" id="ngrams-parent-template">
-		<div class="clouds">
-		</div>
-		<button class="btn btn-block btn-success" type="button" id="hide"> hide {{block_gram}}</button>
-	</script>
-	<script type="text/x-mustache-template" id="noun-phrase-template">
-		<a href="#" rel="{{size}}">{{nounPhrase}}</a>
-
-	</script>
-
-
-	<script type="text/x-mustache-template" id="root-row-template">
-		<div class="span4">
-			<p style="text-align: center">{{sentence}}</p>
-		</div>
-		<div class="span1">
-			<p style="text-align: center">{{polarity_value}}</p>
-		</div>
+		 </tbody>
 		
-		
-		
-		<div class="span1">
-			<div class="btn-group">
-				<select id="ddpFilter" class="btn btn-success dropdown-toggle btn-xs" data-toggle="dropdown" style="width: 98%">
-					<option value="1">food</option>
-					<option value="2">service</option>
-					<option value="3">ambience</option>
-					<option value="4">cost</option>
-					<option value="5">null</option>
-					<option value="6">overall</option>
-				</select>
-			</div>
-			</div>
-		<div class="span1">
-			<div class="btn-group">
-				<select id="ddpFiltersentiment" class="btn btn-success dropdown-toggle btn-xs" data-toggle="dropdown" style="width: 98%">
-					<option value="1">super-positive</option>
-					<option value="2">positive</option>
-					<option value="3">neutral</option>
-					<option value="4">negative</option>
-					<option value="5">super-negative</option>
-				</select>
-			</div>
-			</div>
-		<div class="span1">
-			<div class="btn-group">
-				<select id="ddpFilterCustomer" class="btn btn-success dropdown-toggle btn-xs" data-toggle="dropdown" style="width: 98%">
-					<option value="2">repeated customer</option>
-					<option value="1">void</option>
-					<option value="3">recommended customer</option>
-				</select>
-			</div>
-			</div>
-		<div class="span1">
-			<div class="btn-group">
-				<select id="ddpFilterError" class="btn btn-success dropdown-toggle btn-xs" data-toggle="dropdown" style="width: 98%">
-					<option value="1">void</option>
-					<option value="2">error</option>
-					<option value="3">Interjection</option>
-				</select>
-			</div>
-			</div>
-			
-		<div class="span1">
-			<div class="btn-group">
-				<select id="ddpFilterGetNGrams" class="btn btn-success dropdown-toggle btn-xs" data-toggle="dropdown" style="width: 98%">
-					<option value="0">void</option>
-					<option value="1">Unigram</option>
-					<option value="2">Bigram</option>
-					<option value="3">Trigram</option>
-					<option value="4">Quadgram</option>
-					<option value="5">Pentgram</option>
-					<option value="6">Hexgram</option>
-					<option value="7">Septgram</option>
-				</select>
-			</div>
-			</div>
 
-		<div class="span2">
-			<p style="text-align: center">{{noun_phrases}}</p>
-		</div>
-			
-</script>
-	<script type="text/x-mustache-template" id="algorithm-comparison-parent-submit-results-template">
-			<td colspan="4">
-			<button type="submit" id="submitCompareAlgorithmsResults" class="btn btn-primary" style="width: 100%; margin-top: .5%; margin-bottom: 0; margin-right: 0">Compare Algorithms</button>
-		</td>
+
+	</script>
+	<script type="text/x-mustache-template" id="append-restaurant-template">
 		<td>
-		</td>
-		<td>
+			<label class="checkbox">
+				<input type="checkbox" value="{{eatery_name}}" id={{eatery_id}} class="change_eatery_id">
+				{{eatery_name}}
+			</label>
 		</td>
 	</script>
-	
-	<script type="text/x-mustache-template" id="algorithm-comparison-after-post-parent-template">
-		<tbody>
-	</tbody>
-	
-	</script>
-	
-	
-	<script type="text/x-mustache-template" id="algorithm-comparison-after-post-child-template">
-		<td colspan="6">{{algorithm_name}}</td>
-		<td colspan="4">{{accuracy}}</td>		
-		</script>
 
-	<script type="text/x-mustache-template" id="algorithm-comparison-parent-template">
-		<tbody>
-	</tbody>
-	
-	</script>
-	<script type="text/x-mustache-template" id="algorithm-comparison-template">
-			<td colspan="4">
-		<p style="text-align: center">{{sentence}}</p>
-	</td>
-			<td colspan="4">
-				<select id="ddpFilter" class="btn btn-success dropdown-toggle btn-xs" data-toggle="dropdown" style="width: 98%">
-					<option value="1">food</option>
-					<option value="2">service</option>
-					<option value="3">ambience</option>
-					<option value="4">cost</option>
-					<option value="5">null</option>
-					<option value="6">overall</option>
-				</select>
-	</td>
-			<td colspan="4">
-				<select id="ddpFiltersentiment" class="btn btn-success dropdown-toggle btn-xs" data-toggle="dropdown" style="width: 98%">
-					<option value="1">super-positive</option>
-					<option value="2">positive</option>
-					<option value="3">neutral</option>
-					<option value="4">negative</option>
-					<option value="5">super-negative</option>
-				</select>
-	</td>
-			
-</script>
+
+
 <div class="container-fluid">                                                                                                              
             <div class="row-fluid">   
 		                
                 
 		    <div class="navbar">
 			    <div class="page-header panel panel-default">
-			<h3 >Canworks<span class="label label-default" id="version">version 1.95</span></h3>       
+			<h4>Mad Machines REProE<span class="label label-default" id="version">version 3.00</span></h4>       
 			</div>
             </div>
-        </div>
+        	</div>
 
             
-        <div class="row-fluid new_body" >
-                    <div class="span12">
-                        <div class="dynamic_display_header">
+        <div class="row-fluid new_body">
+        	<div class="row-fluid">
+			<div class="span2 side-bar">
+				<!--Sidebar content-->
 			</div>
-                        <div class="dynamic_display_word_cloud">
+			<div class="span10 main-body">
+				<!--Body content-->
 			</div>
-                        <div class="dynamic_display">
-			</div>
-                    </div>
-                </div>
+		</div>	
+	
+        	<div class="row-fluid">
+			<div class="sentences">
+		</div>	
+		</div>	
+	
+	
+	
+	</div>
 	<!--
 	<script>
 		$("#version")
@@ -408,7 +165,6 @@
 	<script src="js/Global-variables.js"></script>
     <script src="js/router.js"></script>
     <script src="js/main-backbone.js"></script>
-    <script src="js/each-row-backbone.js"></script>
     <script src="js/word_cloud.js"></script>
     <!-- <script src="js/for_one_page.js"></script> -->
     

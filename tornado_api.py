@@ -68,10 +68,7 @@ from ProductionEnvironmentApi.join_two_clusters import ProductionJoinClusters
 
 
 
-
-training_db = connection.training_data
-training_sentiment_collection = training_db.training_sentiment_collection
-training_tag_collection = training_db.training_tag_collection
+from ProcessingCeleryTask import MappingList, PerReviewWorker, EachEateryWorker, DoClustersWorker     
 
 
 def cors(f):
@@ -302,6 +299,24 @@ class GetWordCloud(tornado.web.RequestHandler):
                         review_list = [(post.get("review_id"), post.get("review_text")) for post in reviews.find({"eatery_id" :eatery_id})] 
                 """
                 print "Processing word cloud"
+
+                celery_chain = (EachEateryWorker.s(eatery_id, category, start_epoch, end_epoch)
+                            | MappingList.s(eatery_id, SentTokenizeToNP.s()))()
+
+
+
+                while celery_chain.status != "SUCCESS":
+                        pass
+
+                try:
+                        for __id in celery_chain.children[0]:
+                                while __id.status != "SUCCESS":
+                                        pass
+                except IndexError as e:
+                        pass
+
+
+
 
                 ins = EachEatery(eatery_id=eatery_id)
                 if not ins.return_non_processed_reviews():

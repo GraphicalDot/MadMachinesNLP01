@@ -46,51 +46,41 @@ BROKER_URL = 'redis://{host}:{port}/{db_number}'.format(host=CELERY_REDIS_BROKER
 
 
 CELERY_QUEUES = (
-		Queue('ReviewIdToSentTokenizeQueue', Exchange('default', delivery_mode= 2),  routing_key='ReviewIdToSentTokenizeQueue.import'),
-		Queue('SentTokenizeToNPQueue', Exchange('default', delivery_mode= 2),  routing_key='SentTokenizeToNPQueue.import'),
-		Queue('MappingListQueue', Exchange('pos_tagger', delivery_mode= 2),  routing_key='MappingListQueue.import'),
-		Queue('NPClusteringQueue', Exchange('np_clusteringr', delivery_mode= 2),  routing_key='NPClusteringQueue.import'),
-		Queue('CleanResultBackEndQueue', Exchange('clean_backend', delivery_mode= 2),  routing_key='CleanResultBackEndQueue.import'),
-		Queue('NoNounPhrasesReviewsQueue', Exchange('no_noun_phrases_reviews', delivery_mode= 2),  routing_key='NoNounPhrasesReviewsQueue.import'),
-		Queue('StoreInEateryQueue', Exchange('store_in_eatery', delivery_mode= 2),  routing_key='StoreInEateryQueue.import'),
+		Queue('MappingListQueue', Exchange('mapping_list', delivery_mode= 2),  routing_key='MappingListQueue.import'),
+		Queue('EachEateryQueue', Exchange('default', delivery_mode= 2),  routing_key='EachEateryQueue.import'),
+		Queue('PerReviewQueue', Exchange('per_review', delivery_mode= 2),  routing_key='PerReviewQueue.import'),
+		Queue('DoClustersQueue', Exchange('do_clusters', delivery_mode= 2),  routing_key='DoClustersQueue.import'),
+		Queue('ReturnResultQueue', Exchange('return_result', delivery_mode= 2),  routing_key='ReturnResultQueue.import'),
                     )
 
 
 #And your routes that will decide which task goes where:
 CELERY_ROUTES = {
-		'ProcessingCeleryTask.StoreInEatery': {
-				'queue': 'StoreInEateryQueue',
-				'routing_key': 'StoreInEateryQueue.import',
+		'ProcessingCeleryTask.EachEateryWorker': {
+				'queue': 'EachEateryQueue',
+				'routing_key': 'EachEateryQueue.import',
                         },		
 		
-                'ProcessingCeleryTask.ReviewIdToSentTokenize': {
-				'queue': 'ReviewIdToSentTokenizeQueue',
-				'routing_key': 'ReviewIdToSentTokenizeQueue.import',
-                        },		
-		
-                
-                'ProcessingCeleryTask.SentTokenizeToNP': {
-				'queue': 'SentTokenizeToNPQueue',
-				'routing_key': 'SentTokenizeToNPQueue.import',
-                        },		
-                
-                'ProcessingCeleryTask.MappingList': {
+                'ProcessingCeleryTask.MappingListWorker': {
 				'queue': 'MappingListQueue',
 				'routing_key': 'MappingListQueue.import',
-                                   },
-                'ProcessingCeleryTask.CleanResultBackEnd': {
-				'queue': 'CleanResultBackEndQueue',
-				'routing_key': 'CleanResultBackEndQueue.import',
-                                   },
-		'ProcessingCeleryTask.Clustering': {
-				'queue': 'NPClusteringQueue',
-				'routing_key': 'NPClusteringQueue.import',
                         },		
 		
-                'ProcessingCeleryTask.NoNounPhrasesReviews': {
-				'queue': 'NoNounPhrasesReviewsQueue',
-				'routing_key': 'NoNounPhrasesReviewsQueue.import',
+                'ProcessingCeleryTask.PerReviewWorker': {
+				'queue': 'PerReviewQueue',
+				'routing_key': 'PerReviewQueue.import',
                         },		
+		
+                
+                'ProcessingCeleryTask.DoClustersWorker': {
+				'queue': 'DoClustersQueue',
+				'routing_key': 'DoClustersQueue.import',
+                        },		
+                
+                'ProcessingCeleryTask.ReturnResultWorker': {
+				'queue': 'ReturnResultQueue',
+				'routing_key': 'ReturnResultQueue.import',
+                                   },
                         }
 
 #Celery result backend settings, We are using monngoodb to store the results after running the tasks through celery
