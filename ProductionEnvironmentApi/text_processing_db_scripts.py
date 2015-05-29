@@ -136,10 +136,13 @@ class MongoScriptsEateries(object):
                 return list()
 
         def get_noun_phrases(self, category, number_of_nps):
+                print self.eatery_id
                 result = eateries_results_collection.find_one({"eatery_id": self.eatery_id})
                 if category == "food":
                         return result["food"]["dishes"][0: number_of_nps]
                 else:
+                        print category
+                        print result[category]
                         return result[category]
 
 

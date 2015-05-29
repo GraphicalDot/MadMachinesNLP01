@@ -56,6 +56,10 @@ from PIL import Image
 import inspect
 import functools
 import tornado.httpserver
+from tornado.web import asynchronous
+from tornado.concurrent import run_on_executor
+from concurrent.futures import ThreadPoolExecutor
+
 from Text_Processing.Sentence_Tokenization.Sentence_Tokenization_Classes import SentenceTokenizationOnRegexOnInterjections
 from GlobalConfigs import connection, eateries, reviews, yelp_eateries, yelp_reviews
          
@@ -68,7 +72,23 @@ from ProductionEnvironmentApi.join_two_clusters import ProductionJoinClusters
 
 
 
-from ProcessingCeleryTask import MappingList, PerReviewWorker, EachEateryWorker, DoClustersWorker     
+from ProcessingCeleryTask import MappingListWorker, PerReviewWorker, EachEateryWorker, DoClustersWorker     
+
+
+def print_execution(func):
+        "This decorator dumps out the arguments passed to a function before calling it"
+        argnames = func.func_code.co_varnames[:func.func_code.co_argcount]
+        fname = func.func_name
+        def wrapper(*args,**kwargs):
+                start_time = time.time()
+                print "{0} Now {1} have started executing {2}".format(bcolors.OKBLUE, func.func_name, bcolors.RESET)
+                result = func(*args, **kwargs)
+                print "{0} Total time taken by {1} for execution is --<<{2}>>--{3}\n".format(bcolors.OKGREEN, func.func_name,
+                                (time.time() - start_time), bcolors.RESET)
+                return result
+        return wrapper
+
+
 
 
 def cors(f):
@@ -237,12 +257,13 @@ class GetPics(tornado.web.RequestHandler):
 
 class LimitedEateriesList(tornado.web.RequestHandler):
 	@cors
-	@tornado.gen.coroutine
+	@print_execution
+        #@tornado.gen.coroutine
+        @asynchronous
         def get(self):
                 """
                 This gives only the limited eatery list like the top on the basis of the reviews count
                 """
-                print "fuckk you"
                 result = list(eateries.find(fields= {"eatery_id": True, "_id": False, "eatery_name": True, "area_or_city": True}).limit(14).sort("eatery_total_reviews", -1))
 	
                 for element in result:
@@ -259,11 +280,20 @@ class LimitedEateriesList(tornado.web.RequestHandler):
 			"result": result +  yelp_result,
 			})
 
-
+                self.finish()
                 
                 
 class GetWordCloud(tornado.web.RequestHandler):
-	@cors
+    
+        @property
+        def executor(self):
+                return self.application.executor
+    
+    
+    
+    
+        @cors
+	@print_execution
 	@tornado.gen.coroutine
         def post(self):
                 def Error(arg):
@@ -299,7 +329,17 @@ class GetWordCloud(tornado.web.RequestHandler):
                         review_list = [(post.get("review_id"), post.get("review_text")) for post in reviews.find({"eatery_id" :eatery_id})] 
                 """
                 print "Processing word cloud"
+                __result = yield self._exe(eatery_id, category)
+                self.write({"success": True,
+			"error": False,
+			"result": __result,
+			})
 
+                self.finish()
+
+        
+        @run_on_executor
+        def _exe(self, eatery_id, category):
                 celery_chain = (EachEateryWorker.s(eatery_id)| MappingListWorker.s(eatery_id, PerReviewWorker.s()))()
 
 
@@ -314,34 +354,13 @@ class GetWordCloud(tornado.web.RequestHandler):
                         pass
 
 
-                DoClustersWorker.apply_async(args=[eatery_id])
+                do_cluster_result = DoClustersWorker.apply_async(args=[eatery_id])
 
-
-                ins = EachEatery(eatery_id=eatery_id)
-                if not ins.return_non_processed_reviews():
-                        eatery_instance = MongoScriptsEateries(eatery_id)
-                        result = eatery_instance.get_noun_phrases(category, 30)
-                        self.write({"success": True,
-		        	"error": False,
-		        	"result": result,
-		        	})
-                        self.finish()
-                
-                for review_id, review_text, review_time in ins.return_non_processed_reviews():
-                        per_review_instance = PerReview(review_id, review_text, review_time, eatery_id)
-                        per_review_instance.run()
-                        
-                do_cluster_ins = DoClusters(eatery_id=eatery_id)
-                do_cluster_ins.run()  
-
-
+                while do_cluster_result.status != "SUCCESS":
+                        pass
                 eatery_instance = MongoScriptsEateries(eatery_id)
                 result = eatery_instance.get_noun_phrases(category, 30)
-                self.write({"success": True,
-			"error": False,
-			"result": result,
-			})
-
+                return result
 
 class UpdateClassifier(tornado.web.RequestHandler):
         @cors
@@ -550,6 +569,8 @@ class Application(tornado.web.Application):
                         ]
                 settings = dict(cookie_secret="__TODO:_GENERATE_YOUR_OWN_RANDOM_VALUE_HERE__",)
                 tornado.web.Application.__init__(self, handlers, **settings)
+                self.executor = ThreadPoolExecutor(max_workers=60)
+
 
 def main():
         http_server = tornado.httpserver.HTTPServer(Application())

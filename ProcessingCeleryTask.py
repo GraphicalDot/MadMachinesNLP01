@@ -210,7 +210,9 @@ class MappingListWorker(celery.Task):
                 """
                 self.start = time.time()
                 callback = subtask(__callback)
-	        
+	       
+                if not bool(args):
+                        return None
                 print args
                 print __eatery_id
                 return group(callback.clone([arg, __eatery_id]) for arg in args)()

@@ -400,12 +400,10 @@ class DoClusters(object):
                         sub_tag_dict = DoClusters.unmingle_food_sub(__nps_food)
 
                         for sub_category in ["dishes", "place-food", "sub-food"]:
-                                print sub_tag_dict.get(sub_category), sub_category
                                 __result = self.clustering(sub_tag_dict.get(sub_category), sub_category)
                                 self.mongo_instance.update_food_sub_nps(__result, sub_category)
                         
                         for sub_category in ["menu-food", "overall-food"]:
-                                print sub_tag_dict.get(sub_category), sub_category
                                 #REsult corresponding to the menu-food tag
                                 __result = DoClusters.aggregation(sub_tag_dict.get(sub_category))
                                 self.mongo_instance.update_food_sub_nps(__result, sub_category)
@@ -414,8 +412,10 @@ class DoClusters(object):
 
                         for __category in ["ambience", "service", "cost"]:
                                 __nps = self.mongo_instance.fetch_reviews(__category)
-                                print __nps
                                 __whle_nps = DoClusters.make_cluster(__nps, __category)
+                                print __whle_nps
+                                print "\n\n\n\n\n"
+                                
                                 self.mongo_instance.update_nps(__category, __whle_nps)
                         
                         self.mongo_instance.update_considered_ids()
@@ -430,7 +430,7 @@ class DoClusters(object):
                         if not bool(reviews_ids):
                                 warnings.warn("{0} All the noun phrases has already been processed {1}".format(\
                                     bcolors.OKBLUE, bcolors.RESET))
-                                
+                                return 
 
                         MongoScriptsDoClusters.reviews_with_time(reviews_ids)
                         __nps_food = self.mongo_instance.fetch_reviews("food", reviews_ids)
@@ -445,12 +445,9 @@ class DoClusters(object):
                         for sub_category in ["dishes", "place-food", "sub-food"]:
                                 #deals with clustering in ProductionHeuristicClustering
                                 __nps_new_result = self.clustering(sub_tag_dict.get(sub_category), sub_category)
-                                print __nps_new_result
                                 #old noun phrases stored already in mongodbunder food.sub_category
                                 __nps_old_result = self.mongo_instance.fetch_nps_frm_eatery("food", sub_category)
                                 
-                                print  __nps_new_result, "\n\n"
-                                print __nps_old_result, "\n\n"
                                 
                                 
                                 __whle = __nps_old_result + __nps_new_result
@@ -687,13 +684,15 @@ class DoClusters(object):
         def flattening_dict(key, value):
                 """
                 key: ambience-overall 
-                {'sentiment': [u'super-positive',u'neutral', u'super-positive', u'neutral', u'neutral'],
-                'timeline': [(u'super-positive', u'2014-09-19 06:56:42'), (u'neutral', u'2014-09-19 06:56:42'),
+                value: 
+                    {'sentiment': [u'super-positive',u'neutral', u'super-positive', u'neutral', u'neutral'],
+                    'timeline': [(u'super-positive', u'2014-09-19 06:56:42'), (u'neutral', u'2014-09-19 06:56:42'),
                             (u'super-positive', u'2014-08-11 12:20:18'), (u'neutral', u'2014-05-06 13:06:56'),
                             (u'neutral', u'2014-05-06 13:06:56')]},
 
 
-                Output: {'name': u'ambience-overall', u'neutral': 3, u'super-positive': 2, 
+                Output: 
+                    {'name': u'ambience-overall', u'neutral': 3, u'super-positive': 2, 
                 'timeline': [(u'neutral', u'2014-05-06 13:06:56'), (u'neutral', u'2014-05-06 13:06:56'),
                 (u'super-positive', u'2014-08-11 12:20:18'), (u'super-positive', u'2014-09-19 06:56:42'),
                 (u'neutral', u'2014-09-19 06:56:42')]},
@@ -720,26 +719,49 @@ class DoClusters(object):
                 """
                 Input:
                     [[u'super-positive', u'ambience-overall', u'2014-09-19 06:56:42'],
-                     [u'neutral', u'ambience-overall', u'2014-09-19 06:56:42'],
-                      [u'positive', u'open-area', u'2014-09-19 06:56:42'],
-                       [u'super-positive', u'ambience-overall', u'2014-08-11 12:20:18'],
-                        [u'positive', u'decor', u'2014-04-05 12:33:45'],
-                         [u'super-positive', u'decor', u'2014-05-06 18:50:17'],
-                          [u'neutral', u'ambience-overall', u'2014-05-06 13:06:56'],
-                           [u'positive', u'decor', u'2014-05-06 13:06:56'],
-                            [u'positive', u'music', u'2014-05-06 13:06:56'],
-                             [u'neutral', u'ambience-overall', u'2014-05-06 13:06:56']]
+                    [u'neutral', u'ambience-overall', u'2014-09-19 06:56:42'],
+                    [u'positive', u'open-area', u'2014-09-19 06:56:42'],
+                    [u'super-positive', u'ambience-overall', u'2014-08-11 12:20:18'],
+                    [u'positive', u'decor', u'2014-04-05 12:33:45'],
+                    [u'super-positive', u'decor', u'2014-05-06 18:50:17'],
+                    [u'neutral', u'ambience-overall', u'2014-05-06 13:06:56'],
+                    [u'positive', u'decor', u'2014-05-06 13:06:56'],
+                    [u'positive', u'music', u'2014-05-06 13:06:56'],
+                    [u'neutral', u'ambience-overall', u'2014-05-06 13:06:56']]
                 
                 Result:
 
-                [{u'name': u'service-null', u'negative': 0, u'neutral': 0, u'positive': 1, u'super-negative': 0,
-                u'super-positive': 0, u'timeline': [[u'positive', u'2014-09-19 06:56:42']]},
-                                        
-                {u'name': u'service-overall', u'negative': 2, u'neutral': 0, u'positive': 1, u'super-negative': 0,
-                u'super-positive': 0, u'timeline': [[u'positive', u'2014-09-19 06:56:42'], 
-                    [u'negative', u'2014-09-19 06:56:42'], [u'negative', u'2014-09-19 06:56:42']]}],
+                {ambience-overall: {
+                                'sentiment': [u'super-positive',u'neutral', u'super-positive', u'neutral', u'neutral'],
+                                'timeline': [(u'super-positive', u'2014-09-19 06:56:42'), (u'neutral', u'2014-09-19 06:56:42'),
+                                            (u'super-positive', u'2014-08-11 12:20:18'), (u'neutral', u'2014-05-06 13:06:56'),
+                                            (u'neutral', u'2014-05-06 13:06:56')]},
+                
+                ambience-null: {
+                                'sentiment': [u'super-positive',u'neutral', u'super-positive', u'neutral', u'neutral'],
+                                'timeline': [
+                                        (u'super-positive', u'2014-09-19 06:56:42'), (u'neutral', u'2014-09-19 06:56:42'),
+                                    (u'super-positive', u'2014-08-11 12:20:18'), (u'neutral', u'2014-05-06 13:06:56'),
+                        }}
+
                 """
                 sentences_dict = dict()
+
+                for sub_tag in eval("{0}_SUB_TAGS".format(category.upper()[0:4])):
+                        for sentiment in SENTIMENT_TAGS:
+                            sentences_dict.update({sub_tag: {"sentiment": list(), "timeline": list()}})
+
+                for __sentiment, __category, review_time in noun_phrases:
+                        timeline = sentences_dict.get(__category).get("timeline")
+                        timeline.append((__sentiment, review_time))
+                        sentiment = sentences_dict.get(__category).get("sentiment")
+                        sentiment.append(__sentiment)
+
+                        sentences_dict.update({
+                                    __category: {"sentiment": sentiment, "timeline": timeline}})
+    
+                return sentences_dict
+                """
                 for __sentiment, __category, review_time in noun_phrases:
                         if not sentences_dict.has_key(__category):
                                 sentences_dict.update({__category: {"sentiment": [__sentiment], \
@@ -756,13 +778,13 @@ class DoClusters(object):
 
 
 
-                left_out_sub_tags = set.difference(set(eval("{0}_SUB_TAGS".format(category.upper()[0:4]))), set(sentences_dict.keys()))
+                left_out_sub_tgs = set.difference(set(eval("{0}_SUB_TAGS".format(category.upper()[0:4]))), set(sentences_dict.keys()))
                 
                 for sub_tag in left_out_sub_tags:
                         sentences_dict.update({sub_tag: {"sentiment": None, "timeline": []}})
 
                 return sentences_dict
-
+                """
 
 if __name__ == "__main__":
         """
