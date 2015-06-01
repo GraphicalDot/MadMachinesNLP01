@@ -60,6 +60,18 @@ def basic_setup():
 	run("sudo apt-get install -y libpq-dev")
 
 
+def installing_riak():
+        run("sudo apt-get install curl")
+        run("sudo curl -s https://packagecloud.io/install/repositories/basho/riak/script.deb.sh | sudo bash")
+        run("sudo apt-get install riak=2.1.1-1")
+        
+        
+
+def increasing_ulimits():
+        /etc/security/limits.conf
+
+        *     soft    nofile          40000
+        *     hard    nofile          40000
 
 
 

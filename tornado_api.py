@@ -264,12 +264,12 @@ class LimitedEateriesList(tornado.web.RequestHandler):
                 """
                 This gives only the limited eatery list like the top on the basis of the reviews count
                 """
-                result = list(eateries.find(fields= {"eatery_id": True, "_id": False, "eatery_name": True, "area_or_city": True}).limit(14).sort("eatery_total_reviews", -1))
+                result = list(eateries.find({"website": "zomato", "area_or_city": "ncr"},  fields= {"eatery_id": True, "_id": False, "eatery_name": True, "area_or_city": True}).limit(100).sort("eatery_total_reviews", -1))
 	
                 for element in result:
                         eatery_id = element.get("eatery_id")
                         element.update({"reviews": reviews.find({"eatery_id": eatery_id}).count()})
-
+                """
                 yelp_result = list(yelp_eateries.find(fields= {"eatery_id": True, "_id": False, "eatery_name": True, "area_or_city": True}).limit(5).sort("eatery_total_reviews", -1))
                 
                 for element in yelp_result:
@@ -280,16 +280,56 @@ class LimitedEateriesList(tornado.web.RequestHandler):
 			"result": result +  yelp_result,
 			})
 
+                """
+                self.write({"success": True,
+			"error": False,
+                        "result": result[::-1],
+			})
                 self.finish()
                 
                 
-class GetWordCloud(tornado.web.RequestHandler):
-    
+class Query(tornado.web.RequestHandler):
         @property
         def executor(self):
                 return self.application.executor
     
-    
+        @cors
+	@print_execution
+	@tornado.gen.coroutine
+        def post(self):
+                def Error(arg):
+                        self.write({"error": True,
+                                "success": False,
+                                "messege": "Text is required in the form",
+                                })
+                        self.finish()
+
+
+                text = self.get_argument("text")
+                if not text: self.finish(Error())
+                
+                ambience_text = self.get_argument("text")
+                service_text = self.get_argument("text")
+                cost_text = self.get_argument("text")
+
+                __result = yield self._exe(food_text, ambience_text, service_text, cost_text)
+                self.write({"success": True,
+			"error": False,
+			"result": __result,
+			})
+
+                self.finish()
+
+        
+        @run_on_executor
+        def _exe(self, eatery_id, category):
+                result = QueryResolution(food_text, ambience_text, service_text, cost_text)
+                return result
+
+class GetWordCloud(tornado.web.RequestHandler):
+        @property
+        def executor(self):
+                return self.application.executor
     
     
         @cors
