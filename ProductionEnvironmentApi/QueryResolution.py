@@ -7,7 +7,16 @@ How it works:
     
 
 
+pipe = [
+    {"$project": {"birthday":1, "id":1}
+        },
+            {"$match": { "birthday":{"$gte":datetime.datetime(1987, 1, 1, 0, 0)} }
+                         }
+                ]
+                res =db.patients.aggregate(pipe,allowDiskUse=True)
 
+
+have the results returned as a cursor, by specifying useCursor=True when you call aggregate.
 """
 
 

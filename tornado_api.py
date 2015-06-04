@@ -297,6 +297,7 @@ class Query(tornado.web.RequestHandler):
 	@print_execution
 	@tornado.gen.coroutine
         def post(self):
+                print "post calles"
                 def Error(arg):
                         self.write({"error": True,
                                 "success": False,
@@ -399,7 +400,7 @@ class GetWordCloud(tornado.web.RequestHandler):
                 while do_cluster_result.status != "SUCCESS":
                         pass
                 eatery_instance = MongoScriptsEateries(eatery_id)
-                result = eatery_instance.get_noun_phrases(category, 30)
+                result = eatery_instance.get_noun_phrases(category, 40)
                 return result
 
 class UpdateClassifier(tornado.web.RequestHandler):
@@ -460,152 +461,13 @@ class ChangeTagOrSentiment(tornado.web.RequestHandler):
                         }
 
 
-class RawTextParser(tornado.web.RequestHandler):
-        @cors
-        @timeit
-        def post(self):
-                result = list()
-                from Text_Processing.PosTaggers.pos_tagging import PosTaggers
-
-                
-                path = "/home/kaali/Programs/Python/Canworks/Canworks/Text_Processing/PrepareClassifiers/InMemoryClassifiers/"
-                args = raw_text_processing_parser.parse_args()
-                text = args["text"]
-                tag = args["tag"]
-
-
-                text = text.replace("\n", "")
-                sentiment_result = list()
-                sent_tokenizer = SentenceTokenizationOnRegexOnInterjections()
-                sentences = sent_tokenizer.tokenize(text)
-
-                tag_classifier = joblib.load("{0}/{1}".format(path_in_memory_classifiers, "svm_linear_kernel_classifier_tag.lib"))
-                new_sentiment_classifier = joblib.load("{0}/{1}".format(path_in_memory_classifiers, "svm_linear_kernel_classifier_sentiment_new_dataset.lib"))
-                
-	
-
-                predicted_sentences = zip(sentences, tag_classifier.predict(sentences))
-                def normalize_sentiments(result):
-                        edited_result = list()
-                        for (sent, sentiment, noun_phrases) in result:
-                                __nouns = list()
-                                if sentiment.startswith("super"):
-                                        sentiment = sentiment.split("-")[1]
-                                        __nouns.extend(noun_phrases)
-                                        __nouns.extend(noun_phrases)
-                                else:
-                                    __nouns.extend(noun_phrases)
-                                edited_result.append([sent, sentiment,  __nouns ])
-                        return edited_result
-
-                def populate_result(sent_sentiment_tags):
-                        print sent_sentiment_tags
-                        edited_result = list()
-                        for (sent, sentiment, noun_phrases) in sent_sentiment_tags:
-                                __nouns = list()
-                                if sentiment.startswith("super"):
-                                        sentiment = sentiment.split("-")[1]
-                                        __nouns.append(noun_phrases)
-                                        __nouns.append(noun_phrases)
-                                else:
-                                    __nouns.append(noun_phrases)
-                                edited_result.append([(sentiment,noun) for noun in  __nouns ])
-                        
-                        result_dict = dict()
-                        for (sentiment, noun_phrase), frequency in Counter(list(itertools.chain(*edited_result))).iteritems():
-                                if result_dict.has_key(noun_phrase):
-                                        result = result_dict.get(noun_phrase)
-                                        positive, negative, neutral = result.get("positive"), result.get("negative"),\
-                                                result.get("neutral") 
-
-                                        
-
-                                        new_frequency_negative = (negative, negative+1)[sentiment == "negative"]
-                                        new_frequency_positive = (positive, positive+1)[sentiment == "positive"]
-                                        new_frequency_neutral = (neutral, neutral+1)[sentiment == "neutral"]
-                                        
-                                        result_dict.update({noun_phrase: {"negative": new_frequency_negative, "positive": new_frequency_positive, 
-                                             "neutral": new_frequency_neutral, }})
-                                else:
-                                        result_dict.update({
-                                                noun_phrase:
-                                                {"positive": (0, frequency)[sentiment == "positive"], 
-                                                "negative": (0, frequency)[sentiment == "negative"],
-                                                "neutral": (0, frequency)[sentiment == "neutral"],
-                                                }
-                                            })
-                        
-                        
-                        result = list()
-                        for noun_phrase, polarity_dict in result_dict.iteritems():
-                            result.append({"name": noun_phrase,
-                                        "positive": polarity_dict.get("positive"),
-                                        "negative": polarity_dict.get("negative"),
-                                        "neutral": polarity_dict.get("neutral"),
-                                        })
-                        return result
-
-                if tag == "food":
-                        sentences = [e[0] for e in predicted_sentences if e[1] == "food"]
-                        sub_tag_classifier = joblib.load("{0}/{1}".format(path_in_memory_classifiers,\
-                                                    "svm_linear_kernel_classifier_food_sub_tags_5May.lib"))                
-                        
-                        sentences = [encoding_help(e[0]) for e in zip(sentences, sub_tag_classifier.predict(sentences)) if e[1] == "dishes"]
-                        predicted_sentiment = new_sentiment_classifier.predict(sentences)
-                        
-                        #noun_phrases_algorithm_name = "topia_n_textblob"
-                        noun_phrases_algorithm_name = "topia"
-                        __nouns = NounPhrases(sentences, default_np_extractor=noun_phrases_algorithm_name)
-                        result  = [__tuple for __tuple in zip(sentences, predicted_sentiment, 
-                                __nouns.noun_phrases[noun_phrases_algorithm_name]) if __tuple[2]]
-                
-                        edited_result = normalize_sentiments(result)
-
-                        
-                        from FoodDomainApiHandlers.heuristic_clustering import HeuristicClustering
-                        __result = HeuristicClustering(edited_result, sentences, None)
-                        result = sorted(__result.result, reverse=True, key= lambda x: x.get("positive")+x.get("negative"))
-
-
-                if tag == "ambience":
-                        result = list()
-                        sentences = [e[0] for e in predicted_sentences if e[1] == "ambience"]
-                        ambience_classifier = joblib.load("{0}/{1}".format(path_in_memory_classifiers, "svm_linear_kernel_classifier_ambience.lib"))
-                        predicted_sentiment = new_sentiment_classifier.predict(sentences)
-                    
-                        predicted_sub_tags = ambience_classifier.predict(sentences)
-                        result = populate_result(zip(sentences, predicted_sentiment, predicted_sub_tags))
-
-                if tag == "service":
-                        sentences = [e[0] for e in predicted_sentences if e[1] == "service"]
-                        predicted_sentiment = new_sentiment_classifier.predict(sentences)
-                        
-                        predicted_sub_tags = ambience_classifier.predict(sentences)
-                        
-                        result = populate_result(zip(sentences, predicted_sentiment, predicted_sub_tags))
-                
-                
-                if tag == "cost":
-                        sentences = [e[0] for e in predicted_sentences if e[1] == "cost"]
-                        cost_classifier = joblib.load("{0}/{1}".format(path_in_memory_classifiers, "svm_linear_kernel_classifier_cost.lib"))
-                        predicted_sentiment = new_sentiment_classifier.predict(sentences)
-                        predicted_sub_tags = cost_classifier.predict(sentences)
-                        
-                        result = populate_result(zip(sentences, predicted_sentiment, predicted_sub_tags))
-
-                
-
-                return {"success": True,
-				"error": False,
-                                "result": result,
-                                }
-
 
 class Application(tornado.web.Application):
         def __init__(self):
                 handlers = [
                     (r"/limited_eateries_list", LimitedEateriesList),
                     (r"/get_word_cloud", GetWordCloud),
+                    (r"/resolve_query", Query),
                         ]
                 settings = dict(cookie_secret="__TODO:_GENERATE_YOUR_OWN_RANDOM_VALUE_HERE__",)
                 tornado.web.Application.__init__(self, handlers, **settings)

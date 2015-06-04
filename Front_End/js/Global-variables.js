@@ -11,5 +11,6 @@ $(document).ready(function(){
 	window.limited_eateries_list = window.URL + "limited_eateries_list";
 	window.get_word_cloud = window.URL + "get_word_cloud";
 	window.update_sentence = window.URL + "change_tag_or_sentiment";
+	window.resolve_query = window.URL + "resolve_query";
 
 });

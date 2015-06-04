@@ -344,9 +344,16 @@ class ProductionHeuristicClustering:
                         super_positive = super_positive +  self.merged_sentiment_nps[name].get("super-positive") 
                         timeline.extend(self.merged_sentiment_nps[name].get("timeline"))
 
-                result = sorted(result, reverse= True, key=lambda x: x.get("positive")+x.get("negative") + x.get("neutral")+
-                                                                    x.get("super-positive")+ x.get("super-negative"))
-                return {"name": result[0].get("name"), "positive": positive, "negative": negative, "neutral": neutral, 
+                whole = dict()
+                for a in cluster_names:
+                        __list = list()
+                        for b in cluster_names :
+                                __list.append(SimilarityMatrices.modified_dice_cofficient(a, b))
+                        whole.update({a: sum(__list)})
+                
+                name = filter(lambda x: whole[x] == max(whole.values()), whole.keys())[0]
+
+                return {"name": name, "positive": positive, "negative": negative, "neutral": neutral, 
                         "super-negative": super_negative, "super-positive": super_positive, "similar": cluster_names,
                         "timeline": timeline}
 
