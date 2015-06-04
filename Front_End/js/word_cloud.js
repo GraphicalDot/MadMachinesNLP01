@@ -51,7 +51,7 @@ App.SeeWordCloudDateSelectionView = Backbone.View.extend({
 		$(".data_selection").modal("hide");
 		bootbox.dialog({ 
 			closeButton: false, 
-			message: "<img src='css/images/y4RRIFJ.jpg'>",
+			message: "<img src='css/images/loading.gif'>",
 			className: "loadingclass",
 		});
 	},
@@ -150,7 +150,8 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 		this.model = options.model
 		console.log(this.model)
 		this._data = options.model
-		this.ForceLayout(this.model);
+		this.BarLayout(this.model);
+		//this.ForceLayout(this.model);
 		},
 	
 
@@ -179,15 +180,15 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 		if (LEVEL == 0){
 			$.each(this._data, function(i, __d){
 				newDataSet.push({"name": __d.name, 
-						"polarity": __d.polarity, 
+						"timeline": __d.timeline, 
 						"positive": __d.positive,
 						"negative": __d.negative,
 						"neutral": __d.neutral,
 						"sentences": __d.sentences,
 						"similar": __d.similar,
-						"o_likeness": __d.o_likeness,
-						"i_likeness": __d.i_likeness,
-						"r": __d.positive+__d.negative + __d.neutral,
+						"superpositive": __d.superpositive,
+						"supernegative": __d.supernegative,
+						"r": __d.positive+__d.negative + __d.neutral + __d.supernegative + __d.superpositive,
 						}); }); return newDataSet }
 			
 		if(LEVEL == 1){
@@ -228,7 +229,88 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 								}); }); }; }); }; }); }; }); return newDataSet}
 		},
 
+	BarLayout: function(_data){
+		/* The function to update svg elements if the window is being resized
+		 function updateWindow(){
+		 *     x = w.innerWidth || e.clientWidth || g.clientWidth;
+		 *         y = w.innerHeight|| e.clientHeight|| g.clientHeight;
+		 *
+		 *             svg.attr("width", x).attr("height", y);
+		 *             }
+		 *             window.onresize = updateWindow;
+		/* To Add scales to radius so that the nodes fit into the window
+		 * http://alignedleft.com/tutorials/d3/scales
+		 * consult the above mentioned tutorials
+		 */
 
+		_this = this;
+		function DATA(value, LEVEL){return  _this.dataFunction(value, LEVEL)}
+		LEVEL = 0
+		var width = $(window).width() - 500;
+		var height = $(window).height();
+		var barHeight = 20;
+
+		data = DATA(null, LEVEL);
+
+
+		var RScale = d3.scale.linear()
+			 	.range([0, width])
+				.domain([0, d3.max(data, function(d) { return d.r; })])
+		
+		var svg = d3.select(".main-body").append("svg")
+			.attr("width", width)
+			.attr("height", height);
+		
+
+		var bar = svg.selectAll("g")
+				.data(DATA(null, LEVEL))
+			        .enter().append("g")
+				.attr("transform", function(d, i) { return "translate(0," + i * barHeight + ")"; });
+		
+
+		bar
+				.append("rect")
+				.attr("class", "dishes")
+				.style("fill", "yellowgreen") 
+				.attr("width", function(d) {return RScale(d.superpositive); })
+				      .attr("height", barHeight - 1);
+		
+		bar
+				.append("rect")
+			.style("fill", "salmongreen") 
+			.attr("width", function(d) {return RScale(d.positive); })
+				      .attr("height", barHeight - 1)
+			.attr("transform", function(d, i) { return "translate(" + RScale(d.superpositive) +", 0)"; });
+		bar
+				.append("rect")
+			.style("fill", "PaleTurquoise") 
+			.attr("width", function(d) {return RScale(d.neutral); })
+				      .attr("height", barHeight - 1)
+		
+			.attr("transform", function(d, i) { return "translate(" + RScale(d.superpositive+d.positive) +", 0)"; });
+		bar
+				.append("rect")
+			.style("fill", "sandy") 
+			.attr("width", function(d) { console.log(RScale(d.r)); return RScale(d.negative); })
+				      .attr("height", barHeight - 1)
+			.attr("transform", function(d, i) { return "translate(" + RScale(d.superpositive+d.positive+d.neutral) +", 0)"; });
+		
+		
+		bar
+				.append("rect")
+			.style("fill", "sandybrown") 
+			.attr("width", function(d) { console.log(RScale(d.r)); return RScale(d.supernegative); })
+				      .attr("height", barHeight - 1)
+			.attr("transform", function(d, i) { return "translate(" + RScale(d.superpositive+d.positive+d.neutral+d.negative) +", 0)"; });
+		bar.append("text")
+			          .attr("x", function(d) { return RScale(d.r) - 3; })
+				        .attr("y", barHeight / 2)
+					      .attr("dy", ".35em")
+					            .text(function(d) { return d.name; });
+
+		
+		//drawNodes(data())
+	},
 	ForceLayout: function(_data){
 		/* The function to update svg elements if the window is being resized
 		 function updateWindow(){
@@ -372,7 +454,7 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 					html: true, 
 					title: function(){
 					//return  "<br>" + 'Name: ' +'  ' +'<span>' + this.__data__.name + '</span>' +"<br>" + 'Frequency: ' +  '<span>' + this.__data__.r + '</span>';}
-					return   '<span>' + this.__data__.name + '</span>' + '<br>'+ '<span>' + 'Positive: ' + this.__data__.positive + '</span>' +  "<br>" + 'Negative: ' +  '<span>' + this.__data__.negative + '</span>' + '<span>' +  "<br>" + 'Neutral: ' +  '<span>'+ this.__data__.neutral + '</span>'+ '<br>'+ '<span>' + 'I_Likeness: '+ this.__data__.i_likeness + '</span>' + '<br>'+ '<span>'+ 'O_Likeness: ' + this.__data__.o_likeness + '</span>';}
+					return   '<span>' + this.__data__.name + '</span>' + '<br>'+ '<span>' + 'Positive: ' + this.__data__.positive + '</span>' +  "<br>" + 'Negative: ' +  '<span>' + this.__data__.negative + '</span>' + '<span>' +  "<br>" + 'Neutral: ' +  '<span>'+ this.__data__.neutral + '</span>'+ '<br>'+ '<span>' + 'superpositive: '+ this.__data__.superpositive + '</span>' + '<br>'+ '<span>'+ 'supernegative: ' + this.__data__.supernegative + '</span>';}
 				      });
 
 

@@ -1,6 +1,7 @@
 $(document).ready(function(){
 
 
+
 App.SeeWordCloudDateSelectionView = Backbone.View.extend({
 	template: window.template("see-word-cloud-date-selection"),
 	tag: "form",
@@ -16,15 +17,19 @@ App.SeeWordCloudDateSelectionView = Backbone.View.extend({
 		newfunction()
 	},
 
+
 	render: function(){
-		this.beforeRender();	
+		this.beforeRender();
 		this.$el.append(this.template(this));
 		return this;	
 	},
 
 	beforeRender: function(){
 		var self = this;
-		var jqhr = $.post(window.get_start_date_for_restaurant, {"eatery_id": $("#eateriesList").find('option:selected').attr("id")})	
+		window.eatery_id = $(":checkbox:checked").attr("id");
+	
+		/*	
+		var jqhr = $.post(window.get_start_date_for_restaurant, {"eatery_id": window.eatery_id})	
 		jqhr.done(function(data){
 			console.log(data.result)
 			self.$("#startDate").val(data.result.start)
@@ -32,9 +37,9 @@ App.SeeWordCloudDateSelectionView = Backbone.View.extend({
 			self.$("#endDate").val(data.result.end)
 			self.$("#selectEndDate").val(data.result.end)
 		});
+		*/
+		},
 
-
-	}, 
 
 	events: {
 		"click #idSubmit": "submit",
@@ -46,7 +51,7 @@ App.SeeWordCloudDateSelectionView = Backbone.View.extend({
 		$(".data_selection").modal("hide");
 		bootbox.dialog({ 
 			closeButton: false, 
-			message: "<img src='css/images/loading_3.gif'>",
+			message: "<img src='css/images/loading.gif'>",
 			className: "loadingclass",
 		});
 	},
@@ -57,9 +62,23 @@ App.SeeWordCloudDateSelectionView = Backbone.View.extend({
 		event.preventDefault();
 		this.$el.addClass("dvLoading");
 	
+		window.word_cloud_category =  $("#wordCloudCategory").find("option:selected").val();
+
+		console.log("This is the category selected" + window.word_cloud_category);	
+		/*
+		if (window.word_cloud_category == "Service"){
+			bootbox.alert("The service word cloud has not been implemented yet !!");
+			$(".loadingclass").modal("hide");
+			$(".data_selection").modal("hide");
+			$.each($(":checkbox"), function(iter, __checkbox){
+				$("#" + __checkbox.id).prop("checked", false); 
+				})
+			return 
+		}
+
+		*/
 		this.loading_bootbox()
-
-
+		/*
 		if ($('#startDate').val() > $('#selectStartDate').val()){
 			bootbox.alert("Genius the start date selected should be greater then start date").find('.modal-content').addClass("bootbox-modal-custom-class");
 			return
@@ -71,23 +90,37 @@ App.SeeWordCloudDateSelectionView = Backbone.View.extend({
 			return
 		}
 	
-	
-		var jqhr = $.post(window.get_word_cloud, {"eatery_id": $("#eateriesList").find('option:selected').attr("id"),
-							"start_date": $('#selectStartDate').val(),
-							"end_date": $('#selectEndDate').val(),
-		    					"category": $("#wordCloudCategory").find("option:selected").val(),
-						})	
+		*/
+		//payload = {"eatery_id": eatery_id, "category":"overall", "total_noun_phrases": 15, "word_tokenization_algorithm": 
+		//	'punkt_n_treebank', "pos_tagging_algorithm": "hunpos_pos_tagger", "noun_phrases_algorithm":"regex_textblob_conll_np"}
 		
+
+
+		console.log(window.eatery_id + "    " + window.word_cloud_category);	
+		var jqhr = $.post(window.get_word_cloud, {"eatery_id": window.eatery_id,
+		//					"start_date": $('#selectStartDate').val(),
+		//					"end_date": $('#selectEndDate').val(),
+		    					"category": window.word_cloud_category,
+							"total_noun_phrases": 20,	
+					})
+
+
 		
 		//On success of the jquery post request
 		jqhr.done(function(data){
 			var subView = new App.WordCloudWith_D3({model: data.result});
 			$(".loadingclass").modal("hide");
+			
+
+			$.each(data.sentences, function(iter, sentence){
+				var subView = new App.RootRowView({model: sentence}); 
+				$(".sentences").append(subView.render().el)
+			})
 			});
 
 		//In case the jquery post request fails
-		jqhr.fail(function(){
-				bootbox.alert("Either the api or internet connection is not working, Try again later")
+		jqhr.fail(function(data){
+				bootbox.alert(data.messege)
 				self.$el.removeClass("dvLoading");
 				event.stopPropagation();
 		});
@@ -102,394 +135,357 @@ App.SeeWordCloudDateSelectionView = Backbone.View.extend({
 	cancel: function(event){
 		event.preventDefault();
 		$(".data_selection").modal("hide");
+		$.each($(":checkbox"), function(iter, __checkbox){
+				$("#" + __checkbox.id).prop("checked", false); 
+	})
 	},
 
 });
 
+
 App.WordCloudWith_D3 = Backbone.View.extend({
 	initialize: function(options){
-		this.model = options.model;
+		//In case svg was present on the page
+		d3.select("svg").remove()
+		this.model = options.model
 		console.log(this.model)
-		$.each(this.model, function(i, __d){
-			console.log(__d.name, __d.frequency, __d.polarity)
-		
-		})
+		this._data = options.model
+		this.ForceLayout(this.model);
+		},
 	
-		this.render();
-	},
 
+	dataFunction: function(value, LEVEL){
 
-	render: function(){
-		//copied from : https://github.com/vlandham/bubble_cloud/blob/gh-pages/coffee/vis.coffee
-		//explanation at:
-
-		var Bubbles, root, texts;		
-		root = typeof exports !== "undefined" && exports !== null ? exports : this;
-		function Bubbles(){
-			var  chart, clear, click, collide, collisionPadding, connectEvents, data, force, gravity, hashchange, height, idValue, jitter, label, margin, maxRadius, minCollisionRadius, mouseout, mouseover, node, rScale, rValue, textValue, tick, transformData, update, updateActive, updateLabels, updateNodes, width
-			width = $(window).width() - 50;
-			height = $(window).height()*1.1;
-			data = [];
-			node = null;
-			label = null;
-			margin = {top: 5, right: 0, bottom: 0, left: 0};
-			maxRadius = 80;
-	
-			rScale = d3.scale.sqrt().range([0,maxRadius])
-	
-				
-			var tip = d3.tip()
-				.attr('class', 'd3-tip')
-				.offset([-10, 0])
-				.html(function(d) {
-					return "<strong style='color:black'>Frequency:</strong> <span style='color:red'>" + d.frequency + "</span>";
-			    })
-
-	
-			function rValue(d){
-				return parseInt(d.frequency);
-				};
-
-			function idValue(d){
-				return d.name
-				};
-	
-			function textValue(d){
-				return d.name
-					};
-
-			collisionPadding = 4
-			minCollisionRadius = 20
-	
-			jitter = 0.5;
-
-			transformData = function(rawData){
-				rawData.forEach(function(d){
-				d.count = parseInt(d.count);
-				return rawData.sort(function(){
-					return 0.5 - Math.random();
-				});
-				})
-				return rawData;
-					};
-		
-
-			function tick(e){
-				node.attr("cx", function(d) { return d.x = Math.max(rScale(rValue(d)), Math.min(width - 50, d.x)); })
-					.attr("cy", function(d) { return d.y = Math.max(rScale(rValue(d)), Math.min(height - 50, d.y)); });
-				
-				var dampenedAlpha;
-				dampenedAlpha = e.alpha * 0.1
-
-				node.each(gravity(dampenedAlpha))
-				.each(collide(jitter))
-				.attr("transform", function(d){
-					return "translate(" + d.x + "," + d.y + ")";
-				})
-
-
-				texts.style("left", function(d) { return (margin.left + d.x) - d.dx / 2})
-				.style("top", function(d){(margin.top + d.y) - d.dy / 2})
-			};
-	
-	
-	
-			force = d3.layout.force()
-					.gravity(0)
-					.charge(0)
-					.size([width, height])
-					.on("tick", tick)
-			
-
-	
-	
-			rawData = this.model
-			
-			function chart(selection){
-				return selection
-					.attr("id", "background_class")
-					.each(function(rawData){
-					var maxDomainValue, svg, svgEnter;
-					data = transformData(rawData)
-					maxDomainValue = d3.max(data, function(d){ return rValue(d)})
-					rScale.domain([0, maxDomainValue])
-		
-					svg = d3.select(this)
-						.selectAll("svg")
-						.data([data])
-				
-					svgEnter = svg.enter().append("svg");
-					svg.attr("width", width + margin.left + margin.right);
-					svg.attr("height", height + margin.top + margin.bottom);	      
-
-					svg.call(tip)	
-					
-					
-					//This Function will add shadow to the nodes
-					addShadow(svg)	
-					
-					node = svgEnter.append("g")
-						.attr("id", "bubble-nodes")
-						.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-
-					node.append("rect")
-						.attr("id", "bubble-background")
-						.attr("width", width)
-						.attr("height", height)
-
-					update()
-				})
-			};
-
-
-		 function update(){
-			data.forEach(function(d, i){
-				return d.forceR = Math.max(minCollisionRadius, rScale(rValue(d)));
-			});
-			force.nodes(data).start()
-
-			updateNodes()
-				};
-
-		function getSize(d) {
-			var radius ;
-			var bbox = this.getBBox();
-			cbbox = this.parentNode.getBBox();
-			radius = this.parentNode.firstChild.getAttribute("r")	
-			scale = radius/3;
-			d.scale = scale;
+		function ADD_EX_BUBBLES(old_array){
+			for(var i = 0; i < window.EX_BUBBLES; i++){
+				old_array.push({"name": "NULL", 
+						"polarity": 2, 
+						"r": .1,})
+			}
+				    return old_array;
 		}
 
 
-		function updateNodes(){
-			node = node.selectAll(".bubble-node").data(data, function(d){ return idValue(d)})
+		function if_data_empty(a_rray){
+			if(a_rray == undefined){
+				LEVEL = LEVEL -1
+				bootbox.alert("There is no after level for this tag")
+			}
+		
+			return true
+		}
+		
+		var newDataSet = [];
+		if (LEVEL == 0){
+			$.each(this._data, function(i, __d){
+				newDataSet.push({"name": __d.name, 
+						"timeline": __d.timeline, 
+						"positive": __d.positive,
+						"negative": __d.negative,
+						"neutral": __d.neutral,
+						"sentences": __d.sentences,
+						"similar": __d.similar,
+						"superpositive": __d.superpositive,
+						"supernegative": __d.supernegative,
+						"r": __d.positive+__d.negative + __d.neutral + __d.supernegative + __d.superpositive,
+						}); }); return newDataSet }
+			
+		if(LEVEL == 1){
+			PARENT_LEVEL_1 = value
+			$.each(this._data, function(i, __d){
+				if (__d.name == value){
+					$.each(__d.children, function(i, _d){
+						newDataSet.push({"name": _d.name, 
+							"polarity": _d.polarity, 
+							"r": _d.frequency,
+							}); }); }; }); return newDataSet}
+		if(LEVEL == 2){ 
+			PARENT_LEVEL_2 = value
+			$.each(this._data, function(i, __d){
+				if (__d.name == PARENT_LEVEL_1){
+					$.each(__d.children, function(i, _d){
+						if (_d.name == PARENT_LEVEL_2){
+							if_data_empty(_d.children)
+							$.each(_d.children, function(i, child){
+								newDataSet.push({"name": child.name, 
+									"polarity": child.polarity, 
+									"r": child.frequency,
+									}); }); }; }); }; }); return newDataSet}
+		
+		if(LEVEL == 3){ 
+			PARENT_LEVEL_3 = value
+			$.each(this._data, function(i, __d){
+				if (__d.name == PARENT_LEVEL_1){
+					$.each(__d.children, function(i, _d){
+						if (_d.name == PARENT_LEVEL_2){
+							$.each(_d.children, function(i, child){
+								if (child.name == PARENT_LEVEL_3){
+									if_data_empty(child.children)
+									$.each(child.children, function(i, __child){
+										newDataSet.push({"name": __child.name, 
+										"polarity": __child.polarity, 
+										"r": __child.frequency,
+								}); }); }; }); }; }); }; }); return newDataSet}
+		},
 
-			node.exit().remove()
+
+	ForceLayout: function(_data){
+		/* The function to update svg elements if the window is being resized
+		 function updateWindow(){
+		 *     x = w.innerWidth || e.clientWidth || g.clientWidth;
+		 *         y = w.innerHeight|| e.clientHeight|| g.clientHeight;
+		 *
+		 *             svg.attr("width", x).attr("height", y);
+		 *             }
+		 *             window.onresize = updateWindow;
+		/* To Add scales to radius so that the nodes fit into the window
+		 * http://alignedleft.com/tutorials/d3/scales
+		 * consult the above mentioned tutorials
+		 */
+
+		_this = this;
+		function DATA(value, LEVEL){return  _this.dataFunction(value, LEVEL)}
+		LEVEL = 0
+		var width = $(window).width() - 100;
+		var height = $(window).height();
+
+		var fill = d3.scale.category10();
+		var color = d3.scale.category10().domain(d3.range(10000));
+
+
+		var duration = 2000;
+		var delay = 2;
+
+
+
+		var force = d3.layout.force()
+			.size([width, height])
+			.charge(100)
+		
+		var svg = d3.select(".main-body").append("svg")
+			.attr("width", width)
+			.attr("height", height);
+
+		var g = svg.append("g")
+				.attr("transform", "translate(" + 0 + "," + 0 + ")")
+
+		//This is the function wchich returns the maximum radius of the bubbles 
+		function drawNodes(nodes){
+			function convert_polarity(polarity){
+				return polarity == 1? "positive":"negative" 
+
+			};
+		
+			var RScale = d3.scale.linear()
+				.domain(d3.extent(nodes, function(d) { return d.r; }))
+			 	.range([width/25, 2*(width/25)])
+		
+
+			function rmax(){
+				var RMAX = 0
+				$.each(nodes, function(i, __node){
+					if (RMAX < RScale(__node.r)){
+						RMAX = RScale(__node.r)
+					}
+				});
+				return RMAX
+			}
+
+			function tick(e){
+				/*This prevents the bubbles to be dragged outside the svg element */
+				node.attr("cx", function(d) { return d.x = Math.max(rmax(), Math.min(width - rmax(), d.x)); })
+					        .attr("cy", function(d) { return d.y = Math.max(rmax(), Math.min(height - rmax(), d.y)); });
+				
+				
+				var q = d3.geom.quadtree(nodes),
+				i = 0,
+				n = nodes.length;
+				while (++i < n) q.visit(collide(nodes[i]));
+
+					//.attr("cx", function(d) { return d.x; })
+					//.attr("cy", function(d) { return d.y; })
+					node
+						.transition()
+						.duration(75)
+						.attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; })
+				};
+
+			function collide(_node){
+				var r = RScale(_node.r);
+	
+				nx1 = _node.x - r,
+				nx2 = _node.x + r,
+				ny1 = _node.y - r,
+				ny2 = _node.y + r;
+	    
+				return function(quad, x1, y1, x2, y2){
+					if (quad.point && (quad.point !== _node)){
+						var x = _node.x - quad.point.x,
+						y = _node.y - quad.point.y,
+						l = Math.sqrt(x * x + y * y),
+						r = RScale(_node.r) + RScale(quad.point.r);
+						if (l < r){
+							l = (l - r)/l*.5;
+							_node.x -= x *= l;
+							_node.y -= y *= l;
+							quad.point.x += x;
+							quad.point.y += y;
+							}
+					}
+					return x1 > nx2 || x2 < nx1 || y1 > ny2 || y2 < ny1;};
 			
-			node.enter()
-				.append("a")
-				.style("filter", "url(#drop-shadow)")
-				.attr("class", "bubble-node")
-				.attr("fill", function(d){return d.polarity ? "#66CCFF" : "#FF0033" })
-				.call(force.drag)
-				.call(connectEvents)
-				.append("circle")
-				.attr("r", function(d){ return rScale(rValue(d))
-				})
+					}
+		function charge(d){return RScale(d.r) + 1 }     
+
+		force.nodes(nodes)
+			.gravity(.09)
+			.charge(charge)
+			.start()
+		force.on("tick", tick)
+
+		var node = g.selectAll(".node")
+				.data(nodes, function(d) { return d.name; })
+	
+	
+		
+		node.enter()
+			.append("g")
+			.attr("class", "node")
+			.on("dblclick", OnDBLClick)
+			.attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; })
+			.call(force.drag)
+		
 			
-			//Adding tooltip
-			$('svg circle').tipsy({ 
-					        gravity: 'w', 
-					        html: true, 
-					        title: function(){
-							return 'Frequency: ' + '<span>' + this.__data__.frequency + '</span>';
-						}
+		node.append("circle")
+			.attr("r", 0)
+			.attr("fill", function(d, i){console.log(fill(parseInt(Math.random()*1000+ i))); return fill(parseInt(Math.random()*10+ i))}) 
+			.attr("class", "node")
+			//.attr("fill", function(d){return d.polarity ? "#66CCFF" : "#FF0033" }) 
+			//.style("stroke", function(d, i) { return d3.rgb(fill(i & 3)).darker(10); })
+			//.style("stroke", function(d, i) { return "#e377c2" })
+			//.style("stroke", function(d, i) { return d.polarity == 1? "blue":"red" })
+			//.style('stroke-width', '10px')
+			.on("mousedown", function() { d3.event.stopPropagation(); })
+
+
+		$('svg g').tipsy({ gravity: 'w', 
+					html: true, 
+					title: function(){
+					//return  "<br>" + 'Name: ' +'  ' +'<span>' + this.__data__.name + '</span>' +"<br>" + 'Frequency: ' +  '<span>' + this.__data__.r + '</span>';}
+					return   '<span>' + this.__data__.name + '</span>' + '<br>'+ '<span>' + 'Positive: ' + this.__data__.positive + '</span>' +  "<br>" + 'Negative: ' +  '<span>' + this.__data__.negative + '</span>' + '<span>' +  "<br>" + 'Neutral: ' +  '<span>'+ this.__data__.neutral + '</span>'+ '<br>'+ '<span>' + 'superpositive: '+ this.__data__.superpositive + '</span>' + '<br>'+ '<span>'+ 'supernegative: ' + this.__data__.supernegative + '</span>';}
 				      });
 
 
 
-			texts = node.append("text")
-					      .style("text-anchor", "middle")
-					      .attr("dy", ".3em")
-					      .attr('fill', 'black')
-					      .attr("label-name", function(d) { return textValue(d)})
-					      .text(function(d) { return textValue(d)})
-					      .each(getSize)
-					      //.style("font-size", function(d){ return Math.max(1, rScale(rValue(d)/2))+"px"})
-					      .style("font-size", function(d){ return d.scale+"px"})
-					      .style("width", function(d){ return rScale(rValue(d))+"px"})
-		}
-
-			function addShadow(svg){
-					defs = svg.append("defs");
-					filter = defs.append("filter")
-						    .attr("id", "drop-shadow")
-						    .attr("height", "150%")
-						    .attr("width", "200%")
-					filter.append("feGaussianBlur")
-						.attr("in", "SourceAlpha")
-						.attr("stdDeviation", 5)
-						.attr("result", "blur");
-
-					feOffset = filter.append("feOffset")
-						    .attr("in", "blur")
-						    .attr("dx", 5)
-						    .attr("dy", 5)
-						    .attr("result", "offsetBlur");
-					feMerge = filter.append("feMerge");
-							feMerge.append("feMergeNode")
-							.attr("in", "offsetBlur")
-					
-					feMerge.append("feMergeNode")
-						.attr("in", "SourceGraphic");
-
-				}
+		node.append('foreignObject')	
+			.attr("class", "foreign")
+			.append('xhtml:div')
+			.style("font-size", 0)
+			.append("p")	
 		
-	
-	
-
-		function gravity(alpha){
-			cx = width/2
-			cy = height/2
-			ax = alpha/8
-			ay = alpha
-
-			return function(d){
-				d.x += (cx - d.x)*ax
-				return d.y += (cy - d.y)*ay
-				};
-		};
-
-
-		function collide(jitter){
-			return function(d){
-				return data.forEach(function(d2){
-					var distance, minDistance, moveX, moveY, x, y;
-					
-					if (d != d2){
-						x = d.x - d2.x
-						y = d.y - d2.y
-						distance = Math.sqrt(x*x+y*y)
-						minDistance = d.forceR + d2.forceR + collisionPadding
-          
-						if (distance < minDistance){
-							distance = (distance-minDistance)/distance*jitter
-							moveX = x*distance
-							moveY = y*distance
-							d.x -= moveX
-							d.y -= moveY
-							d2.x += moveX
-							d2.y += moveY
-						}
-					}
-						})
-				}
-					}
-
-
-		function connectEvents(d){
-		//	d.on("click", onclick)
-		};
-
-		function onclick(d){
-			console.log("Click on the bubble has been initiated")
-			event.preventDefault();
-			function increaseRadius(selector){
-				d3.select(selector).select("circle")
-					.attr("class", "clicked_bubble")
-					.transition()
-					.duration(7500)
-					.attr("r", rScale(rValue(d))*3)
-			}
-
-
-			function increaseTextSize(selector){
-				d3.select(selector).select("text")
-					.attr("class", "clicked_bubble")
-					.transition()
-					.duration(7500)
-					.style("font-size", function(d){ return d.scale*3+"px"});
-				}
-
-
-
-			console.log(d.frequency)
-			//location.replace("#" + encodeURIComponent(idValue(d)))
+		d3.selectAll("circle")
+			.transition()
+			//.duration(2000)
+			.ease("cicle")
+			.duration(1000) // this is 1s
+			.delay(50)
+			.attr("r", function(d){return RScale(d.r)})
 			
-			d3.transition()
-				.ease("linear")
-					.each(function() {
-						d3.selectAll(".bubble-node").transition()
-						.duration(7500)
-				              .style("opacity", function(){ 
-						      if (this.childNodes[1].getAttribute("label-name") != d.name)
-						{
-							return 0;
-						}
-						      
-					      }
-						      
-						      )
-			        })
+		
+		.transition()
+		.each("end", function(){		
+				d3.selectAll(document.getElementsByTagName("foreignObject")).transition()
+					.attr('x', function(d){console.log(this.parentNode.getBBox()); return this.parentNode.getBBox().x/1.5})
+					.attr('y', function(d){return this.parentNode.getBBox().y/2})
+					.attr('width', function(d){ return 2*RScale(d.r) * Math.cos(Math.PI / 4)})
+					.attr('height', function(d){ return 2*RScale(d.r) * Math.cos(Math.PI / 4)})
+					.attr('color', 'black')
+					.each(getSize)
 			
-					.transition()
-					.ease("linear")
-					.call(increaseRadius(this))
+			})
 
-		}		    
-		 tooltip = d3.select("body")
-			      .append("div")
-			          .style("position", "absolute")
-				      .style("z-index", "10")
-				          .style("visibility", "hidden")
-					      .text("a simple tooltip");
+		.transition()
+		.each("end", function(){		
+				d3.selectAll(document.getElementsByTagName("foreignObject")).selectAll("div").transition()
+					.style("font-size", function(d){return RScale(d.r)/5 + "px"})
+			
+			})	
+			
+		.transition()
+		.each("end", function(){		
+				d3.selectAll(document.getElementsByTagName("foreignObject")).selectAll("div").selectAll("p").transition()
+					.text(function(d) { return d.name.substring(0, RScale(d.r) / 3)})
+					.attr('id', "node-bubble")
+					.style("text-align", "center")
+					.style("vertical-align", "middle")
+					.style("padding", "10px 5px 15px 20px")
+					.style("line-height", "1")
+			})
+		
 
-
-
-		function mouseover(d){
-			console.log(d)
-			//.tooltip({ content: "Awesome title!" });
-			tooltip.text(d.name); 
-			  return tooltip.style("visibility", "visible");
-				/*
-			return node.classed("bubble-hover", function(p){
-				console.log()
-				return p === d
-				;
+		node.exit().transition().attr("r", 0).duration(750).remove();
+		
+		
+		d3.select("body")
+			.on("mousedown", mousedown)
+		
+		function mousedown(){
+			nodes.forEach(function(o, i){
+				o.x += (Math.random() - .5) * 70;
+				o.y += (Math.random() - .5) * 70;
 			});
-			*/
-			      };
-		function mouseout(d){
-			return node.classed("bubble-hover", false);
-			        };
-
-		  chart.jitter = function(_) {
-			      if (!arguments.length) {
-				            return jitter;
-					        }
-			          jitter = _;
-				      force.start();
-				          return chart;
-					    };
-		    chart.height = function(_) {
-			        if (!arguments.length) {
-					      return height;
-					          }
-				    height = _;
-				        return chart;
-					  };
-		      chart.width = function(_) {
-			          if (!arguments.length) {
-					        return width;
-						    }
-				      width = _;
-				          return chart;
-					    };
-		        chart.r = function(_) {
-				    if (!arguments.length) {
-					          return rValue;
-						      }
-				        rValue = _;
-					    return chart;
-					      }
-
-
-		return chart
-
+			force.resume();
 		}
 		
-		plotData = function(selector, data, plot){
-			return d3.select(selector).datum(data).call(plot);
+		}
+		
+
+
+		function getSize(d){
+			var radius ;
+			var bbox = this.getBBox();
+			var cbbox = this.parentNode.getBBox(); 
+			radius = this.parentNode.firstChild.getAttribute("r")
+		}
+
+
+
+
+		function OnDBLClick(d){
+			/*
+			LEVEL = LEVEL+1
+			console.log(DATA(d.name, LEVEL))
+			drawNodes(DATA(d.name, LEVEL))
+			console.log(d)
+			console.log(LEVEL)
+			*/
+			$(".sentences").empty()
+			$.each(d.similar, function(iter, __data){
+				__html = '<button class="btn btn-small btn-primary" type="button" style="margin: 10px">' + __data + '</button>';
+				$('.sentences').append(__html)
+			})
+			$.each(d.sentences, function(iter, __sent){
+				var subView = new App.RootRowView({model: __sent}); 
+				$(".sentences").append(subView.render().el)
+
+			})			
+			console.log(d)
+			console.log(d.similar)
+			console.log(d.i_likeness)
+			console.log(d.o_likeness)
+		
 		};
-		 
-		
-		plot = Bubbles();
 
-		plotData(".dynamic_display", this.model, plot);
-
+		console.log(DATA(null, LEVEL))
+		drawNodes(DATA(null, LEVEL))
+		//drawNodes(data())
 	},
-		
+
+
+
 })
+
+
 
 })
 
