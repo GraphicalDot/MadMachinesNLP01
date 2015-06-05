@@ -41,9 +41,6 @@ from Sentence_Tokenization import SentenceTokenizationOnRegexOnInterjections, Co
 from Algortihms import Sklearn_RandomForest
 from Algortihms import SVMWithGridSearch
 from colored_print import bcolors
-connection = pymongo.Connection()
-db = connection.modified_canworks
-reviews = db.review
 
 
 def timeit(method):

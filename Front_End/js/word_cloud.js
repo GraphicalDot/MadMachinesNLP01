@@ -51,7 +51,7 @@ App.SeeWordCloudDateSelectionView = Backbone.View.extend({
 		$(".data_selection").modal("hide");
 		bootbox.dialog({ 
 			closeButton: false, 
-			message: "<img src='css/images/loading.gif'>",
+			message: "<img src='css/images/loading.png'>",
 			className: "loadingclass",
 		});
 	},
@@ -246,15 +246,15 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 		_this = this;
 		function DATA(value, LEVEL){return  _this.dataFunction(value, LEVEL)}
 		LEVEL = 0
-		var width = $(window).width() - 500;
+		var width = $(window).width() - $(".append_eatery").width()*1.5;
 		var height = $(window).height();
-		var barHeight = 20;
+		var barHeight = 25;
 
 		data = DATA(null, LEVEL);
 
 
 		var RScale = d3.scale.linear()
-			 	.range([0, width])
+			 	.range([0, width-50])
 				.domain([0, d3.max(data, function(d) { return d.r; })])
 		
 		var svg = d3.select(".main-body").append("svg")
@@ -265,6 +265,8 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 		var bar = svg.selectAll("g")
 				.data(DATA(null, LEVEL))
 			        .enter().append("g")
+				.style("padding",  "5px")
+				.style("margin",  "5px")
 				.attr("transform", function(d, i) { return "translate(0," + i * barHeight + ")"; });
 		
 
@@ -290,7 +292,7 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 			.attr("transform", function(d, i) { return "translate(" + RScale(d.superpositive+d.positive) +", 0)"; });
 		bar
 				.append("rect")
-			.style("fill", "sandy") 
+			.style("fill", "red") 
 			.attr("width", function(d) { console.log(RScale(d.r)); return RScale(d.negative); })
 				      .attr("height", barHeight - 1)
 			.attr("transform", function(d, i) { return "translate(" + RScale(d.superpositive+d.positive+d.neutral) +", 0)"; });
@@ -302,15 +304,20 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 			.attr("width", function(d) { console.log(RScale(d.r)); return RScale(d.supernegative); })
 				      .attr("height", barHeight - 1)
 			.attr("transform", function(d, i) { return "translate(" + RScale(d.superpositive+d.positive+d.neutral+d.negative) +", 0)"; });
+		
 		bar.append("text")
 			          .attr("x", function(d) { return RScale(d.r) - 3; })
 				        .attr("y", barHeight / 2)
 					      .attr("dy", ".35em")
-					            .text(function(d) { return d.name; });
+					            .text(function(d) { return d.name; })
+					.style("font-size", function(d){return barHeight/2 + "px"})
 
 		
 		//drawNodes(data())
 	},
+
+
+
 	ForceLayout: function(_data){
 		/* The function to update svg elements if the window is being resized
 		 function updateWindow(){
