@@ -241,6 +241,8 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 		/* To Add scales to radius so that the nodes fit into the window
 		 * http://alignedleft.com/tutorials/d3/scales
 		 * consult the above mentioned tutorials
+		 *
+		 * http://bl.ocks.org/mbostock/1134768
 		 */
 
 		_this = this;
@@ -254,63 +256,70 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 
 
 		var RScale = d3.scale.linear()
-			 	.range([0, width-50])
+			 	.range([0, width-200])
 				.domain([0, d3.max(data, function(d) { return d.r; })])
 		
 		var svg = d3.select(".main-body").append("svg")
 			.attr("width", width)
-			.attr("height", height);
-		
+			.attr("height", height*1.5)
+			.style("shape-rendering", "crispEdges")	
+			.style("margin-top", height/15)	
 
 		var bar = svg.selectAll("g")
 				.data(DATA(null, LEVEL))
 			        .enter().append("g")
-				.style("padding",  "5px")
-				.style("margin",  "5px")
+				//.style("stroke", function(d, i) { return d3.rgb(i).darker(); })
 				.attr("transform", function(d, i) { return "translate(0," + i * barHeight + ")"; });
 		
 
 		bar
 				.append("rect")
 				.attr("class", "dishes")
-				.style("fill", "yellowgreen") 
+				.style("fill", "green") 
 				.attr("width", function(d) {return RScale(d.superpositive); })
-				      .attr("height", barHeight - 1);
+				.transition().delay(function (d,i){ return i * 300;}).duration(300)	
+		  		.attr("height", barHeight - 1);
 		
 		bar
 				.append("rect")
-			.style("fill", "salmongreen") 
+			.style("fill", "yellowgreen") 
 			.attr("width", function(d) {return RScale(d.positive); })
+				.transition().delay(function (d,i){ return i * 300;}).duration(300)	
 				      .attr("height", barHeight - 1)
 			.attr("transform", function(d, i) { return "translate(" + RScale(d.superpositive) +", 0)"; });
 		bar
 				.append("rect")
 			.style("fill", "PaleTurquoise") 
 			.attr("width", function(d) {return RScale(d.neutral); })
+				.transition().delay(function (d,i){ return i * 300;}).duration(300)	
 				      .attr("height", barHeight - 1)
 		
 			.attr("transform", function(d, i) { return "translate(" + RScale(d.superpositive+d.positive) +", 0)"; });
 		bar
 				.append("rect")
-			.style("fill", "red") 
+			.style("fill", "lightpink") 
 			.attr("width", function(d) { console.log(RScale(d.r)); return RScale(d.negative); })
+				.transition().delay(function (d,i){ return i * 300;}).duration(300)	
 				      .attr("height", barHeight - 1)
 			.attr("transform", function(d, i) { return "translate(" + RScale(d.superpositive+d.positive+d.neutral) +", 0)"; });
 		
 		
 		bar
 				.append("rect")
-			.style("fill", "sandybrown") 
+			.style("fill", "red") 
 			.attr("width", function(d) { console.log(RScale(d.r)); return RScale(d.supernegative); })
+				.transition().delay(function (d,i){ return i * 300;}).duration(300)	
 				      .attr("height", barHeight - 1)
 			.attr("transform", function(d, i) { return "translate(" + RScale(d.superpositive+d.positive+d.neutral+d.negative) +", 0)"; });
 		
 		bar.append("text")
-			          .attr("x", function(d) { return RScale(d.r) - 3; })
+					.transition().delay(function (d,i){ return i * 300;}).duration(300)	
+			          .attr("x", function(d) { return RScale(d.r) + 4; })
 				        .attr("y", barHeight / 2)
 					      .attr("dy", ".35em")
 					            .text(function(d) { return d.name; })
 					.style("font-size", function(d){return barHeight/2 + "px"})
+					.style("font-family", "'Source Sans Pro', sans-serif")
 
 		
 		//drawNodes(data())

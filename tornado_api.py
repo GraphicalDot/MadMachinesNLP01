@@ -283,7 +283,7 @@ class LimitedEateriesList(tornado.web.RequestHandler):
                 """
                 self.write({"success": True,
 			"error": False,
-                        "result": result[::-1],
+                        "result": result,
 			})
                 self.finish()
                 
@@ -376,6 +376,8 @@ class GetWordCloud(tornado.web.RequestHandler):
                         element.update({"supernegative": element.get("super-negative")})
                         element.pop("super-negative")
                         element.pop("super-positive")
+               
+                print __result
                 self.write({"success": True,
 			"error": False,
 			"result": __result,
