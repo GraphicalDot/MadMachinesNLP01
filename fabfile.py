@@ -75,6 +75,19 @@ def increasing_ulimits():
 
 
 
+def install_elastic_search_stack():
+        """
+        For more configuration options for Elastic search, read the following document
+        https://www.digitalocean.com/community/tutorials/how-to-install-elasticsearch-logstash-and-kibana-4-on-ubuntu-14-04
+        """
+        run("sudo add-apt-repository -y ppa:webupd8team/java")
+        run("sudo apt-get update")
+        run("sudo apt-get -y install oracle-java8-installer")
+        run("wget -O - http://packages.elasticsearch.org/GPG-KEY-elasticsearch | sudo apt-key add -")
+        run("echo 'deb http://packages.elasticsearch.org/elasticsearch/1.4/debian stable main' | sudo tee /etc/apt/sources.list.d/elasticsearch.list")
+        run("sudo apt-get update")
+        run("sudo apt-get -y install elasticsearch=1.4.4")
+
 
 def get_host():
         if env["host"] == "localhost":

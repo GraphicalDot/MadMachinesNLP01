@@ -377,12 +377,33 @@ class GetWordCloud(tornado.web.RequestHandler):
                         element.pop("super-negative")
                         element.pop("super-positive")
                
-                print __result
+
+                """
+                new_noun_phrases = list()
+                keys = list()
+                for e in __result:
+                        keys.append({"name": e.get("name")})
+                        for t in e.get("timeline"):
+                                new_noun_phrases.append({"name": e.get("name"),
+                                    "superpositive": (0, 1)[t[0] == "superpositive"],
+                                    "supernegative": (0, 1)[t[0] == "supernegative"],
+                                    "neutral": (0, 1)[t[0] == "neutral"],
+                                    "positive": (0, 1)[t[0] == "positive"],
+                                    "negative": (0, 1)[t[0] == "negative"],
+                                    "ptime": t[1]})
+
+                sorted_np = sorted(new_noun_phrases, key=lambda x: x.get("p-time"))
+                
+                print sorted_np 
+                self.write({"success": True,
+			"error": False,
+                        "result": {"noun_phrases": sorted_np, "keys": keys},
+			})
+                """
                 self.write({"success": True,
 			"error": False,
 			"result": __result,
-			})
-
+                        })
                 self.finish()
 
         

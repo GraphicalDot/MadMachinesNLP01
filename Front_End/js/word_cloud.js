@@ -150,6 +150,7 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 		this.model = options.model
 		console.log(this.model)
 		this._data = options.model
+		//this.ChangingBarLayout(this.model);
 		this.BarLayout(this.model);
 		//this.ForceLayout(this.model);
 		},
@@ -180,7 +181,7 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 		if (LEVEL == 0){
 			$.each(this._data, function(i, __d){
 				newDataSet.push({"name": __d.name, 
-						"timeline": __d.timeline, 
+						"ptime": __d.ptime, 
 						"positive": __d.positive,
 						"negative": __d.negative,
 						"neutral": __d.neutral,
@@ -229,20 +230,182 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 								}); }); }; }); }; }); }; }); return newDataSet}
 		},
 
-	BarLayout: function(_data){
-		/* The function to update svg elements if the window is being resized
-		 function updateWindow(){
-		 *     x = w.innerWidth || e.clientWidth || g.clientWidth;
-		 *         y = w.innerHeight|| e.clientHeight|| g.clientHeight;
-		 *
-		 *             svg.attr("width", x).attr("height", y);
-		 *             }
-		 *             window.onresize = updateWindow;
-		/* To Add scales to radius so that the nodes fit into the window
-		 * http://alignedleft.com/tutorials/d3/scales
-		 * consult the above mentioned tutorials
-		 *
+	ChangingBarLayout: function(_data){
+		/* 
 		 * http://bl.ocks.org/mbostock/1134768
+		 [[u'vada pao bao', u'neutral', u'2015-01-07 13:23:45'],
+ 		[u'chilli paneer', u'neutral', u'2015-01-07 13:23:45'],
+		[u'mezze platter', u'neutral', u'2015-01-07 13:23:45'],
+		[u'chicken burger', u'neutral', u'2015-01-07 17:10:56'],
+		[u'china box', u'neutral', u'2015-01-07 18:32:04'],
+		[u'vada pao bao', u'negative', u'2015-01-07 18:32:04'],
+		[u'china box', u'super-positive', u'2015-01-07 23:37:34'],
+		[u'chicken wings', u'super-positive', u'2015-01-08 13:57:09'],
+		[u'mezze platter', u'super-positive', u'2015-01-08 13:57:09'],
+		[u'oreo mud pot', u'super-positive', u'2015-01-08 13:57:09'],
+		[u'vada pao bao', u'positive', u'2015-01-08 23:23:55'],
+		[u'keema pao', u'super-positive', u'2015-01-08 23:23:55'],
+		[u'pepper china box', u'super-positive', u'2015-01-08 23:23:55']] 
+		 */
+
+
+		
+
+		noun_phrases = _data.noun_phrases;
+		var noun_phrases = [ {'name': 'strawberry cheesecake', 'ptime': '2014-08-12 22:12:34', 'positive': 1, 'negative': 0, 
+			'supernegative': 0, 'neutral': 0, 'superpositive': 0}, 
+			     {'name': 'strawberry cheesecake', 'ptime': '2014-08-11 18:51:39', 'positive': 0, 'negative': 0, 
+				     'supernegative': 0, 'neutral': 1, 'superpositive': 0}, 
+			     {'name': 'strawberry cheesecake', 'ptime': '2014-08-03 18:01:10', 'positive': 1, 'negative': 0, 
+				     'supernegative': 0, 'neutral': 0, 'superpositive': 0}, 
+			     {'name': 'strawberry cheesecake', 'ptime': '2014-08-01 21:51:03', 'positive': 0, 'negative': 0, 
+				     'supernegative': 0, 'neutral': 1, 'superpositive': 0}, 
+			     {'name': 'strawberry cheesecake', 'ptime': '2014-11-21 12:01:09', 'positive': 0, 'negative': 0, 
+				     'supernegative': 0, 'neutral': 1, 'superpositive': 0}, 
+			     {'name': 'loaded nachos', 'ptime': '2014-08-23 00:48:53', 'positive': 1, 'negative': 0, 
+				     'supernegative': 0, 'neutral': 0, 'superpositive': 0}, 
+			     {'name': 'loaded nachos', 'ptime': '2014-08-01 21:51:03', 'positive': 1, 'negative': 0, 
+				     'supernegative': 0, 'neutral': 0, 'superpositive': 0}, 
+			     {'name': 'loaded nachos', 'ptime': '2014-12-09 00:20:36', 'positive': 1, 'negative': 0, 
+				     'supernegative': 0, 'neutral': 0, 'superpositive': 0}, 
+			     {'name': 'loaded nachos', 'ptime': '2014-10-06 14:06:25', 'positive': 1, 'negative': 0, 
+				     'supernegative': 0, 'neutral': 0, 'superpositive': 0}, 
+			     {'name': 'loaded nachos', 'ptime': '2014-09-25 11:01:33', 'positive': 1, 'negative': 0, 
+				     'supernegative': 0, 'neutral': 0, 'superpositive': 0}, 
+			     {'name': 'loaded nachos', 'ptime': '2014-09-26 15:49:53', 'positive': 0, 'negative': 0, 
+				     'supernegative': 0, 'neutral': 1, 'superpositive': 0}, 
+			     {'name': 'deconstructed moscow mule', 'ptime': '2014-08-23 00:48:53', 'positive': 1, 'negative': 0, 
+				     'supernegative': 0, 'neutral': 0, 'superpositive': 0}, 
+			     {'name': 'deconstructed moscow mule', 'ptime': '2014-11-02 12:24:41', 'positive': 0, 'negative': 0, 
+				     'supernegative': 0, 'neutral': 1, 'superpositive': 0}]
+
+		
+		
+		keys = _data.keys;
+		var keys = [{'name': 'strawberry cheesecake'}, {'name': 'deconstructed moscow mule'}, {'name': 'loaded nachos'}]
+		
+		console.log(keys)
+		_this = this;
+		/*
+		function DATA(value, LEVEL){return  _this.dataFunction(value, LEVEL)}
+		LEVEL = 0
+		
+		data = DATA(null, LEVEL);
+		*/
+		var RScale = d3.scale.linear()
+			 	.range([0, width-200])
+				//.domain([0, d3.max(keys, function(d) { return d.r; })])
+				.domain([0, 10])
+		var width = $(window).width() - $(".append_eatery").width()*1.5;
+		var height = $(window).height();
+		var barHeight = 25;
+
+		var transitionTime = 50;
+		var svg = d3.select(".main-body").append("svg")
+			.attr("width", width)
+			.attr("height", height*1.5)
+			.style("shape-rendering", "crispEdges")	
+			.style("margin-top", height/15)	
+
+
+
+			
+		$.each(noun_phrases, function(iter, key){
+			update(key)	
+		})
+
+		function update(__key){
+			var bar = svg.selectAll("g")
+				.data(keys, function(d, i){return d.name})
+			        
+			bar.enter().append("g")
+				.attr("class",function(d) { return d.name })
+			bar.exit().remove();
+			
+			
+			rects = bar.selectAll("rect")
+				.data(function(d){return d.name})
+
+			rects.enter().append("rect")
+				.style("fill", "green") 
+				.attr("width", function(d) {return 10})
+				.transition().delay(function (d,i){ return i * transitionTime;}).duration(transitionTime)	
+		  		.attr("height", barHeight);
+			
+			/*	
+			bar
+				.append("rect")
+				.attr("class", "dishes")
+				.style("fill", "green") 
+				.attr("width", function(d) {return RScale(d.superpositive); })
+				.transition().delay(function (d,i){ return i * transitionTime;}).duration(transitionTime)	
+		  		.attr("height", barHeight - 1);
+		
+			bar
+				.append("rect")
+				.style("fill", "yellowgreen") 
+				.attr("width", function(d) {return RScale(d.positive); })
+				.transition().delay(function (d,i){ return i * transitionTime;}).duration(transitionTime)	
+				.attr("height", barHeight - 1)
+				.attr("transform", function(d, i) { return "translate(" + RScale(d.superpositive) +", 0)"; });
+			
+			bar
+				.append("rect")
+				.style("fill", "PaleTurquoise") 
+				.attr("width", function(d) {return RScale(d.neutral); })
+				.transition().delay(function (d,i){ return i * transitionTime;}).duration(transitionTime)	
+				.attr("height", barHeight - 1)
+				.attr("transform", function(d, i) { return "translate(" + RScale(d.superpositive+d.positive) +", 0)"; });
+		
+			bar
+				.append("rect")
+				.style("fill", "lightpink") 
+				.attr("width", function(d) { console.log(RScale(d.r)); return RScale(d.negative); })
+				.transition().delay(function (d,i){ return i * transitionTime;}).duration(transitionTime)	
+				      .attr("height", barHeight - 1)
+				.attr("transform", function(d, i) { return "translate(" + RScale(d.superpositive+d.positive+d.neutral) +", 0)"; });
+		
+		
+			bar
+				.append("rect")
+				.style("fill", "red") 
+				.attr("width", function(d) { console.log(RScale(d.r)); return RScale(d.supernegative); })
+				.transition().delay(function (d,i){ return i * transitionTime;}).duration(transitionTime)	
+				.attr("height", barHeight - 1)
+				.attr("transform", function(d, i) { return "translate(" + RScale(d.superpositive+d.positive+d.neutral+d.negative) +", 0)"; });
+			bar.append("text")
+				.transition().delay(function (d,i){ return i * transitionTime;}).duration(transitionTime)
+				.attr("x", function(d) { return RScale(d.r) + 4; })
+				.attr("y", barHeight / 2)
+				.attr("dy", ".35em")
+				.text(function(d) { return d.name; })
+				.style("font-size", function(d){return barHeight/2 + "px"})
+				.style("font-family", "'Source Sans Pro', sans-serif")
+			*/
+				}
+		//drawNodes(data())
+	},
+
+	BarLayout: function(_data){
+		/* 
+		 * http://bl.ocks.org/mbostock/1134768
+		 
+		 {u'name': u'strawberry cheesecake', u'negative': 0, 'supernegative': 0, u'neutral': 4, 
+		 u'timeline': [[u'super-positive', u'2014-08-19 09:11:52'], [u'neutral', u'2014-09-29 14:17:48'], 
+		 [u'positive', u'2014-08-12 22:12:34'], [u'neutral', u'2014-08-11 18:51:39'], [u'positive', u'2014-08-03 18:01:10'], 
+		 [u'neutral', u'2014-08-01 21:51:03'], [u'neutral', u'2014-11-21 12:01:09']], 'superpositive': 1, 
+		 u'similar': [u'strawberry cheese cake', u'strawberry cheesecake'], u'positive': 2}, 
+		 
+		 {u'name': u'loaded nachos', u'positive': 5, u'negative': 0, 'supernegative': 0, u'neutral': 1, u'timeline': 
+		 [[u'positive', u'2014-08-23 00:48:53'], [u'positive', u'2014-08-01 21:51:03'], [u'positive', u'2014-12-09 00:20:36'], 
+		 [u'positive', u'2014-10-06 14:06:25'], [u'positive', u'2014-09-25 11:01:33'], [u'neutral', u'2014-09-26 15:49:53']], 
+		 'superpositive': 0, u'similar': []}, {u'name': u'deconstructed moscow mule', u'positive': 3, u'negative': 0, 
+		 'supernegative': 0, u'neutral': 1, u'timeline': [[u'positive', u'2014-08-23 00:48:53'], 
+		 [u'super-positive', u'2014-08-20 21:06:16'], [u'positive', u'2014-07-21 16:45:36'], 
+		 [u'super-positive', u'2014-12-10 12:18:05'], [u'positive', u'2014-12-14 14:10:19'], [u'neutral', u'2014-11-02 12:24:41']], 
+		 'superpositive': 2, 
+		 u'similar': []}]
+		  Now get have started executing 
 		 */
 
 		_this = this;
@@ -255,6 +418,7 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 		data = DATA(null, LEVEL);
 
 
+		var transitionTime = 300;
 		var RScale = d3.scale.linear()
 			 	.range([0, width-200])
 				.domain([0, d3.max(data, function(d) { return d.r; })])
@@ -269,7 +433,8 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 				.data(DATA(null, LEVEL))
 			        .enter().append("g")
 				//.style("stroke", function(d, i) { return d3.rgb(i).darker(); })
-				.attr("transform", function(d, i) { return "translate(0," + i * barHeight + ")"; });
+				.attr("id", function(d, i) { return d.name})
+				.attr("transform", function(d, i) { return "translate(0," + i * barHeight + ")"; })
 		
 
 		bar
@@ -277,21 +442,21 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 				.attr("class", "dishes")
 				.style("fill", "green") 
 				.attr("width", function(d) {return RScale(d.superpositive); })
-				.transition().delay(function (d,i){ return i * 300;}).duration(300)	
+				.transition().delay(function (d,i){ return i * transitionTime;}).duration(transitionTime)	
 		  		.attr("height", barHeight - 1);
 		
 		bar
 				.append("rect")
 			.style("fill", "yellowgreen") 
 			.attr("width", function(d) {return RScale(d.positive); })
-				.transition().delay(function (d,i){ return i * 300;}).duration(300)	
+				.transition().delay(function (d,i){ return i * transitionTime;}).duration(transitionTime)	
 				      .attr("height", barHeight - 1)
 			.attr("transform", function(d, i) { return "translate(" + RScale(d.superpositive) +", 0)"; });
 		bar
 				.append("rect")
 			.style("fill", "PaleTurquoise") 
 			.attr("width", function(d) {return RScale(d.neutral); })
-				.transition().delay(function (d,i){ return i * 300;}).duration(300)	
+				.transition().delay(function (d,i){ return i * transitionTime;}).duration(transitionTime)	
 				      .attr("height", barHeight - 1)
 		
 			.attr("transform", function(d, i) { return "translate(" + RScale(d.superpositive+d.positive) +", 0)"; });
@@ -299,7 +464,7 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 				.append("rect")
 			.style("fill", "lightpink") 
 			.attr("width", function(d) { console.log(RScale(d.r)); return RScale(d.negative); })
-				.transition().delay(function (d,i){ return i * 300;}).duration(300)	
+				.transition().delay(function (d,i){ return i * transitionTime;}).duration(transitionTime)	
 				      .attr("height", barHeight - 1)
 			.attr("transform", function(d, i) { return "translate(" + RScale(d.superpositive+d.positive+d.neutral) +", 0)"; });
 		
@@ -308,19 +473,18 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 				.append("rect")
 			.style("fill", "red") 
 			.attr("width", function(d) { console.log(RScale(d.r)); return RScale(d.supernegative); })
-				.transition().delay(function (d,i){ return i * 300;}).duration(300)	
+				.transition().delay(function (d,i){ return i * transitionTime;}).duration(transitionTime)	
 				      .attr("height", barHeight - 1)
 			.attr("transform", function(d, i) { return "translate(" + RScale(d.superpositive+d.positive+d.neutral+d.negative) +", 0)"; });
 		
 		bar.append("text")
-					.transition().delay(function (d,i){ return i * 300;}).duration(300)	
+					.transition().delay(function (d,i){ return i * transitionTime;}).duration(transitionTime)	
 			          .attr("x", function(d) { return RScale(d.r) + 4; })
 				        .attr("y", barHeight / 2)
 					      .attr("dy", ".35em")
 					            .text(function(d) { return d.name; })
 					.style("font-size", function(d){return barHeight/2 + "px"})
 					.style("font-family", "'Source Sans Pro', sans-serif")
-
 		
 		//drawNodes(data())
 	},
