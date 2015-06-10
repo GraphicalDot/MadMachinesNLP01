@@ -58,7 +58,7 @@ def basic_setup():
 	run("sudo apt-get install -y ocaml-nox")
 	run("sudo apt-get install -y mercurial")
 	run("sudo apt-get install -y libpq-dev")
-
+        run("sudo apt-get install build-essential libssl-dev libffi-dev python-dev")
 
 def installing_riak():
         run("sudo apt-get install curl")

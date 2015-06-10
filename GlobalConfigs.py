@@ -5,6 +5,12 @@ Dated: 19 february, 2015
 Purpose: This file has all the config variables stored in it,
 """
 import pymongo
+import elasticsearch
+
+ELASTICSEARCH_IP = "192.18.1.16"
+ELASTICSEARCH_PORT = 9200
+
+ES = elasticsearch.Elasticsearch("{0}:{1}".format(ELASTICSEARCH_IP, ELASTICSEARCH_PORT))
 
 
 ##2014-07-22 20:49:11

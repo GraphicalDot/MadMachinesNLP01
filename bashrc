@@ -3,7 +3,10 @@
 # for examples
 
 # If not running interactively, don't do anything
-[ -z "$PS1" ] && return
+case $- in
+    *i*) ;;
+      *) return;;
+esac
 
 # don't put duplicate lines or lines starting with space in the history.
 # See bash(1) for more options
@@ -28,7 +31,7 @@ shopt -s checkwinsize
 [ -x /usr/bin/lesspipe ] && eval "$(SHELL=/bin/sh lesspipe)"
 
 # set variable identifying the chroot you work in (used in the prompt below)
-if [ -z "$debian_chroot" ] && [ -r /etc/debian_chroot ]; then
+if [ -z "${debian_chroot:-}" ] && [ -r /etc/debian_chroot ]; then
     debian_chroot=$(cat /etc/debian_chroot)
 fi
 
@@ -40,7 +43,7 @@ esac
 # uncomment for a colored prompt, if the terminal has the capability; turned
 # off by default to not distract the user: the focus in a terminal window
 # should be on the output of commands, not on the prompt
-force_color_prompt=yes
+#force_color_prompt=yes
 
 if [ -n "$force_color_prompt" ]; then
     if [ -x /usr/bin/tput ] && tput setaf 1 >&/dev/null; then
@@ -64,7 +67,10 @@ unset color_prompt force_color_prompt
 case "$TERM" in
 xterm*|rxvt*)
     #PS1="\[\e]0;${debian_chroot:+($debian_chroot)}\u@\h: \w\a\]$PS1"
-	PS1="[\t \u@\h:\W] $ "    
+    PS1="[\t \u@\h:\W (\[\e[32;1m\]\$(/bin/ls | /usr/bin/wc -l | /bin/sed 's: ::g') files, \$(/bin/ls -lah | /bin/grep -m 1 total | /bin/sed 's/total //')b)-]$\[\e[0m\] "
+    #PS1='\[\e[m\n\e[1;30m\][$$:$PPID \j:\!\[\e[1;30m\]]\[\e[0;36m\] \T \d \[\e[1;30m\][\[\e[1;34m\]\u@\H\[\e[1;30m\]:\[\e[0;37m\]${SSH_TTY} \[\e[0;32m\]+${SHLVL}\[\e[1;30m\]] \[\e[1;37m\]\w\[\e[0;37m\] \n($SHLVL:\!)\$ '
+	#PS1="\n\[\e[30;1m\]\[\016\]l\[\017\](\[\e[34;1m\]\u@\h\[\e[30;1m\])-(\[\e[34;1m\]\j\[\e[30;1m\])-(\[\e[34;1m\]\@ \d\[\e[30;1m\])->\[\e[30;1m\]\n\[\016\]m\[\017\]-(\[\[\e[32;1m\]\w\[\e[30;1m\])-(\[\e[32;1m\]\$(/bin/ls -2 | /usr/bin/wc -l | /bin/sed 's: ::g') files, \$(/bin/ls -lah | /bin/grep -m 1 total | /bin/sed 's/total //')b\[\e[30;1m\])--> \[\e[0m\]"
+
 ;;
 *)
     ;;
@@ -103,67 +109,49 @@ fi
 # enable programmable completion features (you don't need to enable
 # this, if it's already enabled in /etc/bash.bashrc and /etc/profile
 # sources /etc/bash.bashrc).
-if [ -f /etc/bash_completion ] && ! shopt -oq posix; then
+if ! shopt -oq posix; then
+  if [ -f /usr/share/bash-completion/bash_completion ]; then
+    . /usr/share/bash-completion/bash_completion
+  elif [ -f /etc/bash_completion ]; then
     . /etc/bash_completion
+  fi
 fi
 
-Black='\033[0;30m'     
-DarkGray='\033[1;30m'
-Blue='\033[0;34m'     
-LightBlue='\033[1;34m'
-Green='\033[0;32m'     
-LightGreen='\033[1;32m'
-Cyan='\033[0;36m'     
-LightCyan='\033[1;36m'
-NC='\033[0m'
 
 
 function MadMachinesNLP01
-	{
-	cd /home/k3/Programs/MadMachinesNLP01/; 
-	source bin/activate; cd MadMachinesNLP01;
-	clear;
-	}
+        {
+        cd /home/kaali2/Programs/Python/MadmachinesNLP01/;
+        source bin/activate; cd MadMachinesNLP01;
+        clear;
+        }
 
 function MappingListWorker() {
-	cd /home/k3/Programs/MadMachinesNLP01/; 
-	source bin/activate; cd MadMachinesNLP01;
-	clear;
-	celery -A ProcessingCeleryTask  worker -n MappingListWorker -Q MappingListQueue --concurrency=4 -P gevent --loglevel=info --autoreload;	
+        cd /home/kaali2/Programs/Python/MadmachinesNLP01/;
+        source bin/activate; cd MadMachinesNLP01;
+        clear;
+        celery -A ProcessingCeleryTask  worker -n MappingListWorker -Q MappingListQueue --concurrency=4 -P gevent --loglevel=info --autoreload;
 }
 function EachEateryWorker() {
-	cd /home/k3/Programs/MadMachinesNLP01/; 
-	source bin/activate; cd MadMachinesNLP01;
-	clear;
-	celery -A ProcessingCeleryTask  worker -n EachEateryWorker -Q EachEateryQueue --concurrency=4 -P gevent --loglevel=info --autoreload; 
+        cd /home/kaali2/Programs/Python/MadmachinesNLP01/;
+        source bin/activate; cd MadMachinesNLP01;
+        clear;
+        celery -A ProcessingCeleryTask  worker -n EachEateryWorker -Q EachEateryQueue --concurrency=4 -P gevent --loglevel=info --autoreload;
 }
 function PerReviewWorker() {
-	cd /home/k3/Programs/MadMachinesNLP01/; 
-	source bin/activate; cd MadMachinesNLP01;
-	clear;
-	worker_name="PerReviewWorker_"
-	worker_name+=$1
-	celery -A ProcessingCeleryTask  worker -n $worker_name -Q PerReviewQueue --concurrency=4 -P gevent --loglevel=info --autoreload 	
+        cd /home/kaali2/Programs/Python/MadmachinesNLP01/;
+        source bin/activate; cd MadMachinesNLP01;
+        clear;
+        worker_name="PerReviewWorker_"
+        worker_name+=$1
+        celery -A ProcessingCeleryTask  worker -n $worker_name -Q PerReviewQueue --concurrency=4 -P gevent --loglevel=info --autoreload
 }
 
 function DoClustersWorker() {
-	cd /home/k3/Programs/MadMachinesNLP01/; 
-	source bin/activate; cd MadMachinesNLP01;
-	clear;
-	celery -A ProcessingCeleryTask  worker -n DoClustersWorker -Q DoClustersQueue --concurrency=4 -P gevent --loglevel=info --autoreload 	
-	}
+        cd /home/kaali2/Programs/Python/MadmachinesNLP01/;
+        source bin/activate; cd MadMachinesNLP01;
+        clear;
+        celery -A ProcessingCeleryTask  worker -n DoClustersWorker -Q DoClustersQueue --concurrency=4 -P gevent --loglevel=info --autoreload
+        }
 
 
-
-a="Welcome Kaali"
-b=$date
-echo -e "\n\x1b[32m\x1b[5m\t\t\t$a$b" 
-output=$(date)
-echo -e ' \t\t\t'$output''
-tput sgr0
-
-
-JAVA_HOME=/usr/lib/jvm/java-7-openjdk-amd64/bin
-export JAVA_HOME	
-PATH=$PATH:$JAVA_HOME	
-export PATH
