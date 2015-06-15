@@ -632,6 +632,48 @@ if __name__ == "__main__":
                     ["negative", ['japanese restaurant',  u'chicken teriyaki', u'chicken teppanyaki']],
                     ["neutral", ['spicy salmon roll', 'salmon rolls', u'spicy salmon rolls']]]
 
+
+
+        def return_food_sentences(eatery_id):
+                from sklearn.externals import joblib
+                sent_tokenizer = SentenceTokenizationOnRegexOnInterjections()
+                reviews_list = list()
+                for post in reviews.find({"eatery_id": eatery_id}):
+                        reviews_list.extend([[sent, post.get("review_time")] for sent in sent_tokenizer.tokenize(post.get("review_text"))])
+                
+                tag_classifier = joblib.load("Text_Processing/PrepareClassifiers/InMemoryClassifiers/svm_linear_kernel_classifier_tag.lib")
+
+                tags = tag_classifier.predict([e[0] for e in reviews_list])
+                food_sentences = list()
+                for (sent, review_time),  tag in zip(reviews_list, tags):
+                        if tag == "food":
+                                food_sentences.append([sent, review_time])
+   
+                food_tag_classifier = joblib.load("Text_Processing/PrepareClassifiers/InMemoryClassifiers/svm_linear_kernel_classifier_food_sub_tags.lib")
+                sub_tags = food_tag_classifier.predict([e[0] for e in food_sentences])
+
+                dishes_n_drinks = list()
+
+                for (sent, review_time), sub_tag in zip(food_sentences, sub_tags):
+                        if sub_tag == "dishes" or sub_tag == "drinks":
+                                dishes_n_drinks.append([sent, review_time])
+                        
+    
+
+                sentiment_classifier = joblib.load("Text_Processing/PrepareClassifiers/InMemoryClassifiers/svm_linear_kernel_classifier_sentiment_new_dataset.lib")
+                sentiments = sentiment_classifier.predict([e[0] for e in dishes_n_drinks])
+    
+                from topia.termextract import extract
+                topia_extractor = extract.TermExtractor()
+                noun_phrases = list()
+                for (sent, review_time), tag in zip(dishes_n_drinks, sentiments):
+                        nouns = topia_extractor(sent)
+                        noun_phrases.append([tag, [e[0].lower() for e in nouns], review_time])
+                        
+                return filter(lambda x: x[1], noun_phrases)
+
+
+
         sentences = [u'do try their Paneer Chilli Pepper starter .',
                  u'even through they have numerous drinks in the menu , on a Friday night ( when i visited the place ) they were serving only specific brands of liquor .',
                   u"so the place is gorgeousambience might have felt better if there wasn't a party goingin case you are looking a pleasant dinner with friends and family you need to check if there is party or event going onit can be quite annoyingapart from that the best appetizer to try is Mustard Fish paparikaits absolutely amazing and deliciously juicyand the prawns are pretty good tooi was pretty disappointed with the pastamy lil sister could cook better pastaso pasta here is a complete no notry going for the pizzas insteadand their appetizers have a decent variety toothe service was pretty good and friendlybut it really got quite irritating cause of the party going on",

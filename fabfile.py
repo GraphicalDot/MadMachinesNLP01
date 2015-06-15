@@ -74,6 +74,19 @@ def increasing_ulimits():
         *     hard    nofile          40000
 
 
+def install_phantomjs():
+        """
+        http://phantomjs.org/build.html
+        """
+        run ("sudo apt-get install build-essential g++ flex bison gperf ruby perl \
+                  libsqlite3-dev libfontconfig1-dev libicu-dev libfreetype6 libssl-dev \
+                    libpng-dev libjpeg-dev python libX11-dev libxext-dev")
+        run("sudo apt-get install ttf-mscorefonts-installer")
+        run("git clone git://github.com/ariya/phantomjs.git")
+        run("cd phantomjs")
+        run("git checkout 2.0")
+        run("./build.sh")
+
 
 def install_elastic_search_stack():
         """
