@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-
+#-*- coding: utf-8 -*-
 """
 Author: Kaali
 Dated: 9 march, 2015
@@ -66,6 +66,7 @@ class SimilarityMatrices:
                         print "New matric found  beyween %s and %s\n"%(__str1, __str2)
                         return 0.9
                 """
+                
                 try:
                     return  float(__l*2)/total
                 except Exception as e:
@@ -309,51 +310,63 @@ class ProductionHeuristicClustering:
                 X = np.zeros((len(self.keys), len(self.keys)), dtype=np.float)
                 for i in xrange(0, len(self.keys)):
                         for j in xrange(0, len(self.keys)):
-                                """
                                 if i == j:
                                         #If calculating for same element
                                         X[i][j] = 0.5
                                         X[j][i] = 0.5
                                     
                                 if X[i][j] == 0:
-                                """
                                 #st = 'Levenshtein.ratio("{1}", "{0}")'.format(self.keys[i], self.keys[j])
                                 #ratio = eval(st)
                                 #ratio = SimilarityMatrices.levenshtein_ratio(self.keys[i], self.keys[j])
-                                ratio = SimilarityMatrices.modified_dice_cofficient(self.keys[i], self.keys[j])
-                                X[i][j] = ratio
-                                X[j][i] = ratio
+                                        ratio = SimilarityMatrices.modified_dice_cofficient(self.keys[i], self.keys[j])
+                                        X[i][j] = ratio
+                                        X[j][i] = ratio
             
             
                 #Making tuples of the indexes for the element in X where the rtion is greater than .76
                 #indices = np.where((X > .75) & (X < 1))
                 indices = np.where(X > .75)
                 new_list = zip(indices[0], indices[1])
+                print new_list
                 print [(self.keys[a], self.keys[b]) for a, b in new_list]
 
                 found = False
                 test_new_list = list()
 
-                print new_list
                 for e in new_list:
                     
-                        print "New incoming (%s, %s)"%(self.keys[e[0]], self.keys[e[1]])
                         for j in self.clusters:
 
                                 if bool(set.intersection(set(e), set(j))):
                                         j.extend(e)
-                                        print "cluster it joined %s"%[self.keys[p] for p in set(j)]
-                                        print "cluster it joined %s"%j
                                         found = True
                                         break
                         if not found:    
                                 self.clusters.append(list(e))
                                 found = False
                                 
-                        print self.clusters 
                         found = False
-                #Removing duplicate elements from clusters list
+                
                 self.clusters = [list(set(element)) for element in self.clusters if len(element)> 2]
+                """
+                found = False
+                new_clusters = list()
+                #Removing duplicate elements from clusters list
+                for e in self.clusters:
+                        for j in new_clusters:
+                                
+                                if bool(set.intersection(set(e), set(j))):
+                                        j.extend(e)
+                                        found = True
+                                        break
+                        if not found:
+                                new_clusters.append(list(e))
+                                found = False
+                        found = False
+
+                self.clusters = new_clusters
+                """
                 return 
 
         #@print_execution
@@ -494,6 +507,508 @@ class ProductionHeuristicClustering:
 
 if __name__ == "__main__":
 
-
         ins = ProductionHeuristicClustering("308322")
-        print ins.run()
+        ins.run()
+        """
+
+        New incoming (death wings, death wings)
+        (94, 94)
+
+        New incoming (death wings chicken, death wings chicken)
+        (124, 124)
+
+        New incoming (death wings chicken, chicken death wings)
+        (124, 483)
+        New incoming (death wings chicken, death chicken wings)
+        (124, 762)
+        New incoming (chicken wings n, chicken wings n)
+        (211, 211)
+        New incoming (chicken wings n, chicken wings i)
+        (211, 214)
+        New incoming (chicken wings n, bbq chicken wings)
+        (211, 350)
+        New incoming (chicken wings n, chicken wings)
+        (211, 359)
+        New incoming (chicken wings n, devil chicken wings)
+        (211, 628)
+        New incoming (chicken wings n, f *ck chicken wings)
+        (211, 723)
+        New incoming (chicken wings n, death chicken wings)
+        (211, 762)
+        New incoming (chicken wings i, chicken wings n)
+        (214, 211)
+        New incoming (chicken wings i, chicken wings i)
+        (214, 214)
+        New incoming (chicken wings i, bbq chicken wings)
+        (214, 350)
+        New incoming (chicken wings i, chicken wings)
+        (214, 359)
+        New incoming (chicken wings i, devil chicken wings)
+        (214, 628)
+        New incoming (chicken wings i, f *ck chicken wings)
+        (214, 723)
+        New incoming (chicken wings i, death chicken wings)
+        (214, 762)
+
+
+        (bbq chicken, bbq chicken)
+        (305, 305)
+        (bbq chicken, bbq chicken wings)
+        (305, 350)
+        (bbq chicken, chicken)
+        (305, 565)
+
+
+        New incoming (death wings chicken, death wings chicken)
+        (124, 124)
+
+        New incoming (death wings chicken, chicken death wings)
+        (124, 483)
+        cluster it joined [u'chicken death wings', u'death wings chicken']
+        cluster it joined [124, 124, 124, 483]
+
+        New incoming (death wings chicken, death chicken wings)
+        (124, 762)
+        cluster it joined [u'death chicken wings', u'chicken death wings', u'death wings chicken']
+        cluster it joined [124, 124, 124, 483, 124, 762]
+
+        New incoming (chicken wings n, chicken wings n)
+        (211, 211)
+
+        New incoming (chicken wings n, chicken wings i)
+        (211, 214)
+        cluster it joined [u'chicken wings n', u'chicken wings i']
+        cluster it joined [211, 211, 211, 214]
+
+        New incoming (chicken wings n, bbq chicken wings)
+        (211, 350)
+        cluster it joined [u'chicken wings n', u'bbq chicken wings', u'chicken wings i']
+        cluster it joined [211, 211, 211, 214, 211, 350]
+
+        New incoming (chicken wings n, chicken wings)
+        (211, 359)
+        cluster it joined [u'chicken wings n', u'bbq chicken wings', u'chicken wings i', u'chicken wings']
+        cluster it joined [211, 211, 211, 214, 211, 350, 211, 359]
+
+        New incoming (chicken wings n, devil chicken wings)
+        (211, 628)
+        cluster it joined [u'chicken wings n', u'devil chicken wings', u'bbq chicken wings', u'chicken wings i', u'chicken wings']
+        cluster it joined [211, 211, 211, 214, 211, 350, 211, 359, 211, 628]
+
+
+        New incoming (chicken wings n, f *ck chicken wings)
+        (211, 723)
+        cluster it joined [u'chicken wings n', u'chicken wings', u'f *ck chicken wings', u'devil chicken wings', u'chicken wings i', u'bbq chicken wings']
+        cluster it joined [211, 211, 211, 214, 211, 350, 211, 359, 211, 628, 211, 723]
+
+        New incoming (chicken wings n, death chicken wings)
+        (211, 762)
+        cluster it joined [u'death chicken wings', u'chicken death wings', u'death wings chicken', u'chicken wings n']
+        cluster it joined [124, 124, 124, 483, 124, 762, 211, 762]
+
+
+        New incoming (bbq chicken wings, chicken wings n)
+        (350, 211)
+        cluster it joined [u'chicken death wings', u'chicken wings', u'f *ck chicken wings', u'bbq chicken', u'chicken wings n', u'devil chicken wings', u'chicken', u'chicken wings i', u'death chicken wings', u'death wings chicken', u'bbq chicken wings']
+        cluster it joined [124, 124, 124, 483, 124, 762, 211, 762, 214, 211, 214, 214, 214, 350, 214, 359, 214, 628, 214, 723, 214, 762, 305, 350, 305, 565, 350, 211]
+
+        New incoming (bbq chicken wings, chicken wings i)
+        (350, 214)
+        cluster it joined [u'chicken death wings', u'chicken wings', u'f *ck chicken wings', u'bbq chicken', u'chicken wings n', u'devil chicken wings', u'chicken', u'chicken wings i', u'death chicken wings', u'death wings chicken', u'bbq chicken wings']
+        cluster it joined [124, 124, 124, 483, 124, 762, 211, 762, 214, 211, 214, 214, 214, 350, 214, 359, 214, 628, 214, 723, 214, 762, 305, 350, 305, 565, 350, 211, 350, 214]
+
+        New incoming (bbq chicken wings, bbq chicken)
+        (350, 305)
+        cluster it joined [u'chicken death wings', u'chicken wings', u'f *ck chicken wings', u'bbq chicken', u'chicken wings n', u'devil chicken wings', u'chicken', u'chicken wings i', u'death chicken wings', u'death wings chicken', u'bbq chicken wings']
+        cluster it joined [124, 124, 124, 483, 124, 762, 211, 762, 214, 211, 214, 214, 214, 350, 214, 359, 214, 628, 214, 723, 214, 762, 305, 350, 305, 565, 350, 211, 350, 214, 350, 305]
+
+        New incoming (bbq chicken wings, bbq chicken wings)
+        (350, 350)
+        cluster it joined [u'chicken death wings', u'chicken wings', u'f *ck chicken wings', u'bbq chicken', u'chicken wings n', u'devil chicken wings', u'chicken', u'chicken wings i', u'death chicken wings', u'death wings chicken', u'bbq chicken wings']
+        cluster it joined [124, 124, 124, 483, 124, 762, 211, 762, 214, 211, 214, 214, 214, 350, 214, 359, 214, 628, 214, 723, 214, 762, 305, 350, 305, 565, 350, 211, 350, 214, 350, 305, 350, 350]
+
+
+        New incoming (bbq chicken wings, chicken wings)
+        (350, 359)
+        cluster it joined [u'chicken death wings', u'chicken wings', u'f *ck chicken wings', u'bbq chicken', u'chicken wings n', u'devil chicken wings', u'chicken', u'chicken wings i', u'death chicken wings', u'death wings chicken', u'bbq chicken wings']
+        cluster it joined [124, 124, 124, 483, 124, 762, 211, 762, 214, 211, 214, 214, 214, 350, 214, 359, 214, 628, 214, 723, 214, 762, 305, 350, 305, 565, 350, 211, 350, 214, 350, 305, 350, 350, 350, 359]
+
+        New incoming (bbq chicken wings, f *ck chicken wings)
+        (350, 723)
+        cluster it joined [u'chicken death wings', u'chicken wings', u'f *ck chicken wings', u'bbq chicken', u'chicken wings n', u'devil chicken wings', u'chicken', u'chicken wings i', u'death chicken wings', u'death wings chicken', u'bbq chicken wings']
+        cluster it joined [124, 124, 124, 483, 124, 762, 211, 762, 214, 211, 214, 214, 214, 350, 214, 359, 214, 628, 214, 723, 214, 762, 305, 350, 305, 565, 350, 211, 350, 214, 350, 305, 350, 350, 350, 359, 350, 723]
+
+
+        New incoming (chicken wings, chicken wings n)
+        (359, 211)
+        cluster it joined [u'chicken death wings', u'chicken wings', u'f *ck chicken wings', u'bbq chicken', u'chicken wings n', u'devil chicken wings', u'chicken', u'chicken wings i', u'death chicken wings', u'death wings chicken', u'bbq chicken wings']
+        cluster it joined [124, 124, 124, 483, 124, 762, 211, 762, 214, 211, 214, 214, 214, 350, 214, 359, 214, 628, 214, 723, 214, 762, 305, 350, 305, 565, 350, 211, 350, 214, 350, 305, 350, 350, 350, 359, 350, 723, 359, 211]
+
+
+        New incoming (chicken wings, chicken wings i)
+        (359, 214)
+        cluster it joined [u'chicken death wings', u'chicken wings', u'f *ck chicken wings', u'bbq chicken', u'chicken wings n', u'devil chicken wings', u'chicken', u'chicken wings i', u'death chicken wings', u'death wings chicken', u'bbq chicken wings']
+        cluster it joined [124, 124, 124, 483, 124, 762, 211, 762, 214, 211, 214, 214, 214, 350, 214, 359, 214, 628, 214, 723, 214, 762, 305, 350, 305, 565, 350, 211, 350, 214, 350, 305, 350, 350, 350, 359, 350, 723, 359, 211, 359, 214]
+
+
+        New incoming (chicken wings, bbq chicken wings)
+        (359, 350)
+        cluster it joined [u'chicken death wings', u'chicken wings', u'f *ck chicken wings', u'bbq chicken', u'chicken wings n', u'devil chicken wings', u'chicken', u'chicken wings i', u'death chicken wings', u'death wings chicken', u'bbq chicken wings']
+        cluster it joined [124, 124, 124, 483, 124, 762, 211, 762, 214, 211, 214, 214, 214, 350, 214, 359, 214, 628, 214, 723, 214, 762, 305, 350, 305, 565, 350, 211, 350, 214, 350, 305, 350, 350, 350, 359, 350, 723, 359, 211, 359, 214, 359, 350]
+
+        New incoming (chicken wings, chicken wings)
+        (359, 359)
+        cluster it joined [u'chicken death wings', u'chicken wings', u'f *ck chicken wings', u'bbq chicken', u'chicken wings n', u'devil chicken wings', u'chicken', u'chicken wings i', u'death chicken wings', u'death wings chicken', u'bbq chicken wings']
+        cluster it joined [124, 124, 124, 483, 124, 762, 211, 762, 214, 211, 214, 214, 214, 350, 214, 359, 214, 628, 214, 723, 214, 762, 305, 350, 305, 565, 350, 211, 350, 214, 350, 305, 350, 350, 350, 359, 350, 723, 359, 211, 359, 214, 359, 350, 359, 359]
+
+        New incoming (chicken wings, devil chicken wings)
+        (359, 628)
+        cluster it joined [u'chicken death wings', u'chicken wings', u'f *ck chicken wings', u'bbq chicken', u'chicken wings n', u'devil chicken wings', u'chicken', u'chicken wings i', u'death chicken wings', u'death wings chicken', u'bbq chicken wings']
+        cluster it joined [124, 124, 124, 483, 124, 762, 211, 762, 214, 211, 214, 214, 214, 350, 214, 359, 214, 628, 214, 723, 214, 762, 305, 350, 305, 565, 350, 211, 350, 214, 350, 305, 350, 350, 350, 359, 350, 723, 359, 211, 359, 214, 359, 350, 359, 359, 359, 628]
+
+        New incoming (chicken wings, f *ck chicken wings)
+        (359, 723)
+        cluster it joined [u'chicken death wings', u'chicken wings', u'f *ck chicken wings', u'bbq chicken', u'chicken wings n', u'devil chicken wings', u'chicken', u'chicken wings i', u'death chicken wings', u'death wings chicken', u'bbq chicken wings']
+        cluster it joined [124, 124, 124, 483, 124, 762, 211, 762, 214, 211, 214, 214, 214, 350, 214, 359, 214, 628, 214, 723, 214, 762, 305, 350, 305, 565, 350, 211, 350, 214, 350, 305, 350, 350, 350, 359, 350, 723, 359, 211, 359, 214, 359, 350, 359, 359, 359, 628, 359, 723]
+
+
+        New incoming (chicken wings, death chicken wings)
+        (359, 762)
+        cluster it joined [u'chicken death wings', u'chicken wings', u'f *ck chicken wings', u'bbq chicken', u'chicken wings n', u'devil chicken wings', u'chicken', u'chicken wings i', u'death chicken wings', u'death wings chicken', u'bbq chicken wings']
+        cluster it joined [124, 124, 124, 483, 124, 762, 211, 762, 214, 211, 214, 214, 214, 350, 214, 359, 214, 628, 214, 723, 214, 762, 305, 350, 305, 565, 350, 211, 350, 214, 350, 305, 350, 350, 350, 359, 350, 723, 359, 211, 359, 214, 359, 350, 359, 359, 359, 628, 359, 723, 359, 762]
+
+
+        New incoming (chicken death wings, death wings chicken)
+        (483, 124)
+        cluster it joined [u'chicken death wings', u'chicken wings', u'f *ck chicken wings', u'bbq chicken', u'chicken wings n', u'devil chicken wings', u'chicken', u'chicken wings i', u'death chicken wings', u'death wings chicken', u'bbq chicken wings']
+        cluster it joined [124, 124, 124, 483, 124, 762, 211, 762, 214, 211, 214, 214, 214, 350, 214, 359, 214, 628, 214, 723, 214, 762, 305, 350, 305, 565, 350, 211, 350, 214, 350, 305, 350, 350, 350, 359, 350, 723, 359, 211, 359, 214, 359, 350, 359, 359, 359, 628, 359, 723, 359, 762, 483, 124]
+
+        
+        New incoming (chicken death wings, chicken death wings)
+        (483, 483)
+        cluster it joined [u'chicken death wings', u'chicken wings', u'f *ck chicken wings', u'bbq chicken', u'chicken wings n', u'devil chicken wings', u'chicken', u'chicken wings i', u'death chicken wings', u'death wings chicken', u'bbq chicken wings']
+        cluster it joined [124, 124, 124, 483, 124, 762, 211, 762, 214, 211, 214, 214, 214, 350, 214, 359, 214, 628, 214, 723, 214, 762, 305, 350, 305, 565, 350, 211, 350, 214, 350, 305, 350, 350, 350, 359, 350, 723, 359, 211, 359, 214, 359, 350, 359, 359, 359, 628, 359, 723, 359, 762, 483, 124, 483, 483]
+
+        New incoming (chicken death wings, death chicken wings)
+        (483, 762)
+        cluster it joined [u'chicken death wings', u'chicken wings', u'f *ck chicken wings', u'bbq chicken', u'chicken wings n', u'devil chicken wings', u'chicken', u'chicken wings i', u'death chicken wings', u'death wings chicken', u'bbq chicken wings']
+        cluster it joined [124, 124, 124, 483, 124, 762, 211, 762, 214, 211, 214, 214, 214, 350, 214, 359, 214, 628, 214, 723, 214, 762, 305, 350, 305, 565, 350, 211, 350, 214, 350, 305, 350, 350, 350, 359, 350, 723, 359, 211, 359, 214, 359, 350, 359, 359, 359, 628, 359, 723, 359, 762, 483, 124, 483, 483, 483, 762]
+
+
+        New incoming (chicken, • chicken)
+        (565, 237)
+        cluster it joined [u'chicken death wings', u'chicken wings', u'\u2022 chicken', u'f *ck chicken wings', u'bbq chicken', u'chicken wings n', u'devil chicken wings', u'chicken', u'chicken wings i', u'death chicken wings', u'death wings chicken', u'bbq chicken wings']
+        cluster it joined [124, 124, 124, 483, 124, 762, 211, 762, 214, 211, 214, 214, 214, 350, 214, 359, 214, 628, 214, 723, 214, 762, 305, 350, 305, 565, 350, 211, 350, 214, 350, 305, 350, 350, 350, 359, 350, 723, 359, 211, 359, 214, 359, 350, 359, 359, 359, 628, 359, 723, 359, 762, 483, 124, 483, 483, 483, 762, 565, 237]
+
+        New incoming (chicken, bbq chicken)
+        (565, 305)
+        cluster it joined [u'chicken death wings', u'chicken wings', u'\u2022 chicken', u'f *ck chicken wings', u'bbq chicken', u'chicken wings n', u'devil chicken wings', u'chicken', u'chicken wings i', u'death chicken wings', u'death wings chicken', u'bbq chicken wings']
+        cluster it joined [124, 124, 124, 483, 124, 762, 211, 762, 214, 211, 214, 214, 214, 350, 214, 359, 214, 628, 214, 723, 214, 762, 305, 350, 305, 565, 350, 211, 350, 214, 350, 305, 350, 350, 350, 359, 350, 723, 359, 211, 359, 214, 359, 350, 359, 359, 359, 628, 359, 723, 359, 762, 483, 124, 483, 483, 483, 762, 565, 237, 565, 305]
+
+        New incoming (chicken, chicken)
+        (565, 565)
+        cluster it joined [u'chicken death wings', u'chicken wings', u'\u2022 chicken', u'f *ck chicken wings', u'bbq chicken', u'chicken wings n', u'devil chicken wings', u'chicken', u'chicken wings i', u'death chicken wings', u'death wings chicken', u'bbq chicken wings']
+        cluster it joined [124, 124, 124, 483, 124, 762, 211, 762, 214, 211, 214, 214, 214, 350, 214, 359, 214, 628, 214, 723, 214, 762, 305, 350, 305, 565, 350, 211, 350, 214, 350, 305, 350, 350, 350, 359, 350, 723, 359, 211, 359, 214, 359, 350, 359, 359, 359, 628, 359, 723, 359, 762, 483, 124, 483, 483, 483, 762, 565, 237, 565, 305, 565, 565]
+
+
+        New incoming (chicken, chicken bao)
+        (565, 693)
+        cluster it joined [u'chicken death wings', u'chicken wings', u'\u2022 chicken', u'f *ck chicken wings', u'bbq chicken', u'chicken wings n', u'devil chicken wings', u'chicken', u'chicken wings i', u'death chicken wings', u'death wings chicken', u'bbq chicken wings', u'chicken bao']
+
+
+        New incoming (chicken, chicken box)
+        (565, 861)
+        cluster it joined [u'chicken death wings', u'chicken wings', u'\u2022 chicken', u'f *ck chicken wings', u'bbq chicken', u'chicken wings n', u'devil chicken wings', u'chicken', u'chicken wings i', u'death chicken wings', u'death wings chicken', u'chicken box', u'bbq chicken wings', u'chicken bao']
+
+        New incoming (devil chicken wings, chicken wings n)
+        (628, 211)
+        cluster it joined [u'chicken death wings', u'chicken wings', u'\u2022 chicken', u'f *ck chicken wings', u'bbq chicken', u'chicken wings n', u'devil chicken wings', u'chicken', u'chicken wings i', u'death chicken wings', u'death wings chicken', u'chicken box', u'bbq chicken wings', u'chicken bao']
+        cluster it joined [124, 124, 124, 483, 124, 762, 211, 762, 214, 211, 214, 214, 214, 350, 214, 359, 214, 628, 214, 723, 214, 762, 305, 350, 305, 565, 350, 211, 350, 214, 350, 305, 350, 350, 350, 359, 350, 723, 359, 211, 359, 214, 359, 350, 359, 359, 359, 628, 359, 723, 359, 762, 483, 124, 483, 483, 483, 762, 565, 237, 565, 305, 565, 565, 565, 693, 565, 861, 628, 211]
+
+        New incoming (devil chicken wings, chicken wings i)
+        (628, 214)
+        cluster it joined [u'chicken death wings', u'chicken wings', u'\u2022 chicken', u'f *ck chicken wings', u'bbq chicken', u'chicken wings n', u'devil chicken wings', u'chicken', u'chicken wings i', u'death chicken wings', u'death wings chicken', u'chicken box', u'bbq chicken wings', u'chicken bao']
+        cluster it joined [124, 124, 124, 483, 124, 762, 211, 762, 214, 211, 214, 214, 214, 350, 214, 359, 214, 628, 214, 723, 214, 762, 305, 350, 305, 565, 350, 211, 350, 214, 350, 305, 350, 350, 350, 359, 350, 723, 359, 211, 359, 214, 359, 350, 359, 359, 359, 628, 359, 723, 359, 762, 483, 124, 483, 483, 483, 762, 565, 237, 565, 305, 565, 565, 565, 693, 565, 861, 628, 211, 628, 214]
+
+        New incoming (devil chicken wings, chicken wings)
+        (628, 359)
+        cluster it joined [u'chicken death wings', u'chicken wings', u'\u2022 chicken', u'f *ck chicken wings', u'bbq chicken', u'chicken wings n', u'devil chicken wings', u'chicken', u'chicken wings i', u'death chicken wings', u'death wings chicken', u'chicken box', u'bbq chicken wings', u'chicken bao']
+        cluster it joined [124, 124, 124, 483, 124, 762, 211, 762, 214, 211, 214, 214, 214, 350, 214, 359, 214, 628, 214, 723, 214, 762, 305, 350, 305, 565, 350, 211, 350, 214, 350, 305, 350, 350, 350, 359, 350, 723, 359, 211, 359, 214, 359, 350, 359, 359, 359, 628, 359, 723, 359, 762, 483, 124, 483, 483, 483, 762, 565, 237, 565, 305, 565, 565, 565, 693, 565, 861, 628, 211, 628, 214, 628, 359]
+
+        New incoming (devil chicken wings, devil chicken wings)
+        (628, 628)
+        cluster it joined [u'chicken death wings', u'chicken wings', u'\u2022 chicken', u'f *ck chicken wings', u'bbq chicken', u'chicken wings n', u'devil chicken wings', u'chicken', u'chicken wings i', u'death chicken wings', u'death wings chicken', u'chicken box', u'bbq chicken wings', u'chicken bao']
+        cluster it joined [124, 124, 124, 483, 124, 762, 211, 762, 214, 211, 214, 214, 214, 350, 214, 359, 214, 628, 214, 723, 214, 762, 305, 350, 305, 565, 350, 211, 350, 214, 350, 305, 350, 350, 350, 359, 350, 723, 359, 211, 359, 214, 359, 350, 359, 359, 359, 628, 359, 723, 359, 762, 483, 124, 483, 483, 483, 762, 565, 237, 565, 305, 565, 565, 565, 693, 565, 861, 628, 211, 628, 214, 628, 359, 628, 628]
+
+
+        New incoming (chicken bao, chicken)
+        (693, 565)
+        cluster it joined [u'chicken death wings', u'chicken wings', u'\u2022 chicken', u'f *ck chicken wings', u'bbq chicken', u'chicken wings n', u'devil chicken wings', u'chicken', u'chicken wings i', u'death chicken wings', u'death wings chicken', u'chicken box', u'bbq chicken wings', u'chicken bao']
+        cluster it joined [124, 124, 124, 483, 124, 762, 211, 762, 214, 211, 214, 214, 214, 350, 214, 359, 214, 628, 214, 723, 214, 762, 305, 350, 305, 565, 350, 211, 350, 214, 350, 305, 350, 350, 350, 359, 350, 723, 359, 211, 359, 214, 359, 350, 359, 359, 359, 628, 359, 723, 359, 762, 483, 124, 483, 483, 483, 762, 565, 237, 565, 305, 565, 565, 565, 693, 565, 861, 628, 211, 628, 214, 628, 359, 628, 628, 693, 565]
+
+        New incoming (chicken bao, chicken bao)
+        (693, 693)
+        cluster it joined [u'chicken death wings', u'chicken wings', u'\u2022 chicken', u'f *ck chicken wings', u'bbq chicken', u'chicken wings n', u'devil chicken wings', u'chicken', u'chicken wings i', u'death chicken wings', u'death wings chicken', u'chicken box', u'bbq chicken wings', u'chicken bao']
+        cluster it joined [124, 124, 124, 483, 124, 762, 211, 762, 214, 211, 214, 214, 214, 350, 214, 359, 214, 628, 214, 723, 214, 762, 305, 350, 305, 565, 350, 211, 350, 214, 350, 305, 350, 350, 350, 359, 350, 723, 359, 211, 359, 214, 359, 350, 359, 359, 359, 628, 359, 723, 359, 762, 483, 124, 483, 483, 483, 762, 565, 237, 565, 305, 565, 565, 565, 693, 565, 861, 628, 211, 628, 214, 628, 359, 628, 628, 693, 565, 693, 693]
+
+        New incoming (chicken bao, chicken box)
+        (693, 861)
+        cluster it joined [u'chicken death wings', u'chicken wings', u'\u2022 chicken', u'f *ck chicken wings', u'bbq chicken', u'chicken wings n', u'devil chicken wings', u'chicken', u'chicken wings i', u'death chicken wings', u'death wings chicken', u'chicken box', u'bbq chicken wings', u'chicken bao']
+        cluster it joined [124, 124, 124, 483, 124, 762, 211, 762, 214, 211, 214, 214, 214, 350, 214, 359, 214, 628, 214, 723, 214, 762, 305, 350, 305, 565, 350, 211, 350, 214, 350, 305, 350, 350, 350, 359, 350, 723, 359, 211, 359, 214, 359, 350, 359, 359, 359, 628, 359, 723, 359, 762, 483, 124, 483, 483, 483, 762, 565, 237, 565, 305, 565, 565, 565, 693, 565, 861, 628, 211, 628, 214, 628, 359, 628, 628, 693, 565, 693, 693, 693, 861]
+
+
+
+        New incoming (f *ck chicken wings, chicken wings n)
+        (723, 211)
+        cluster it joined [u'chicken death wings', u'chicken wings', u'\u2022 chicken', u'f *ck chicken wings', u'bbq chicken', u'chicken wings n', u'devil chicken wings', u'chicken', u'chicken wings i', u'death chicken wings', u'death wings chicken', u'chicken box', u'bbq chicken wings', u'chicken bao']
+        cluster it joined [124, 124, 124, 483, 124, 762, 211, 762, 214, 211, 214, 214, 214, 350, 214, 359, 214, 628, 214, 723, 214, 762, 305, 350, 305, 565, 350, 211, 350, 214, 350, 305, 350, 350, 350, 359, 350, 723, 359, 211, 359, 214, 359, 350, 359, 359, 359, 628, 359, 723, 359, 762, 483, 124, 483, 483, 483, 762, 565, 237, 565, 305, 565, 565, 565, 693, 565, 861, 628, 211, 628, 214, 628, 359, 628, 628, 693, 565, 693, 693, 693, 861, 723, 211]
+
+        New incoming (f *ck chicken wings, chicken wings i)
+        (723, 214)
+        cluster it joined [u'chicken death wings', u'chicken wings', u'\u2022 chicken', u'f *ck chicken wings', u'bbq chicken', u'chicken wings n', u'devil chicken wings', u'chicken', u'chicken wings i', u'death chicken wings', u'death wings chicken', u'chicken box', u'bbq chicken wings', u'chicken bao']
+        cluster it joined [124, 124, 124, 483, 124, 762, 211, 762, 214, 211, 214, 214, 214, 350, 214, 359, 214, 628, 214, 723, 214, 762, 305, 350, 305, 565, 350, 211, 350, 214, 350, 305, 350, 350, 350, 359, 350, 723, 359, 211, 359, 214, 359, 350, 359, 359, 359, 628, 359, 723, 359, 762, 483, 124, 483, 483, 483, 762, 565, 237, 565, 305, 565, 565, 565, 693, 565, 861, 628, 211, 628, 214, 628, 359, 628, 628, 693, 565, 693, 693, 693, 861, 723, 211, 723, 214]
+
+        New incoming (f *ck chicken wings, bbq chicken wings)
+        (723, 350)
+        cluster it joined [u'chicken death wings', u'chicken wings', u'\u2022 chicken', u'f *ck chicken wings', u'bbq chicken', u'chicken wings n', u'devil chicken wings', u'chicken', u'chicken wings i', u'death chicken wings', u'death wings chicken', u'chicken box', u'bbq chicken wings', u'chicken bao']
+        cluster it joined [124, 124, 124, 483, 124, 762, 211, 762, 214, 211, 214, 214, 214, 350, 214, 359, 214, 628, 214, 723, 214, 762, 305, 350, 305, 565, 350, 211, 350, 214, 350, 305, 350, 350, 350, 359, 350, 723, 359, 211, 359, 214, 359, 350, 359, 359, 359, 628, 359, 723, 359, 762, 483, 124, 483, 483, 483, 762, 565, 237, 565, 305, 565, 565, 565, 693, 565, 861, 628, 211, 628, 214, 628, 359, 628, 628, 693, 565, 693, 693, 693, 861, 723, 211, 723, 214, 723, 350]
+
+        New incoming (f *ck chicken wings, chicken wings)
+        (723, 359)
+        cluster it joined [u'chicken death wings', u'chicken wings', u'\u2022 chicken', u'f *ck chicken wings', u'bbq chicken', u'chicken wings n', u'devil chicken wings', u'chicken', u'chicken wings i', u'death chicken wings', u'death wings chicken', u'chicken box', u'bbq chicken wings', u'chicken bao']
+        cluster it joined [124, 124, 124, 483, 124, 762, 211, 762, 214, 211, 214, 214, 214, 350, 214, 359, 214, 628, 214, 723, 214, 762, 305, 350, 305, 565, 350, 211, 350, 214, 350, 305, 350, 350, 350, 359, 350, 723, 359, 211, 359, 214, 359, 350, 359, 359, 359, 628, 359, 723, 359, 762, 483, 124, 483, 483, 483, 762, 565, 237, 565, 305, 565, 565, 565, 693, 565, 861, 628, 211, 628, 214, 628, 359, 628, 628, 693, 565, 693, 693, 693, 861, 723, 211, 723, 214, 723, 350, 723, 359]
+
+        New incoming (f *ck chicken wings, f *ck chicken wings)
+        (723, 723)
+        cluster it joined [u'chicken death wings', u'chicken wings', u'\u2022 chicken', u'f *ck chicken wings', u'bbq chicken', u'chicken wings n', u'devil chicken wings', u'chicken', u'chicken wings i', u'death chicken wings', u'death wings chicken', u'chicken box', u'bbq chicken wings', u'chicken bao']
+        cluster it joined [124, 124, 124, 483, 124, 762, 211, 762, 214, 211, 214, 214, 214, 350, 214, 359, 214, 628, 214, 723, 214, 762, 305, 350, 305, 565, 350, 211, 350, 214, 350, 305, 350, 350, 350, 359, 350, 723, 359, 211, 359, 214, 359, 350, 359, 359, 359, 628, 359, 723, 359, 762, 483, 124, 483, 483, 483, 762, 565, 237, 565, 305, 565, 565, 565, 693, 565, 861, 628, 211, 628, 214, 628, 359, 628, 628, 693, 565, 693, 693, 693, 861, 723, 211, 723, 214, 723, 350, 723, 359, 723, 723]
+
+        New incoming (death chicken wings, death wings chicken)
+        (762, 124)
+        cluster it joined [u'chicken death wings', u'chicken wings', u'\u2022 chicken', u'f *ck chicken wings', u'bbq chicken', u'chicken wings n', u'devil chicken wings', u'chicken', u'chicken wings i', u'death chicken wings', u'death wings chicken', u'chicken box', u'bbq chicken wings', u'chicken bao']
+        cluster it joined [124, 124, 124, 483, 124, 762, 211, 762, 214, 211, 214, 214, 214, 350, 214, 359, 214, 628, 214, 723, 214, 762, 305, 350, 305, 565, 350, 211, 350, 214, 350, 305, 350, 350, 350, 359, 350, 723, 359, 211, 359, 214, 359, 350, 359, 359, 359, 628, 359, 723, 359, 762, 483, 124, 483, 483, 483, 762, 565, 237, 565, 305, 565, 565, 565, 693, 565, 861, 628, 211, 628, 214, 628, 359, 628, 628, 693, 565, 693, 693, 693, 861, 723, 211, 723, 214, 723, 350, 723, 359, 723, 723, 762, 124]
+
+        New incoming (death chicken wings, chicken wings n)
+        (762, 211)
+        cluster it joined [u'chicken death wings', u'chicken wings', u'\u2022 chicken', u'f *ck chicken wings', u'bbq chicken', u'chicken wings n', u'devil chicken wings', u'chicken', u'chicken wings i', u'death chicken wings', u'death wings chicken', u'chicken box', u'bbq chicken wings', u'chicken bao']
+        cluster it joined [124, 124, 124, 483, 124, 762, 211, 762, 214, 211, 214, 214, 214, 350, 214, 359, 214, 628, 214, 723, 214, 762, 305, 350, 305, 565, 350, 211, 350, 214, 350, 305, 350, 350, 350, 359, 350, 723, 359, 211, 359, 214, 359, 350, 359, 359, 359, 628, 359, 723, 359, 762, 483, 124, 483, 483, 483, 762, 565, 237, 565, 305, 565, 565, 565, 693, 565, 861, 628, 211, 628, 214, 628, 359, 628, 628, 693, 565, 693, 693, 693, 861, 723, 211, 723, 214, 723, 350, 723, 359, 723, 723, 762, 124, 762, 211]
+
+        New incoming (death chicken wings, chicken wings i)
+        (762, 214)
+        cluster it joined [u'chicken death wings', u'chicken wings', u'\u2022 chicken', u'f *ck chicken wings', u'bbq chicken', u'chicken wings n', u'devil chicken wings', u'chicken', u'chicken wings i', u'death chicken wings', u'death wings chicken', u'chicken box', u'bbq chicken wings', u'chicken bao']
+        cluster it joined [124, 124, 124, 483, 124, 762, 211, 762, 214, 211, 214, 214, 214, 350, 214, 359, 214, 628, 214, 723, 214, 762, 305, 350, 305, 565, 350, 211, 350, 214, 350, 305, 350, 350, 350, 359, 350, 723, 359, 211, 359, 214, 359, 350, 359, 359, 359, 628, 359, 723, 359, 762, 483, 124, 483, 483, 483, 762, 565, 237, 565, 305, 565, 565, 565, 693, 565, 861, 628, 211, 628, 214, 628, 359, 628, 628, 693, 565, 693, 693, 693, 861, 723, 211, 723, 214, 723, 350, 723, 359, 723, 723, 762, 124, 762, 211, 762, 214]
+
+        New incoming (death chicken wings, chicken wings)
+        (762, 359)
+        cluster it joined [u'chicken death wings', u'chicken wings', u'\u2022 chicken', u'f *ck chicken wings', u'bbq chicken', u'chicken wings n', u'devil chicken wings', u'chicken', u'chicken wings i', u'death chicken wings', u'death wings chicken', u'chicken box', u'bbq chicken wings', u'chicken bao']
+        cluster it joined [124, 124, 124, 483, 124, 762, 211, 762, 214, 211, 214, 214, 214, 350, 214, 359, 214, 628, 214, 723, 214, 762, 305, 350, 305, 565, 350, 211, 350, 214, 350, 305, 350, 350, 350, 359, 350, 723, 359, 211, 359, 214, 359, 350, 359, 359, 359, 628, 359, 723, 359, 762, 483, 124, 483, 483, 483, 762, 565, 237, 565, 305, 565, 565, 565, 693, 565, 861, 628, 211, 628, 214, 628, 359, 628, 628, 693, 565, 693, 693, 693, 861, 723, 211, 723, 214, 723, 350, 723, 359, 723, 723, 762, 124, 762, 211, 762, 214, 762, 359]
+
+        New incoming (death chicken wings, chicken death wings)
+        (762, 483)
+        cluster it joined [u'chicken death wings', u'chicken wings', u'\u2022 chicken', u'f *ck chicken wings', u'bbq chicken', u'chicken wings n', u'devil chicken wings', u'chicken', u'chicken wings i', u'death chicken wings', u'death wings chicken', u'chicken box', u'bbq chicken wings', u'chicken bao']
+        cluster it joined [124, 124, 124, 483, 124, 762, 211, 762, 214, 211, 214, 214, 214, 350, 214, 359, 214, 628, 214, 723, 214, 762, 305, 350, 305, 565, 350, 211, 350, 214, 350, 305, 350, 350, 350, 359, 350, 723, 359, 211, 359, 214, 359, 350, 359, 359, 359, 628, 359, 723, 359, 762, 483, 124, 483, 483, 483, 762, 565, 237, 565, 305, 565, 565, 565, 693, 565, 861, 628, 211, 628, 214, 628, 359, 628, 628, 693, 565, 693, 693, 693, 861, 723, 211, 723, 214, 723, 350, 723, 359, 723, 723, 762, 124, 762, 211, 762, 214, 762, 359, 762, 483]
+
+
+        New incoming (death chicken wings, death chicken wings)
+        (762, 762)
+        cluster it joined [u'chicken death wings', u'chicken wings', u'\u2022 chicken', u'f *ck chicken wings', u'bbq chicken', u'chicken wings n', u'devil chicken wings', u'chicken', u'chicken wings i', u'death chicken wings', u'death wings chicken', u'chicken box', u'bbq chicken wings', u'chicken bao']
+        cluster it joined [124, 124, 124, 483, 124, 762, 211, 762, 214, 211, 214, 214, 214, 350, 214, 359, 214, 628, 214, 723, 214, 762, 305, 350, 305, 565, 350, 211, 350, 214, 350, 305, 350, 350, 350, 359, 350, 723, 359, 211, 359, 214, 359, 350, 359, 359, 359, 628, 359, 723, 359, 762, 483, 124, 483, 483, 483, 762, 565, 237, 565, 305, 565, 565, 565, 693, 565, 861, 628, 211, 628, 214, 628, 359, 628, 628, 693, 565, 693, 693, 693, 861, 723, 211, 723, 214, 723, 350, 723, 359, 723, 723, 762, 124, 762, 211, 762, 214, 762, 359, 762, 483, 762, 762]
+
+
+        New incoming (chicken box, chicken)
+        (861, 565)
+        cluster it joined [u'chicken death wings', u'chicken wings', u'\u2022 chicken', u'f *ck chicken wings', u'bbq chicken', u'chicken wings n', u'devil chicken wings', u'chicken', u'chicken wings i', u'death chicken wings', u'death wings chicken', u'chicken box', u'bbq chicken wings', u'chicken bao']
+        cluster it joined [124, 124, 124, 483, 124, 762, 211, 762, 214, 211, 214, 214, 214, 350, 214, 359, 214, 628, 214, 723, 214, 762, 305, 350, 305, 565, 350, 211, 350, 214, 350, 305, 350, 350, 350, 359, 350, 723, 359, 211, 359, 214, 359, 350, 359, 359, 359, 628, 359, 723, 359, 762, 483, 124, 483, 483, 483, 762, 565, 237, 565, 305, 565, 565, 565, 693, 565, 861, 628, 211, 628, 214, 628, 359, 628, 628, 693, 565, 693, 693, 693, 861, 723, 211, 723, 214, 723, 350, 723, 359, 723, 723, 762, 124, 762, 211, 762, 214, 762, 359, 762, 483, 762, 762, 861, 565]
+
+
+        New incoming (chicken box, chicken bao)
+        (861, 693)
+        cluster it joined [u'chicken death wings', u'chicken wings', u'\u2022 chicken', u'f *ck chicken wings', u'bbq chicken', u'chicken wings n', u'devil chicken wings', u'chicken', u'chicken wings i', u'death chicken wings', u'death wings chicken', u'chicken box', u'bbq chicken wings', u'chicken bao']
+        cluster it joined [124, 124, 124, 483, 124, 762, 211, 762, 214, 211, 214, 214, 214, 350, 214, 359, 214, 628, 214, 723, 214, 762, 305, 350, 305, 565, 350, 211, 350, 214, 350, 305, 350, 350, 350, 359, 350, 723, 359, 211, 359, 214, 359, 350, 359, 359, 359, 628, 359, 723, 359, 762, 483, 124, 483, 483, 483, 762, 565, 237, 565, 305, 565, 565, 565, 693, 565, 861, 628, 211, 628, 214, 628, 359, 628, 628, 693, 565, 693, 693, 693, 861, 723, 211, 723, 214, 723, 350, 723, 359, 723, 723, 762, 124, 762, 211, 762, 214, 762, 359, 762, 483, 762, 762, 861, 565, 861, 693]
+
+
+        New incoming (chicken box, chicken box)
+        (861, 861)
+        cluster it joined [u'chicken death wings', u'chicken wings', u'\u2022 chicken', u'f *ck chicken wings', u'bbq chicken', u'chicken wings n', u'devil chicken wings', u'chicken', u'chicken wings i', u'death chicken wings', u'death wings chicken', u'chicken box', u'bbq chicken wings', u'chicken bao']
+        cluster it joined [124, 124, 124, 483, 124, 762, 211, 762, 214, 211, 214, 214, 214, 350, 214, 359, 214, 628, 214, 723, 214, 762, 305, 350, 305, 565, 350, 211, 350, 214, 350, 305, 350, 350, 350, 359, 350, 723, 359, 211, 359, 214, 359, 350, 359, 359, 359, 628, 359, 723, 359, 762, 483, 124, 483, 483, 483, 762, 565, 237, 565, 305, 565, 565, 565, 693, 565, 861, 628, 211, 628, 214, 628, 359, 628, 628, 693, 565, 693, 693, 693, 861, 723, 211, 723, 214, 723, 350, 723, 359, 723, 723, 762, 124, 762, 211, 762, 214, 762, 359, 762, 483, 762, 762, 861, 565, 861, 693, 861, 861]
+
+
+        
+
+
+        New incoming (wada pao, wada pao)
+        (335, 335)
+        New incoming (wada pao, vada pao)
+        (335, 698)
+        cluster it joined [u'vada pao', u'wada pao']
+        cluster it joined [335, 335, 335, 698]
+
+        New incoming (veg vada pao, veg vada pao)
+        (614, 614)
+
+        New incoming (veg vada pao, vada pao)
+        (614, 698)
+        cluster it joined [u'vada pao', u'veg vada pao', u'wada pao']
+        cluster it joined [335, 335, 335, 698, 614, 698]
+    
+        
+        New incoming (vada pav, vada pav)
+        (685, 685)
+
+        New incoming (vada pav, vada pao)
+        (685, 698)
+        cluster it joined [u'vada pao', u'vada pav', u'veg vada pao', u'wada pao']
+        cluster it joined [335, 335, 335, 698, 614, 698, 685, 698]
+        
+        New incoming (vada pao, wada pao)
+        (698, 335)
+        cluster it joined [u'vada pao', u'vada pav', u'veg vada pao', u'wada pao']
+        cluster it joined [335, 335, 335, 698, 614, 698, 685, 698, 698, 335]
+
+        New incoming (vada pao, veg vada pao)
+        (698, 614)
+        cluster it joined [u'vada pao', u'vada pav', u'veg vada pao', u'wada pao']
+        cluster it joined [335, 335, 335, 698, 614, 698, 685, 698, 698, 335, 698, 614]
+
+        New incoming (vada pao, vada pav)
+        (698, 685)
+        cluster it joined [u'vada pao', u'vada pav', u'veg vada pao', u'wada pao']
+        cluster it joined [335, 335, 335, 698, 614, 698, 685, 698, 698, 335, 698, 614, 698, 685]
+
+        New incoming (vada pao, vada pao)
+        (698, 698)
+        cluster it joined [u'vada pao', u'vada pav', u'veg vada pao', u'wada pao']
+        cluster it joined [335, 335, 335, 698, 614, 698, 685, 698, 698, 335, 698, 614, 698, 685, 698, 698]
+
+        New incoming (vada pao, vada pao bao)
+        (698, 703)
+        cluster it joined [u'vada pao', u'vada pao bao', u'vada pav', u'veg vada pao', u'wada pao']
+        cluster it joined [335, 335, 335, 698, 614, 698, 685, 698, 698, 335, 698, 614, 698, 685, 698, 698, 698, 703]
+        
+        New incoming (vada pao bao, vada pao)
+        (703, 698)
+        cluster it joined [u'vada pao', u'vada pao bao', u'vada pav', u'veg vada pao', u'wada pao']
+        cluster it joined [335, 335, 335, 698, 614, 698, 685, 698, 698, 335, 698, 614, 698, 685, 698, 698, 698, 703, 703, 698]
+
+        New incoming (vada pao bao, vada pao bao)
+        (703, 703)
+        cluster it joined [u'vada pao', u'vada pao bao', u'vada pav', u'veg vada pao', u'wada pao']
+        cluster it joined [335, 335, 335, 698, 614, 698, 685, 698, 698, 335, 698, 614, 698, 685, 698, 698, 698, 703, 703, 698, 703, 703]
+
+
+        New incoming (island iced tea, island iced tea)
+        (388, 388)
+        New incoming (island iced tea, island tea)
+        (388, 449)
+        cluster it joined [u'island tea', u'island iced tea']
+        cluster it joined [388, 388, 388, 449]
+
+        (388, 650)
+        cluster it joined [u'island tea', u'island teas', u'island iced tea']
+        cluster it joined [388, 388, 388, 449, 388, 650]
+
+        New incoming (island iced tea, island ice tea)
+        (388, 651)
+        cluster it joined [u'island tea', u'island teas', u'island ice tea', u'island iced tea']
+        cluster it joined [388, 388, 388, 449, 388, 650, 388, 651]
+
+        New incoming (island iced tea, long island iced tea)
+        (388, 1026)
+        cluster it joined [u'long island iced tea', u'island iced tea', u'long long island iced teas', u'longest long island iced teas', u'longest long island iced tea', u'longest island ice teas']
+        cluster it joined [113, 113, 113, 953, 113, 971, 113, 1015, 113, 1026, 388, 1026]
+
+
+        New incoming (island tea, island iced tea)
+        (449, 388)
+        cluster it joined [u'island tea', u'long island iced tea', u'island iced tea', u'long long island iced teas', u'longest long island iced teas', u'longest long island iced tea', u'longest island ice teas']
+        cluster it joined [113, 113, 113, 953, 113, 971, 113, 1015, 113, 1026, 388, 1026, 449, 388]
+        New incoming (island tea, island tea)
+        (449, 449)
+        cluster it joined [u'island tea', u'long island iced tea', u'island iced tea', u'long long island iced teas', u'longest long island iced teas', u'longest long island iced tea', u'longest island ice teas']
+        cluster it joined [113, 113, 113, 953, 113, 971, 113, 1015, 113, 1026, 388, 1026, 449, 388, 449, 449]
+
+        New incoming (island tea, island teas)
+        (449, 650)
+        cluster it joined [u'island tea', u'long island iced tea', u'island iced tea', u'island teas', u'long long island iced teas', u'longest long island iced teas', u'longest long island iced tea', u'longest island ice teas']
+        cluster it joined [113, 113, 113, 953, 113, 971, 113, 1015, 113, 1026, 388, 1026, 449, 388, 449, 449, 449, 650]
+
+
+        New incoming (island ice tea lovers, island ice tea lovers)
+        (613, 613)
+
+        New incoming (island ice tea lovers, island ice tea)
+        (613, 651)
+        cluster it joined [u'island tea', u'island teas', u'island ice tea', u'island iced tea', u'island ice tea lovers']
+        cluster it joined [388, 388, 388, 449, 388, 650, 388, 651, 613, 651]
+
+    New incoming (island teas, island iced tea)
+    (650, 388)
+    cluster it joined [u'island tea', u'long island iced tea', u'island iced tea', u'island teas', u'long long island iced teas', u'longest long island iced teas', u'longest long island iced tea', u'longest island ice teas']
+    cluster it joined [113, 113, 113, 953, 113, 971, 113, 1015, 113, 1026, 388, 1026, 449, 388, 449, 449, 449, 650, 650, 388]
+
+    New incoming (island teas, island tea)
+    (650, 449)
+    cluster it joined [u'island tea', u'long island iced tea', u'island iced tea', u'island teas', u'long long island iced teas', u'longest long island iced teas', u'longest long island iced tea', u'longest island ice teas']
+    cluster it joined [113, 113, 113, 953, 113, 971, 113, 1015, 113, 1026, 388, 1026, 449, 388, 449, 449, 449, 650, 650, 388, 650, 449]
+
+    New incoming (island teas, island teas)
+    (650, 650)
+    cluster it joined [u'island tea', u'long island iced tea', u'island iced tea', u'island teas', u'long long island iced teas', u'longest long island iced teas', u'longest long island iced tea', u'longest island ice teas']
+    cluster it joined [113, 113, 113, 953, 113, 971, 113, 1015, 113, 1026, 388, 1026, 449, 388, 449, 449, 449, 650, 650, 388, 650, 449, 650, 650]
+
+
+
+
+    New incoming (island ice tea, island iced tea)
+    (651, 388)
+    cluster it joined [u'island tea', u'long island iced tea', u'island ice tea', u'island iced tea', u'island teas', u'long long island iced teas', u'longest long island iced teas', u'longest long island iced tea', u'longest island ice teas']
+    cluster it joined [113, 113, 113, 953, 113, 971, 113, 1015, 113, 1026, 388, 1026, 449, 388, 449, 449, 449, 650, 650, 388, 650, 449, 650, 650, 651, 388]
+
+    New incoming (island ice tea, island ice tea lovers)
+    (651, 613)
+    cluster it joined [u'island tea', u'long island iced tea', u'island ice tea', u'island iced tea', u'island ice tea lovers', u'island teas', u'long long island iced teas', u'longest long island iced teas', u'longest long island iced tea', u'longest island ice teas']
+    cluster it joined [113, 113, 113, 953, 113, 971, 113, 1015, 113, 1026, 388, 1026, 449, 388, 449, 449, 449, 650, 650, 388, 650, 449, 650, 650, 651, 388, 651, 613]
+
+    New incoming (island ice tea, island ice tea)
+    (651, 651)
+    cluster it joined [u'island tea', u'long island iced tea', u'island ice tea', u'island iced tea', u'island ice tea lovers', u'island teas', u'long long island iced teas', u'longest long island iced teas', u'longest long island iced tea', u'longest island ice teas']
+
+    New incoming (island ice tea, island ice tea tops)
+    (651, 773)
+    cluster it joined [u'island tea', u'long island iced tea', u'island ice tea', u'island iced tea', u'island ice tea lovers', u'island teas', u'long long island iced teas', u'longest long island iced teas', u'longest long island iced tea', u'longest island ice teas', u'island ice tea tops']
+    cluster it joined [113, 113, 113, 953, 113, 971, 113, 1015, 113, 1026, 388, 1026, 449, 388, 449, 449, 449, 650, 650, 388, 650, 449, 650, 650, 651, 388, 651, 613, 651, 651, 651, 773]
+
+    New incoming (island ice tea, long island ice tea)
+    (651, 908)
+    cluster it joined [u'island tea', u'long island iced tea', u'island ice tea', u'island iced tea', u'island ice tea lovers', u'island teas', u'long long island iced teas', u'long island ice tea', u'longest long island iced teas', u'longest long island iced tea', u'longest island ice teas', u'island ice tea tops']
+    cluster it joined [113, 113, 113, 953, 113, 971, 113, 1015, 113, 1026, 388, 1026, 449, 388, 449, 449, 449, 650, 650, 388, 650, 449, 650, 650, 651, 388, 651, 613, 651, 651, 651, 773, 651, 908]
+
+New incoming (long island ice tea, island ice tea)
+(908, 651)
+cluster it joined [u'island tea', u'long island iced tea', u'island ice tea', u'island iced tea', u'island ice tea lovers', u'island teas', u'long long island iced teas', u'long island ice tea', u'longest long island iced teas', u'longest long island iced tea', u'longest island ice teas', u'island ice tea tops']
+cluster it joined [113, 113, 113, 953, 113, 971, 113, 1015, 113, 1026, 388, 1026, 449, 388, 449, 449, 449, 650, 650, 388, 650, 449, 650, 650, 651, 388, 651, 613, 651, 651, 651, 773, 651, 908, 773, 651, 773, 773, 908, 651]
+
+        New incoming (long island ice tea, long island ice tea)
+        (908, 908)
+        cluster it joined [u'island tea', u'long island iced tea', u'island ice tea', u'island iced tea', u'island ice tea lovers', u'island teas', u'long long island iced teas', u'long island ice tea', u'longest long island iced teas', u'longest long island iced tea', u'longest island ice teas', u'island ice tea tops']
+        cluster it joined [113, 113, 113, 953, 113, 971, 113, 1015, 113, 1026, 388, 1026, 449, 388, 449, 449, 449, 650, 650, 388, 650, 449, 650, 650, 651, 388, 651, 613, 651, 651, 651, 773, 651, 908, 773, 651, 773, 773, 908, 651, 908, 908]
+
+        New incoming (long island ice tea, longest island ice teas)
+        (908, 953)
+        cluster it joined [u'island tea', u'long island iced tea', u'island ice tea', u'island iced tea', u'island ice tea lovers', u'island teas', u'long long island iced teas', u'long island ice tea', u'longest long island iced teas', u'longest long island iced tea', u'longest island ice teas', u'island ice tea tops']
+        cluster it joined [113, 113, 113, 953, 113, 971, 113, 1015, 113, 1026, 388, 1026, 449, 388, 449, 449, 449, 650, 650, 388, 650, 449, 650, 650, 651, 388, 651, 613, 651, 651, 651, 773, 651, 908, 773, 651, 773, 773, 908, 651, 908, 908, 908, 953]
+
+        New incoming (long island ice tea, long long island iced teas)
+        (908, 971)
+        cluster it joined [u'island tea', u'long island iced tea', u'island ice tea', u'island iced tea', u'island ice tea lovers', u'island teas', u'long long island iced teas', u'long island ice tea', u'longest long island iced teas', u'longest long island iced tea', u'longest island ice teas', u'island ice tea tops']
+        cluster it joined [113, 113, 113, 953, 113, 971, 113, 1015, 113, 1026, 388, 1026, 449, 388, 449, 449, 449, 650, 650, 388, 650, 449, 650, 650, 651, 388, 651, 613, 651, 651, 651, 773, 651, 908, 773, 651, 773, 773, 908, 651, 908, 908, 908, 953, 908, 971]
+
+        New incoming (long island ice tea, long island iced tea)
+        (908, 1026)
+        cluster it joined [u'island tea', u'long island iced tea', u'island ice tea', u'island iced tea', u'island ice tea lovers', u'island teas', u'long long island iced teas', u'long island ice tea', u'longest long island iced teas', u'longest long island iced tea', u'longest island ice teas', u'island ice tea tops']
+        cluster it joined [113, 113, 113, 953, 113, 971, 113, 1015, 113, 1026, 388, 1026, 449, 388, 449, 449, 449, 650, 650, 388, 650, 449, 650, 650, 651, 388, 651, 613, 651, 651, 651, 773, 651, 908, 773, 651, 773, 773, 908, 651, 908, 908, 908, 953, 908, 971, 908, 1026]
+
+
+        New incoming (parle g biscuits, parle g biscuits)
+        (701, 701)
+        """

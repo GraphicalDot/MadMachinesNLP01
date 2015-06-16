@@ -282,8 +282,6 @@ class ProductionHeuristicClustering:
                 new_list = zip(indices[0], indices[1])
 
                 found = False
-                test_new_list = list()
-
                 for e in new_list:
                         for j in self.clusters:
                                 if bool(set.intersection(set(e), set(j))):
@@ -295,8 +293,25 @@ class ProductionHeuristicClustering:
                                 found = False
                                 
                         found = False
-                #Removing duplicate elements from clusters list
+                
                 self.clusters = [list(set(element)) for element in self.clusters if len(element)> 2]
+                found = False
+                new_clusters = list()
+
+                for e in self.clusters:
+                        for j in new_clusters:
+                                if bool(set.intersection(set(e), set(j))):
+                                        j.extend(e)
+                                        found = True
+                                        break
+                        if not found:    
+                                new_clusters.append(list(e))
+                                found = False
+                                
+                        found = False
+
+                self.clusters = new_clusters
+                #Removing duplicate elements from clusters list
                 return 
 
         #@print_execution
