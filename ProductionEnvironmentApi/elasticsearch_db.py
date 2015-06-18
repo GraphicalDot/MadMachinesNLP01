@@ -5,6 +5,26 @@ Dated: 9 June, 2015
 Purpose: This is the script that will be used to populate elastic search on remote node
 The purpose of the elastic search to solve the problem of query resolution
 
+Configuring Details:
+        each index in Elasticsearch is allocated 5 primary shards and 1 replica which means that if you have at least two nodes in\
+                your cluster, your index will have 5 primary shards and another 5 replica shards (1 complete replica) for a total of 10 shards per index.
+    
+        So we will have 26 indexes char-a, char-b etc
+        Then we will have two types 
+        char-a/dishes/
+        char-a/restaurants/
+
+        char-a/dishes/ will have all the dishes starting with character "a"
+        char-a/restaurants/ will have all the restaurants with their name starting with character "a"
+
+        
+
+
+        so in case of scaling we can move indexes and shards, so at the full capacity we can have
+        130 nodes, 5 shards for each dish-* and 5 replica set for each.
+
+
+
 
 https://www.elastic.co/guide/en/elasticsearch/reference/current/_executing_searches.html
 ##To match exact phrase
@@ -28,6 +48,32 @@ In contrast, this example composes two match queries and returns all accounts co
                         { "match" :{"address": "lane" } }
                         ]}
                 }}
+
+
+The cache is not enabled by default, but can be enabled when creating a new index as follows:
+
+    curl -XPUT localhost:9200/my_index -d'
+    {
+      "settings": {
+          "index.cache.query.enable": true
+            }
+            }
+            '
+
+#To list all the indices
+http://192.168.1.14:9200/_cat/indices?v
+
+
+#To print mapping
+http://192.168.1.14:9200/food/_mapping?pretty=true
+
+
+
+
+Schema:
+    Elastic search
+    To start with we will have some shards
+
 """
 
 

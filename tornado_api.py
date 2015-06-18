@@ -308,7 +308,8 @@ class Query(tornado.web.RequestHandler):
 
                 text = self.get_argument("text")
                 if not text: self.finish(Error())
-                
+               
+                food_text = None
                 ambience_text = self.get_argument("text")
                 service_text = self.get_argument("text")
                 cost_text = self.get_argument("text")
@@ -323,9 +324,40 @@ class Query(tornado.web.RequestHandler):
 
         
         @run_on_executor
-        def _exe(self, eatery_id, category):
-                result = QueryResolution(food_text, ambience_text, service_text, cost_text)
-                return result
+        def _exe(self, food_text, ambience_text, service_text, cost_text):
+                eatery_id = "308322"
+                category = "food"
+                celery_chain = (EachEateryWorker.s(eatery_id)| MappingListWorker.s(eatery_id, PerReviewWorker.s()))()
+
+
+                while celery_chain.status != "SUCCESS":
+                        pass
+
+                try:
+                        for __id in celery_chain.children[0]:
+                                while __id.status != "SUCCESS":
+                                        pass
+                except IndexError as e:
+                        pass
+
+
+                do_cluster_result = DoClustersWorker.apply_async(args=[eatery_id])
+
+                while do_cluster_result.status != "SUCCESS":
+                        pass
+                eatery_instance = MongoScriptsEateries(eatery_id)
+                result = eatery_instance.get_noun_phrases(category, 40)
+                for element in result:
+                        element.update({"superpositive": element.get("super-positive") })
+                        element.update({"supernegative": element.get("super-negative")})
+                        element.pop("super-negative")
+                        element.pop("super-positive")
+                
+                self.write({"success": True,
+			"error": False,
+			"result": result,
+                        })
+                self.finish()
 
 class GetWordCloud(tornado.web.RequestHandler):
         @property
@@ -400,6 +432,9 @@ class GetWordCloud(tornado.web.RequestHandler):
                         "result": {"noun_phrases": sorted_np, "keys": keys},
 			})
                 """
+                for element in __result:
+                        print element, "\n\n"
+
                 self.write({"success": True,
 			"error": False,
 			"result": __result,

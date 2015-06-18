@@ -233,8 +233,7 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 	ChangingBarLayout: function(_data){
 		/* 
 		 * http://bl.ocks.org/mbostock/1134768
-		 
-		data =  [[u'vada pao bao', u'neutral', u'2015-01-07 13:23:45'],
+		 [[u'vada pao bao', u'neutral', u'2015-01-07 13:23:45'],
  		[u'chilli paneer', u'neutral', u'2015-01-07 13:23:45'],
 		[u'mezze platter', u'neutral', u'2015-01-07 13:23:45'],
 		[u'chicken burger', u'neutral', u'2015-01-07 17:10:56'],
@@ -247,9 +246,9 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 		[u'vada pao bao', u'positive', u'2015-01-08 23:23:55'],
 		[u'keema pao', u'super-positive', u'2015-01-08 23:23:55'],
 		[u'pepper china box', u'super-positive', u'2015-01-08 23:23:55']] 
-
-
 		 */
+
+
 		
 
 		noun_phrases = _data.noun_phrases;
@@ -434,7 +433,7 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 				.data(DATA(null, LEVEL))
 			        .enter().append("g")
 				//.style("stroke", function(d, i) { return d3.rgb(i).darker(); })
-				.attr("class", function(d, i) { return d.name.replace(" ", "_")})
+				.attr("id", function(d, i) { return d.name})
 				.attr("transform", function(d, i) { return "translate(0," + i * barHeight + ")"; })
 		
 

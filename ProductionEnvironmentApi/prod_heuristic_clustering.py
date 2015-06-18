@@ -346,6 +346,7 @@ class ProductionHeuristicClustering:
                 timeline = list()
                
                 cluster_names = [self.keys[element] for element in cluster_list]
+                whole_cluster_names_n_keys = [self.merged_sentiment_nps.get(self.keys[element]) for element in cluster_list]
 
                 for element in cluster_list:
                         name = self.keys[element]    
@@ -369,7 +370,7 @@ class ProductionHeuristicClustering:
                 name = filter(lambda x: whole[x] == max(whole.values()), whole.keys())[0]
 
                 return {"name": name, "positive": positive, "negative": negative, "neutral": neutral, 
-                        "super-negative": super_negative, "super-positive": super_positive, "similar": cluster_names,
+                        "super-negative": super_negative, "super-positive": super_positive, "similar": whole_cluster_names_n_keys,
                         "timeline": timeline}
 
         #@print_execution

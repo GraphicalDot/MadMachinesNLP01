@@ -51,6 +51,9 @@ App.MainView = Backbone.View.extend({
 		jqhr.done(function(data){
 			if (data.error == false){
 				console.log(data.result)
+				var subView = new App.BarChartView();
+				subView.render().el;	
+								
 				/*
 				$.each(data.result, function(iter, eatery){
 					var subView = new App.AppendRestaurants({"eatery": eatery});
@@ -89,113 +92,56 @@ App.MainView = Backbone.View.extend({
 
 });
 
-/*
-
-App.AppendRestaurants = Backbone.View.extend({
-	template: window.template("append-restaurant"),
-	tagName: "tr",
-	eatery_name: function(){return this.model.eatery.eatery_name},
-	eatery_id: function(){return this.model.eatery.eatery_id},
-	reviews: function(){return this.model.eatery.reviews},
-	area: function(){return this.model.eatery.area_or_city},
-	initialize: function(options){
-		this.model = this.options;
-		console.log(this.eatery_name());
-		console.log(this.reviews());
-	},
-
-	render: function(){
-		this.$el.append(this.template(this));
-		this.$(".change_eatery_id").hovercard({
-			detailsHTML: '<p><b>' + "Reviews:" + this.reviews() + '</b>'+ '<br>'+ '<b> City: '+ this.area() + '</b></p>',
-			width: 90,
-			openOnTop: true,
-			height: 30,
-		});
-		return this;	
-	
-	},
 
 
-});
-
-App.RootRowView = Backbone.View.extend({
-        tagName: "fieldset",
-        className: "well plan each_row",
-        template: window.template("root-row"),
-        sentiment: function(){return this.model.sentiment},
-        sentence: function(){return this.model.sentence},
-
+App.BarChartView = Backbone.View.extend({
         initialize: function(options){
                 var self = this;
+		var ctx = document.getElementById("myChart").getContext("2d");
+		var data = {
+			    labels: ["January", "February", "March", "April", "May", "June", "July"],
+	    datasets: [
+	        {
+			            label: "My First dataset",
+	            fillColor: "rgba(220,220,220,0.5)",
+	            strokeColor: "rgba(220,220,220,0.8)",
+	            highlightFill: "rgba(220,220,220,0.75)",
+	            highlightStroke: "rgba(220,220,220,1)",
+	            data: [65, 59, 80, 81, 56, 55, 40]
+	        },
+	        {
+			            label: "My Second dataset",
+	            fillColor: "rgba(151,187,205,0.5)",
+	            strokeColor: "rgba(151,187,205,0.8)",
+	            highlightFill: "rgba(151,187,205,0.75)",
+	            highlightStroke: "rgba(151,187,205,1)",
+		                data: [28, 48, 40, 19, 86, 27, 90]
+					        }
+    ]
+		};
 		
-                this.sentiments = {"super-positive": 1, "positive": 2, "neutral": 3, "negative": 4, "super-negative": 5, "mixed": 6};
-		this.model = options.model;
+		var myBarChart = new Chart(ctx).Bar(data, options);
+		//this.model = options.model;
 	},
 
         render: function(){
-                this.$el.append(this.template(this));
-                this.$("#ddpFiltersentiment option[value='" + this.sentiments[this.sentiment()] + "']").attr("selected", "selected")
+                //this.$el.append(this.template(this));
 		return this;
         },
 
         events: {
-                    "change #ddpFilter" : "changeTag",
-                    "change #ddpFiltersentiment" : "changeSentiment",
 		    },
 
 
 	changeSentiment: function(event){
-                var self = this;
-                event.preventDefault()
-                sentence = self.sentence();
-                changed_polarity = self.$('#ddpFiltersentiment option:selected').text();
-                console.log(self.sentence())
-                console.log(changed_polarity)
-		var jqhr = $.post(window.update_sentence, {"sentence": sentence, "value": changed_polarity, "whether_allowed": false})
-                jqhr.done(function(data){
-                        console.log(data.success)
-                        if (data.success == true){
-                                bootbox.alert(data.messege)
-                                }
-                        else {
-                                bootbox.alert(data.messege)
-                                }
-                        })
-
-                jqhr.fail(function(){
-                        bootbox.alert("Either the api or internet connection is not working, Try again later")
-                                })
-        
 				},
 
 
 	changeTag: function(event){
-                var self = this;
-                event.preventDefault()
-                changed_tag = self.$('#ddpFilter option:selected').text();
-                sentence = self.sentence();
-
-                console.log(self.sentence())
-                console.log(changed_tag)
-		var jqhr = $.post(window.update_sentence, {"sentence": sentence, "value": changed_tag, "whether_allowed": false})
-                jqhr.done(function(data){
-                        if (data.success == true){
-                                bootbox.alert(data.messege)
-                        }
-                        else {
-                                bootbox.alert(data.messege)
-                                }
-                        })
-
-                jqhr.fail(function(){
-                                bootbox.alert("Either the api or internet connection is not working, Try again later")
-                        })
         },
 
 });
 
-*/
 });
 
 
