@@ -74,6 +74,30 @@ Schema:
     Elastic search
     To start with we will have some shards
 
+
+Task1:
+        To incorporate new dishes for the same restaurant
+
+Task2:
+        Auto complete options as the user types in the string to be searched
+
+
+Task3: Match the strng like "chiken tikkka" with the dishes stored in the database
+
+
+Task4: Match other factors like service, ambience, and cost with the dishes
+
+
+Task5:
+     
+
+
+Task3:
+        
+
+
+
+
 """
 
 
@@ -103,6 +127,15 @@ class ElasticSearchScripts(object):
                 service:
                 """
                 return 
+
+
+        @staticmethod
+        def upde_dish_for_rest(dish_name, eatery_id, eatery_name):
+                """
+                This method takes in three arguments dish_name, eatery_name, eatery_id
+                """
+
+
 
 
         def flush(self, index_name):

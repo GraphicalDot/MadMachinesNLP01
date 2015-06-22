@@ -432,15 +432,34 @@ class GetWordCloud(tornado.web.RequestHandler):
                         "result": {"noun_phrases": sorted_np, "keys": keys},
 			})
                 """
-                for element in __result:
-                        print element, "\n\n"
+                __timeline_result = list()
+                for e in __result:
+                        for mention_time in e["timeline"]:
+                                __timeline_result.append([mention_time[1], (0, 1)[mention_time[0] == "super-positive"], (0, 1)[mention_time[0] == "positive"], (0, 1)[mention_time[0] == "neutral"], (0, 1)[mention_time[0] == "negative"], (0, 1)[mention_time[0] == "super-negative"],  e.get("name")])
 
+                new_time_line = sorted(__timeline_result, key=lambda x: x[0])
+              
+
+                __list = list()
+                __list.append(new_time_line[0])
+                for element in new_time_line[1:]:
+                        if element[0].split(" ")[0] == __list[-1][0][0].split(" ")[0]:
+                                __list[-1].append(element)
+                        else:
+                                __list.append([element])
+
+                self.write({"success": True,
+			"error": False,
+			"result": __list,
+                        })
+                self.finish()
+                """
                 self.write({"success": True,
 			"error": False,
 			"result": __result,
                         })
                 self.finish()
-
+                """
         
         @run_on_executor
         def _exe(self, eatery_id, category):

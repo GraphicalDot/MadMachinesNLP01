@@ -5,6 +5,12 @@
 @import url(http://fonts.googleapis.com/css?family=Marko+One);
 
 
+ .grid-line{
+	     stroke: blue;
+	         shape-rendering: crispEdges;
+		     stroke-opacity: .2;
+	     }
+
 
 .searchbox{
     background-color:#fffbf8;

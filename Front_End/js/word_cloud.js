@@ -150,8 +150,8 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 		this.model = options.model
 		console.log(this.model)
 		this._data = options.model
-		//this.ChangingBarLayout(this.model);
-		this.BarLayout(this.model);
+		this.StackLayout(this.model);
+		//this.BarLayout(this.model);
 		//this.ForceLayout(this.model);
 		},
 	
@@ -230,164 +230,195 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 								}); }); }; }); }; }); }; }); return newDataSet}
 		},
 
-	ChangingBarLayout: function(_data){
+	StackLayout: function(_data){
+		console.log(_data)
 		/* 
 		 * http://bl.ocks.org/mbostock/1134768
-		 
-		data =  [[u'vada pao bao', u'neutral', u'2015-01-07 13:23:45'],
- 		[u'chilli paneer', u'neutral', u'2015-01-07 13:23:45'],
-		[u'mezze platter', u'neutral', u'2015-01-07 13:23:45'],
-		[u'chicken burger', u'neutral', u'2015-01-07 17:10:56'],
-		[u'china box', u'neutral', u'2015-01-07 18:32:04'],
-		[u'vada pao bao', u'negative', u'2015-01-07 18:32:04'],
-		[u'china box', u'super-positive', u'2015-01-07 23:37:34'],
-		[u'chicken wings', u'super-positive', u'2015-01-08 13:57:09'],
-		[u'mezze platter', u'super-positive', u'2015-01-08 13:57:09'],
-		[u'oreo mud pot', u'super-positive', u'2015-01-08 13:57:09'],
-		[u'vada pao bao', u'positive', u'2015-01-08 23:23:55'],
-		[u'keema pao', u'super-positive', u'2015-01-08 23:23:55'],
-		[u'pepper china box', u'super-positive', u'2015-01-08 23:23:55']] 
-
-
-		 */
+		*/	 
+		 var margin = {
+			 'top': 30,
+			 'right': 10,
+			 'bottom': 10,
+			 'left': 50};
 		
-
-		noun_phrases = _data.noun_phrases;
-		var noun_phrases = [ {'name': 'strawberry cheesecake', 'ptime': '2014-08-12 22:12:34', 'positive': 1, 'negative': 0, 
-			'supernegative': 0, 'neutral': 0, 'superpositive': 0}, 
-			     {'name': 'strawberry cheesecake', 'ptime': '2014-08-11 18:51:39', 'positive': 0, 'negative': 0, 
-				     'supernegative': 0, 'neutral': 1, 'superpositive': 0}, 
-			     {'name': 'strawberry cheesecake', 'ptime': '2014-08-03 18:01:10', 'positive': 1, 'negative': 0, 
-				     'supernegative': 0, 'neutral': 0, 'superpositive': 0}, 
-			     {'name': 'strawberry cheesecake', 'ptime': '2014-08-01 21:51:03', 'positive': 0, 'negative': 0, 
-				     'supernegative': 0, 'neutral': 1, 'superpositive': 0}, 
-			     {'name': 'strawberry cheesecake', 'ptime': '2014-11-21 12:01:09', 'positive': 0, 'negative': 0, 
-				     'supernegative': 0, 'neutral': 1, 'superpositive': 0}, 
-			     {'name': 'loaded nachos', 'ptime': '2014-08-23 00:48:53', 'positive': 1, 'negative': 0, 
-				     'supernegative': 0, 'neutral': 0, 'superpositive': 0}, 
-			     {'name': 'loaded nachos', 'ptime': '2014-08-01 21:51:03', 'positive': 1, 'negative': 0, 
-				     'supernegative': 0, 'neutral': 0, 'superpositive': 0}, 
-			     {'name': 'loaded nachos', 'ptime': '2014-12-09 00:20:36', 'positive': 1, 'negative': 0, 
-				     'supernegative': 0, 'neutral': 0, 'superpositive': 0}, 
-			     {'name': 'loaded nachos', 'ptime': '2014-10-06 14:06:25', 'positive': 1, 'negative': 0, 
-				     'supernegative': 0, 'neutral': 0, 'superpositive': 0}, 
-			     {'name': 'loaded nachos', 'ptime': '2014-09-25 11:01:33', 'positive': 1, 'negative': 0, 
-				     'supernegative': 0, 'neutral': 0, 'superpositive': 0}, 
-			     {'name': 'loaded nachos', 'ptime': '2014-09-26 15:49:53', 'positive': 0, 'negative': 0, 
-				     'supernegative': 0, 'neutral': 1, 'superpositive': 0}, 
-			     {'name': 'deconstructed moscow mule', 'ptime': '2014-08-23 00:48:53', 'positive': 1, 'negative': 0, 
-				     'supernegative': 0, 'neutral': 0, 'superpositive': 0}, 
-			     {'name': 'deconstructed moscow mule', 'ptime': '2014-11-02 12:24:41', 'positive': 0, 'negative': 0, 
-				     'supernegative': 0, 'neutral': 1, 'superpositive': 0}]
-
-		
-		
-		keys = _data.keys;
-		var keys = [{'name': 'strawberry cheesecake'}, {'name': 'deconstructed moscow mule'}, {'name': 'loaded nachos'}]
-		
-		console.log(keys)
-		_this = this;
 		/*
-		function DATA(value, LEVEL){return  _this.dataFunction(value, LEVEL)}
-		LEVEL = 0
+		x = d3.scale.ordinal().rangeRoundBands([0, width - margin.right - margin.left]),
+		y = d3.scale.linear().range([0, height - margin.top - margin.bottom]),
+		z = d3.scale.ordinal().range(["green", "yellowgreen", "PaleTurquoise", "lightpink", "red"]),	       
 		
-		data = DATA(null, LEVEL);
-		*/
-		var RScale = d3.scale.linear()
-			 	.range([0, width-200])
-				//.domain([0, d3.max(keys, function(d) { return d.r; })])
-				.domain([0, 10])
-		var width = $(window).width() - $(".append_eatery").width()*1.5;
-		var height = $(window).height();
-		var barHeight = 25;
+		n = 5, // number of layers
+		m  = _data.length, // number of samples per layer
+		stack = d3.layout.stack()
+		layers = stack(d3.range(n).map(function() { return bumpLayer(m, .1); })),
+		yGroupMax = d3.max(layers, function(layer) { return d3.max(layer, function(d) { return d.y; }); }),
+		yStackMax = d3.max(layers, function(layer) { return d3.max(layer, function(d) { return d.y0 + d.y; }); });
 
-		var transitionTime = 50;
+		
 		var svg = d3.select(".main-body").append("svg")
 			.attr("width", width)
-			.attr("height", height*1.5)
-			.style("shape-rendering", "crispEdges")	
-			.style("margin-top", height/15)	
+			.attr("height", height)
+			//.style("shape-rendering", "crispEdges")	
+			//.style("margin-top", height/15)	
+			.attr("margin", margin)
+		*/
+		var data = [
+    
+		{
+        "key": "Key_3",
+        "values": [
+            {"x": "Cols # 21",  "y": 30},
+            {"x": "Cols # 9",  "y": 39},
+            {"x": "Cols # 8",  "y": 36},
+            {"x": "Cols # 16",  "y": 31},
+            {"x": "Cols # 43",  "y": 35},
+            {"x": "Cols # 49",  "y": 34}, 
+            {"x": "Cols # 19",  "y": 34},
+            {"x": "Cols # 29",  "y": 34},
+            {"x": "Cols # 39",  "y": 34},
+            {"x": "Cols # 59",  "y": 34},
+            {"x": "Cols # 69",  "y": 34}
+        ]
+    },
+		{
+        "key": "Key_2",
+        "values": [
+            {"x": "Cols # 21",  "y": 70},
+            {"x": "Cols # 9",  "y": 39},
+            {"x": "Cols # 8",  "y": 96},
+            {"x": "Cols # 16",  "y": 21},
+            {"x": "Cols # 43",  "y": 95},
+            {"x": "Cols # 49",  "y": 24},
+            {"x": "Cols # 19",  "y": 34},
+            {"x": "Cols # 29",  "y": 34},
+            {"x": "Cols # 39",  "y": 34},
+            {"x": "Cols # 59",  "y": 34},
+            {"x": "Cols # 69",  "y": 34}
+        ]
+    },
+    {
+        "key": "Key_1",
+        "values": [
+            {"x": "Cols # 21",  "y": 93},
+            {"x": "Cols # 9",  "y": 73},
+            {"x": "Cols # 8",  "y": 94},
+            {"x": "Cols # 16",  "y": 80},
+            {"x": "Cols # 43",  "y": 56},
+            {"x": "Cols # 49",  "y": 83},
+            {"x": "Cols # 19",  "y": 34},
+            {"x": "Cols # 29",  "y": 34},
+            {"x": "Cols # 39",  "y": 34},
+            {"x": "Cols # 59",  "y": 34},
+            {"x": "Cols # 69",  "y": 34}
+        ]
+    },
+    {
+        "key": "Key_0",
+        "values": [
+            {"x": "Cols # 21",  "y": 38},
+            {"x": "Cols # 9",  "y": 88},
+            {"x": "Cols # 8",  "y": 7},
+            {"x": "Cols # 16",  "y": 88},
+            {"x": "Cols # 43",  "y": 38},
+            {"x": "Cols # 49",  "y": 77}, 
+            {"x": "Cols # 19",  "y": 34},
+            {"x": "Cols # 29",  "y": 34},
+            {"x": "Cols # 39",  "y": 34},
+            {"x": "Cols # 59",  "y": 34},
+            {"x": "Cols # 69",  "y": 34}
+        ]
+    }
+]
+		var width = $(window).width() - $(".append_eatery").width()*1.5;
+		var height = $(window).height();
+
+    		keys = data[0].values.map(function(item){return item.x }),
+    		stack = d3.layout.stack().values(function(d){ return d.values;}),
+    		layers = stack(data),
+    		yMax = d3.max(layers, function(layer) { return d3.max(layer.values, function(d) { return d.y0 + d.y; }); })
+
+		var totals = {};
+		data.forEach(function(series){
+			series.values.forEach(function(item){
+					totals[item.x] = (totals[item.x] || 0 ) + item.y
+      				})
+    			})
+
+		transitionTime = 300;
+		var x = d3.scale.ordinal()
+			.domain(keys)
+			.rangeRoundBands([0, width], .08);
 
 
+		var y = d3.scale.linear()
+			.domain([0, yMax])
+			.range([height, 0]);
 
-			
-		$.each(noun_phrases, function(iter, key){
-			update(key)	
-		})
+		var color = d3.scale.linear()
+			.domain([0, data.length - 1])
+			.range(["#f00", "#00f"]);
 
-		function update(__key){
-			var bar = svg.selectAll("g")
-				.data(keys, function(d, i){return d.name})
-			        
-			bar.enter().append("g")
-				.attr("class",function(d) { return d.name })
-			bar.exit().remove();
-			
-			
-			rects = bar.selectAll("rect")
-				.data(function(d){return d.name})
+		var yAxis = d3.svg.axis()
+			.scale(y)
+			.tickSize(0)
+			.tickPadding(6)
+			.orient("left");
 
-			rects.enter().append("rect")
-				.style("fill", "green") 
-				.attr("width", function(d) {return 10})
-				.transition().delay(function (d,i){ return i * transitionTime;}).duration(transitionTime)	
-		  		.attr("height", barHeight);
-			
-			/*	
-			bar
-				.append("rect")
-				.attr("class", "dishes")
-				.style("fill", "green") 
-				.attr("width", function(d) {return RScale(d.superpositive); })
-				.transition().delay(function (d,i){ return i * transitionTime;}).duration(transitionTime)	
-		  		.attr("height", barHeight - 1);
-		
-			bar
-				.append("rect")
-				.style("fill", "yellowgreen") 
-				.attr("width", function(d) {return RScale(d.positive); })
-				.transition().delay(function (d,i){ return i * transitionTime;}).duration(transitionTime)	
-				.attr("height", barHeight - 1)
-				.attr("transform", function(d, i) { return "translate(" + RScale(d.superpositive) +", 0)"; });
-			
-			bar
-				.append("rect")
-				.style("fill", "PaleTurquoise") 
-				.attr("width", function(d) {return RScale(d.neutral); })
-				.transition().delay(function (d,i){ return i * transitionTime;}).duration(transitionTime)	
-				.attr("height", barHeight - 1)
-				.attr("transform", function(d, i) { return "translate(" + RScale(d.superpositive+d.positive) +", 0)"; });
-		
-			bar
-				.append("rect")
-				.style("fill", "lightpink") 
-				.attr("width", function(d) { console.log(RScale(d.r)); return RScale(d.negative); })
-				.transition().delay(function (d,i){ return i * transitionTime;}).duration(transitionTime)	
-				      .attr("height", barHeight - 1)
-				.attr("transform", function(d, i) { return "translate(" + RScale(d.superpositive+d.positive+d.neutral) +", 0)"; });
-		
-		
-			bar
-				.append("rect")
-				.style("fill", "red") 
-				.attr("width", function(d) { console.log(RScale(d.r)); return RScale(d.supernegative); })
-				.transition().delay(function (d,i){ return i * transitionTime;}).duration(transitionTime)	
-				.attr("height", barHeight - 1)
-				.attr("transform", function(d, i) { return "translate(" + RScale(d.superpositive+d.positive+d.neutral+d.negative) +", 0)"; });
-			bar.append("text")
-				.transition().delay(function (d,i){ return i * transitionTime;}).duration(transitionTime)
-				.attr("x", function(d) { return RScale(d.r) + 4; })
-				.attr("y", barHeight / 2)
-				.attr("dy", ".35em")
-				.text(function(d) { return d.name; })
-				.style("font-size", function(d){return barHeight/2 + "px"})
-				.style("font-family", "'Source Sans Pro', sans-serif")
-			*/
-				}
-		//drawNodes(data())
+		var xAxis = d3.svg.axis()
+			.scale(x)
+			.tickSize(0)
+			.tickPadding(6)
+			.orient("bottom");
+
+		var svg = d3.select(".main-body").append("svg")
+			.attr("width", width - margin.left - margin.right)
+			.attr("height", height - margin.top - margin.bottom)
+			.append("g")
+			.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+		var layer = svg.selectAll(".layer")
+			.data(layers)
+			.enter().append("g")
+			//.transition().delay(function (d,i){ return i * transitionTime;}).duration(transitionTime)	
+			.attr("class", "layer")
+			.style("fill", function(d, i) { return color(i); });
+
+		layer.selectAll("rect")
+			.data(function(d) { return d.values; })
+			.enter().append("rect")
+			.attr("fill-opacity", .5)
+			.attr("stroke", "#000")
+			.attr("width", x.rangeBand())
+			.attr("x", function(d) { return x(d.x); })
+			.attr("y", function(d) { return y(d.y0 + d.y); })
+			.attr("height", function(d) { return y(d.y0) - y(d.y0 + d.y); });
+
+		layer.selectAll("text")
+			.data(keys)
+			.enter().append("text")
+			.transition().delay(function (d,i){ return i * transitionTime;}).duration(transitionTime)	
+			.text( function(d){return d + ': '+ totals[d];})
+			.attr('fill', '#000')
+			.style('font-size', 15)
+			.attr("x", function(d){ return x(d) + 25})
+
+		svg.append("g")
+			.attr("class", "x axis")
+			.attr("transform", "translate(0," + height + ")")
+		 	.style("font-size", 10)	 
+			.call(xAxis)
+
+		svg.append("g")
+			.attr("class", "y axis")
+		 	.style("font-size", 10)	 
+    			.call(yAxis)	
+	
+	
+	
 	},
 
 	BarLayout: function(_data){
+		
+		
 		/* 
 		 * http://bl.ocks.org/mbostock/1134768
 		 
@@ -414,24 +445,63 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 		LEVEL = 0
 		var width = $(window).width() - $(".append_eatery").width()*1.5;
 		var height = $(window).height();
-		var barHeight = 25;
 
 		data = DATA(null, LEVEL);
 
+		 var margin = {
+			 'top': 30,
+			 'right': 10,
+			 'bottom': 10,
+			 'left': 50};
+		
+		 var barHeight = (height -margin.top - margin.bottom)/data.length;
 
 		var transitionTime = 300;
 		var RScale = d3.scale.linear()
 			 	.range([0, width-200])
 				.domain([0, d3.max(data, function(d) { return d.r; })])
 		
+		var xScale = d3.scale.linear()
+				.domain([0, d3.max(data, function(d) { return d.r; })])
+			 	.range([0, width-200])
+
+	
+		var xAxis = d3.svg.axis()
+				.scale(xScale)
+				.ticks(25)
+				.tickSize(2)
+				.tickSubdivide(true)
+				 .orient("bottom")
+
 		var svg = d3.select(".main-body").append("svg")
 			.attr("width", width)
-			.attr("height", height*1.5)
-			.style("shape-rendering", "crispEdges")	
-			.style("margin-top", height/15)	
+			.attr("height", height)
+			//.style("shape-rendering", "crispEdges")	
+			//.style("margin-top", height/15)	
+			.attr("margin", margin)
+	
+		svg.append("g")
+			 .attr("class", "x-axis")
+			 .attr("transform", "translate(0," + (height -margin.top -margin.bottom)+ ")")        
+			 .call(xAxis)
+		
+	 	 d3.selectAll("g.x-axis g.tick")
+		 		.append("line")
+				.classed("grid-line", true)
+				.attr("x1", 0)
+				.attr("y1", 0)
+				.attr("x2", 0)
+				.attr("y2", - (height - 2 * 25));		
+		
 
-		var bar = svg.selectAll("g")
+		 d3.selectAll(".tick > text")
+		 	.style("font-size", 10)	 
+		 	.style("font-color", "blue");	 
+	
+
+		var bar = svg.selectAll("dishes")
 				.data(DATA(null, LEVEL))
+				.attr("class", "dishes")
 			        .enter().append("g")
 				//.style("stroke", function(d, i) { return d3.rgb(i).darker(); })
 				.attr("class", function(d, i) { return d.name.replace(" ", "_")})
