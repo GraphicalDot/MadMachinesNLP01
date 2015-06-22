@@ -431,7 +431,6 @@ class GetWordCloud(tornado.web.RequestHandler):
 			"error": False,
                         "result": {"noun_phrases": sorted_np, "keys": keys},
 			})
-                """
                 __timeline_result = list()
                 for e in __result:
                         for mention_time in e["timeline"]:
@@ -459,7 +458,6 @@ class GetWordCloud(tornado.web.RequestHandler):
 			"result": __result,
                         })
                 self.finish()
-                """
         
         @run_on_executor
         def _exe(self, eatery_id, category):

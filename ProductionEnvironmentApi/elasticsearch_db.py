@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+et nu!/usr/bin/env python
 """
 Author: kaali
 Dated: 9 June, 2015
@@ -68,6 +68,89 @@ http://192.168.1.14:9200/_cat/indices?v
 http://192.168.1.14:9200/food/_mapping?pretty=true
 
 
+step1:
+        Define setting for elastic search indexes 
+                indexing references:
+                
+                reference1 : http://www.spacevatican.org/2012/6/3/fun-with-elasticsearch-s-children-and-nested-documents/
+
+
+        make indexes into the elastic search
+
+        make mappings into elastic search
+
+        make analyzer on elastic search
+            https://www.elastic.co/guide/en/elasticsearch/guide/current/analysis-intro.html
+            for the time being we are going to use the standard analyzer
+        
+
+For each eatery update the es with dishes
+    with each dish having a eatery_id and lat long for eatery stored with it
+
+update char_h for eatery
+    eatery details to be inserted 
+
+
+
+
+If a new review comes in, watch for the noun phrases that has been changed and update es
+same goes for eatery
+
+
+
+so for ex user search for chicken, 
+    dishes starting with chicken for eateries with eatries details
+    the problem is do we need to also take similr dishes into account or not
+
+
+Prolem Statement:
+        Query: I need to have chicken tikka and chicken peri peri in a place 5km from my current location, with nice decor and 
+        value for money
+
+
+        Query2:
+                nice decor within 5km
+
+Resolution1:
+        sentence tokenization:
+            dishes: chicken tikka and chicken peri peri
+            location : within 5 km, suggestion in 10 km 
+            ambience: nice decor
+            cost: value for money
+
+
+        
+
+Now ES:
+        Step1:
+            if Search dish1 and dish2 with common eatery:
+                return eateries
+            elseif :
+                search dish1 or dish2 with eateries:
+                    combine the resut
+            else:
+                search levenshtein 
+
+            
+        sort according to the location nearest being in 5km
+
+
+Query Resolution 2:
+        find all within 5km and then sort according to total decor
+
+
+
+                
+
+
+
+buk insertion and update are possible
+
+
+
+
+
+
 
 
 Schema:
@@ -107,6 +190,153 @@ from compiler.ast import flatten
 file_name = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(file_name)
 from GlobalConfigs import ES
+
+
+def analyzer():
+        """
+        Analyzers are composed of a single Tokenizer and zero or more TokenFilters. The tokenizer may be preceded 
+        by one or more CharFilters. The analysis module allows you to register Analyzers under logical names which 
+        can then be referenced either in mapping definitions or in certain APIs.
+        Elasticsearch comes with a number of prebuilt analyzers which are ready to use. Alternatively, you can 
+        combine the built in character filters, tokenizers and token filters to create custom analyzers.
+        http://gibrown.com/2013/04/17/mapping-wordpress-posts-to-elasticsearch/
+  
+
+        curl -X POST 'http://localhost:9200/thegame/_close'     
+        curl -X PUT 'http://localhost:9200/thegame/_settings' -d 
+
+        curl -X POST 'http://localhost:9200/thegame/_open
+
+        curl 'localhost:9200/test/_analyze?pretty=1&analyzer=my_edge_ngram_analyzer' -d 'FC Schalke 04'
+
+
+        http://stackoverflow.com/questions/27804354/elasticsearch-use-custom-analyzer-on-filter
+         "analysis": {
+                "filter": {
+                        "snowball": { "type": "snowball", "language": "English" },
+                        "english_stemmer": { "type": "stemmer", "language": "english" },
+                        "english_possessive_stemmer": { "type": "stemmer", "language": "possessive_english" },
+                        "stopwords": { "type": "stop",  "stopwords": [ "_english_" ] },
+                        "worddelimiter": { "type": "word_delimiter" }
+                        },
+         
+                "tokenizer": {
+                        "nGram": { "type": "nGram", "min_gram": 1, "max_gram": 20 }
+                    },
+                
+                "analyzer": {
+                        "custom_analyzer": {
+                                "type": "custom",
+                                "tokenizer": "nGram",
+                                "filter": [
+                                    "stopwords",
+                                    "asciifolding",
+                                    "lowercase",
+                                    "snowball",
+                                    "english_stemmer",
+                                    "english_possessive_stemmer",
+                                    "worddelimiter"
+               ]
+                    },
+                        "custom_search_analyzer": {
+                                "type": "custom",
+                                "tokenizer": "edgeNGram",
+                                "filter": [
+                                        "stopwords",
+                                        "asciifolding",
+                                        "lowercase",
+                                        "snowball",
+                                        "english_stemmer",
+                                        "english_possessive_stemmer",
+                                        "worddelimiter"]
+                        }
+                    }
+                  }
+                 },
+   
+                "mappings": {
+                        "posts": {
+                        "properties": {
+            "name": {
+               "type": "string",
+               "analyzer": "custom_analyzer",
+               "boost": 5
+            },
+            "seller": {
+               "type": "nested",
+               "properties": {
+                  "similar": {
+                     "type": "string", 
+                     "index_analyzer": "custom_analyzer", 
+                     "search_analyzer": "custom_search_analyzer",
+                     "boost": 3
+                  }
+               }
+            }
+         }
+      }
+   }
+}'      
+
+
+
+{
+   "query": {
+      "bool": {
+         "must": [
+            {
+               "match": {
+                  "title": "post"
+               }
+            },
+            {
+               "nested": {
+                  "path": "seller",
+                  "query": {
+                     "match": {
+                        "seller.firstName": {
+                            "query": "Test 3",
+                            "operator": "and"
+                        }
+                     }
+                  }
+               }
+            }
+         ]
+      }
+   }
+}'
+
+
+               {
+"settings": {
+    "analysis": {
+         "analyzer": {
+             "standardWithEdgeNGram": {
+                 "tokenizer": "standard",
+                 "filter": ["lowercase", "edgeNGram"]
+             }
+         },
+         "tokenizer": {
+             "standard": {
+                 "type": "standard"
+             }
+         },
+         "filter": {
+             "lowercase": {
+                "type": "lowercase"
+            },
+            "edgeNGram": {
+                "type": "edgeNGram",
+                "min_gram": 2,
+                "max_gram": 15,
+                "token_chars": ["letter", "digit"]
+            }
+        }
+    }
+},
+
+"""
 
 
 class ElasticSearchScripts(object):

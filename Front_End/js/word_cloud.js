@@ -150,8 +150,8 @@ App.WordCloudWith_D3 = Backbone.View.extend({
 		this.model = options.model
 		console.log(this.model)
 		this._data = options.model
-		this.StackLayout(this.model);
-		//this.BarLayout(this.model);
+		//this.StackLayout(this.model);
+		this.BarLayout(this.model);
 		//this.ForceLayout(this.model);
 		},
 	
