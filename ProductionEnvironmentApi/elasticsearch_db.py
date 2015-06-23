@@ -191,7 +191,7 @@ file_name = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(file_name)
 from GlobalConfigs import ES
 from elasticsearch import Elasticsearch
-
+from elasticsearch import RequestError
 
 def analyzer():
         """
@@ -212,72 +212,6 @@ def analyzer():
 
 
         http://stackoverflow.com/questions/27804354/elasticsearch-use-custom-analyzer-on-filter
-         "analysis": {
-                "filter": {
-                        "snowball": { "type": "snowball", "language": "English" },
-                        "english_stemmer": { "type": "stemmer", "language": "english" },
-                        "english_possessive_stemmer": { "type": "stemmer", "language": "possessive_english" },
-                        "stopwords": { "type": "stop",  "stopwords": [ "_english_" ] },
-                        "worddelimiter": { "type": "word_delimiter" }
-                        },
-         
-                "tokenizer": {
-                        "nGram": { "type": "nGram", "min_gram": 1, "max_gram": 20 }
-                    },
-                
-                "analyzer": {
-                        "custom_analyzer": {
-                                "type": "custom",
-                                "tokenizer": "nGram",
-                                "filter": [
-                                        "stopwords",
-                                    "asciifolding",
-                                    "lowercase",
-                                    "snowball",
-                                    "english_stemmer",
-                                    "english_possessive_stemmer",
-                                    "worddelimiter"
-               ]
-                    },
-                        "custom_search_analyzer": {
-                                "type": "custom",
-                                "tokenizer": "edgeNGram",
-                                "filter": [
-                                        "stopwords",
-                                        "asciifolding",
-                                        "lowercase",
-                                        "snowball",
-                                        "english_stemmer",
-                                        "english_possessive_stemmer",
-                                        "worddelimiter"]
-                        }
-                    }
-                  }
-                 },
-   
-                "mappings": {
-                        "posts": {
-                        "properties": {
-            "name": {
-               "type": "string",
-               "analyzer": "custom_analyzer",
-               "boost": 5
-            },
-            "seller": {
-               "type": "nested",
-               "properties": {
-                  "similar": {
-                     "type": "string", 
-                     "index_analyzer": "custom_analyzer", 
-                     "search_analyzer": "custom_search_analyzer",
-                     "boost": 3
-                  }
-               }
-            }
-         }
-      }
-   }
-}'      
 
 
 
@@ -342,12 +276,17 @@ def analyzer():
 
 class ElasticSearchScripts(object):
         def __init__(self):
+                """
+                Will have minimum two indexes
+                one for dishes and one for eateries
+                """
+                
                 pass
 
 
 
         @staticmethod
-        def __settings_es(__index):
+        def __settings_es(__index_name, delete_index=False):
                 """
                 Update the settings lke number of shards and replicas on elsticsearch
                 
@@ -356,6 +295,7 @@ class ElasticSearchScripts(object):
                 The purpose of such a high number of shards is that later on, when we would expect a increase in load, 
                 The shards could be shifted to new servers
 
+                More reference here: http://blog.qbox.io/building-an-elasticsearch-index-with-python
                 """
                 client = Elasticsearch()
                 query = {'settings': {
@@ -363,11 +303,20 @@ class ElasticSearchScripts(object):
                                     'number_of_replicas': 2,
                                     }
                         }
-                client.indices.create(index=__index, body=query)
-
+                try:
+                        client.indices.create(index=__index_name, body=query)
+                except Exception:
+                        if delete_index:
+                                client.indices.delete(index = __index_name)
+                                client.indices.create(index=__index_name, body=query)
+                        else:
+                                print "Index settings for Index {0} already exists".format(__index_name)
+                
         @staticmethod
-        def __mapping_es():
+        def __shards_analyze_mapping_es(__index_name):
                 """
+                Can be done only on the index level
+
                 We have to declare nested type for nested documents in es mapping 
                 so that es will stop treating them as flat objects 
                 More is available here: https://www.elastic.co/blog/managing-relations-inside-elasticsearch
@@ -376,9 +325,78 @@ class ElasticSearchScripts(object):
                 This arrangement does come with some disadvantages. Most obvious, you can only access these nested 
                 documents using a special ` nested query`. Another big disadvantage comes when you need to update 
                 the document, either the root or any of the objects.
-                """
+                
+                To check whether the analyzer is udated or not
+                curl 'http://192.168.1.2:9200/dishes/_analyze?pretty=1&analyzer=custom_analyzer' -d 'FC Schalke 04'
 
-        
+                """
+                client.indices.get_mapping(index=__index_name)
+                client.indices.get_settings(index=__index_name)
+
+                __body = {'settings': {
+                                    'number_of_shards': 5,
+                                    'number_of_replicas': 2,
+                        
+                        
+                                    
+                        "analysis": {
+                        "filter": {
+                                "snowball": { "type": "snowball", "language": "English" },
+                                "english_stemmer": { "type": "stemmer", "language": "english" },
+                                "english_possessive_stemmer": { "type": "stemmer", "language": "possessive_english" },
+                                "stopwords": { "type": "stop",  "stopwords": [ "_english_" ] },
+                                "worddelimiter": { "type": "word_delimiter" }
+                            },
+         
+                        "tokenizer": {
+                                "nGram": { "type": "nGram", "min_gram": 1, "max_gram": 20 }
+                            },
+                
+                        "analyzer": {
+                                "custom_analyzer": {
+                                        "type": "custom",
+                                        "tokenizer": "nGram",
+                                        "filter": [
+                                                "stopwords",
+                                                "asciifolding",
+                                                "lowercase",
+                                                "snowball",
+                                                "english_stemmer",
+                                                "english_possessive_stemmer",
+                                                "worddelimiter"
+                                                ]
+                                                },
+                        
+                                "custom_search_analyzer": {
+                                            "type": "custom",
+                                            "tokenizer": "edgeNGram",
+                                        "filter": [
+                                                "stopwords",
+                                                "asciifolding",
+                                                "lowercase",
+                                                "snowball",
+                                                "english_stemmer",
+                                                "english_possessive_stemmer",
+                                                "worddelimiter"]
+                                                }
+                                    }}, 
+                                }}
+
+  
+        def _change_default_analyzer(__index_name):
+                client.indices.close(index=__index_name)
+                body = {"index": {
+                                "analysis": {
+                                        "analyzer": {
+                                                "default": {
+                                                        "type": "custom_analyzer"}}}}}
+
+                client.indices.put_settings(index=__index_name, body=body)
+
+                client.indices.open(index=__index_name)
+                return 
+
+
         def initial(self, eatery_id):
                 """
                 Used to initially update the data
@@ -391,6 +409,37 @@ class ElasticSearchScripts(object):
                 service:
                 """
                 return 
+                        "mappings": {
+                                "name": {
+                                        "properties": {
+                                                    "name": {
+                                                            "type": "string",
+                                                            "analyzer": "custom_analyzer",
+                                                            },
+                                                    "similar": {
+                                                            "type": "nested",
+                                                             "properties": {
+                                                                    "name": {
+                                                                            "type": "string", 
+                                                                                    "index_analyzer": "custom_analyzer", 
+                                                                                    "search_analyzer": "custom_search_analyzer",
+                                                                                },
+                                                                    'negative': { "type": "int"
+                                                                                },
+                                                                    'neutral': {"type": "int"
+                                                                                },
+                                                                    'positive': {"type": "int"
+                                                                                },
+                                                                    'super-negative': {"type": "int"
+                                                                        },
+                                                                    'super-positive': {"type": "int"
+                                                                                },
+                                                                    'timeline': {"type": "string"
+                                                                            }
+                                                             }
+                                                            }
+                                                        }
+                                            }},
 
 
         @staticmethod
