@@ -1,4 +1,4 @@
-et nu!/usr/bin/env python
+#!/usr/bin/env python
 """
 Author: kaali
 Dated: 9 June, 2015
@@ -190,6 +190,7 @@ from compiler.ast import flatten
 file_name = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(file_name)
 from GlobalConfigs import ES
+from elasticsearch import Elasticsearch
 
 
 def analyzer():
@@ -229,7 +230,7 @@ def analyzer():
                                 "type": "custom",
                                 "tokenizer": "nGram",
                                 "filter": [
-                                    "stopwords",
+                                        "stopwords",
                                     "asciifolding",
                                     "lowercase",
                                     "snowball",
@@ -343,6 +344,39 @@ class ElasticSearchScripts(object):
         def __init__(self):
                 pass
 
+
+
+        @staticmethod
+        def __settings_es(__index):
+                """
+                Update the settings lke number of shards and replicas on elsticsearch
+                
+                This will specifies the number of shards = 20 and number of replicas 2 for the __index name given to it,
+
+                The purpose of such a high number of shards is that later on, when we would expect a increase in load, 
+                The shards could be shifted to new servers
+
+                """
+                client = Elasticsearch()
+                query = {'settings': {
+                                    'number_of_shards': 20,
+                                    'number_of_replicas': 2,
+                                    }
+                        }
+                client.indices.create(index=__index, body=query)
+
+        @staticmethod
+        def __mapping_es():
+                """
+                We have to declare nested type for nested documents in es mapping 
+                so that es will stop treating them as flat objects 
+                More is available here: https://www.elastic.co/blog/managing-relations-inside-elasticsearch
+
+
+                This arrangement does come with some disadvantages. Most obvious, you can only access these nested 
+                documents using a special ` nested query`. Another big disadvantage comes when you need to update 
+                the document, either the root or any of the objects.
+                """
 
         
         def initial(self, eatery_id):
