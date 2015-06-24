@@ -1,5 +1,9 @@
 #!/usr/bin/env python
 """
+https://gist.github.com/lightsuner/5df39112b8507d15ede6
+https://gist.github.com/lukas-vlcek/5143799
+http://192.168.1.5:9200/_cluster/state?pretty&filter_nodes=true&filter_routing_table=true&filter_indices=dishes
+
 Author: kaali
 Dated: 9 June, 2015
 Purpose: This is the script that will be used to populate elastic search on remote node
@@ -378,11 +382,57 @@ class ElasticSearchScripts(object):
                                                 "english_stemmer",
                                                 "english_possessive_stemmer",
                                                 "worddelimiter"]
-                                                }
+                                                },
                                     }}, 
                                 }}
 
-  
+                settings_that_work = {
+                         "settings": {
+                             "analysis": {
+                                  "analyzer": {
+                                                    "custom_analyzer": {
+                                                                        "type": "custom",
+                                                                                        "tokenizer": "edgeNGram",                                                    
+                                                                                         "filter": ["lowercase"]}}}    
+                                                    }
+                         }
+
+                client.indices.create(index="dishes", body=__body)
+                __mappings = {'dish': {'properties': {'name': {'analyzer': 'custom_analyzer',
+                                        'type': 'string'},
+                                        'negative': {'type': 'long'},
+                                        'neutral': {'type': 'long'},
+                                        'positive': {'type': 'long'},
+                                        'similar': {
+                                                'properties': {'name': 
+                                                                    {'analyzer': 'custom_analyzer',
+                                                                    'type': 'string'},
+                                                            'negative': {
+                                                                     'type': 'long'},
+                                                            'neutral': {
+                                                                    'type': 'long'},
+                                                            'positive': {
+                                                                    'type': 'long'},
+                                                            'super-negative': {
+                                                                    'type': 'long'},
+                                                            'super-positive': {
+                                                                    'type': 'long'},
+                                                            'timeline': {
+                                                                'type': 'string'}
+                                                            }
+                                                },
+   
+                                        'super-negative': {
+                                                    'type': 'long'},
+                                        'super-positive': {
+                                                    'type': 'long'},
+                                        'timeline': {
+                                            'type': 'string'}}}}
+                
+                
+                client.indices.put_mapping(index="dishes", doc_type="dish", body = __mappings)
+
+
         def _change_default_analyzer(__index_name):
                 client.indices.close(index=__index_name)
                 body = {"index": {
