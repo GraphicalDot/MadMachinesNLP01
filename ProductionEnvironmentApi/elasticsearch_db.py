@@ -340,26 +340,11 @@ class ElasticSearchScripts(object):
                 __body = {'settings': {
                                     'number_of_shards': 5,
                                     'number_of_replicas': 2,
-                        
-                        
-                                    
                         "analysis": {
-                        "filter": {
-                                "snowball": { "type": "snowball", "language": "English" },
-                                "english_stemmer": { "type": "stemmer", "language": "english" },
-                                "english_possessive_stemmer": { "type": "stemmer", "language": "possessive_english" },
-                                "stopwords": { "type": "stop",  "stopwords": [ "_english_" ] },
-                                "worddelimiter": { "type": "word_delimiter" }
-                            },
-         
-                        "tokenizer": {
-                                "nGram": { "type": "nGram", "min_gram": 1, "max_gram": 20 }
-                            },
-                
                         "analyzer": {
                                 "custom_analyzer": {
                                         "type": "custom",
-                                        "tokenizer": "nGram",
+                                        "tokenizer": "custom_nGram",
                                         "filter": [
                                                 "stopwords",
                                                 "asciifolding",
@@ -370,23 +355,55 @@ class ElasticSearchScripts(object):
                                                 "worddelimiter"
                                                 ]
                                                 },
+                                    }
+                        "filter": {
+                                "snowball": { "type": "snowball", "language": "English" },
+                                "english_stemmer": { "type": "stemmer", "language": "english" },
+                                "english_possessive_stemmer": { "type": "stemmer", "language": "possessive_english" },
+                                "stopwords": { "type": "stop",  "stopwords": [ "_english_" ] },
+                                "worddelimiter": { "type": "word_delimiter" }},
+         
+                        "tokenizer": {
+                                "custom_nGram": { "type": "nGram", "min_gram": 1, "max_gram": 20 }
+                            },
                         
-                                "custom_search_analyzer": {
-                                            "type": "custom",
-                                            "tokenizer": "edgeNGram",
-                                        "filter": [
-                                                "stopwords",
-                                                "asciifolding",
-                                                "lowercase",
-                                                "snowball",
-                                                "english_stemmer",
-                                                "english_possessive_stemmer",
-                                                "worddelimiter"]
-                                                },
-                                    }}, 
-                                }}
+                        }, }}
 
-                settings_that_work = {
+                        _settings = {
+                                "settings": {
+                                        "analysis": {
+                                                "analyzer": {
+                                                        "custom_analyzer": {
+                                                            "tokenizer" : "my_edge_ngram_tokenizer",
+                                                            "filter": ["lowercase", "asciifolding"],
+                                                                    }
+                                                        "custom_analyzer_two": {
+                                                            "tokenizer" : "limited_tokenizer",
+                                                            "filter": ["lowercase", "asciifolding"],
+                                                                    }
+                                                        },
+                                                "tokenizer": {
+                                                        "my_edge_ngram_tokenizer": {
+                                                                "type" : "edgeNGram",
+                                                                "min_gram" : "2",
+                                                                "max_gram" : "100",
+                                                                "token_chars": [ "letter", "digit" ]
+                                                                }
+                                                        "limited_tokenizer": {
+                                                                "type" : "edgeNGram",
+                                                                "min_gram" : "2",
+                                                                "max_gram" : "10",
+                                                                "token_chars": [ "letter", "digit" ]
+                                                                }
+                                                        }
+                                                }
+                                        }}
+
+
+
+
+
+			settings_that_work = {
                          "settings": {
                              "analysis": {
                                   "analyzer": {
