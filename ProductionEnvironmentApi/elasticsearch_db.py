@@ -6,277 +6,22 @@ http://192.168.1.5:9200/_cluster/state?pretty&filter_nodes=true&filter_routing_t
 
 Author: kaali
 Dated: 9 June, 2015
-Purpose: This is the script that will be used to populate elastic search on remote node
-The purpose of the elastic search to solve the problem of query resolution
-
-Configuring Details:
-        each index in Elasticsearch is allocated 5 primary shards and 1 replica which means that if you have at least two nodes in\
-                your cluster, your index will have 5 primary shards and another 5 replica shards (1 complete replica) for a total of 10 shards per index.
-    
-        So we will have 26 indexes char-a, char-b etc
-        Then we will have two types 
-        char-a/dishes/
-        char-a/restaurants/
-
-        char-a/dishes/ will have all the dishes starting with character "a"
-        char-a/restaurants/ will have all the restaurants with their name starting with character "a"
-
-        
-
-
-        so in case of scaling we can move indexes and shards, so at the full capacity we can have
-        130 nodes, 5 shards for each dish-* and 5 replica set for each.
-
-
-
-
-https://www.elastic.co/guide/en/elasticsearch/reference/current/_executing_searches.html
-##To match exact phrase
-        body ={"query" :{
-            "match_phrase" :{
-                    "name": "chicken pieces"}}}
-
-
-
-This example composes two match queries and returns all accounts containing "mill" and "lane" in the address:
-{ "query": {"bool":{ "must": [
-            {"match" : {"address": "mill"}},
-            {"match" : {"address": "lane"}}
-            ]}
-                        }}
-
-In contrast, this example composes two match queries and returns all accounts containing "mill" or "lane" in the address:
-    {"query": {
-        "bool": {
-            "should": [{"match" :{"address": "mill" }},
-                        { "match" :{"address": "lane" } }
-                        ]}
-                }}
-
-
-The cache is not enabled by default, but can be enabled when creating a new index as follows:
-
-    curl -XPUT localhost:9200/my_index -d'
-    {
-      "settings": {
-          "index.cache.query.enable": true
-            }
-            }
-            '
-
-#To list all the indices
-http://192.168.1.14:9200/_cat/indices?v
-
-
-#To print mapping
-http://192.168.1.14:9200/food/_mapping?pretty=true
-
-
-step1:
-        Define setting for elastic search indexes 
-                indexing references:
-                
-                reference1 : http://www.spacevatican.org/2012/6/3/fun-with-elasticsearch-s-children-and-nested-documents/
-
-
-        make indexes into the elastic search
-
-        make mappings into elastic search
-
-        make analyzer on elastic search
-            https://www.elastic.co/guide/en/elasticsearch/guide/current/analysis-intro.html
-            for the time being we are going to use the standard analyzer
-        
-
-For each eatery update the es with dishes
-    with each dish having a eatery_id and lat long for eatery stored with it
-
-update char_h for eatery
-    eatery details to be inserted 
-
-
-
-
-If a new review comes in, watch for the noun phrases that has been changed and update es
-same goes for eatery
-
-
-
-so for ex user search for chicken, 
-    dishes starting with chicken for eateries with eatries details
-    the problem is do we need to also take similr dishes into account or not
-
-
-Prolem Statement:
-        Query: I need to have chicken tikka and chicken peri peri in a place 5km from my current location, with nice decor and 
-        value for money
-
-
-        Query2:
-                nice decor within 5km
-
-Resolution1:
-        sentence tokenization:
-            dishes: chicken tikka and chicken peri peri
-            location : within 5 km, suggestion in 10 km 
-            ambience: nice decor
-            cost: value for money
-
-
-        
-
-Now ES:
-        Step1:
-            if Search dish1 and dish2 with common eatery:
-                return eateries
-            elseif :
-                search dish1 or dish2 with eateries:
-                    combine the resut
-            else:
-                search levenshtein 
-
-            
-        sort according to the location nearest being in 5km
-
-
-Query Resolution 2:
-        find all within 5km and then sort according to total decor
-
-
-
-                
-
-
-
-buk insertion and update are possible
-
-
-
-
-
-
-
-
-Schema:
-    Elastic search
-    To start with we will have some shards
-
-
-Task1:
-        To incorporate new dishes for the same restaurant
-
-Task2:
-        Auto complete options as the user types in the string to be searched
-
-
-Task3: Match the strng like "chiken tikkka" with the dishes stored in the database
-
-
-Task4: Match other factors like service, ambience, and cost with the dishes
-
-
-Task5:
-     
-
-
-Task3:
-        
-
-
-
-
 """
 
-
+import time
 import os
 import sys
 from compiler.ast import flatten
 file_name = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(file_name)
-from GlobalConfigs import ES
-from elasticsearch import Elasticsearch
+from GlobalConfigs import ES, eateries_results_collection, bcolors
+from elasticsearch import Elasticsearch, helpers
 from elasticsearch import RequestError
 
-def analyzer():
-        """
-        Analyzers are composed of a single Tokenizer and zero or more TokenFilters. The tokenizer may be preceded 
-        by one or more CharFilters. The analysis module allows you to register Analyzers under logical names which 
-        can then be referenced either in mapping definitions or in certain APIs.
-        Elasticsearch comes with a number of prebuilt analyzers which are ready to use. Alternatively, you can 
-        combine the built in character filters, tokenizers and token filters to create custom analyzers.
-        http://gibrown.com/2013/04/17/mapping-wordpress-posts-to-elasticsearch/
-  
-
-        curl -X POST 'http://localhost:9200/thegame/_close'     
-        curl -X PUT 'http://localhost:9200/thegame/_settings' -d 
-
-        curl -X POST 'http://localhost:9200/thegame/_open
-
-        curl 'localhost:9200/test/_analyze?pretty=1&analyzer=my_edge_ngram_analyzer' -d 'FC Schalke 04'
-
-
-        http://stackoverflow.com/questions/27804354/elasticsearch-use-custom-analyzer-on-filter
-
-
-
-{
-   "query": {
-      "bool": {
-         "must": [
-            {
-               "match": {
-                  "title": "post"
-               }
-            },
-            {
-               "nested": {
-                  "path": "seller",
-                  "query": {
-                     "match": {
-                        "seller.firstName": {
-                            "query": "Test 3",
-                            "operator": "and"
-                        }
-                     }
-                  }
-               }
-            }
-         ]
-      }
-   }
-}'
-
-
-               {
-"settings": {
-    "analysis": {
-         "analyzer": {
-             "standardWithEdgeNGram": {
-                 "tokenizer": "standard",
-                 "filter": ["lowercase", "edgeNGram"]
-             }
-         },
-         "tokenizer": {
-             "standard": {
-                 "type": "standard"
-             }
-         },
-         "filter": {
-             "lowercase": {
-                "type": "lowercase"
-            },
-            "edgeNGram": {
-                "type": "edgeNGram",
-                "min_gram": 2,
-                "max_gram": 15,
-                "token_chars": ["letter", "digit"]
-            }
-        }
-    }
-},
-
-"""
-
+ES_CLIENT = Elasticsearch("192.168.1.21")
+EATERY_ONE_DISHES = list()
+EATERY_TWO_DISHES = list()
+NUMBER_OF_DOCS = 20
 
 class ElasticSearchScripts(object):
         def __init__(self):
@@ -289,98 +34,44 @@ class ElasticSearchScripts(object):
 
 
 
+
+
         @staticmethod
-        def __settings_es(__index_name, delete_index=False):
+        def prep_es_indexes():
                 """
-                Update the settings lke number of shards and replicas on elsticsearch
-                
-                This will specifies the number of shards = 20 and number of replicas 2 for the __index name given to it,
-
-                The purpose of such a high number of shards is that later on, when we would expect a increase in load, 
-                The shards could be shifted to new servers
-
-                More reference here: http://blog.qbox.io/building-an-elasticsearch-index-with-python
+                Two indexes will be created one for the restaurants and one for the dishes
+                index:
+                        eateries
+                            type:
+                                eatery
+                        dishes:
+                                dish
                 """
-                client = Elasticsearch()
-                query = {'settings': {
-                                    'number_of_shards': 20,
-                                    'number_of_replicas': 2,
-                                    }
-                        }
                 try:
-                        client.indices.create(index=__index_name, body=query)
-                except Exception:
-                        if delete_index:
-                                client.indices.delete(index = __index_name)
-                                client.indices.create(index=__index_name, body=query)
-                        else:
-                                print "Index settings for Index {0} already exists".format(__index_name)
-                
-        @staticmethod
-        def __shards_analyze_mapping_es(__index_name):
-                """
-                Can be done only on the index level
+                        ES_CLIENT.indices.delete(index="dishes")
+                        print "{0} DELETING index {1}".format(bcolors.OKGREEN, bcolors.RESET)
+                except Exception as e:
+                        print "{0} {1}".format(bcolors.FAIL, bcolors.RESET)
+                        print "{0} Index Dishes doesnt exists {1}".format(bcolors.FAIL, bcolors.RESET)
+                        print e
 
-                We have to declare nested type for nested documents in es mapping 
-                so that es will stop treating them as flat objects 
-                More is available here: https://www.elastic.co/blog/managing-relations-inside-elasticsearch
-
-
-                This arrangement does come with some disadvantages. Most obvious, you can only access these nested 
-                documents using a special ` nested query`. Another big disadvantage comes when you need to update 
-                the document, either the root or any of the objects.
-                
-                To check whether the analyzer is udated or not
-                curl 'http://192.168.1.2:9200/dishes/_analyze?pretty=1&analyzer=custom_analyzer' -d 'FC Schalke 04'
-
-                """
-                client.indices.get_mapping(index=__index_name)
-                client.indices.get_settings(index=__index_name)
-
-                __body = {'settings': {
-                                    'number_of_shards': 5,
-                                    'number_of_replicas': 2,
-                        "analysis": {
-                        "analyzer": {
-                                "custom_analyzer": {
-                                        "type": "custom",
-                                        "tokenizer": "custom_nGram",
-                                        "filter": [
-                                                "stopwords",
-                                                "asciifolding",
-                                                "lowercase",
-                                                "snowball",
-                                                "english_stemmer",
-                                                "english_possessive_stemmer",
-                                                "worddelimiter"
-                                                ]
-                                                },
-                                    }
-                        "filter": {
-                                "snowball": { "type": "snowball", "language": "English" },
-                                "english_stemmer": { "type": "stemmer", "language": "english" },
-                                "english_possessive_stemmer": { "type": "stemmer", "language": "possessive_english" },
-                                "stopwords": { "type": "stop",  "stopwords": [ "_english_" ] },
-                                "worddelimiter": { "type": "word_delimiter" }},
-         
-                        "tokenizer": {
-                                "custom_nGram": { "type": "nGram", "min_gram": 1, "max_gram": 20 }
-                            },
-                        
-                        }, }}
-
-                        _settings = {
+                __settings = {
                                 "settings": {
                                         "analysis": {
                                                 "analyzer": {
                                                         "custom_analyzer": {
+                                                            "type": "custom",
                                                             "tokenizer" : "my_edge_ngram_tokenizer",
                                                             "filter": ["lowercase", "asciifolding"],
-                                                                    }
+                                                                    },
                                                         "custom_analyzer_two": {
+                                                            "type": "custom",
                                                             "tokenizer" : "limited_tokenizer",
                                                             "filter": ["lowercase", "asciifolding"],
-                                                                    }
+                                                                    },
+                                                        "custom_standard": {
+                                                                "type": "standard"
+                                                                }
                                                         },
                                                 "tokenizer": {
                                                         "my_edge_ngram_tokenizer": {
@@ -388,7 +79,7 @@ class ElasticSearchScripts(object):
                                                                 "min_gram" : "2",
                                                                 "max_gram" : "100",
                                                                 "token_chars": [ "letter", "digit" ]
-                                                                }
+                                                                },
                                                         "limited_tokenizer": {
                                                                 "type" : "edgeNGram",
                                                                 "min_gram" : "2",
@@ -399,22 +90,9 @@ class ElasticSearchScripts(object):
                                                 }
                                         }}
 
+                print "{0}Settings updated {1}".format(bcolors.OKGREEN, bcolors.RESET)
 
-
-
-
-			settings_that_work = {
-                         "settings": {
-                             "analysis": {
-                                  "analyzer": {
-                                                    "custom_analyzer": {
-                                                                        "type": "custom",
-                                                                                        "tokenizer": "edgeNGram",                                                    
-                                                                                         "filter": ["lowercase"]}}}    
-                                                    }
-                         }
-
-                client.indices.create(index="dishes", body=__body)
+                ES_CLIENT.indices.create(index="dishes", body=__settings)
                 __mappings = {'dish': {'properties': {'name': {'analyzer': 'custom_analyzer',
                                         'type': 'string'},
                                         'negative': {'type': 'long'},
@@ -443,11 +121,156 @@ class ElasticSearchScripts(object):
                                                     'type': 'long'},
                                         'super-positive': {
                                                     'type': 'long'},
+                                        'eatery_name': {
+                                                    'type': 'string',
+                                                    'analyzer': 'custom_analyzer',
+                                                    },
+                                        'eatery_name_not_analyzed': {
+                                                    'type': 'string',
+                                                    'analyzer': 'standard',
+                                                    },
+
+                                        'eatery_id': {
+                                                    'type': 'string', 
+                                                    'analyzer': 'custom_standard',
+                                                    },
                                         'timeline': {
                                             'type': 'string'}}}}
                 
+                try:
+                        ES_CLIENT.indices.put_mapping(index="dishes", doc_type="dish", body = __mappings)
+                        print "{0}Mappings updated {1}".format(bcolors.OKGREEN, bcolors.RESET)
+                except Exception as e:
+                        print "{0}Mappings update Failed with error {1} {2}".format(bcolors.FAIL, e, bcolors.RESET)
+
+                test_doc = {'eatery_name': u"Karim's", u'name': u'chicken korma', u'super-negative': 0, u'negative': 0, u'super-positive': 1, 
+                        u'neutral': 6, u'timeline': [[u'positive', u'2013-01-24 17:34:01'], [u'neutral', u'2014-07-18 23:49:05'], 
+                        [u'neutral', u'2014-06-05 13:30:14'], [u'super-positive', u'2013-07-04 17:03:37'], 
+                        [u'neutral', u'2013-04-18 20:40:35'], [u'neutral', u'2013-01-18 23:04:17'], 
+                        [u'neutral', u'2013-01-11 14:04:49'], [u'neutral', u'2012-12-29 21:51:43']], 'eatery_id': '463', 
+                        u'similar': [{u'name': u'chicken qorma', u'positive': 1, u'negative': 0, u'super-positive': 0, u'neutral': 0, 
+                            u'timeline': [[u'positive', u'2013-01-24 17:34:01']], u'super-negative': 0}, 
+                            {u'name': u'chicken korma', u'positive': 0, u'negative': 0, u'super-positive': 1, u'neutral': 5, 
+                                u'timeline': [[u'neutral', u'2014-07-18 23:49:05'], [u'neutral', u'2014-06-05 13:30:14'], 
+                                    [u'super-positive', u'2013-07-04 17:03:37'], [u'neutral', u'2013-04-18 20:40:35'], 
+                                    [u'neutral', u'2013-01-18 23:04:17'], [u'neutral', u'2013-01-11 14:04:49']], u'super-negative': 0}, 
+                                {u'name': u'i order chicken korma', u'positive': 0, u'negative': 0, u'super-positive': 0, u'neutral': 1, 
+                                    u'timeline': [[u'neutral', u'2012-12-29 21:51:43']], u'super-negative': 0}], u'positive': 1}
                 
-                client.indices.put_mapping(index="dishes", doc_type="dish", body = __mappings)
+                
+                print "{0}Updating test data {1}".format(bcolors.OKGREEN, bcolors.RESET)
+                l = ES_CLIENT.index(index="dishes", doc_type="dish", body=test_doc)
+
+                print "{0}Result:\n {1} {2}".format(bcolors.OKGREEN, l, bcolors.RESET)
+
+                __body = {"query" : {
+                            "term" : { "_id" : l.get("_id")}
+                                }}
+
+                print "{0}Test Doc deleted {1}".format(bcolors.OKGREEN, bcolors.RESET)
+                ES_CLIENT.delete_by_query(index="dishes", doc_type="dish", body=__body)
+
+                
+                return 
+        
+        @staticmethod
+        def populate_test_data():
+                """
+                ##TODO: eatery_address and eatery_coordinates shall be strored in mongodb and also in elstic search
+                
+                Update elastic search with 20 dishes from two restaurants, to run tests 
+                eatery_one
+                        eatery_name: karim's
+                        eatery_id: 463
+                        dishes = [u'moti roti', u'20 mins', u'10 mins', u'20 min', u'30 mins', u'20 mins', u'gurda kaleji', 
+                        u'gurda kaleji', u'gurda kalegi', u'gurda / kaleji', u'signature dishes', u'signature dish', u'signature dishes', 
+                        u'mutton keema', u'mutton kheema', u'mutton keema', u'shahi tukda', u'shahi tukdaa', u'shahi tukda', u'tender meat', 
+                        u'roghini naan', u'qeema naan', u'rogan josh']
+
+                        
+                eatery_two
+                        eatery_name: hauz khas socials
+                        eatery_id = 308322
+                        dishes_name = [u'steel tiffin box', u'steel tiffins', u'tiffin boxes', u'steel tiffin boxes', 
+                        u'steel tiffin box', u'steel tiffin', u'chicken sizzler', u'chicken sizzler', u'peri peri chicken sizzler', 
+                        u'grilled chicken sizzler', u'chilli paneer black pepper china box', u'chilli paneer black pepper china box', 
+                        u'chilly paneer black pepper china box', u'bombay bachelor sandwich', u'bombay bachelor sandwich', 
+                        u'bombay bachelors sandwich', u'\u2022 bombay bachelor sandwich', u'prawn sesame toast', u'prawn sesame', 
+                        u'sesame toast', u'sesame prawn toast', u'prawn sesame toast', u'honey chilli potatoes', u'honey chilli potatoes', 
+                        u'honey chilli potato', u'chilli potatoes', u'cottage cheese', u'cottage cheese sizzler', u'cottage cheese', 
+                        u'toffee sauce', u'cosmo explosion', u'chicken peri peri']
+                """
+                eatery_dishes_one = eateries_results_collection.find_one({"eatery_id": "463"})["food"]["dishes"][40: 40+NUMBER_OF_DOCS]
+                eatery_dishes_two = eateries_results_collection.find_one({"eatery_id": "308322"})["food"]["dishes"][40: 40+NUMBER_OF_DOCS]
+                __list = []
+
+                print "\n\n{0}Updating ES with karims {1} documents {2}".format(bcolors.OKGREEN, NUMBER_OF_DOCS, bcolors.RESET)
+                for dish in eatery_dishes_one:
+                        dish.update({"eatery_name": "karim's", "eatery_id": "463", "_index": "dishes", "_type": "dish", "eatery_name_not_analyzed": "karim's"})
+                        __list.append(dish)       
+
+                try:
+                        __result = helpers.bulk(ES_CLIENT, __list, stats_only=True)
+                        print "{0}Updated ES with karims {1} documents with result {2} {3}".format(bcolors.OKGREEN, \
+                                                                                NUMBER_OF_DOCS, __result,  bcolors.RESET)
+                except Exception as e:
+                        print "{0}Update or karim dishes failed with error {1}{2}".format(bcolors.FAIL, e, bcolors.RESET)
+
+                __list = []
+                print "\n\n{0}Updating ES with Hauz khas socials {1} documents {2}".format(bcolors.OKGREEN, NUMBER_OF_DOCS, bcolors.RESET)
+                for dish in eatery_dishes_two:
+                        dish.update({"eatery_name": "Hauz Khas Social", "eatery_id": "308322",  "_index": "dishes", "_type": "dish", "eatery_name_not_analyzed": "Hauz Khas Social"})
+                        __list.append(dish)       
+                try:
+                        __result = helpers.bulk(ES_CLIENT, __list, stats_only=True)
+                        print "{0}Updated ES with Hauxkhas socials {1} documents with result {2} {3}".format(bcolors.OKGREEN,\
+                                NUMBER_OF_DOCS, __result,  bcolors.RESET)
+                except Exception as e:
+                        print "{0}Update or Hauxkhas socials dishes failed with error {1}{2}".format(bcolors.FAIL, e, bcolors.RESET)
+
+
+        @staticmethod
+        def check_eatery():
+                """
+                Points to consider
+                The difference is simple: filters are cached and don't influence the score, therefore faster than queries.
+                As a general rule, filters should be used instead of queries:
+                        for binary yes/no searches
+                        for queries on exact values
+                As a general rule, queries should be used instead of filters:
+                        for full text search
+                        where the result depends on a relevance score
+                more information: https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl.html
+
+                So to search eatery on eatery_id we need exact results
+                but on eatery name we need to have query on eatery_name
+                
+                First:
+                    Test for eatery_id, we have implemented analyzer: custom_standard which implies that it takes
+                    eatery_id as a string, doesnt convert it to ngrams
+                """
+                
+                ##THis is to make ES wait, so that all the documents that were being indexed, will be available for 
+                ##search
+                ES_CLIENT.indices.refresh() 
+                print "\n\n{0}         Testing for search with eatery_id {1}".format(bcolors.OKGREEN, bcolors.RESET)
+                eatery_id = "308322"
+                search_body = {"query":
+                                    {"match_phrase":
+                                                {"eatery_id": eatery_id}}}
+                
+                filtered_query = {"query": {
+                                            "filtered": {
+                                                    "filter":   { "term": { "eatery_id": eatery_id }}}}}
+                                    
+                result = ES_CLIENT.search(index="dishes", doc_type="dish", body=filtered_query)
+                if result["hits"]["total"] == NUMBER_OF_DOCS:
+                        print "{0}         Search with eatery_id test passed{1}".format(bcolors.OKGREEN, bcolors.RESET)
+                else:
+                        print "{0}         Search with eatery_id test Failed Miserbly{1}".format(bcolors.FAIL, bcolors.RESET)
+                        
+
+                search_body = {'query': {'match': {'eatery_name_not_analyzed': 'haux khas social'}}}
 
 
         def _change_default_analyzer(__index_name):
@@ -466,7 +289,6 @@ class ElasticSearchScripts(object):
 
         def initial(self, eatery_id):
                 """
-                Used to initially update the data
                 For every eatery stored in mongodb, We have four keys asscoaited with that post
                 food, service, cost, ambience
 
@@ -474,7 +296,6 @@ class ElasticSearchScripts(object):
                 food tag has these keys associated with it.
                 [u'menu-food', u'overall-food', u'sub-food', u'place-food', u'dishes']
                 service:
-                """
                 return 
                         "mappings": {
                                 "name": {
@@ -508,7 +329,8 @@ class ElasticSearchScripts(object):
                                                         }
                                             }},
 
-
+                """
+                return 
         @staticmethod
         def upde_dish_for_rest(dish_name, eatery_id, eatery_name):
                 """
@@ -552,10 +374,10 @@ class ElasticSearchScripts(object):
                 search_body = {"query":
                         {"match_phrase": 
                                 {"name": __str}
-                        }
+                        }}
+                return 
 
-
-
+                
         @staticmethod
         def dish_suggestions(__str):
                 """
@@ -595,8 +417,8 @@ class ElasticSearchScripts(object):
 
 
 
-
-
-
-
+if __name__ == "__main__":
+        ElasticSearchScripts.prep_es_indexes()
+        ElasticSearchScripts.populate_test_data()
+        ElasticSearchScripts.check_eatery()
 
