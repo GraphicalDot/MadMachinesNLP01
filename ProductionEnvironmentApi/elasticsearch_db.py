@@ -18,11 +18,11 @@ from GlobalConfigs import ES, eateries_results_collection, bcolors
 from elasticsearch import Elasticsearch, helpers
 from elasticsearch import RequestError
 
-ES_CLIENT = Elasticsearch()
+ES_CLIENT = Elasticsearch("192.168.1.5")
 EATERY_ONE_DISHES = list()
 EATERY_TWO_DISHES = list()
-NUMBER_OF_DOCS = 20
-
+NUMBER_OF_DOCS = 40
+#localhost:9200/test/_analyze?analyzer=whitespace' -d 'this is a test'
 class ElasticSearchScripts(object):
         def __init__(self):
                 """
@@ -59,9 +59,19 @@ class ElasticSearchScripts(object):
                                 "settings": {
                                         "analysis": {
                                                 "analyzer": {
+                                                        "keyword_analyzer": {
+                                                            "type": "custom",
+                                                            "tokenizer" : "keyword",
+                                                            "filter": ["lowercase", "asciifolding"],
+                                                                    },
+                                                        "shingle_analyzer": {
+                                                            "type": "custom",
+                                                            "tokenizer" : "ngram_tokenizer",
+                                                            "filter": ["lowercase", "asciifolding", "shingle_tokenizer"],
+                                                                    },
                                                         "custom_analyzer": {
                                                             "type": "custom",
-                                                            "tokenizer" : "my_edge_ngram_tokenizer",
+                                                            "tokenizer" : "ngram_tokenizer",
                                                             "filter": ["lowercase", "asciifolding"],
                                                                     },
                                                         "custom_analyzer_two": {
@@ -69,15 +79,17 @@ class ElasticSearchScripts(object):
                                                             "tokenizer" : "limited_tokenizer",
                                                             "filter": ["lowercase", "asciifolding"],
                                                                     },
-                                                        "custom_standard": {
-                                                                "type": "standard"
+                                                        "standard_analyzer": {
+                                                                "type": "custom", 
+                                                                "tokenizer": "standard",
+                                                                "filter": ["lowercase", "asciifolding"],
                                                                 }
                                                         },
                                                 "tokenizer": {
-                                                        "my_edge_ngram_tokenizer": {
+                                                        "ngram_tokenizer": {
                                                                 "type" : "edgeNGram",
-                                                                "min_gram" : "2",
-                                                                "max_gram" : "100",
+                                                                "min_gram" : 2,
+                                                                "max_gram" : 100,
                                                                 "token_chars": [ "letter", "digit" ]
                                                                 },
                                                         "limited_tokenizer": {
@@ -85,23 +97,61 @@ class ElasticSearchScripts(object):
                                                                 "min_gram" : "2",
                                                                 "max_gram" : "10",
                                                                 "token_chars": [ "letter", "digit" ]
-                                                                }
-                                                        }
+                                                                },
+                                                        }, 
+                                                "filter": {
+                                                            "shingle_tokenizer": {
+                                                                "type" : "shingle",
+                                                                "min_shingle_size" : 2,
+                                                                "max_shingle_size" : 5,
+                                                                },
+                                                            }
                                                 }
                                         }}
 
                 print "{0}Settings updated {1}".format(bcolors.OKGREEN, bcolors.RESET)
 
                 ES_CLIENT.indices.create(index="dishes", body=__settings)
-                __mappings = {'dish': {'properties': {'name': {'analyzer': 'custom_analyzer',
-                                        'type': 'string'},
+                __mappings = {'dish': {
+                                 '_all' : {'enabled' : True},
+                                'properties': 
+                                                {'name': 
+                                                        {
+                                                            #'analyzer': 'custom_analyzer', 
+                                                            'type': 'string', 
+                                                            'copy_to': ['dish_raw', 'dish_shingle'],
+                                                            },
+                                                    
+                                                    
+                                        'dish_shingle': {
+                                                    'type': 'string', 
+                                                    'analyzer': 'shingle_analyzer',
+                                                    },
+                                        'dish_raw': {
+                                                    'type': 'string', 
+                                                    'analyzer': 'keyword_analyzer',
+                                                    },
+
+                                        'eatery_shingle': {
+                                                    'type': 'string', 
+                                                    'analyzer': 'shingle_analyzer',
+                                                    },
+
+                                        'eatery_raw': {
+                                                    'type': 'string', 
+                                                    'analyzer': 'keyword_analyzer',
+                                                    },
+                                        
                                         'negative': {'type': 'long'},
                                         'neutral': {'type': 'long'},
                                         'positive': {'type': 'long'},
                                         'similar': {
                                                 'properties': {'name': 
-                                                                    {'analyzer': 'custom_analyzer',
-                                                                    'type': 'string'},
+                                                                    {
+                                                                        'type': 'string', 
+                                                                        'copy_to': ['dish_raw', 'dish_shingle'],
+                                                                    
+                                                                    },
                                                             'negative': {
                                                                      'type': 'long'},
                                                             'neutral': {
@@ -122,17 +172,12 @@ class ElasticSearchScripts(object):
                                         'super-positive': {
                                                     'type': 'long'},
                                         'eatery_name': {
-                                                    'type': 'string',
-                                                    'analyzer': 'custom_analyzer',
+                                                            'type': 'string', 
+                                                            'copy_to': ['eatery_shingle', "eatery_raw"],
                                                     },
-                                        'eatery_name_not_analyzed': {
-                                                    'type': 'string',
-                                                    'analyzer': 'standard',
-                                                    },
-
                                         'eatery_id': {
                                                     'type': 'string', 
-                                                    'analyzer': 'custom_standard',
+                                                    'index': 'not_analyzed',
                                                     },
                                         'timeline': {
                                             'type': 'string'}}}}
@@ -208,7 +253,7 @@ class ElasticSearchScripts(object):
 
                 print "\n\n{0}Updating ES with karims {1} documents {2}".format(bcolors.OKGREEN, NUMBER_OF_DOCS, bcolors.RESET)
                 for dish in eatery_dishes_one:
-                        dish.update({"eatery_name": "karim's", "eatery_id": "463", "_index": "dishes", "_type": "dish", "eatery_name_not_analyzed": "karim's"})
+                        dish.update({"eatery_name": "karim's", "eatery_id": "463", "_index": "dishes", "_type": "dish"})
                         __list.append(dish)       
 
                 try:
@@ -221,7 +266,7 @@ class ElasticSearchScripts(object):
                 __list = []
                 print "\n\n{0}Updating ES with Hauz khas socials {1} documents {2}".format(bcolors.OKGREEN, NUMBER_OF_DOCS, bcolors.RESET)
                 for dish in eatery_dishes_two:
-                        dish.update({"eatery_name": "Hauz Khas Social", "eatery_id": "308322",  "_index": "dishes", "_type": "dish", "eatery_name_not_analyzed": "Hauz Khas Social"})
+                        dish.update({"eatery_name": "Hauz Khas Social", "eatery_id": "308322",  "_index": "dishes", "_type": "dish"})
                         __list.append(dish)       
                 try:
                         __result = helpers.bulk(ES_CLIENT, __list, stats_only=True)
@@ -273,6 +318,10 @@ class ElasticSearchScripts(object):
                         
 
 
+                ##testing for exact eatery_name
+
+
+
         def return_dishes(eatery_id, number_of_dishes):
                 """
                 This will return all the dishes related to the particular eatery_id
@@ -293,6 +342,35 @@ class ElasticSearchScripts(object):
                 result = ES_CLIENT.search(index="dishes", doc_type="dish", body=search_body)["hits"]["hits"]
                 return [e.get("_source") for e in result]
                 
+
+
+
+
+
+
+        def update_n_delete(eatery_id, updated_dishes):
+                """
+                eatery_id
+                updated_dishes: New dictionary for dishes with the same datastructues but now have new values due to
+                        new reviews update.
+
+                This method deals with deleting the old one and updating the es with the new ones.
+                """
+                {"query": {
+                        "match": {
+                                        "title" : "elasticsearch"
+                                                }
+                            }
+            }
+
+                search= ES_CLIENT.search(
+                                q='The Query to ES.',
+                                index="*logstash-*",
+                                    size=10,
+                                        search_type="scan",
+                                            scroll='5m',
+                                            )
+
 
         def _change_default_analyzer(__index_name):
                 client.indices.close(index=__index_name)
@@ -434,9 +512,6 @@ class ElasticSearchScripts(object):
 
                         
                 result = ES.search(index='food', doc_type='dishes', body=body)
-                
-
-
 
 if __name__ == "__main__":
         ElasticSearchScripts.prep_es_indexes()

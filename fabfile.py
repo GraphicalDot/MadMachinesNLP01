@@ -4,7 +4,7 @@
 #!/usr/bin/env python
 
 from __future__ import with_statement
-from fabric.api import show, local, settings, prefix, abort, run, cd, env, require, hide, execute, put
+from fabric.api import task, show, local, settings, prefix, abort, run, cd, env, require, hide, execute, put
 from fabric.contrib.console import confirm
 from fabric.network import disconnect_all
 from fabric.colors import green as _green, yellow as _yellow, red as _red
@@ -12,7 +12,7 @@ from fabric.contrib.files import exists
 from fabric.utils import error
 import os
 import time
-
+from fabric.operations import local as lrun, run
 """
 env.use_ssh_config = True
 env.hosts = ["52.24.208.205"] ##For t2 medium
@@ -32,7 +32,7 @@ print PATH
 
 TAGGERS_PATH = "{0}/Text_Processing/PosTaggers/hunpos-1.0-linux".format(PATH)
 
-
+@task
 def basic_setup():
 	""""
 	This method should be run before installing virtual environment as it will install python pip
@@ -40,14 +40,15 @@ def basic_setup():
 	"""
 	#run("sudo apt-get update")
 	#run("sudo apt-get upgrade")
-	run("sudo apt-get install -y python-pip")
-        run("sudo apt-get install -y libevent-dev")
-	run("sudo apt-get install -y python-all-dev")
-	run("sudo apt-get install -y ipython")
-	run("sudo apt-get install -y libxml2-dev")
-	run("sudo apt-get install -y libxslt1-dev") 
-	run("sudo apt-get install -y python-setuptools python-dev build-essential")
-	run("sudo apt-get install -y libxml2-dev libxslt1-dev lib32z1-dev")
+	env.run("sudo apt-get install -y python-pip")
+        env.run("sudo apt-get install -y libevent-dev")
+	env.run("sudo apt-get install -y python-all-dev")
+	env.run("sudo apt-get install -y ipython")
+	env.run("sudo apt-get install -y libxml2-dev")
+	env.run("sudo apt-get install -y libxslt1-dev") 
+	env.run("sudo apt-get install -y python-setuptools python-dev build-essential")
+	"""
+        run("sudo apt-get install -y libxml2-dev libxslt1-dev lib32z1-dev")
 	run("sudo apt-get install -y python-lxml")
 	#Dependencies for installating sklearn
 	run("sudo apt-get install -y build-essential python-dev python-setuptools libatlas-dev libatlas3gf-base")
@@ -59,6 +60,17 @@ def basic_setup():
 	run("sudo apt-get install -y mercurial")
 	run("sudo apt-get install -y libpq-dev")
         run("sudo apt-get install build-essential libssl-dev libffi-dev python-dev")
+        """
+
+@task
+def localhost():
+        env.run = lrun
+        env.hosts = ['localhost']
+
+@task
+def remote():
+        env.run = run
+        env.hosts = ['192.168.1.5']
 
 def installing_riak():
         run("sudo apt-get install curl")
@@ -68,11 +80,13 @@ def installing_riak():
         
 
 def increasing_ulimits():
+        """
         /etc/security/limits.conf
 
         *     soft    nofile          40000
         *     hard    nofile          40000
-
+        """
+        return
 
 def install_phantomjs():
         """
