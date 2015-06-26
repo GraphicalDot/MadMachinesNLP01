@@ -18,7 +18,7 @@ from GlobalConfigs import ES, eateries_results_collection, bcolors
 from elasticsearch import Elasticsearch, helpers
 from elasticsearch import RequestError
 
-ES_CLIENT = Elasticsearch("192.168.1.21")
+ES_CLIENT = Elasticsearch()
 EATERY_ONE_DISHES = list()
 EATERY_TWO_DISHES = list()
 NUMBER_OF_DOCS = 20
@@ -177,7 +177,9 @@ class ElasticSearchScripts(object):
         def populate_test_data():
                 """
                 ##TODO: eatery_address and eatery_coordinates shall be strored in mongodb and also in elstic search
-                
+                ##Update very dish with a total_sentiments counter, so that the result from elastic search could be sorted based
+                ##on this counter
+
                 Update elastic search with 20 dishes from two restaurants, to run tests 
                 eatery_one
                         eatery_name: karim's
@@ -270,8 +272,27 @@ class ElasticSearchScripts(object):
                         print "{0}         Search with eatery_id test Failed Miserbly{1}".format(bcolors.FAIL, bcolors.RESET)
                         
 
-                search_body = {'query': {'match': {'eatery_name_not_analyzed': 'haux khas social'}}}
 
+        def return_dishes(eatery_id, number_of_dishes):
+                """
+                This will return all the dishes related to the particular eatery_id
+                """
+                if type(eatery_id) != str:
+                        raise StandardError("eatery_id should be a string")
+
+
+                search_body = {                                                   
+                            "query":{ 
+                                    "match_phrase":{ 
+                                                "eatery_id":  eatery_id}}, 
+                            "sort": { "total_sentiments": { "order": "desc" } }, 
+                            "from": 0,
+                            "size": number_of_dishes, 
+                          }
+
+                result = ES_CLIENT.search(index="dishes", doc_type="dish", body=search_body)["hits"]["hits"]
+                return [e.get("_source") for e in result]
+                
 
         def _change_default_analyzer(__index_name):
                 client.indices.close(index=__index_name)
