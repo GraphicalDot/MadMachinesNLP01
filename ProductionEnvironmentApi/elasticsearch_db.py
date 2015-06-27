@@ -18,7 +18,7 @@ from GlobalConfigs import ES, eateries_results_collection, bcolors
 from elasticsearch import Elasticsearch, helpers
 from elasticsearch import RequestError
 
-ES_CLIENT = Elasticsearch("192.168.1.5")
+ES_CLIENT = Elasticsearch("localhost")
 EATERY_ONE_DISHES = list()
 EATERY_TWO_DISHES = list()
 NUMBER_OF_DOCS = 10
@@ -28,9 +28,50 @@ class ElasticSearchScripts(object):
                 """
                 Will have minimum two indexes
                 one for dishes and one for eateries
+                FOOD_SUB_TAGS = ['dishes', 'menu-food', 'null-food', 'overall-food', 'place-food', 'sub-food']
+                COST_SUB_TAGS = ['cheap', 'cost-null', 'expensive', 'not worth', 'value for money']
+                SERV_SUB_TAGS = ['booking', 'management', 'presentation', 'service-null', 'service-overall',\
+                'staff', 'waiting-hours']
+
+                AMBI_SUB_TAGS = [u'ambience-null', 'ambience-overall', 'crowd', 'dancefloor', 'decor', \'
+                in-seating', 'music', 'open-area', 'romantic', 'smoking-zone', 'sports', 'sports-screens', 'view']
+
+                Index:
+                        food:
+                                _type: dish
+                                _type: overall
+                                _type: menu ##How is the menu
+                                _type: place
+                                _type: cusine ##Will have cusinine asscociated with it like italian, mexican
+                        cost:
+                                __type:
+                                __type:
+                                __type:
+                                __type:
+                        ambience:
+                                __type: overall
+                                __type: crowd
+                                __type: dancefloor
+                                __type: decor
+                                __type: inseating
+                                __type: music
+                                __type: openarea
+                                __type: romantic
+                                __type: smoking-zone
+                                __type: sports
+                                __type: sportss
+                                __type: view
+                        service:
+                                __type: booking
+                                __type: management
+                                __type: presentation
+                                __type: overall
+                                __type: staff
+                                __type: waitinghours
+                    
                 """
                 
-                if not ES_CLIENT.indices.exists("dishes"):
+                if not ES_CLIENT.indices.exists("food"):
                         ElasticSearchScripts.prep_es_indexes()
 
                 return 
@@ -48,11 +89,11 @@ class ElasticSearchScripts(object):
                                 dish
                 """
                 try:
-                        ES_CLIENT.indices.delete(index="dishes")
+                        ES_CLIENT.indices.delete(index="food")
                         print "{0} DELETING index {1}".format(bcolors.OKGREEN, bcolors.RESET)
                 except Exception as e:
                         print "{0} {1}".format(bcolors.FAIL, bcolors.RESET)
-                        print "{0} Index Dishes doesnt exists {1}".format(bcolors.FAIL, bcolors.RESET)
+                        print "{0} Index Food doesnt exists {1}".format(bcolors.FAIL, bcolors.RESET)
                         print e
 
                 __settings = {
@@ -122,7 +163,7 @@ class ElasticSearchScripts(object):
 
                 print "{0}Settings updated {1}".format(bcolors.OKGREEN, bcolors.RESET)
 
-                ES_CLIENT.indices.create(index="dishes", body=__settings)
+                ES_CLIENT.indices.create(index="food", body=__settings)
                 __mappings = {'dish': {
                                  '_all' : {'enabled' : True},
                                 'properties': 
@@ -194,11 +235,14 @@ class ElasticSearchScripts(object):
                                                     'type': 'string', 
                                                     'index': 'not_analyzed',
                                                     },
+                                        'total_sentiment': {
+                                                    'type': 'integer', 
+                                                    },
                                         'timeline': {
                                             'type': 'string'}}}}
                 
                 try:
-                        ES_CLIENT.indices.put_mapping(index="dishes", doc_type="dish", body = __mappings)
+                        ES_CLIENT.indices.put_mapping(index="food", doc_type="dish", body = __mappings)
                         print "{0}Mappings updated {1}".format(bcolors.OKGREEN, bcolors.RESET)
                 except Exception as e:
                         print "{0}Mappings update Failed with error {1} {2}".format(bcolors.FAIL, e, bcolors.RESET)
@@ -219,7 +263,7 @@ class ElasticSearchScripts(object):
                 
                 
                 print "{0}Updating test data {1}".format(bcolors.OKGREEN, bcolors.RESET)
-                l = ES_CLIENT.index(index="dishes", doc_type="dish", body=test_doc)
+                l = ES_CLIENT.index(index="food", doc_type="dish", body=test_doc)
 
                 print "{0}Result:\n {1} {2}".format(bcolors.OKGREEN, l, bcolors.RESET)
 
@@ -228,7 +272,7 @@ class ElasticSearchScripts(object):
                                 }}
 
                 print "{0}Test Doc deleted {1}".format(bcolors.OKGREEN, bcolors.RESET)
-                ES_CLIENT.delete_by_query(index="dishes", doc_type="dish", body=__body)
+                ES_CLIENT.delete_by_query(index="food", doc_type="dish", body=__body)
 
                 print "{0}_________ Index Dishes ready to be used _______________{1}".format(bcolors.OKGREEN, bcolors.RESET) 
                 return 
@@ -273,7 +317,7 @@ class ElasticSearchScripts(object):
                             "size": number_of_dishes,
                           }
                 
-                suggestions = client.search(index="dishes", doc_type="dish", body=dish_suggestions)
+                suggestions = client.search(index="food", doc_type="dish", body=dish_suggestions)
                 suggestions = ElasticSearchScripts.process_result(dish_suggestions)
 
                 exact_dish_search_body =  {
@@ -284,11 +328,11 @@ class ElasticSearchScripts(object):
                             "from": 0,
                             "size": number_of_dishes,
                           }
-                result = client.search(index="dishes", doc_type="dish", body=exact_dish_search_body)
+                result = client.search(index="food", doc_type="dish", body=exact_dish_search_body)
                 result = ElasticSearchScripts.process_result(result)
                 if result:
                         return {"match": result,
-                                "suggestions": [eatery["eatery_name"] for eatery in suggestions])
+                                "suggestions": [eatery["eatery_name"] for eatery in suggestions]}
 
                 #REsult on the basis of Distance algorithm which happens to be levenshtein right now
                 distance_dish_body = {
@@ -300,11 +344,11 @@ class ElasticSearchScripts(object):
                                                     "prefix_length": 1
                                                     }}}}
                 
-                result = client.search(index="dishes", doc_type="dish", body=distance_dish_body)
+                result = client.search(index="food", doc_type="dish", body=distance_dish_body)
                 result = ElasticSearchScripts.process_result(result)
                 if result:
                         return {"match": result,
-                                "suggestions": [eatery["eatery_name"] for eatery in suggestions])
+                                "suggestions": [eatery["eatery_name"] for eatery in suggestions]}
                 
 
                 
@@ -320,14 +364,14 @@ class ElasticSearchScripts(object):
                                             }
                                     }
                 
-                result = client.search(index="dishes", doc_type="dish", body=phonetic_search_body)
+                result = client.search(index="food", doc_type="dish", body=phonetic_search_body)
                 result = ElasticSearchScripts.process_result(result)
                 if result:
                         return {"match": result,
-                                "suggestions": [eatery["eatery_name"] for eatery in suggestions])
+                                "suggestions": [eatery["eatery_name"] for eatery in suggestions]}
                     
                 return {"match": result,
-                            "suggestions": [eatery["eatery_name"] for eatery in suggestions])
+                            "suggestions": [eatery["eatery_name"] for eatery in suggestions]}
                     
 
 
@@ -352,6 +396,13 @@ class ElasticSearchScripts(object):
                 return [e.get("_source") for e in result]
                 
 
+
+        @staticmethod
+        def insert_eatery(__eatery_data):
+                """
+                This method deasl with updating or inserting th eatery data into 
+                """
+                return 
 
 
 

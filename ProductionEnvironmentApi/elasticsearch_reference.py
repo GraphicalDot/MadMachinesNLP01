@@ -18,7 +18,7 @@ from GlobalConfigs import ES, eateries_results_collection, bcolors
 from elasticsearch import Elasticsearch, helpers
 from elasticsearch import RequestError
 
-ES_CLIENT = Elasticsearch("192.168.1.5")
+ES_CLIENT = Elasticsearch("localhost:")
 EATERY_ONE_DISHES = list()
 EATERY_TWO_DISHES = list()
 NUMBER_OF_DOCS = 10
@@ -194,6 +194,10 @@ class ElasticSearchScripts(object):
                                                     'type': 'string', 
                                                     'index': 'not_analyzed',
                                                     },
+                                        
+                                        'total_sentiments': {
+                                                    'type': 'integer',
+                                                },
                                         'timeline': {
                                             'type': 'string'}}}}
                 
