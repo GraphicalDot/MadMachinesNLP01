@@ -54,3 +54,41 @@ search_body = {
                             "from": 0,
                             "size": number_of_dishes,
                           }
+
+
+## To search for exact dish
+search_body =  {                    
+                            "query":{
+                                    "term":{
+                                                "dish_raw":  "per peri chicken sizzler"}},
+
+                            "from": 0,
+                            "size": number_of_dishes,
+                          }
+
+
+##To search for dishes who have something silimar to the queried dish
+search_body =  {
+                            "query":{
+                                    "match":{
+                                                "dish_shingle":  "per peri chicken sizzler"}},
+
+                            "from": 0,
+                            "size": number_of_dishes,
+                          }
+
+
+
+##To search with phoneti algorithms
+search_body = {                                                 
+  "query": {
+    "match": {
+      "dish_phonetic": {
+        "query": "pari pari",
+        "fuzziness": 10,
+        "prefix_length": 1
+      }
+    }
+  }
+}
+

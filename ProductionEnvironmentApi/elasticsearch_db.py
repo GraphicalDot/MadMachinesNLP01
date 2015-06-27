@@ -21,7 +21,7 @@ from elasticsearch import RequestError
 ES_CLIENT = Elasticsearch("192.168.1.5")
 EATERY_ONE_DISHES = list()
 EATERY_TWO_DISHES = list()
-NUMBER_OF_DOCS = 40
+NUMBER_OF_DOCS = 10
 #localhost:9200/test/_analyze?analyzer=whitespace' -d 'this is a test'
 class ElasticSearchScripts(object):
         def __init__(self):
@@ -30,10 +30,10 @@ class ElasticSearchScripts(object):
                 one for dishes and one for eateries
                 """
                 
-                pass
+                if not ES_CLIENT.indices.exists("dishes"):
+                        ElasticSearchScripts.prep_es_indexes()
 
-
-
+                return 
 
 
         @staticmethod
@@ -59,6 +59,11 @@ class ElasticSearchScripts(object):
                                 "settings": {
                                         "analysis": {
                                                 "analyzer": {
+                                                        "phonetic_analyzer": {
+                                                            "type": "custom",
+                                                            "tokenizer" : "whitespace",
+                                                            "filter": ["lowercase", "asciifolding", "standard", "custom_metaphone"],
+                                                                    },
                                                         "keyword_analyzer": {
                                                             "type": "custom",
                                                             "tokenizer" : "keyword",
@@ -105,6 +110,12 @@ class ElasticSearchScripts(object):
                                                                 "min_shingle_size" : 2,
                                                                 "max_shingle_size" : 5,
                                                                 },
+
+                                                            "custom_metaphone": {
+                                                                    "type" : "phonetic",
+                                                                    "encoder" : "metaphone",
+                                                                    "replace" : False
+                                                                    }
                                                             }
                                                 }
                                         }}
@@ -119,10 +130,14 @@ class ElasticSearchScripts(object):
                                                         {
                                                             #'analyzer': 'custom_analyzer', 
                                                             'type': 'string', 
-                                                            'copy_to': ['dish_raw', 'dish_shingle'],
+                                                            'copy_to': ['dish_raw', 'dish_shingle', "dish_phonetic"],
                                                             },
                                                     
                                                     
+                                        'dish_phonetic': {
+                                                    'type': 'string', 
+                                                    'analyzer': 'phonetic_analyzer',
+                                                    },
                                         'dish_shingle': {
                                                     'type': 'string', 
                                                     'analyzer': 'shingle_analyzer',
@@ -149,7 +164,7 @@ class ElasticSearchScripts(object):
                                                 'properties': {'name': 
                                                                     {
                                                                         'type': 'string', 
-                                                                        'copy_to': ['dish_raw', 'dish_shingle'],
+                                                                        'copy_to': ['dish_raw', 'dish_shingle', "dish_phonetic"],
                                                                     
                                                                     },
                                                             'negative': {
@@ -215,111 +230,105 @@ class ElasticSearchScripts(object):
                 print "{0}Test Doc deleted {1}".format(bcolors.OKGREEN, bcolors.RESET)
                 ES_CLIENT.delete_by_query(index="dishes", doc_type="dish", body=__body)
 
-                
+                print "{0}_________ Index Dishes ready to be used _______________{1}".format(bcolors.OKGREEN, bcolors.RESET) 
                 return 
-        
-        @staticmethod
-        def populate_test_data():
-                """
-                ##TODO: eatery_address and eatery_coordinates shall be strored in mongodb and also in elstic search
-                ##Update very dish with a total_sentiments counter, so that the result from elastic search could be sorted based
-                ##on this counter
 
-                Update elastic search with 20 dishes from two restaurants, to run tests 
-                eatery_one
-                        eatery_name: karim's
-                        eatery_id: 463
-                        dishes = [u'moti roti', u'20 mins', u'10 mins', u'20 min', u'30 mins', u'20 mins', u'gurda kaleji', 
-                        u'gurda kaleji', u'gurda kalegi', u'gurda / kaleji', u'signature dishes', u'signature dish', u'signature dishes', 
-                        u'mutton keema', u'mutton kheema', u'mutton keema', u'shahi tukda', u'shahi tukdaa', u'shahi tukda', u'tender meat', 
-                        u'roghini naan', u'qeema naan', u'rogan josh']
 
-                        
-                eatery_two
-                        eatery_name: hauz khas socials
-                        eatery_id = 308322
-                        dishes_name = [u'steel tiffin box', u'steel tiffins', u'tiffin boxes', u'steel tiffin boxes', 
-                        u'steel tiffin box', u'steel tiffin', u'chicken sizzler', u'chicken sizzler', u'peri peri chicken sizzler', 
-                        u'grilled chicken sizzler', u'chilli paneer black pepper china box', u'chilli paneer black pepper china box', 
-                        u'chilly paneer black pepper china box', u'bombay bachelor sandwich', u'bombay bachelor sandwich', 
-                        u'bombay bachelors sandwich', u'\u2022 bombay bachelor sandwich', u'prawn sesame toast', u'prawn sesame', 
-                        u'sesame toast', u'sesame prawn toast', u'prawn sesame toast', u'honey chilli potatoes', u'honey chilli potatoes', 
-                        u'honey chilli potato', u'chilli potatoes', u'cottage cheese', u'cottage cheese sizzler', u'cottage cheese', 
-                        u'toffee sauce', u'cosmo explosion', u'chicken peri peri']
-                """
-                eatery_dishes_one = eateries_results_collection.find_one({"eatery_id": "463"})["food"]["dishes"][40: 40+NUMBER_OF_DOCS]
-                eatery_dishes_two = eateries_results_collection.find_one({"eatery_id": "308322"})["food"]["dishes"][40: 40+NUMBER_OF_DOCS]
-                __list = []
 
-                print "\n\n{0}Updating ES with karims {1} documents {2}".format(bcolors.OKGREEN, NUMBER_OF_DOCS, bcolors.RESET)
-                for dish in eatery_dishes_one:
-                        dish.update({"eatery_name": "karim's", "eatery_id": "463", "_index": "dishes", "_type": "dish"})
-                        __list.append(dish)       
+        def find_eatery_id(self, eatery_id):
 
-                try:
-                        __result = helpers.bulk(ES_CLIENT, __list, stats_only=True)
-                        print "{0}Updated ES with karims {1} documents with result {2} {3}".format(bcolors.OKGREEN, \
-                                                                                NUMBER_OF_DOCS, __result,  bcolors.RESET)
-                except Exception as e:
-                        print "{0}Update or karim dishes failed with error {1}{2}".format(bcolors.FAIL, e, bcolors.RESET)
+                return 
 
-                __list = []
-                print "\n\n{0}Updating ES with Hauz khas socials {1} documents {2}".format(bcolors.OKGREEN, NUMBER_OF_DOCS, bcolors.RESET)
-                for dish in eatery_dishes_two:
-                        dish.update({"eatery_name": "Hauz Khas Social", "eatery_id": "308322",  "_index": "dishes", "_type": "dish"})
-                        __list.append(dish)       
-                try:
-                        __result = helpers.bulk(ES_CLIENT, __list, stats_only=True)
-                        print "{0}Updated ES with Hauxkhas socials {1} documents with result {2} {3}".format(bcolors.OKGREEN,\
-                                NUMBER_OF_DOCS, __result,  bcolors.RESET)
-                except Exception as e:
-                        print "{0}Update or Hauxkhas socials dishes failed with error {1}{2}".format(bcolors.FAIL, e, bcolors.RESET)
+        def suggest_eatery_name(self, suggest_eatery):
+                return 
 
 
         @staticmethod
-        def check_eatery():
+        def process_result(__result):
+                [[j.pop(k) for k in ["_id", "_score", "_index", "_type"]] for j in __result]
+                [l.pop("_source") for l in __result]
+                return __result
+
+        def suggest_dish(self, __dish_name, number_of_dishes=None):
                 """
-                Points to consider
-                The difference is simple: filters are cached and don't influence the score, therefore faster than queries.
-                As a general rule, filters should be used instead of queries:
-                        for binary yes/no searches
-                        for queries on exact values
-                As a general rule, queries should be used instead of filters:
-                        for full text search
-                        where the result depends on a relevance score
-                more information: https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl.html
+                Args:
+                        dish_name must be lower case
+                        type(string)
 
-                So to search eatery on eatery_id we need exact results
-                but on eatery name we need to have query on eatery_name
-                
-                First:
-                    Test for eatery_id, we have implemented analyzer: custom_standard which implies that it takes
-                    eatery_id as a string, doesnt convert it to ngrams
+                First it will look for the exact dish_name
+
+                Second it will do the fuzzy search, and find the dish similar considering levenshtein distance algorithm, 
+
+                third it will find the dish_names that sound similar to given dish name on the basis of soundex algorithm
                 """
+                if not number_of_dishes:
+                        number_of_dishes = 10
                 
-                ##THis is to make ES wait, so that all the documents that were being indexed, will be available for 
-                ##search
-                ES_CLIENT.indices.refresh() 
-                print "\n\n{0}         Testing for search with eatery_id {1}".format(bcolors.OKGREEN, bcolors.RESET)
-                eatery_id = "308322"
-                search_body = {"query":
-                                    {"match_phrase":
-                                                {"eatery_id": eatery_id}}}
+                dish_suggestions= {
+                                "query":{
+                                        "match":{
+                                                "dish_shingle":  __dish_name}},
+
+                            "from": 0,
+                            "size": number_of_dishes,
+                          }
                 
-                filtered_query = {"query": {
-                                            "filtered": {
-                                                    "filter":   { "term": { "eatery_id": eatery_id }}}}}
-                                    
-                result = ES_CLIENT.search(index="dishes", doc_type="dish", body=filtered_query)
-                if result["hits"]["total"] == NUMBER_OF_DOCS:
-                        print "{0}         Search with eatery_id test passed{1}".format(bcolors.OKGREEN, bcolors.RESET)
-                else:
-                        print "{0}         Search with eatery_id test Failed Miserbly{1}".format(bcolors.FAIL, bcolors.RESET)
-                        
+                suggestions = client.search(index="dishes", doc_type="dish", body=dish_suggestions)
+                suggestions = ElasticSearchScripts.process_result(dish_suggestions)
 
+                exact_dish_search_body =  {
+                            "query":{
+                                    "term":{
+                                                "dish_raw":  __dish_name}},
 
-                ##testing for exact eatery_name
+                            "from": 0,
+                            "size": number_of_dishes,
+                          }
+                result = client.search(index="dishes", doc_type="dish", body=exact_dish_search_body)
+                result = ElasticSearchScripts.process_result(result)
+                if result:
+                        return {"match": result,
+                                "suggestions": [eatery["eatery_name"] for eatery in suggestions])
 
+                #REsult on the basis of Distance algorithm which happens to be levenshtein right now
+                distance_dish_body = {
+                            "query": {
+                                    "match": {
+                                            "dish_raw": {
+                                                    "query": __dish_name,
+                                                    "fuzziness": 10,
+                                                    "prefix_length": 1
+                                                    }}}}
+                
+                result = client.search(index="dishes", doc_type="dish", body=distance_dish_body)
+                result = ElasticSearchScripts.process_result(result)
+                if result:
+                        return {"match": result,
+                                "suggestions": [eatery["eatery_name"] for eatery in suggestions])
+                
+
+                
+                #REsult on the basis of phoneti algorithms
+                phonetic_search_body = {
+                        "query": {
+                                "match": {
+                                    "dish_phonetic": {
+                                            "query": __dish_name,
+                                                    "fuzziness": 10,
+                                                    "prefix_length": 1}
+                                                        }
+                                            }
+                                    }
+                
+                result = client.search(index="dishes", doc_type="dish", body=phonetic_search_body)
+                result = ElasticSearchScripts.process_result(result)
+                if result:
+                        return {"match": result,
+                                "suggestions": [eatery["eatery_name"] for eatery in suggestions])
+                    
+                return {"match": result,
+                            "suggestions": [eatery["eatery_name"] for eatery in suggestions])
+                    
 
 
         def return_dishes(eatery_id, number_of_dishes):
@@ -515,6 +524,4 @@ class ElasticSearchScripts(object):
 
 if __name__ == "__main__":
         ElasticSearchScripts.prep_es_indexes()
-        ElasticSearchScripts.populate_test_data()
-        ElasticSearchScripts.check_eatery()
 

@@ -21,8 +21,8 @@ from elasticsearch import RequestError
 ES_CLIENT = Elasticsearch("192.168.1.5")
 EATERY_ONE_DISHES = list()
 EATERY_TWO_DISHES = list()
-NUMBER_OF_DOCS = 40
-
+NUMBER_OF_DOCS = 10
+#localhost:9200/test/_analyze?analyzer=whitespace' -d 'this is a test'
 class ElasticSearchScripts(object):
         def __init__(self):
                 """
@@ -59,6 +59,21 @@ class ElasticSearchScripts(object):
                                 "settings": {
                                         "analysis": {
                                                 "analyzer": {
+                                                        "phonetic_analyzer": {
+                                                            "type": "custom",
+                                                            "tokenizer" : "whitespace",
+                                                            "filter": ["lowercase", "asciifolding", "standard", "custom_metaphone"],
+                                                                    },
+                                                        "keyword_analyzer": {
+                                                            "type": "custom",
+                                                            "tokenizer" : "keyword",
+                                                            "filter": ["lowercase", "asciifolding"],
+                                                                    },
+                                                        "shingle_analyzer": {
+                                                            "type": "custom",
+                                                            "tokenizer" : "ngram_tokenizer",
+                                                            "filter": ["lowercase", "asciifolding", "shingle_tokenizer"],
+                                                                    },
                                                         "custom_analyzer": {
                                                             "type": "custom",
                                                             "tokenizer" : "ngram_tokenizer",
@@ -78,8 +93,8 @@ class ElasticSearchScripts(object):
                                                 "tokenizer": {
                                                         "ngram_tokenizer": {
                                                                 "type" : "edgeNGram",
-                                                                "min_gram" : "2",
-                                                                "max_gram" : "100",
+                                                                "min_gram" : 2,
+                                                                "max_gram" : 100,
                                                                 "token_chars": [ "letter", "digit" ]
                                                                 },
                                                         "limited_tokenizer": {
@@ -87,32 +102,71 @@ class ElasticSearchScripts(object):
                                                                 "min_gram" : "2",
                                                                 "max_gram" : "10",
                                                                 "token_chars": [ "letter", "digit" ]
-                                                                }
-                                                        }
+                                                                },
+                                                        }, 
+                                                "filter": {
+                                                            "shingle_tokenizer": {
+                                                                "type" : "shingle",
+                                                                "min_shingle_size" : 2,
+                                                                "max_shingle_size" : 5,
+                                                                },
+
+                                                            "custom_metaphone": {
+                                                                    "type" : "phonetic",
+                                                                    "encoder" : "metaphone",
+                                                                    "replace" : False
+                                                                    }
+                                                            }
                                                 }
                                         }}
 
                 print "{0}Settings updated {1}".format(bcolors.OKGREEN, bcolors.RESET)
 
                 ES_CLIENT.indices.create(index="dishes", body=__settings)
-                __mappings = {'dish': {'properties': 
+                __mappings = {'dish': {
+                                 '_all' : {'enabled' : True},
+                                'properties': 
                                                 {'name': 
                                                         {
-                                                            'analyzer': 'custom_analyzer', 
+                                                            #'analyzer': 'custom_analyzer', 
                                                             'type': 'string', 
-                                                            "path": "full",
-                                                            'fields':{
-                                                                    'raw': {'type': 'string', 'index': 'not_analyzed'},
-                                                                    'tokenized': {'type': 'string', 'index': 'analyzed'},
-                                                                }
+                                                            'copy_to': ['dish_raw', 'dish_shingle', "dish_phonetic"],
+                                                            },
+                                                    
+                                                    
+                                        'dish_phonetic': {
+                                                    'type': 'string', 
+                                                    'analyzer': 'phonetic_analyzer',
                                                     },
+                                        'dish_shingle': {
+                                                    'type': 'string', 
+                                                    'analyzer': 'shingle_analyzer',
+                                                    },
+                                        'dish_raw': {
+                                                    'type': 'string', 
+                                                    'analyzer': 'keyword_analyzer',
+                                                    },
+
+                                        'eatery_shingle': {
+                                                    'type': 'string', 
+                                                    'analyzer': 'shingle_analyzer',
+                                                    },
+
+                                        'eatery_raw': {
+                                                    'type': 'string', 
+                                                    'analyzer': 'keyword_analyzer',
+                                                    },
+                                        
                                         'negative': {'type': 'long'},
                                         'neutral': {'type': 'long'},
                                         'positive': {'type': 'long'},
                                         'similar': {
                                                 'properties': {'name': 
-                                                                    {'analyzer': 'custom_analyzer',
-                                                                    'type': 'string'},
+                                                                    {
+                                                                        'type': 'string', 
+                                                                        'copy_to': ['dish_raw', 'dish_shingle', "dish_phonetic"],
+                                                                    
+                                                                    },
                                                             'negative': {
                                                                      'type': 'long'},
                                                             'neutral': {
@@ -133,17 +187,12 @@ class ElasticSearchScripts(object):
                                         'super-positive': {
                                                     'type': 'long'},
                                         'eatery_name': {
-                                                            'analyzer': 'custom_analyzer', 
                                                             'type': 'string', 
-                                                            "path": "full", #just_name
-                                                            'fields':{
-                                                                    'raw': {'type': 'string', 'index': 'not_analyzed'},
-                                                                    'tokenized': {'type': 'string', 'index': 'analyzed'},
-                                                                }
+                                                            'copy_to': ['eatery_shingle', "eatery_raw"],
                                                     },
                                         'eatery_id': {
                                                     'type': 'string', 
-                                                    'analyzer': 'standard_analyzer',
+                                                    'index': 'not_analyzed',
                                                     },
                                         'timeline': {
                                             'type': 'string'}}}}

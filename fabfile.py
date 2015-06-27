@@ -107,13 +107,16 @@ def install_elastic_search_stack():
         For more configuration options for Elastic search, read the following document
         https://www.digitalocean.com/community/tutorials/how-to-install-elasticsearch-logstash-and-kibana-4-on-ubuntu-14-04
         """
-        run("sudo add-apt-repository -y ppa:webupd8team/java")
-        run("sudo apt-get update")
-        run("sudo apt-get -y install oracle-java8-installer")
-        run("wget -O - http://packages.elasticsearch.org/GPG-KEY-elasticsearch | sudo apt-key add -")
-        run("echo 'deb http://packages.elasticsearch.org/elasticsearch/1.4/debian stable main' | sudo tee /etc/apt/sources.list.d/elasticsearch.list")
-        run("sudo apt-get update")
-        run("sudo apt-get -y install elasticsearch=1.4.4")
+        env.run("sudo add-apt-repository -y ppa:webupd8team/java")
+        env.run("sudo apt-get update")
+        env.run("sudo apt-get -y install oracle-java8-installer")
+        env.run("wget -O - http://packages.elasticsearch.org/GPG-KEY-elasticsearch | sudo apt-key add -")
+        env.run("echo 'deb http://packages.elasticsearch.org/elasticsearch/1.4/debian stable main' | sudo tee /etc/apt/sources.list.d/elasticsearch.list")
+        env.run("sudo apt-get update")
+        env.run("sudo apt-get -y install elasticsearch=1.4.4")
+        with cd("/usr/share/elasticsearch"):
+                env.run("bin/plugin -install elasticsearch/elasticsearch-analysis-phonetic/2.4.3")
+        env.run("sudo service elasticsearch start")
 
 
 def get_host():
