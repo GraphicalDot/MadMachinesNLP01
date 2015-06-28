@@ -58,14 +58,19 @@ class EachEatery:
                 self.mongo_eatery_instance = MongoScriptsEateries(self.eatery_id)
         
         def return_non_processed_reviews(self, start_epoch=None, end_epoch=None):
-                ##If there is a change in algortihms or a new eatery to be processed
-                #we run processing all the reviews independent of the start_epoch and
-                #end_epoch, which means whenever there is change all the revviews will
-                #be present in processed_reviews list of eatery unless celery fails to
-                #process all, in case of some internal error
+                """
+                If there is a change in algortihms or a new eatery to be processed
+                we run processing all the reviews independent of the start_epoch and
+                end_epoch, which means whenever there is change all the revviews will
+                be present in processed_reviews list of eatery unless celery fails to
+                process all, in case of some internal error
+                This method treats an existing eatery with old algorithms set and an all together 
+                New eatery as equal, In both the cases eatery will be update by set_new_algorithms
+                method
+                """
                 if not self.mongo_eatery_instance.check_algorithms():
                         self.mongo_eatery_instance.empty_processed_reviews_list()
-                        self.mongo_eatery_instance.set_new_algorithms()
+                        self.mongo_eatery_instance.set_new_algorithms() ##This will insert the eatery if not present
                         self.mongo_eatery_instance.empty_noun_phrases()
                         self.mongo_eatery_instance.empty_old_considered_ids()
             
@@ -393,7 +398,7 @@ class DoClusters(object):
                         
                         __nps_food = self.mongo_instance.fetch_reviews("food")
                         
-                        ##sub_tag_dict = {u'dishes': [[u'positive', 'sent', [u'paneer chilli pepper starter']],
+                        ##sub_tag_dict = {u'dishes': [[u'super-positive', 'sent', [u'paneer chilli pepper starter']],
                         ##[u'positive', sent, []],
                         ##u'menu-food': [[u'positive', sent, []]], u'null-food': [[u'negative', sent, []],
                         ##[u'negative', sent, []],
@@ -413,8 +418,6 @@ class DoClusters(object):
                         for __category in ["ambience", "service", "cost"]:
                                 __nps = self.mongo_instance.fetch_reviews(__category)
                                 __whle_nps = DoClusters.make_cluster(__nps, __category)
-                                print __whle_nps
-                                print "\n\n\n\n\n"
                                 
                                 self.mongo_instance.update_nps(__category, __whle_nps)
                         
@@ -436,7 +439,7 @@ class DoClusters(object):
                         __nps_food = self.mongo_instance.fetch_reviews("food", reviews_ids)
                             
                             
-                        ##{u'dishes': [[u'positive', 'sent', [u'paneer chilli pepper starter']],
+                        ##{u'dishes': [[u'positive', sent, [u'paneer chilli pepper starter']],
                         ##[u'positive', sent, []],
                         ##u'menu-food': [[u'positive', sent, []]], u'null-food': [[u'negative', sent, []],
                         ##[u'negative', sent, []],
@@ -449,7 +452,9 @@ class DoClusters(object):
                                 __nps_old_result = self.mongo_instance.fetch_nps_frm_eatery("food", sub_category)
                                 
                                 
-                                
+                                print  "This is the new result"
+                                print __nps_new_result
+                                print  "Enfind printing new result"
                                 __whle = __nps_old_result + __nps_new_result
                                 __whle_result = self.join_two_clusters(__whle, sub_category)
                                 self.mongo_instance.update_food_sub_nps(__whle_result, sub_category)
@@ -471,7 +476,7 @@ class DoClusters(object):
 
                                 __nps_old_result = self.mongo_instance.fetch_nps_frm_eatery(__category)
                                 __whle_nps = DoClusters.adding_new_old_nps(__nps_old_result, __nps_new_result)
-
+                                
                                 self.mongo_instance.update_nps(__category, __whle_nps)
                         
                         self.mongo_instance.update_considered_ids(review_list=reviews_ids)
@@ -562,13 +567,20 @@ class DoClusters(object):
                         sentiment_dict = dict()
                         [sentiment_dict.update({key: 0}) for key in SENTIMENT_TAGS]
                         sentiment_dict.update({"timeline": list()})
+                        sentiment_dict.update({"total_sentiments": 0})
                         return sentiment_dict
+
+                print "Printind old and new"
+                print old
+                print new
+                print "finished Printind old and new"
 
                 sentiment_dict = dict()
                 if new :
                         [sentiment_dict.update({key: (old.get(key) + new.get(key))}) for key in SENTIMENT_TAGS] 
                         #this statement ensures that we are dealing with case 1
                         sentiment_dict.update({"timeline": sorted((old.get("timeline") + new.get("timeline")), key= lambda x: x[1] )})
+                        sentiment_dict.update({"total_sentiments": old.get("total_sentiments")+ new.get("total_sentiments")})
                         return sentiment_dict
 
 
@@ -584,6 +596,10 @@ class DoClusters(object):
 
                 [sentiment_dict.update(__dict) for __dict in map(convert,  SENTIMENT_TAGS)]
                 sentiment_dict.update({"timeline": timeline})
+                total = sentiment_dict.get("positive") + sentiment_dict.get("negative") + sentiment_dict.get("neutral") + sentiment_dict.get("super-negative")\
+                                    +sentiment_dict.get("super-positive")
+
+                sentiment_dict.update({"total_sentiments": total})
                 return sentiment_dict
 
 
@@ -646,10 +662,10 @@ class DoClusters(object):
         @staticmethod
         def adding_new_old_nps(__new, __old):
                 """
-                __new: [{'name': u'decor', u'super-positive': 1, "negative": 3, "timeline": [(u'negative', u'2014-09-19 06:56:42'),
+                __new: [{'name': u'decor', u'super-positive': 1, "negative": 3, "total_sentiment": 4 , "timeline": [(u'negative', u'2014-09-19 06:56:42'),
                   (u'negative', u'2014-09-19 06:56:42'), (u'neutral', u'2014-09-19 06:56:42')]}, 
                   
-                  {'name': u'ambience-null', u'positive': 1, "timeline": [(u'negative', u'2014-09-19 06:56:42')]},
+                  {'name': u'ambience-null', u'positive': 1, "total_sentiments": 1, "timeline": [(u'negative', u'2014-09-19 06:56:42')]},
 
                 __old: [{'name': u'music', u'super-positive': 1, "timeline": []}, {'name': u'ambience-null', u'neutral': 1, "super-negative": 10}, 
                 {'name': u'ambience-overall', u'neutral': 1, u'super-positive': 2},
@@ -668,8 +684,6 @@ class DoClusters(object):
                 __new_dict = make_dict(__new)
                 __old_dict = make_dict(__old)
 
-                print __new_dict
-                print __old_dict
                 keys = set.union(set(__old_dict.keys()), set(__new_dict.keys()))
                 for key in keys:
                         a = Counter(__new_dict.get(key))
@@ -711,6 +725,7 @@ class DoClusters(object):
 
                 __dict.update({"name": key})
                 __dict.update({"timeline": sorted(value.get("timeline"), key=lambda x: x[1] )})
+                __dict.update({"total_sentiments": value.get("total_sentiments")})
                 return __dict
 
 
@@ -749,17 +764,20 @@ class DoClusters(object):
 
                 for sub_tag in eval("{0}_SUB_TAGS".format(category.upper()[0:4])):
                         for sentiment in SENTIMENT_TAGS:
-                            sentences_dict.update({sub_tag: {"sentiment": list(), "timeline": list()}})
+                            sentences_dict.update({sub_tag: {"sentiment": list(), "timeline": list(), "total_sentiments": 0}})
 
                 for __sentiment, __category, review_time in noun_phrases:
                         timeline = sentences_dict.get(__category).get("timeline")
                         timeline.append((__sentiment, review_time))
                         sentiment = sentences_dict.get(__category).get("sentiment")
                         sentiment.append(__sentiment)
+                        total_sentiments = sentences_dict.get(__category).get("total_sentiments") +1 
 
                         sentences_dict.update({
-                                    __category: {"sentiment": sentiment, "timeline": timeline}})
+                            __category: {"sentiment": sentiment, "timeline": timeline, "total_sentiments": total_sentiments}})
     
+                
+                        
                 return sentences_dict
                 """
                 for __sentiment, __category, review_time in noun_phrases:

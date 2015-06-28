@@ -179,8 +179,21 @@ class ProductionHeuristicClustering:
                         self.result = self.filter_on_basis_pos_tag()
                         self.result = sorted(self.result, reverse=True, key= lambda x: x.get("positive") \
                                                         + x.get("negative")+ x.get("neutral") + x.get("super-positive")+ x.get("super-negative"))
-                        return self.result
-                return self.result
+                        return self.add_sentiments(self.result)
+                
+                
+                return self.add_sentiments(self.result)
+
+
+        def add_sentiments(self, __list):
+                """
+                This takes in a list of dictionaries with sentiments present for each dictionary, 
+                and then adds a new key to every dictionary which is the sum of all the sentiments
+                """
+                __add =  lambda x: x.get("positive") + x.get("negative")+ x.get("neutral") + x.get("super-positive")\
+                                    + x.get("super-negative")
+                [__dict.update({"total_sentiments": __add(__dict)}) for __dict in __list]
+                return __list
 
 
 
@@ -700,7 +713,12 @@ if __name__ == "__main__":
                 (u'positive', [u'paneer chilli pepper starter'], u'2014-09-19 06:56:42'),
                 (u'positive', [u'paneer chilli pepper starter'], u'2014-09-19 06:56:42'),
                 (u'positive', [u'paneer chilli pepper starter'], u'2014-09-19 06:56:42'),
-                 (u'positive', [u'friday night'], u'2014-09-19 06:56:42'),
+                (u'positive', [u'paneer chilli peppe starter'], u'2014-09-19 06:56:42'),
+                (u'positive', [u'paneer chilli peppe ster'], u'2014-09-19 06:56:42'),
+                (u'positive', [u'panee chilli peppe starter'], u'2014-09-19 06:56:42'),
+                (u'positive', [u'paneer chilli peppe starr'], u'2014-09-19 06:56:42'),
+                 
+                (u'positive', [u'friday night'], u'2014-09-19 06:56:42'),
                   (u'positive',
                         [u'pizzas insteadand',
                                u'pastamy lil sister',
@@ -717,4 +735,8 @@ if __name__ == "__main__":
                      (u'neutral', [u'chicken pieces', u'veg pasta n'], u'2014-06-20 15:11:42')]
 
         ins = ProductionHeuristicClustering(sentiment_np_time, "dishes", sentences,)
-        print ins.run()
+        i = ins.run()
+        for e in ins.run():
+            print e
+    
+        print i[0].keys()

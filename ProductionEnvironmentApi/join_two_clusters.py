@@ -140,6 +140,9 @@ class ProductionJoinClusters:
 
         def run(self):
                 self.merged_sentiment_nps = self.merge_similar_elements()
+                for key, value in self.merged_sentiment_nps.iteritems():
+                    if not value.get("total_sentiments"):
+                            print key, value , "\n\n"
                 __sorted = sorted(self.merged_sentiment_nps.keys())
                 #self.NERs = self.ner()
                 self.keys = self.merged_sentiment_nps.keys()
@@ -176,7 +179,7 @@ class ProductionJoinClusters:
                                 new_timeline = np_dict.pop("timeline")
 
                                 new_np_dict = dict()
-                                for key in ['positive', 'negative', 'neutral', 'super-positive', 'super-negative']:
+                                for key in ['positive', 'negative', 'neutral', 'super-positive', 'super-negative', "total_sentiments"]:
                                         __old_frequency, __new_frequency = old.get(key), np_dict.get(key)
                                         new_np_dict.update({key: __old_frequency+__new_frequency})
 
@@ -269,28 +272,35 @@ class ProductionJoinClusters:
                 
                 """
                 result = list()
-                positive, negative, neutral, super_positive, super_negative = int(), int(), int(), int(), int()
+                total_sentiments, positive, negative, neutral, super_positive, super_negative = int(), int(), int(), int(), int(), int()
                 timeline = list()
                
                 cluster_names = [self.keys[element] for element in cluster_list]
 
+                print "Printing cluster names"
                 for element in cluster_list:
                         name = self.keys[element]    
                         new_dict = self.merged_sentiment_nps[name]
                         new_dict.update({"name": name})
-                        result.append(new_dict)        
+                        print new_dict
+                        result.append(new_dict) 
+                        total_sentiments = total_sentiments +  self.merged_sentiment_nps[name].get("total_sentiments") 
                         positive = positive +  self.merged_sentiment_nps[name].get("positive") 
                         negative = negative +  self.merged_sentiment_nps[name].get("negative") 
                         neutral = neutral +  self.merged_sentiment_nps[name].get("neutral") 
                         super_negative = super_negative +  self.merged_sentiment_nps[name].get("super-negative") 
                         super_positive = super_positive +  self.merged_sentiment_nps[name].get("super-positive") 
                         timeline.extend(self.merged_sentiment_nps[name].get("timeline"))
+            
+                print positive, negative, super_positive, super_negative, neutral, total_sentiments
+
+                print "ENd Printing cluster names"
 
                 result = sorted(result, reverse= True, key=lambda x: x.get("positive")+x.get("negative") + x.get("neutral")+
                                                                     x.get("super-positive")+ x.get("super-negative"))
                 return {"name": result[0].get("name"), "positive": positive, "negative": negative, "neutral": neutral, 
                         "super-negative": super_negative, "super-positive": super_positive, "similar": cluster_names,
-                        "timeline": timeline}
+                        "timeline": timeline, "total_sentiments": total_sentiments}
 
         #@print_execution
         def custom_ner(self):
