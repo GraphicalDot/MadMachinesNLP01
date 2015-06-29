@@ -575,11 +575,6 @@ class DoClusters(object):
                         sentiment_dict.update({"total_sentiments": 0})
                         return sentiment_dict
 
-                print "Printind old and new"
-                print old
-                print new
-                print "finished Printind old and new"
-
                 sentiment_dict = dict()
                 if new :
                         [sentiment_dict.update({key: (old.get(key) + new.get(key))}) for key in SENTIMENT_TAGS] 
@@ -660,47 +655,45 @@ class DoClusters(object):
                                 :  [('super-positive','2014-09-19 06:56:42'), ("super-positive": '2014-08-11 12:20:18')]}]
                     
                 """
+                final_dict = dict()
                 nps_dict = DoClusters.make_sentences_dict(__nps, __category)
-                result = [DoClusters.flattening_dict(key, value) for key, value in nps_dict.iteritems()]
-                return result
+                [final_dict.update({key: DoClusters.flattening_dict(key, value)}) for key, value in nps_dict.iteritems()]
+                return final_dict
 
         @staticmethod
         def adding_new_old_nps(__new, __old):
                 """
-                __new: [{'name': u'decor', u'super-positive': 1, "negative": 3, "total_sentiment": 4 , "timeline": [(u'negative', u'2014-09-19 06:56:42'),
-                  (u'negative', u'2014-09-19 06:56:42'), (u'neutral', u'2014-09-19 06:56:42')]}, 
-                  
-                  {'name': u'ambience-null', u'positive': 1, "total_sentiments": 1, "timeline": [(u'negative', u'2014-09-19 06:56:42')]},
+                For lets say ambience category the input will be of the form:
+                   __new = { "smoking-zone":
+                                {u'total_sentiments': 0, u'positive': 0, u'timeline': [], u'negative': 0, u'super-positive': 0, 
+                                                                                            u'neutral': 0, u'super-negative': 0}, 
 
-                __old: [{'name': u'music', u'super-positive': 1, "timeline": []}, {'name': u'ambience-null', u'neutral': 1, "super-negative": 10}, 
-                {'name': u'ambience-overall', u'neutral': 1, u'super-positive': 2},
+                            "dancefloor": {u'total_sentiments': 0, u'positive': 0, u'timeline': [], u'negative': 0, 
+                                                    u'super-positive': 0, u'neutral': 0, u'super-negative': 0},
+
+                            "open-area": {u'total_sentiments': 1, u'positive': 0, u'timeline': [[u'super-positive', u'2013-04-24 12:08:25']],
+                                                        u'negative': 0, u'super-positive': 1, u'neutral': 0, u'super-negative': 0}
+                            }
+                    __old: same as new
+
+                    Result:
+                        Adds both the dictionaries based on the keys!!
                 """
-                aggregated_list = list()
+                aggregated = dict()
 
-                        
-                def make_dict(__list):
-                        new_dict = dict()
-                        for __dict in __list:
-                                name = __dict.get("name")
-                                __dict.pop("name")
-                                new_dict.update({name: __dict})
-                        return new_dict
-
-                __new_dict = make_dict(__new)
-                __old_dict = make_dict(__old)
-
-                keys = set.union(set(__old_dict.keys()), set(__new_dict.keys()))
+                keys = set.union(set(__new.keys()), set(__old.keys()))
                 for key in keys:
-                        a = Counter(__new_dict.get(key))
-                        b = Counter(__old_dict.get(key))
+                        a = __new.get(key)
+                        b = __old.get(key)
                         __keys = set.union(set(a.keys()), set(b.keys()))
                         sentiments = dict()
                         for __key in __keys:
                                 sentiments.update({__key: a.get(__key) + b.get(__key)})
-                        sentiments.update({"name": key})
-                        aggregated_list.append(sentiments)
+                        aggregated.update({key: sentiments})
 
-                return aggregated_list
+                return aggregated
+
+
 
         @staticmethod
         def flattening_dict(key, value):
@@ -714,10 +707,10 @@ class DoClusters(object):
 
 
                 Output: 
-                    {'name': u'ambience-overall', u'neutral': 3, u'super-positive': 2, 
+                    {'neutral': 3, u'super-positive': 2, 
                 'timeline': [(u'neutral', u'2014-05-06 13:06:56'), (u'neutral', u'2014-05-06 13:06:56'),
                 (u'super-positive', u'2014-08-11 12:20:18'), (u'super-positive', u'2014-09-19 06:56:42'),
-                (u'neutral', u'2014-09-19 06:56:42')]},
+                (u'neutral', u'2014-09-19 06:56:42')], "total_sentiments": 10},
 
                 """
                 __dict = dict()
@@ -731,7 +724,6 @@ class DoClusters(object):
 
                 [__dict.update(__sentiment_dict) for __sentiment_dict in map(convert, SENTIMENT_TAGS)]
 
-                __dict.update({"name": key})
                 __dict.update({"timeline": sorted(value.get("timeline"), key=lambda x: x[1] )})
                 __dict.update({"total_sentiments": value.get("total_sentiments")})
                 return __dict
@@ -754,19 +746,13 @@ class DoClusters(object):
                 
                 Result:
 
-                {ambience-overall: {
-                                'sentiment': [u'super-positive',u'neutral', u'super-positive', u'neutral', u'neutral'],
-                                'timeline': [(u'super-positive', u'2014-09-19 06:56:42'), (u'neutral', u'2014-09-19 06:56:42'),
-                                            (u'super-positive', u'2014-08-11 12:20:18'), (u'neutral', u'2014-05-06 13:06:56'),
-                                            (u'neutral', u'2014-05-06 13:06:56')]},
-                
-                ambience-null: {
-                                'sentiment': [u'super-positive',u'neutral', u'super-positive', u'neutral', u'neutral'],
-                                'timeline': [
-                                        (u'super-positive', u'2014-09-19 06:56:42'), (u'neutral', u'2014-09-19 06:56:42'),
-                                    (u'super-positive', u'2014-08-11 12:20:18'), (u'neutral', u'2014-05-06 13:06:56'),
-                        }}
+                        {"romantic":  {u'total_sentiments': 0, u'positive': 0, u'timeline': [], u'negative': 0, 
+                                        u'super-positive': 0, u'neutral': 0, u'super-negative': 0},
 
+                        "crowd": {u'total_sentiments': 4, u'positive': 1, u'timeline': [[u'negative', u'2013-03-24 02:00:43'], 
+                        [u'positive', u'2014-03-27 00:19:55'], [u'negative', u'2014-11-15 15:31:50'], [
+                        u'negative', u'2014-11-15 15:31:50']], u'negative': 3, u'super-positive': 0, u'neutral': 0, u'super-negative': 0}
+                        }
                 """
                 sentences_dict = dict()
 
@@ -784,63 +770,7 @@ class DoClusters(object):
                         sentences_dict.update({
                             __category: {"sentiment": sentiment, "timeline": timeline, "total_sentiments": total_sentiments}})
     
-                
-                        
                 return sentences_dict
-                """
-                for __sentiment, __category, review_time in noun_phrases:
-                        if not sentences_dict.has_key(__category):
-                                sentences_dict.update({__category: {"sentiment": [__sentiment], \
-                                        "timeline": [(__sentiment, review_time)]}})
-
-                        else:
-                                timeline = sentences_dict.get(__category).get("timeline")
-                                timeline.append((__sentiment, review_time))
-                                sentiment = sentences_dict.get(__category).get("sentiment")
-                                sentiment.append(__sentiment)
-
-                                sentences_dict.update({
-                                    __category: {"sentiment": sentiment, "timeline": timeline}})
 
 
-
-                left_out_sub_tgs = set.difference(set(eval("{0}_SUB_TAGS".format(category.upper()[0:4]))), set(sentences_dict.keys()))
-                
-                for sub_tag in left_out_sub_tags:
-                        sentences_dict.update({sub_tag: {"sentiment": None, "timeline": []}})
-
-                return sentences_dict
-                """
-
-if __name__ == "__main__":
-        """
-        14 599
-        1 3239
-        4 309576
-        5 5586
-        98 9784
-        42 3425
-        47 303574
-        62 307801
-        820 218cdcf7214b3ea1ba6ce89e7d37ef9a
-        84 8511e15af9b6379ba951b627a323a0eb
-        """
-        review_id = '3320891'
-        review_text = "Visited the place for a friend's birthday bash. Lots of people have written detailed reviews about this place. So am giving a quick short review:1. Ambience is great. They have divided the place into fine dining, disc, and outdoor lounge area. However the outdoor area is still covered by a makeshift tent like a large pavilion with numerous ACs running to keep the place cool.2. Food is average. Can't say I tasted anything that I haven't had before. However, expect good food and you won't be disappointed. Do try their Paneer Chilli Pepper starter. Pizzas and risotto too was good.3. Drinks - here is an interesting (read weird) fact..even through they have numerous drinks in the menu, on a Friday night (when I visited the place) they were serving only specific brands of liquor. And way above even twice the MRP per bottle. So do make sure you carry a fat wallet if you are gonna drink.4. Service was good. A little slow but still everything came hot (except for the drinks of course!! ;)...but I guess the slow speed was due to the crowd present on a Friday night.And finally, if you are now planning to go (which I wouldn't say no to) do ensure you make a reservation. They DO NOT entertain without a reservation.Hope this was useful. Bon Appetit! :))"
-        review_time = '2014-09-19 06:56:42'
-
-
-        eatery_id = "8511e15af9b6379ba951b627a323a0eb"
-        ins = EachEatery(eatery_id=eatery_id)
-    
-        try:
-                for review_id, review_text, review_time in ins.return_non_processed_reviews():
-                        per_review_instance = PerReview(review_id, review_text, review_time, eatery_id)
-                        per_review_instance.run()
-        except Exception:
-                print "No review to be processed"
-                pass
-
-        do_cluster_ins = DoClusters(eatery_id=eatery_id)
-        do_cluster_ins.run()
 

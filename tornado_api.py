@@ -403,6 +403,16 @@ class GetWordCloud(tornado.web.RequestHandler):
                 """
                 print "Processing word cloud"
                 __result = yield self._exe(eatery_id, category)
+                
+                if category != "food":
+                        new_list = list()
+                        for key, value in __result.iteritems():
+                                value.update({"name": key})
+                                new_list.append(value)
+                        __result = new_list
+
+                
+                
                 for element in __result:
                         element.update({"superpositive": element.get("super-positive") })
                         element.update({"supernegative": element.get("super-negative")})
@@ -410,49 +420,6 @@ class GetWordCloud(tornado.web.RequestHandler):
                         element.pop("super-positive")
                
 
-                """
-                new_noun_phrases = list()
-                keys = list()
-                for e in __result:
-                        keys.append({"name": e.get("name")})
-                        for t in e.get("timeline"):
-                                new_noun_phrases.append({"name": e.get("name"),
-                                    "superpositive": (0, 1)[t[0] == "superpositive"],
-                                    "supernegative": (0, 1)[t[0] == "supernegative"],
-                                    "neutral": (0, 1)[t[0] == "neutral"],
-                                    "positive": (0, 1)[t[0] == "positive"],
-                                    "negative": (0, 1)[t[0] == "negative"],
-                                    "ptime": t[1]})
-
-                sorted_np = sorted(new_noun_phrases, key=lambda x: x.get("p-time"))
-                
-                print sorted_np 
-                self.write({"success": True,
-			"error": False,
-                        "result": {"noun_phrases": sorted_np, "keys": keys},
-			})
-                __timeline_result = list()
-                for e in __result:
-                        for mention_time in e["timeline"]:
-                                __timeline_result.append([mention_time[1], (0, 1)[mention_time[0] == "super-positive"], (0, 1)[mention_time[0] == "positive"], (0, 1)[mention_time[0] == "neutral"], (0, 1)[mention_time[0] == "negative"], (0, 1)[mention_time[0] == "super-negative"],  e.get("name")])
-
-                new_time_line = sorted(__timeline_result, key=lambda x: x[0])
-              
-
-                __list = list()
-                __list.append(new_time_line[0])
-                for element in new_time_line[1:]:
-                        if element[0].split(" ")[0] == __list[-1][0][0].split(" ")[0]:
-                                __list[-1].append(element)
-                        else:
-                                __list.append([element])
-
-                self.write({"success": True,
-			"error": False,
-			"result": __list,
-                        })
-                self.finish()
-                """
                 self.write({"success": True,
 			"error": False,
 			"result": __result,
