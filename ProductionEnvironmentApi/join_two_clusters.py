@@ -277,12 +277,10 @@ class ProductionJoinClusters:
                
                 cluster_names = [self.keys[element] for element in cluster_list]
 
-                print "Printing cluster names"
                 for element in cluster_list:
                         name = self.keys[element]    
                         new_dict = self.merged_sentiment_nps[name]
                         new_dict.update({"name": name})
-                        print new_dict
                         result.append(new_dict) 
                         total_sentiments = total_sentiments +  self.merged_sentiment_nps[name].get("total_sentiments") 
                         positive = positive +  self.merged_sentiment_nps[name].get("positive") 
@@ -292,9 +290,6 @@ class ProductionJoinClusters:
                         super_positive = super_positive +  self.merged_sentiment_nps[name].get("super-positive") 
                         timeline.extend(self.merged_sentiment_nps[name].get("timeline"))
             
-                print positive, negative, super_positive, super_negative, neutral, total_sentiments
-
-                print "ENd Printing cluster names"
 
                 result = sorted(result, reverse= True, key=lambda x: x.get("positive")+x.get("negative") + x.get("neutral")+
                                                                     x.get("super-positive")+ x.get("super-negative"))

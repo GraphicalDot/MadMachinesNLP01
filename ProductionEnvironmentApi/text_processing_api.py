@@ -452,9 +452,6 @@ class DoClusters(object):
                                 __nps_old_result = self.mongo_instance.fetch_nps_frm_eatery("food", sub_category)
                                 
                                 
-                                print  "This is the new result"
-                                print __nps_new_result
-                                print  "Enfind printing new result"
                                 __whle = __nps_old_result + __nps_new_result
                                 __whle_result = self.join_two_clusters(__whle, sub_category)
                                 self.mongo_instance.update_food_sub_nps(__whle_result, sub_category)
@@ -474,9 +471,17 @@ class DoClusters(object):
                                 __nps = self.mongo_instance.fetch_reviews(__category, reviews_ids)
                                 __nps_new_result = DoClusters.make_cluster(__nps, __category)
 
+
+                                print "Start Printing new reuslt for category %s"%__category
+                                print __nps_new_result
+                                print "Finish Printing new reuslt for category %s"%__category
+
                                 __nps_old_result = self.mongo_instance.fetch_nps_frm_eatery(__category)
                                 __whle_nps = DoClusters.adding_new_old_nps(__nps_old_result, __nps_new_result)
                                 
+                                print "Start Printing whole result for category %s"%__category
+                                print __whle_nps
+                                print "Finish Printing whole result for category %s"%__category
                                 self.mongo_instance.update_nps(__category, __whle_nps)
                         
                         self.mongo_instance.update_considered_ids(review_list=reviews_ids)
@@ -688,7 +693,10 @@ class DoClusters(object):
                 for key in keys:
                         a = Counter(__new_dict.get(key))
                         b = Counter(__old_dict.get(key))
-                        sentiments = dict(a+b)
+                        __keys = set.union(set(a.keys()), set(b.keys()))
+                        sentiments = dict()
+                        for __key in __keys:
+                                sentiments.update({__key: a.get(__key) + b.get(__key)})
                         sentiments.update({"name": key})
                         aggregated_list.append(sentiments)
 
