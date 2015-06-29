@@ -369,6 +369,12 @@ class GetWordCloud(tornado.web.RequestHandler):
 	@print_execution
 	@tornado.gen.coroutine
         def post(self):
+                """
+                Args:
+                    eatery_id
+                    category
+                """
+            
                 def Error(arg):
                         return {"error": True,
                                 "success": False,

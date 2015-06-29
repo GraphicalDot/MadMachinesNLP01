@@ -32,7 +32,7 @@ from Text_Processing.colored_print import bcolors
 from Text_Processing.MainAlgorithms.Algorithms_Helpers import get_all_algorithms_result
 from Text_Processing.MainAlgorithms.In_Memory_Main_Classification import timeit, cd
 from encoding_helpers import SolveEncoding
-
+from elasticsearch_db import ElasticSearchScripts
 
 
 from GlobalAlgorithmNames import TAGS
@@ -381,7 +381,7 @@ class DoClusters(object):
                         which implies that some review_ids in old_considered_ids are not being 
                         considered for total noun phrases
                         
-                        Then fecthes the review_ids of reviews who are not being considered for total
+                        Then fetches the review_ids of reviews who are not being considered for total
                         noun phrases 
 
                         instance.fetch_reviews(__categoryi, review_ids) fetch a list of this kind
@@ -486,6 +486,12 @@ class DoClusters(object):
                         
                         self.mongo_instance.update_considered_ids(review_list=reviews_ids)
 
+                ##NOw all the reviews has been classified, tokenized, in short processed, 
+                ##time to populate elastic search
+                ElasticSearchScripts.insert_eatery(self.eatery_id)
+
+
+                
                 return 
 
 

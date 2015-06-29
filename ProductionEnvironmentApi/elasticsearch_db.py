@@ -14,17 +14,16 @@ import sys
 from compiler.ast import flatten
 file_name = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(file_name)
-from GlobalConfigs import ES, eateries_results_collection, bcolors
+from GlobalConfigs import ES_CLIENT, eateries_results_collection, bcolors
+from GlobalAlgorithmNames import FOOD_SUB_TAGS, COST_SUB_TAGS, AMBI_SUB_TAGS, SERV_SUB_TAGS
+
 from elasticsearch import Elasticsearch, helpers
 from elasticsearch import RequestError
 
-ES_CLIENT = Elasticsearch("localhost")
-EATERY_ONE_DISHES = list()
-EATERY_TWO_DISHES = list()
 NUMBER_OF_DOCS = 10
 #localhost:9200/test/_analyze?analyzer=whitespace' -d 'this is a test'
 class ElasticSearchScripts(object):
-        def __init__(self):
+        def __init__(self, renew_indexes=False):
                 """
                 Will have minimum two indexes
                 one for dishes and one for eateries
@@ -72,13 +71,44 @@ class ElasticSearchScripts(object):
                 """
                 
                 if not ES_CLIENT.indices.exists("food"):
-                        ElasticSearchScripts.prep_es_indexes()
+                        ElasticSearchScripts.prep_food_index()
+                        
+                
+                if not ES_CLIENT.indices.exists("ambience"):
+                        ElasticSearchScripts.prep_ambience_index()
+                
+                if not ES_CLIENT.indices.exists("cost"):
+                        ElasticSearchScripts.prep_cost_index()
+                
+                if not ES_CLIENT.indices.exists("service"):
+                        ElasticSearchScripts.prep_service_index()
 
+                if renew_indexes:
+                        ElasticSearchScripts.prep_food_index()
+                        ES_CLIENT.indices.delete(index="ambience")
+                        ES_CLIENT.indices.delete(index="cost")
+                        ES_CLIENT.indices.delete(index="service")
+
+                        ElasticSearchScripts.prep_ambience_index()
+                        ElasticSearchScripts.prep_cost_index()
+                        ElasticSearchScripts.prep_service_index()
                 return 
 
+        @staticmethod
+        def prep_ambience_index():
+                ES_CLIENT.indices.create(index="ambience")
+            
+        @staticmethod
+        def prep_cost_index():
+                ES_CLIENT.indices.create(index="cost")
+        
+            
+        @staticmethod
+        def prep_service_index():
+                ES_CLIENT.indices.create(index="service")
 
         @staticmethod
-        def prep_es_indexes():
+        def prep_food_index():
                 """
                 Two indexes will be created one for the restaurants and one for the dishes
                 index:
@@ -398,10 +428,57 @@ class ElasticSearchScripts(object):
 
 
         @staticmethod
-        def insert_eatery(__eatery_data):
+        def insert_eatery(eatery_id):
                 """
                 This method deasl with updating or inserting th eatery data into 
+                Deals only with four categories food, ambience, service, cost
                 """
+
+                delete_body = {
+                            "query" : {
+                                        "term" : { "eatery_id" : eatery_id }
+                                    }
+                            }
+
+                #https://people.mozilla.org/~wkahngreene/elastic/guide/reference/api/delete-by-query.html
+                try:
+                        ES_CLIENT.delete_by_query(index="_all", body=delete_body, consistency="quorum")
+                except Exception as e:
+                        print "{0}Error occurred while deleting all the entries for the eatery_id {1}{2}".format(\
+                                bcolors.FAIL, eatery_id, bcolors.RESET)
+                
+                
+                
+                eatery = eateries_results_collection.find_one({"eatery_id": eatery_id})
+                eatery_name = eatery.get("eatery_name")
+                food_data = eatery["food"]
+                ambience_data = eatery["ambience"]
+                cost_data = eatery["cost"]
+                service_data = eatery["food"]
+
+                for category in ["food", "cost", "ambience", "service"]:
+                        data = eatery[category]
+                        for sub_category in eval("{0}_SUB_TAGS".format(category[0:4].upper())):
+                                
+                                if sub_category in ["dishes", "place-food", "sub-food"]:
+                                        sub_data = data[sub_category]
+                                        for __dish in sub_data:
+                                                __dish.update({"eatery_id": eatery_id})
+                                                __dish.update({"eatery_name": eatery_name})
+                                                l = ES_CLIENT.index(index="food", doc_type="dishes", body=__dish)
+                            
+                                else:
+					try:
+                                        	sub_data = data[sub_category]
+                                        	sub_data.update({"eatery_id": eatery_id})
+                                        	sub_data.update({"eatery_name": eatery_name})
+
+                                        	l = ES_CLIENT.index(index=category, doc_type=sub_category, body=sub_data)
+                                	except Exception as e:
+                                        	print sub_category
+                                        	print e
+                                        	pass
+
                 return 
 
 
@@ -574,5 +651,5 @@ class ElasticSearchScripts(object):
                 result = ES.search(index='food', doc_type='dishes', body=body)
 
 if __name__ == "__main__":
-        ElasticSearchScripts.prep_es_indexes()
+        ElasticSearchScripts.prep_food_index()
 
