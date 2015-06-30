@@ -264,7 +264,7 @@ class LimitedEateriesList(tornado.web.RequestHandler):
                 """
                 This gives only the limited eatery list like the top on the basis of the reviews count
                 """
-                result = list(eateries.find({"website": "zomato", "area_or_city": "ncr"},  {"eatery_id": True, "_id": False, "eatery_name": True, "area_or_city": True}).limit(100).sort("eatery_total_reviews", -1))
+                result = list(eateries.find({"website": "zomato", "area_or_city": "ncr"},  {"eatery_id": True, "_id": False, "eatery_name": True, "area_or_city": True}).limit(50).sort("eatery_total_reviews", -1))
 	
                 for element in result:
                         eatery_id = element.get("eatery_id")
@@ -283,7 +283,7 @@ class LimitedEateriesList(tornado.web.RequestHandler):
                 """
                 self.write({"success": True,
 			"error": False,
-                        "result": result,
+                        "result": result[::-1],
 			})
                 self.finish()
                 

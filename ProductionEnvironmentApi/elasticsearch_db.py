@@ -8,18 +8,22 @@ Author: kaali
 Dated: 9 June, 2015
 """
 
+import requests
 import time
 import os
 import sys
 from compiler.ast import flatten
 file_name = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(file_name)
-from GlobalConfigs import ES_CLIENT, eateries_results_collection, bcolors
+from GlobalConfigs import ES_CLIENT, eateries_results_collection, bcolors, ELASTICSEARCH_IP
 from GlobalAlgorithmNames import FOOD_SUB_TAGS, COST_SUB_TAGS, AMBI_SUB_TAGS, SERV_SUB_TAGS
 
 from elasticsearch import Elasticsearch, helpers
 from elasticsearch import RequestError
 
+print ES_CLIENT
+ES_CLIENT = Elasticsearch("192.168.1.3")
+print ES_CLIENT
 NUMBER_OF_DOCS = 10
 #localhost:9200/test/_analyze?analyzer=whitespace' -d 'this is a test'
 class ElasticSearchScripts(object):
@@ -85,12 +89,18 @@ class ElasticSearchScripts(object):
 
                 if renew_indexes:
                         ElasticSearchScripts.prep_food_index()
+                        print "{0}Deleting INDEX=<<ambience>> {1}".format(bcolors.FAIL, bcolors.RESET)
                         ES_CLIENT.indices.delete(index="ambience")
+                        print "{0}Deleting INDEX=<<cost>> {1}".format(bcolors.FAIL, bcolors.RESET)
                         ES_CLIENT.indices.delete(index="cost")
+                        print "{0}Deleting INDEX=<<service>> {1}".format(bcolors.FAIL, bcolors.RESET)
                         ES_CLIENT.indices.delete(index="service")
 
+                        print "{0}Creating INDEX=<<ambience>> {1}".format(bcolors.OKGREEN, bcolors.RESET)
                         ElasticSearchScripts.prep_ambience_index()
+                        print "{0}Creating INDEX=<<cost>> {1}".format(bcolors.OKGREEN, bcolors.RESET)
                         ElasticSearchScripts.prep_cost_index()
+                        print "{0}Creating INDEX=<<service>> {1}".format(bcolors.OKGREEN, bcolors.RESET)
                         ElasticSearchScripts.prep_service_index()
                 return 
 
@@ -307,7 +317,75 @@ class ElasticSearchScripts(object):
                 print "{0}_________ Index Dishes ready to be used _______________{1}".format(bcolors.OKGREEN, bcolors.RESET) 
                 return 
 
+        @staticmethod
+        def insert_eatery(eatery_id):
+                """
+                This method deasl with updating or inserting th eatery data into 
+                Deals only with four categories food, ambience, service, cost
+                """
 
+                delete_body = {
+                            "query" : {
+                                        "term" : { "eatery_id" : eatery_id }
+                                    }
+                            }
+
+                #https://people.mozilla.org/~wkahngreene/elastic/guide/reference/api/delete-by-query.html
+                try:
+                        ES_CLIENT.delete_by_query(index="_all", body=delete_body, consistency="quorum")
+                except Exception as e:
+                        print "{0}Error occurred while deleting all the entries for the eatery_id {1}{2}".format(\
+                                bcolors.FAIL, eatery_id, bcolors.RESET)
+                
+                
+                #Elasticsearch refreshes every index at an interval of 1 second, We need to
+                #refresh it for every update
+                r = requests.post("http://{0}:9200/_refresh".format(ELASTICSEARCH_IP))
+                
+
+                eatery = eateries_results_collection.find_one({"eatery_id": eatery_id})
+                eatery_name = eatery.get("eatery_name")
+                food_data = eatery["food"]
+                ambience_data = eatery["ambience"]
+                cost_data = eatery["cost"]
+                service_data = eatery["food"]
+
+                for category in ["food", "cost", "ambience", "service"]:
+                        data = eatery[category]
+                        for sub_category in eval("{0}_SUB_TAGS".format(category[0:4].upper())):
+                                
+                                if sub_category in ["dishes", "place-food", "sub-food"]:
+                                        sub_data = data[sub_category]
+                                        for __dish in sub_data:
+                                                __dish.update({"eatery_id": eatery_id})
+                                                __dish.update({"eatery_name": eatery_name})
+                                                l = ES_CLIENT.index(index="food", doc_type=sub_category, body=__dish)
+                            
+                                else:
+					try:
+                                        	sub_data = data[sub_category]
+                                        	sub_data.update({"eatery_id": eatery_id})
+                                        	sub_data.update({"eatery_name": eatery_name})
+
+                                        	l = ES_CLIENT.index(index=category, doc_type=sub_category, body=sub_data)
+                                	except Exception as e:
+                                        	print sub_category
+                                        	print e
+                                        	pass
+
+                return 
+        def return_dishes(eatery_id):
+                """
+                Return top 10 dishes filtered on the basis of their total sentiments 
+                body = {
+                        "query": {
+                                "term": {"eatery_id": "1901"}
+                                },
+                        "sort" : [
+                                {"total_sentiments" : {"order" : "desc"}}
+                                }
+                """
+                return 
 
         def find_eatery_id(self, eatery_id):
 
@@ -427,59 +505,6 @@ class ElasticSearchScripts(object):
                 
 
 
-        @staticmethod
-        def insert_eatery(eatery_id):
-                """
-                This method deasl with updating or inserting th eatery data into 
-                Deals only with four categories food, ambience, service, cost
-                """
-
-                delete_body = {
-                            "query" : {
-                                        "term" : { "eatery_id" : eatery_id }
-                                    }
-                            }
-
-                #https://people.mozilla.org/~wkahngreene/elastic/guide/reference/api/delete-by-query.html
-                try:
-                        ES_CLIENT.delete_by_query(index="_all", body=delete_body, consistency="quorum")
-                except Exception as e:
-                        print "{0}Error occurred while deleting all the entries for the eatery_id {1}{2}".format(\
-                                bcolors.FAIL, eatery_id, bcolors.RESET)
-                
-                
-                
-                eatery = eateries_results_collection.find_one({"eatery_id": eatery_id})
-                eatery_name = eatery.get("eatery_name")
-                food_data = eatery["food"]
-                ambience_data = eatery["ambience"]
-                cost_data = eatery["cost"]
-                service_data = eatery["food"]
-
-                for category in ["food", "cost", "ambience", "service"]:
-                        data = eatery[category]
-                        for sub_category in eval("{0}_SUB_TAGS".format(category[0:4].upper())):
-                                
-                                if sub_category in ["dishes", "place-food", "sub-food"]:
-                                        sub_data = data[sub_category]
-                                        for __dish in sub_data:
-                                                __dish.update({"eatery_id": eatery_id})
-                                                __dish.update({"eatery_name": eatery_name})
-                                                l = ES_CLIENT.index(index="food", doc_type="dishes", body=__dish)
-                            
-                                else:
-					try:
-                                        	sub_data = data[sub_category]
-                                        	sub_data.update({"eatery_id": eatery_id})
-                                        	sub_data.update({"eatery_name": eatery_name})
-
-                                        	l = ES_CLIENT.index(index=category, doc_type=sub_category, body=sub_data)
-                                	except Exception as e:
-                                        	print sub_category
-                                        	print e
-                                        	pass
-
-                return 
 
 
 
@@ -651,5 +676,5 @@ class ElasticSearchScripts(object):
                 result = ES.search(index='food', doc_type='dishes', body=body)
 
 if __name__ == "__main__":
-        ElasticSearchScripts.prep_food_index()
+        ElasticSearchScripts(renew_indexes=True)
 

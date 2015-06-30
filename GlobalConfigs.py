@@ -7,16 +7,16 @@ Purpose: This file has all the config variables stored in it,
 import pymongo
 import elasticsearch
 
-ELASTICSEARCH_IP = "192.18.1.16"
+ELASTICSEARCH_IP = "192.168.1.3"
 ELASTICSEARCH_PORT = 9200
 
-ES_CLIENT = elasticsearch.Elasticsearch("{0}:{1}".format(ELASTICSEARCH_IP, ELASTICSEARCH_PORT))
+ES_CLIENT = elasticsearch.Elasticsearch(ELASTICSEARCH_IP)
 
 
 ##2014-07-22 20:49:11
 
 TIME_FORMAT = "%Y-%m-%D %H:%M:%S"
-#MONGO_REVIEWS_IP = "192.168.1.11"
+#MONGO_REVIEWS_IP = "192.168.1.12"
 MONGO_REVIEWS_IP = "localhost"
 MONGO_REVIEWS_PORT = 27017
 MONGO_REVIEWS_DB = "modified_canworks"
@@ -24,7 +24,7 @@ MONGO_REVIEWS_EATERIES_COLLECTION = "eatery"
 MONGO_REVIEWS_REVIEWS_COLLECTION = "review"
 
 
-#MONGO_REVIEWS_IP = "192.168.1.11"
+#MONGO_REVIEWS_IP = "192.168.1.12"
 MONGO_REVIEWS_IP = "localhost"
 MONGO_REVIEWS_PORT = 27017
 MONGO_YELP_DB = "YELP_DB"
@@ -34,7 +34,7 @@ MONGO_YELP_REVIEWS = "YELP_REVIEWS"
 
 ##This mongodb has the collections which deals with the eatery_id and its noun phrases for 
 ##particular category, and each category stored has its last updated epoch
-#MONGO_NP_RESULTS_IP = "192.168.1.11"
+#MONGO_NP_RESULTS_IP = "192.168.1.12"
 MONGO_NP_RESULTS_IP = "localhost"
 MONGO_NP_RESULTS_PORT = 27017
 MONGO_RESULTS_DB = "RESULTS_DB"
@@ -46,7 +46,7 @@ MONGO_EATERY_RESULTS_COLLECTION = "EATERY_RESULTS_COLLECTION"
 
 
 
-#CELERY_REDIS_BROKER_IP = "192.168.1.11" 
+#CELERY_REDIS_BROKER_IP = "192.168.1.12" 
 CELERY_REDIS_BROKER_IP = "localhost" 
 CELERY_REDIS_BROKER_PORT = 6379
 CELERY_REDIS_BROKER_DB_NUMBER = 0 
