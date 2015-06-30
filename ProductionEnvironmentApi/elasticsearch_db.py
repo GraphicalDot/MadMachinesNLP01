@@ -22,7 +22,7 @@ from elasticsearch import Elasticsearch, helpers
 from elasticsearch import RequestError
 
 print ES_CLIENT
-ES_CLIENT = Elasticsearch("192.168.1.3")
+ES_CLIENT = Elasticsearch(ELASTICSEARCH_IP)
 print ES_CLIENT
 NUMBER_OF_DOCS = 10
 #localhost:9200/test/_analyze?analyzer=whitespace' -d 'this is a test'
@@ -377,15 +377,79 @@ class ElasticSearchScripts(object):
         def return_dishes(eatery_id):
                 """
                 Return top 10 dishes filtered on the basis of their total sentiments 
-                body = {
-                        "query": {
-                                "term": {"eatery_id": "1901"}
-                                },
-                        "sort" : [
-                                {"total_sentiments" : {"order" : "desc"}}
-                                }
                 """
                 return 
+
+
+
+        @staticmethod
+        def process_result(__result):
+                result = [l["_source"] for l in __result["hits"]["hits"]]
+                return result
+        
+        @staticmethod
+        def get_trending(location):
+                """
+                """
+                food_body = {"_source": ["name", "eatery_name", "positive", "negative", "neutral", "super-positive", "super-negative"],
+                            "from": 0, 
+                            "size": 4, 
+                            "query" : {
+                                  "match_all": {}
+                                     },
+                              "sort" : [
+                                        {"total_sentiments" : {"order" : "desc"}}
+                                           ]
+                              }
+
+                trending_dishes = ES_CLIENT.search(index="food", doc_type="dishes", body=food_body)
+                
+                ambience_body = { "_source": ["name", "eatery_name", "positive", "negative", "neutral", "super-positive", "super-negative"], 
+                            "from": 0, 
+                            "size": 1,
+                            "query": {
+                                    "match_all": {}
+                                     },
+                            "sort": [
+                                    {"total_sentiments": {
+                                                "order" : "desc"}}
+                                           ]
+                              }
+                
+                trending_ambience = ES_CLIENT.search(index="ambience", doc_type="ambience-overall", body=ambience_body)
+                cost_body = { "_source": ["name", "eatery_name", "positive", "negative", "neutral", "super-positive", "super-negative"], 
+                            "from": 0, 
+                            "size": 1,
+                            "query": {
+                                    "match_all": {}
+                                     },
+                            "sort": [
+                                    {"total_sentiments": {
+                                            "order" : "desc"}}
+                                           ]
+                              }
+
+                
+                trending_cost = ES_CLIENT.search(index="cost", doc_type="value for money", body=cost_body)
+                service_body = { "_source": ["name", "eatery_name", "positive", "negative", "neutral", "super-positive", "super-negative"], 
+                            "from": 0, 
+                            "size": 1,
+                            "query": {
+                                    "match_all": {}
+                                     },
+                            "sort": [
+                                    {"total_sentiments": {
+                                            "order" : "desc"}}
+                                           ]
+                              }
+                trending_service = ES_CLIENT.search(index="service", doc_type="service-overall", body=service_body)
+                return {
+                        "food": ElasticSearchScripts.process_result(trending_dishes),  
+                        "ambience": ElasticSearchScripts.process_result(trending_ambience),  
+                        "cost": ElasticSearchScripts.process_result(trending_cost),  
+                        "service": ElasticSearchScripts.process_result(trending_service),  
+                        }
+
 
         def find_eatery_id(self, eatery_id):
 
@@ -395,11 +459,6 @@ class ElasticSearchScripts(object):
                 return 
 
 
-        @staticmethod
-        def process_result(__result):
-                [[j.pop(k) for k in ["_id", "_score", "_index", "_type"]] for j in __result]
-                [l.pop("_source") for l in __result]
-                return __result
 
         def suggest_dish(self, __dish_name, number_of_dishes=None):
                 """
@@ -503,36 +562,6 @@ class ElasticSearchScripts(object):
                 result = ES_CLIENT.search(index="dishes", doc_type="dish", body=search_body)["hits"]["hits"]
                 return [e.get("_source") for e in result]
                 
-
-
-
-
-
-
-
-        def update_n_delete(eatery_id, updated_dishes):
-                """
-                eatery_id
-                updated_dishes: New dictionary for dishes with the same datastructues but now have new values due to
-                        new reviews update.
-
-                This method deals with deleting the old one and updating the es with the new ones.
-                """
-                {"query": {
-                        "match": {
-                                        "title" : "elasticsearch"
-                                                }
-                            }
-            }
-
-                search= ES_CLIENT.search(
-                                q='The Query to ES.',
-                                index="*logstash-*",
-                                    size=10,
-                                        search_type="scan",
-                                            scroll='5m',
-                                            )
-
 
         def _change_default_analyzer(__index_name):
                 client.indices.close(index=__index_name)

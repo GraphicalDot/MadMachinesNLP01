@@ -69,6 +69,7 @@ from ProductionEnvironmentApi.text_processing_db_scripts import MongoScriptsRevi
             MongoScriptsDoClusters, MongoScripts
 from ProductionEnvironmentApi.prod_heuristic_clustering import ProductionHeuristicClustering
 from ProductionEnvironmentApi.join_two_clusters import ProductionJoinClusters
+from ProductionEnvironmentApi.elasticsearch_db import ElasticSearchScripts
 
 
 
@@ -264,7 +265,7 @@ class LimitedEateriesList(tornado.web.RequestHandler):
                 """
                 This gives only the limited eatery list like the top on the basis of the reviews count
                 """
-                result = list(eateries.find({"website": "zomato", "area_or_city": "ncr"},  {"eatery_id": True, "_id": False, "eatery_name": True, "area_or_city": True}).limit(50).sort("eatery_total_reviews", -1))
+                result = list(eateries.find({"website": "zomato", "area_or_city": "ncr"},  {"eatery_id": True, "_id": False, "eatery_name": True, "area_or_city": True}).limit(100).sort("eatery_total_reviews", -1))
 	
                 for element in result:
                         eatery_id = element.get("eatery_id")
@@ -359,6 +360,9 @@ class Query(tornado.web.RequestHandler):
                         })
                 self.finish()
 
+
+#TODO : Tornadoright now hangs and slows down for another requests, if any one of the request fails
+##Return something if a requests cannot be completed before a certain time limit
 class GetWordCloud(tornado.web.RequestHandler):
         @property
         def executor(self):
@@ -514,6 +518,43 @@ class ChangeTagOrSentiment(tornado.web.RequestHandler):
                         }
 
 
+class GetTrending(tornado.web.RequestHandler):
+        @property
+        def executor(self):
+                return self.application.executor
+
+        @cors
+	@print_execution
+	@tornado.gen.coroutine
+        def get(self):
+                """
+                Args:
+                    Location:
+                x_real_ip = self.request.headers.get("X-Real-IP")            
+                print self.request.remote_ip
+
+                location = self.get_argument("location")
+                if not location:
+                        location = None
+                
+                
+
+                """
+                        
+                __result = yield self._exe("location")
+                print __result
+
+                self.write({"success": True,
+			"error": False,
+			"result": __result,
+                        })
+                self.finish()
+        
+        @run_on_executor
+        def _exe(self, location):
+                result = ElasticSearchScripts.get_trending(location)
+                return result
+
 
 class Application(tornado.web.Application):
         def __init__(self):
@@ -521,7 +562,7 @@ class Application(tornado.web.Application):
                     (r"/limited_eateries_list", LimitedEateriesList),
                     (r"/get_word_cloud", GetWordCloud),
                     (r"/resolve_query", Query),
-                        ]
+                    (r"/get_trending", GetTrending),]
                 settings = dict(cookie_secret="__TODO:_GENERATE_YOUR_OWN_RANDOM_VALUE_HERE__",)
                 tornado.web.Application.__init__(self, handlers, **settings)
                 self.executor = ThreadPoolExecutor(max_workers=60)

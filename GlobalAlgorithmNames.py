@@ -9,7 +9,7 @@ SERV_SUB_TAGS = ['booking', 'management', 'presentation', 'service-null', 'servi
         'staff', 'waiting-hours']
 
 AMBI_SUB_TAGS = [u'ambience-null', 'ambience-overall', 'crowd', 'dancefloor', 'decor', \
-        'in-seating', 'music', 'open-area', 'romantic', 'smoking-zone', 'sports', 'sports-screens', 'view']
+        'in-seating', 'music', 'open-area', 'romantic', 'smoking-zone', 'sports', 'sports-screens', 'view', 'sports-props']
 
 
 SENTIMENT_TAGS = ["super-positive", "super-negative", "neutral", "positive", "negative"]
