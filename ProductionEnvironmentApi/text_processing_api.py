@@ -393,8 +393,8 @@ class DoClusters(object):
                 old_considered_ids = self.mongo_instance.old_considered_ids()
                 if not old_considered_ids:
                         #That clustering is running for the first time
-                        warnings.warn("{0} No clustering of noun phrases has been done yet {1}".format(\
-                                    bcolors.FAIL, bcolors.RESET))
+                        warnings.warn("{0} No clustering of noun phrases has been done yet  for eatery_id\
+                                = <<{1}>>{2}".format(bcolors.FAIL, self.eatery_id, bcolors.RESET))
                         
                         __nps_food = self.mongo_instance.fetch_reviews("food")
                         
@@ -428,7 +428,8 @@ class DoClusters(object):
                         reviews_ids = list(set.symmetric_difference(set(old_considered_ids), \
                                 set(processed_reviews)))
 
-                        print "These are the review ids required to be considered %s"%reviews_ids
+                        print "{0} These are the review ids {1} required to be considered for eatery_id\
+                                = <<{2}>> {3}".format(bcolors.OKBLUE, reviews_ids, self.eatery_id, bcolors.RESET)
 
                         if not bool(reviews_ids):
                                 warnings.warn("{0} All the noun phrases has already been processed {1}".format(\
