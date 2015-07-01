@@ -41,7 +41,7 @@ class ElasticSearchScripts(object):
 
                 Index:
                         food:
-                                _type: dish
+                                _type: dishes
                                 _type: overall
                                 _type: menu ##How is the menu
                                 _type: place
@@ -204,7 +204,7 @@ class ElasticSearchScripts(object):
                 print "{0}Settings updated {1}".format(bcolors.OKGREEN, bcolors.RESET)
 
                 ES_CLIENT.indices.create(index="food", body=__settings)
-                __mappings = {'dish': {
+                __mappings = {'dishes': {
                                  '_all' : {'enabled' : True},
                                 'properties': 
                                                 {'name': 
@@ -282,7 +282,7 @@ class ElasticSearchScripts(object):
                                             'type': 'string'}}}}
                 
                 try:
-                        ES_CLIENT.indices.put_mapping(index="food", doc_type="dish", body = __mappings)
+                        ES_CLIENT.indices.put_mapping(index="food", doc_type="dishes", body = __mappings)
                         print "{0}Mappings updated {1}".format(bcolors.OKGREEN, bcolors.RESET)
                 except Exception as e:
                         print "{0}Mappings update Failed with error {1} {2}".format(bcolors.FAIL, e, bcolors.RESET)
@@ -303,7 +303,7 @@ class ElasticSearchScripts(object):
                 
                 
                 print "{0}Updating test data {1}".format(bcolors.OKGREEN, bcolors.RESET)
-                l = ES_CLIENT.index(index="food", doc_type="dish", body=test_doc)
+                l = ES_CLIENT.index(index="food", doc_type="dishes", body=test_doc)
 
                 print "{0}Result:\n {1} {2}".format(bcolors.OKGREEN, l, bcolors.RESET)
 
@@ -312,7 +312,7 @@ class ElasticSearchScripts(object):
                                 }}
 
                 print "{0}Test Doc deleted {1}".format(bcolors.OKGREEN, bcolors.RESET)
-                ES_CLIENT.delete_by_query(index="food", doc_type="dish", body=__body)
+                ES_CLIENT.delete_by_query(index="food", doc_type="dishes", body=__body)
 
                 print "{0}_________ Index Dishes ready to be used _______________{1}".format(bcolors.OKGREEN, bcolors.RESET) 
                 return 
@@ -391,7 +391,7 @@ class ElasticSearchScripts(object):
         def get_trending(location):
                 """
                 """
-                food_body = {"_source": ["name", "eatery_name", "positive", "negative", "neutral", "super-positive", "super-negative"],
+                food_body = {"_source": ["name", "eatery_name", "positive", "negative", "neutral", "super-positive", "super-negative", "total_sentiments"],
                             "from": 0, 
                             "size": 4, 
                             "query" : {
@@ -404,9 +404,9 @@ class ElasticSearchScripts(object):
 
                 trending_dishes = ES_CLIENT.search(index="food", doc_type="dishes", body=food_body)
                 
-                ambience_body = { "_source": ["name", "eatery_name", "positive", "negative", "neutral", "super-positive", "super-negative"], 
+                ambience_body = { "_source": ["name", "eatery_name", "positive", "negative", "neutral", "super-positive", "super-negative", "total_sentiments"], 
                             "from": 0, 
-                            "size": 1,
+                            "size": 2,
                             "query": {
                                     "match_all": {}
                                      },
@@ -417,9 +417,9 @@ class ElasticSearchScripts(object):
                               }
                 
                 trending_ambience = ES_CLIENT.search(index="ambience", doc_type="ambience-overall", body=ambience_body)
-                cost_body = { "_source": ["name", "eatery_name", "positive", "negative", "neutral", "super-positive", "super-negative"], 
+                cost_body = { "_source": ["name", "eatery_name", "positive", "negative", "neutral", "super-positive", "super-negative", "total_sentiments"], 
                             "from": 0, 
-                            "size": 1,
+                            "size": 2,
                             "query": {
                                     "match_all": {}
                                      },
@@ -431,9 +431,9 @@ class ElasticSearchScripts(object):
 
                 
                 trending_cost = ES_CLIENT.search(index="cost", doc_type="value for money", body=cost_body)
-                service_body = { "_source": ["name", "eatery_name", "positive", "negative", "neutral", "super-positive", "super-negative"], 
+                service_body = { "_source": ["name", "eatery_name", "positive", "negative", "neutral", "super-positive", "super-negative", "total_sentiments"], 
                             "from": 0, 
-                            "size": 1,
+                            "size": 2,
                             "query": {
                                     "match_all": {}
                                      },
@@ -480,9 +480,13 @@ class ElasticSearchScripts(object):
                                         "match":{
                                                 "dish_shingle":  __dish_name}},
 
-                            "from": 0,
-                            "size": number_of_dishes,
-                          }
+                                "from": 0,
+                                "size": number_of_dishes,
+                                "sort":[
+                                        {"total_sentiments": {
+                                                "order" : "desc"}}
+                                        ]
+			        }
                 
                 suggestions = client.search(index="food", doc_type="dish", body=dish_suggestions)
                 suggestions = ElasticSearchScripts.process_result(dish_suggestions)
@@ -494,7 +498,12 @@ class ElasticSearchScripts(object):
 
                             "from": 0,
                             "size": number_of_dishes,
-                          }
+                                    "sort": [
+                                            {"total_sentiments": {
+                                                    "order" : "desc"}}
+                                           ]
+                                }
+
                 result = client.search(index="food", doc_type="dish", body=exact_dish_search_body)
                 result = ElasticSearchScripts.process_result(result)
                 if result:

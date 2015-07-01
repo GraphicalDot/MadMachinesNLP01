@@ -526,7 +526,7 @@ class GetTrending(tornado.web.RequestHandler):
         @cors
 	@print_execution
 	@tornado.gen.coroutine
-        def get(self):
+        def post(self):
                 """
                 Args:
                     Location:
@@ -542,11 +542,21 @@ class GetTrending(tornado.web.RequestHandler):
                 """
                         
                 __result = yield self._exe("location")
-                print __result
+                result = dict()
+                for main_category, __out in __result.iteritems():
+                        __list = list()
+                        for item in __out:
+                                superpositive = item.pop("super-positive")
+                                supernegative= item.pop("super-negative")
+                                totalsentiments = item.pop("total_sentiments")
+                                item.update({"totalsentiments": totalsentiments, "superpositive": superpositive, "supernegative": supernegative})
+                                __list.append(item)
+                        result.update({main_category: __list})
+
 
                 self.write({"success": True,
 			"error": False,
-			"result": __result,
+			"result": result,
                         })
                 self.finish()
         
