@@ -129,9 +129,12 @@ def time_series(__result):
         negative = [-abs(num) for num in __a(Counter([x[1].split(" ")[0] for x in ifilter(lambda x: x[0] == "negative" , n_result)]), dates)]
         positive = __a(Counter([x[1].split(" ")[0] for x in ifilter(lambda x: x[0] == "positive" , n_result)]), dates)
 
-        series = [{"name": e, "data": eval(e)} for e in ["neutral", "superpositive", "supernegative", "positive", "negative"]]
+        series = [{"name": e[0], "data": eval(e[0]), "color": e[1]} for e in [("neutral", "blue"), ("superpositive", "green"), ("supernegative", "red"), ("positive", "Chartreuse"), ("negative", "lightpink")]]
+        
+        cumulative = numpy.cumsum([sum(e) for e in zip(negative, supernegative, superpositive, positive, neutral)])
         return {"categories": dates,
-                "series": series}
+                "series": series, 
+                "cumulative": [{"name": "cumulative", "data": list(cumulative)}]}
 
 
 class FBLogin(tornado.web.RequestHandler):
