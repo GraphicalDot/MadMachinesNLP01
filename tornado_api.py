@@ -56,6 +56,7 @@ from PIL import Image
 import inspect
 import functools
 import tornado.httpserver
+from itertools import ifilter
 from tornado.web import asynchronous
 from tornado.concurrent import run_on_executor
 from concurrent.futures import ThreadPoolExecutor
@@ -102,6 +103,35 @@ def cors(f):
         return wrapper
                                                         
 
+
+
+
+def time_series(__result):
+        n_result = list()
+
+        def __a(__dict, dates):
+            __result = []
+            for date in dates:
+                    if __dict[date]:
+                            __result.append(__dict[date])
+                    else:
+                            __result.append(0)
+            return __result
+
+        for element in __result:
+                n_result.append([str(element[0].replace("-", "")), str(element[1].split(" ")[0])])
+        sentiments, dates = zip(*n_result)
+        dates = sorted(list(set(dates)))
+        
+        neutral = __a(Counter([x[1].split(" ")[0] for x in ifilter(lambda x: x[0] == "neutral" , n_result)]), dates)
+        superpositive = __a(Counter([x[1].split(" ")[0] for x in ifilter(lambda x: x[0] == "superpositive" , n_result)]), dates)
+        supernegative = [-abs(num) for num in __a(Counter([x[1].split(" ")[0] for x in ifilter(lambda x: x[0] == "supernegative" , n_result)]), dates)]
+        negative = [-abs(num) for num in __a(Counter([x[1].split(" ")[0] for x in ifilter(lambda x: x[0] == "negative" , n_result)]), dates)]
+        positive = __a(Counter([x[1].split(" ")[0] for x in ifilter(lambda x: x[0] == "positive" , n_result)]), dates)
+
+        series = [{"name": e, "data": eval(e)} for e in ["neutral", "superpositive", "supernegative", "positive", "negative"]]
+        return {"categories": dates,
+                "series": series}
 
 
 class FBLogin(tornado.web.RequestHandler):
@@ -553,6 +583,11 @@ class GetTrending(tornado.web.RequestHandler):
                                 __list.append(item)
                         result.update({main_category: __list})
 
+
+                for key, value in result.iteritems():
+                        for __value in value:
+                                __value.update(time_series(__value["timeline"]))
+                                __value.update({"subcategory": key})
 
                 self.write({"success": True,
 			"error": False,

@@ -29,6 +29,7 @@ App.BarChart = Backbone.View.extend({
 	initialize: function(options){
 		d3.select("svg").remove()
 		this.model = options.model
+		this.HightChart_a()
 		this.BarLayout();
 		},
 	
@@ -47,6 +48,9 @@ App.BarChart = Backbone.View.extend({
 						"superpositive": __d.superpositive,
 						"supernegative": __d.supernegative,
 						"r": __d.totalsentiments,
+						"categories": __d.categories,
+						"series": __d.series,
+						"subcategory": __d.eatery_name,
 						}); }); 
 		return newDataSet 
 		}
@@ -60,15 +64,76 @@ App.BarChart = Backbone.View.extend({
 						"superpositive": __d.superpositive,
 						"supernegative": __d.supernegative,
 						"r": __d.totalsentiments,
+						"categories": __d.categories,
+						"series": __d.series,
+						"subcategory": __d.subcategory,
 						}); }); 
 		return newDataSet 
 
 	},
 			
+	HightChart_a: function(categories, series, name, subcategory){
+	$('.trending-bar-highchart').highcharts({
+        chart: {
+            type: 'column'
+        },
+        title: {
+            text: 'Time series for ' + name +", "+ subcategory
+        },
+        xAxis: {
+		//categories: ['positive', 'superpositive', 'neutral', 'negative', 'supernegative']
+            categories: categories
+	}, 
+        credits: {
+            enabled: false
+        },
+	 'series': series,
+	/*
+        series: [
+	{ name: 'neutral', 
+		data: ['2014-09-13', '2014-10-24', '2014-10-24', '2014-11-03', '2014-12-04', '2014-11-10', '2014-10-24', '2014-10-24', '2014-12-04', '2014-11-10']
+	}, 
 
+	{
+            name: 'positive',
+            data: ['2014-10-10', '2014-08-21', '2014-11-05', '2014-10-27', '2014-09-23', '2014-12-06', '2014-12-11', '2014-09-29', '2014-08-21', '2014-12-06', '2014-11-05', '2014-10-27', '2014-09-23', '2014-12-11', '2014-09-29']
+        }, {
+            name: 'Jane',
+            data: [2, -2, -3, 2, 1]
+        }, {
+            name: 'Joe',
+            data: [3, 4, 4, -2, 5]
+        }]
+
+	*/
+    });
+		},
+
+
+
+
+
+	/*
+	timeSeriesdataFunction: function(__timeline){
+
+		var newDataSet = [];
+
+		$.each(__timeline, function(i, __d){
+				newDataSet.push({"positive": __d[0],
+						"negative": __d[0],
+						"neutral": __d[0],
+						"sentences": __d[0],
+						"superpositive": __d[0],
+						"supernegative": __d[0],
+						"r": __d.totalsentiments,
+						}); }); 
+		return newDataSet 
+	},
+
+	*/
 	BarLayout: function(){
 		function DATA(){return this.dataFunction(_data)}
-		
+		var self = this;	
 		var width = $(".trending-bar-chart").width();
 		var height = $(window).height()/2 ;
 
@@ -145,7 +210,7 @@ App.BarChart = Backbone.View.extend({
 				//.style("stroke", function(d, i) { return d3.rgb(i).darker(); })
 				.attr("class", function(d, i) { return d.name})
 				.attr("transform", function(d, i) { return "translate(0," + i * barHeight + ")"; })
-		
+				.on("click", function(d){console.log(d); self.HightChart_a(d.catgories, d.series, d.name, d.subcategory)})	
 
 		bar
 				.append("rect")
@@ -195,7 +260,7 @@ App.BarChart = Backbone.View.extend({
 				        .attr("y", barHeight / 2)
 					      .attr("dy", ".35em")
 					            .text(function(d) { return d.name; })
-					.style("font-size", function(d){
+						    .style("font-size", function(d){
 							if (d.r == 0){
 								
 							return 	barHeight/2 + "px"

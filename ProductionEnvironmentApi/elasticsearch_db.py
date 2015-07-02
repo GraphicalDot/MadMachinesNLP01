@@ -12,6 +12,7 @@ import requests
 import time
 import os
 import sys
+from itertools import ifilter
 from compiler.ast import flatten
 file_name = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(file_name)
@@ -386,12 +387,56 @@ class ElasticSearchScripts(object):
         def process_result(__result):
                 result = [l["_source"] for l in __result["hits"]["hits"]]
                 return result
+       
+
+
+        @staticmethod
+        def convert_time_series(__result):
+                n_result = list()
+
+                def __a(__dict, dates):
+                        __result = []
+                        for date in dates:
+                                if __dict[date]:
+                                    __result.append(__dict[date])
+                                else:
+                                    __result.append(0)
+                                    
+                        return __result
+
+                for element in __result:
+                        n_result.append([str(element[0].replace("-", "")), str(element[1].split(" ")[0])])
+                sentiments, dates = zip(*n_result)
+                dates = sorted(list(set(dates)))
+
+                neutral = __a(Counter([x[1].split(" ")[0] for x in ifilter(lambda x: x[0] == "neutral"\
+                                                                                    , n_result)]), dates)
         
+                superpositive = __a(Counter([x[1].split(" ")[0] for x in ifilter(lambda x: x[0] == \
+                                                                "superpositive" , n_result)]), dates)
+        
+                supernegative = [-abs(num) for num in __a(Counter([x[1].split(" ")[0] for x in \
+                        ifilter(lambda x: x[0] == "supernegative" , n_result)]), dates)]
+        
+                negative = [-abs(num) for num in __a(Counter([x[1].split(" ")[0] for x in \
+                                        ifilter(lambda x: x[0] == "negative" , n_result)]), dates)]
+        
+                positive = __a(Counter([x[1].split(" ")[0] for x in ifilter(lambda x: x[0] \
+                                                            == "positive" , n_result)]), dates)
+
+        
+                series = [{"name": e, "data": eval(e)} for e in ["neutral", "superpositive", "supernegative", \
+                        "positive", "negative"]]
+        
+                return {"categories": dates,
+                            "series": series}
+
+
         @staticmethod
         def get_trending(location):
                 """
                 """
-                food_body = {"_source": ["name", "eatery_name", "positive", "negative", "neutral", "super-positive", "super-negative", "total_sentiments"],
+                food_body = {"_source": ["name", "eatery_name", "positive", "negative", "neutral", "super-positive", "super-negative", "total_sentiments",  "timeline"],
                             "from": 0, 
                             "size": 4, 
                             "query" : {
@@ -404,7 +449,7 @@ class ElasticSearchScripts(object):
 
                 trending_dishes = ES_CLIENT.search(index="food", doc_type="dishes", body=food_body)
                 
-                ambience_body = { "_source": ["name", "eatery_name", "positive", "negative", "neutral", "super-positive", "super-negative", "total_sentiments"], 
+                ambience_body = { "_source": ["name", "eatery_name", "positive", "negative", "neutral", "super-positive", "super-negative", "total_sentiments", "timeline"], 
                             "from": 0, 
                             "size": 2,
                             "query": {
@@ -417,7 +462,7 @@ class ElasticSearchScripts(object):
                               }
                 
                 trending_ambience = ES_CLIENT.search(index="ambience", doc_type="ambience-overall", body=ambience_body)
-                cost_body = { "_source": ["name", "eatery_name", "positive", "negative", "neutral", "super-positive", "super-negative", "total_sentiments"], 
+                cost_body = { "_source": ["name", "eatery_name", "positive", "negative", "neutral", "super-positive", "super-negative", "total_sentiments",  "timeline"], 
                             "from": 0, 
                             "size": 2,
                             "query": {
@@ -431,7 +476,7 @@ class ElasticSearchScripts(object):
 
                 
                 trending_cost = ES_CLIENT.search(index="cost", doc_type="value for money", body=cost_body)
-                service_body = { "_source": ["name", "eatery_name", "positive", "negative", "neutral", "super-positive", "super-negative", "total_sentiments"], 
+                service_body = { "_source": ["name", "eatery_name", "positive", "negative", "neutral", "super-positive", "super-negative", "total_sentiments", "timeline"], 
                             "from": 0, 
                             "size": 2,
                             "query": {
