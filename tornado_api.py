@@ -322,76 +322,6 @@ class LimitedEateriesList(tornado.web.RequestHandler):
                 self.finish()
                 
                 
-class Query(tornado.web.RequestHandler):
-        @property
-        def executor(self):
-                return self.application.executor
-    
-        @cors
-	@print_execution
-	@tornado.gen.coroutine
-        def post(self):
-                print "post calles"
-                def Error(arg):
-                        self.write({"error": True,
-                                "success": False,
-                                "messege": "Text is required in the form",
-                                })
-                        self.finish()
-
-
-                text = self.get_argument("text")
-                if not text: self.finish(Error())
-               
-                food_text = None
-                ambience_text = self.get_argument("text")
-                service_text = self.get_argument("text")
-                cost_text = self.get_argument("text")
-
-                __result = yield self._exe(food_text, ambience_text, service_text, cost_text)
-                self.write({"success": True,
-			"error": False,
-			"result": __result,
-			})
-
-                self.finish()
-
-        
-        @run_on_executor
-        def _exe(self, food_text, ambience_text, service_text, cost_text):
-                eatery_id = "308322"
-                category = "food"
-                celery_chain = (EachEateryWorker.s(eatery_id)| MappingListWorker.s(eatery_id, PerReviewWorker.s()))()
-
-
-                while celery_chain.status != "SUCCESS":
-                        pass
-
-                try:
-                        for __id in celery_chain.children[0]:
-                                while __id.status != "SUCCESS":
-                                        pass
-                except IndexError as e:
-                        pass
-
-
-                do_cluster_result = DoClustersWorker.apply_async(args=[eatery_id])
-
-                while do_cluster_result.status != "SUCCESS":
-                        pass
-                eatery_instance = MongoScriptsEateries(eatery_id)
-                result = eatery_instance.get_noun_phrases(category, 40)
-                for element in result:
-                        element.update({"superpositive": element.get("super-positive") })
-                        element.update({"supernegative": element.get("super-negative")})
-                        element.pop("super-negative")
-                        element.pop("super-positive")
-                
-                self.write({"success": True,
-			"error": False,
-			"result": result,
-                        })
-                self.finish()
 
 
 #TODO : Tornadoright now hangs and slows down for another requests, if any one of the request fails
@@ -604,6 +534,86 @@ class GetTrending(tornado.web.RequestHandler):
                 return result
 
 
+
+
+class Query(tornado.web.RequestHandler):
+        @property
+        def executor(self):
+                return self.application.executor
+    
+        @cors
+	@print_execution
+	@tornado.gen.coroutine
+        def post(self):
+                print "post calles"
+                def Error(arg):
+                        self.write({"error": True,
+                                "success": False,
+                                "messege": "Text is required in the form",
+                                })
+                        self.finish()
+
+
+                text = self.get_argument("text")
+                if not text: self.finish(Error())
+               
+                food_text = None
+                ambience_text = self.get_argument("text")
+                service_text = self.get_argument("text")
+                cost_text = self.get_argument("text")
+
+                __result = yield self._exe(food_text, ambience_text, service_text, cost_text)
+                self.write({"success": True,
+			"error": False,
+			"result": __result,
+			})
+
+                self.finish()
+
+        
+        @run_on_executor
+        def _exe(self, food_text, ambience_text, service_text, cost_text):
+                eatery_id = "308322"
+                category = "food"
+                celery_chain = (EachEateryWorker.s(eatery_id)| MappingListWorker.s(eatery_id, PerReviewWorker.s()))()
+
+
+                while celery_chain.status != "SUCCESS":
+                        pass
+
+                try:
+                        for __id in celery_chain.children[0]:
+                                while __id.status != "SUCCESS":
+                                        pass
+                except IndexError as e:
+                        pass
+
+
+                do_cluster_result = DoClustersWorker.apply_async(args=[eatery_id])
+
+                while do_cluster_result.status != "SUCCESS":
+                        pass
+                eatery_instance = MongoScriptsEateries(eatery_id)
+                result = eatery_instance.get_noun_phrases(category, 40)
+                for element in result:
+                        element.update({"superpositive": element.get("super-positive") })
+                        element.update({"supernegative": element.get("super-negative")})
+                        element.pop("super-negative")
+                        element.pop("super-positive")
+                
+                self.write({"success": True,
+			"error": False,
+			"result": result,
+                        })
+                self.finish()
+
+def main():
+        http_server = tornado.httpserver.HTTPServer(Application())
+        tornado.autoreload.start()
+        http_server.listen("8000")
+        tornado.ioloop.IOLoop.current().start()
+
+
 class Application(tornado.web.Application):
         def __init__(self):
                 handlers = [
@@ -614,13 +624,6 @@ class Application(tornado.web.Application):
                 settings = dict(cookie_secret="__TODO:_GENERATE_YOUR_OWN_RANDOM_VALUE_HERE__",)
                 tornado.web.Application.__init__(self, handlers, **settings)
                 self.executor = ThreadPoolExecutor(max_workers=60)
-
-
-def main():
-        http_server = tornado.httpserver.HTTPServer(Application())
-        tornado.autoreload.start()
-        http_server.listen("8000")
-        tornado.ioloop.IOLoop.current().start()
 
 
 

@@ -18,8 +18,8 @@ App.RootView = Backbone.View.extend({
 
 
 App.MainView = Backbone.View.extend({
-	//tagName: "fieldset",
-	//className: "well-lg plan",
+	tagName: "form",
+	className: "fomr-group",
 	template: window.template("root"),
 	initialize: function(){
 		var self = this;
@@ -41,7 +41,7 @@ App.MainView = Backbone.View.extend({
 	},
 	
 	events: {
-		'keyup': 'processKey', 	
+		'.submitButton': 'processKey', 	
 		},
 
 
