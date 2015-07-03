@@ -74,11 +74,11 @@ App.BarChart = Backbone.View.extend({
 	},
 			
 	
-	__HightChart: function(__categories, __series, __name, __subcategory, __type){
-		console.log(__type)
+	__HightChartLine: function(__categories, __series, __name, __subcategory, __cumulative){
+		var self = this;
 		$('.trending-bar-highchart').highcharts({
 			chart: {
-				type: __type
+				type: "column"
 					},
 			credits: {
 		            enabled: false
@@ -124,7 +124,83 @@ App.BarChart = Backbone.View.extend({
        			             'Total: ' + this.point.stackTotal;
             			}
         			},
-			series: __series
+			series: __cumulative,
+		
+			exporting: {
+				buttons: {
+					customButton: {
+						text: 'Column',
+						onclick: function () {
+							self.__HightChartColumn(__categories, __series, __name, __subcategory, __cumulative)
+                }
+                },}}
+		});
+		},
+
+	__HightChartColumn: function(__categories, __series, __name, __subcategory, __cumulative){
+		var self = this;
+		$('.trending-bar-highchart').highcharts({
+			chart: {
+				type: "column"
+					},
+			credits: {
+		            enabled: false
+		        },
+
+			title: {
+				text: 'Time series for ' + __name +", "+ __subcategory,
+				style: {"fontSize": ".9em" },
+			},
+			
+			xAxis: {
+				type: "datetime",
+				categories: __categories,
+				dateTimeLabelFormats: {
+			                day: '%e of %b'
+		            	},
+				},
+
+        		yAxis: {
+				title: {
+					text: 'Sentiment Frequency',},
+			labels: {
+				style: {
+					fontWeight: "bold",
+					fontSize: "0.4em" ,
+                		}}
+        			},
+			legend: {
+				align: 'right',
+				x: -30,
+				verticalAlign: 'top',
+         			y: 25,
+            			floating: true,
+            			backgroundColor: (Highcharts.theme && Highcharts.theme.background2) || 'white',
+            			borderColor: '#CCC',
+            			borderWidth: 1,
+            			shadow: false
+        			},
+        		tooltip: {
+            			formatter: function () {
+            			    return '<b>' + this.x + '</b><br/>' +
+              			      this.series.name + ': ' + this.y + '<br/>' +
+       			             'Total: ' + this.point.stackTotal;
+            			}
+        			},
+			series: __series,
+		
+			exporting: {
+				buttons: {
+					customButton: {
+						text: 'Cumulative',
+						onclick: function () {
+						self.__HightChartLine(__categories, __series, __name, __subcategory, __cumulative)
+                }
+                },
+        }
+	}
+
+
 		});
 		},
 
@@ -212,8 +288,7 @@ App.BarChart = Backbone.View.extend({
 				//.style("stroke", function(d, i) { return d3.rgb(i).darker(); })
 				.attr("class", function(d, i) { return d.name})
 				.attr("transform", function(d, i) { return "translate(0," + i * barHeight + ")"; })
-				.on("mouseover", function(d){console.log(d); self.__HightChart(d.categories, d.series, d.name, d.subcategory, "column")})	
-				//.on("dblclick", function(d){console.log(d); self.__HightChart(d.categories, d.cumulative, d.name, d.subcategory, "line")})	
+				.on("click", function(d){console.log(d); self.__HightChartColumn(d.categories, d.series, d.name, d.subcategory, d.cumulative)})	
 				.on("dblclick", dblClick)	
 
 		bar
@@ -259,7 +334,7 @@ App.BarChart = Backbone.View.extend({
 			.attr("transform", function(d, i) { return "translate(" + RScale(d.superpositive+d.positive+d.neutral+d.negative) +", 0)"; });
 		
 		bar.append("text")
-					.transition().delay(function (d,i){ return i * transitionTime;}).duration(transitionTime)	
+				.transition().delay(function (d,i){ return i * transitionTime;}).duration(transitionTime)	
 			          .attr("x", function(d) { return RScale(d.r) + 4; })
 				        .attr("y", barHeight / 2)
 					      .attr("dy", ".35em")
