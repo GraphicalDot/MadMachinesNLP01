@@ -2,7 +2,11 @@
 #-*- coding: utf-8 -*-
 import os
 import sys
+import time
+
+from itertools import ifilter
 from sklearn.externals import joblib
+from collections import Counter                
 from Text_Processing.Sentence_Tokenization.Sentence_Tokenization_Classes import SentenceTokenizationOnRegexOnInterjections
 from GlobalConfigs import connection, eateries, reviews, yelp_eateries, yelp_reviews
 
@@ -14,12 +18,19 @@ from ProductionEnvironmentApi.text_processing_db_scripts import MongoScriptsRevi
 from ProductionEnvironmentApi.prod_heuristic_clustering import ProductionHeuristicClustering
 from ProductionEnvironmentApi.join_two_clusters import ProductionJoinClusters
 from ProductionEnvironmentApi.elasticsearch_db import ElasticSearchScripts
+from ProductionEnvironmentApi.prod_heuristic_clustering import ProductionHeuristicClustering
 from Text_Processing.NounPhrases.noun_phrases import NounPhrases
 
 from GlobalAlgorithmNames import TAG_CLASSIFIER_LIB, SENTI_CLASSIFIER_LIB, FOOD_SB_TAG_CLASSIFIER_LIB,\
             COST_SB_TAG_CLASSIFIER_LIB, SERV_SB_TAG_CLASSIFIER_LIB, AMBI_SB_TAG_CLASSIFIER_LIB, FOOD_SUB_TAGS,\
-            COST_SUB_TAGS, SERV_SUB_TAGS, AMBI_SUB_TAGS
+            COST_SUB_TAGS, SERV_SUB_TAGS, AMBI_SUB_TAGS, NOUN_PHSE_ALGORITHM_NAME
 
+from topia.termextract import extract
+from query_clustering import QueryClustering
+
+
+
+topia_extractor = extract.TermExtractor()
 class QueryResolution(object):
         def __init__(self, text):
                 self.text = "Green Apple Mojito – The bar at HRC is huge and we decided to order the Green Apple Mojito from the ‘Summer’s of the Legends’ Menu. The drink was made from green apples along with Mint. The taste was refreshing. 8/10 Red Hot Chili Fried – Crispy fries with sweet and chili sauce. The fries are topped with cheddar cheese. The dish is served with a portion of tangy salsa dip and cheesy dip. The cheesy dip was so-so and didn’t have any particular flavors. The portion size of this dish was huge and a little more sweet and chili sauce would have been\
@@ -30,7 +41,11 @@ class QueryResolution(object):
 
                 self.food_sub_sents, self.serv_sub_sents, self.ambi_sub_sents,\
                 self.cost_sub_sents = [], [], [], []
+                self.result = {}
 
+
+
+        def run(self):
                 self.sentence_tokenization()
                 self.classification()
                 self.food_sub_classification()
@@ -38,6 +53,9 @@ class QueryResolution(object):
                 self.cost_sub_classification()
                 self.service_sub_classification()
                 self.initiate_dictionaries()
+                self.noun_phrase_extraction()
+                self.populate_result()
+                return self.result
 
 
         def sentence_tokenization(self):
@@ -101,38 +119,59 @@ class QueryResolution(object):
 
 
         def initiate_dictionaries(self):
-                food_dictionary = dict.fromkeys(FOOD_SUB_TAGS, [])
-                print food_dictionary
-                print self.food_sub_sents
-                for sent, sub_tag in self.food_sub_sents:
-                    print sent, sub_tag     
-                    sentences = food_dictionary.get(sub_tag)
-                    sentences.append(sent)
-                    print sub_tag, sentences
-               
-                """
-                        sentences = food_dictionary.get(sub_tag)
-                        sentences.append(sent)
-                        food_dictionary.update({sub_tag: sentences})
-                        print food_dictionary          
-                """
-                for key, value in food_dictionary.iteritems():
-                    print key, value, "\n"
 
-                #cost_dictionary = dict.fromkeys(COST_SUB_TAGS)
-                #service_dictionary = dict.fromkeys(SERV_SUB_TAGS)
-                #ambience_dictionary = dict.fromkeys(AMBI__SUB_TAGS)
+                self.food_dictionary = dict.fromkeys(FOOD_SUB_TAGS, [])
+                [self.food_dictionary.update({__sub_tag: [sent for (sent, tag) in ifilter(lambda x: x[1] == __sub_tag, self.food_sub_sents)]})\
+                                                                                                        for __sub_tag in FOOD_SUB_TAGS]
+                
+                self.ambi_dictionary = dict.fromkeys(AMBI_SUB_TAGS, [])
+                [self.ambi_dictionary.update({__sub_tag: [sent for (sent, tag) in ifilter(lambda x: x[1] == __sub_tag, self.ambi_sub_sents)]})\
+                                                                                                            for __sub_tag in AMBI_SUB_TAGS]
+                
+                self.cost_dictionary = dict.fromkeys(COST_SUB_TAGS, [])
+                [self.cost_dictionary.update({__sub_tag: [sent for (sent, tag) in ifilter(lambda x: x[1] == __sub_tag, self.cost_sub_sents)]})\
+                                                                                                            for __sub_tag in COST_SUB_TAGS]
+                
+                self.serv_dictionary = dict.fromkeys(SERV_SUB_TAGS, [])
+                [self.serv_dictionary.update({__sub_tag: [sent for (sent, tag) in ifilter(lambda x: x[1] == __sub_tag, self.serv_sub_sents)]}) \
+                                                                                                            for __sub_tag in SERV_SUB_TAGS]
+                return 
 
 
         def noun_phrase_extraction(self):
                 """
-                """
-                __nouns = NounPhrases([e[0] for e in self.all_food], default_np_extractor=NOUN_PHSE_ALGORITHM_NAME)
                 self.all_food_with_nps = [[sent, tag, sentiment, sub_tag, nps] for ((sent, tag, sentiment, sub_tag,), nps) in 
                         zip(self.all_food, __nouns.noun_phrases[NOUN_PHSE_ALGORITHM_NAME])] 
                 map(lambda __list: __list.append(self.review_time), self.all_food_with_nps) 
+                """
+
+                for __sub_food_tag in ["dishes", "place-food", "sub-food"]:
+                        if self.food_dictionary.get(__sub_food_tag):
+                                sentences = self.food_dictionary.get(__sub_food_tag)
+                                self.food_dictionary.update({__sub_food_tag: self.clustering(sentences)})
+                return 
 
 
-            
+        def clustering(self, sentences_list):
+                nouns = topia_extractor(" ".join(sentences_list)) 
+                noun_phrases = Counter([e[0] for e in nouns]).keys()
+                ins = QueryClustering(noun_phrases, sub_category="dishes", sentences= sentences_list)
+                return ins.run()
+                
+
+        def populate_result(self):
+                """
+                self.ambi_dictionary.pop("ambience-null")
+                self.serv_dictionary.pop("service-null")
+                """
+                self.result.update({"ambience": filter(lambda x: self.ambi_dictionary[x], AMBI_SUB_TAGS)})
+                self.result.update({"cost": filter(lambda x: self.cost_dictionary[x], COST_SUB_TAGS)})
+                self.result.update({"service": filter(lambda x: self.serv_dictionary[x], SERV_SUB_TAGS)})
+
+                [self.food_dictionary.pop(key) for key in filter(lambda x: not self.food_dictionary[x], self.food_dictionary.keys())]
+                self.food_dictionary.pop("null-food")
+                self.result.update({"food": self.food_dictionary})
+                return 
 if __name__ == "__main__":
-        QueryResolution(None)
+        ins = QueryResolution(None)
+        print ins.run()
