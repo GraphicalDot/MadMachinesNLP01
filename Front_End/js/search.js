@@ -41,17 +41,19 @@ App.MainView = Backbone.View.extend({
 	},
 	
 	events: {
-		'.submitButton': 'processKey', 	
+		'click .submitButton': 'Submit', 	
 		},
 
 
-	processKey: function(event){
+	Submit: function(event){
 		event.preventDefault();
-		if(event.which === 13){
-			value = $("#searchQuery").val();
-			if (value == ""){
+		console.log("Button pressed");
+		value = $("#searchQuery").val();
+			
+		if (value == ""){
 				console.log("No result");
 			}
+		console.log(value)
 		var jqhr = $.post(window.resolve_query, {"text": value})	
 		jqhr.done(function(data){
 			if (data.error == false){
@@ -66,16 +68,18 @@ App.MainView = Backbone.View.extend({
 				*/
 					}
 			else{
-				bootbox.alert(data.error)	
+				var subView = new App.ErrorView();
+				$(".trending-bar-chart").html(subView.render().el);	
 			}
 		})
 		
 		jqhr.fail(function(data){
-				
-				bootbox.alert(data.error)
+				var subView = new App.ErrorView();
+				$(".dynamic-display").html(subView.render().el);	
+						
 		});
-		}
-		},	
+		}, 
+			
 
 
 	seeWordCloud: function(eatery_id){
@@ -93,6 +97,24 @@ App.MainView = Backbone.View.extend({
 	},
 	});
 
+
+App.ErrorView = Backbone.View.extend({
+	tagName: "div",
+	template: window.template("error"),
+	initialize: function(){
+		var self = this;
+		/*
+		
+		$(".side-bar").html(this.render().el);
+			*/
+		},
+
+	render: function(){
+		this.$el.append(this.template(this));
+		return this;
+	},
+
+	})
 
 });
 

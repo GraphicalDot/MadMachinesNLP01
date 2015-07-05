@@ -71,6 +71,7 @@ from ProductionEnvironmentApi.text_processing_db_scripts import MongoScriptsRevi
 from ProductionEnvironmentApi.prod_heuristic_clustering import ProductionHeuristicClustering
 from ProductionEnvironmentApi.join_two_clusters import ProductionJoinClusters
 from ProductionEnvironmentApi.elasticsearch_db import ElasticSearchScripts
+from ProductionEnvironmentApi.query_resolution import QueryResolution
 
 
 
@@ -557,55 +558,35 @@ class Query(tornado.web.RequestHandler):
                 text = self.get_argument("text")
                 if not text: self.finish(Error())
                
-                food_text = None
-                ambience_text = self.get_argument("text")
-                service_text = self.get_argument("text")
-                cost_text = self.get_argument("text")
+                try:
+                        __result = yield self._exe(text)
+                        print l
+                        self.write({"success": True,
+			        "error": False,
+			        "result": __result,
+			        })
 
-                __result = yield self._exe(food_text, ambience_text, service_text, cost_text)
-                self.write({"success": True,
-			"error": False,
-			"result": __result,
-			})
+                except StandardError as e:
+                        self.write({"success": False,
+			        "error": True,
+			        "messege": "Some error occurred while processing your query",
+			        })
 
                 self.finish()
 
         
         @run_on_executor
-        def _exe(self, food_text, ambience_text, service_text, cost_text):
-                eatery_id = "308322"
-                category = "food"
-                celery_chain = (EachEateryWorker.s(eatery_id)| MappingListWorker.s(eatery_id, PerReviewWorker.s()))()
-
-
-                while celery_chain.status != "SUCCESS":
-                        pass
-
+        def _exe(self, text):
                 try:
-                        for __id in celery_chain.children[0]:
-                                while __id.status != "SUCCESS":
-                                        pass
-                except IndexError as e:
-                        pass
-
-
-                do_cluster_result = DoClustersWorker.apply_async(args=[eatery_id])
-
-                while do_cluster_result.status != "SUCCESS":
-                        pass
-                eatery_instance = MongoScriptsEateries(eatery_id)
-                result = eatery_instance.get_noun_phrases(category, 40)
-                for element in result:
-                        element.update({"superpositive": element.get("super-positive") })
-                        element.update({"supernegative": element.get("super-negative")})
-                        element.pop("super-negative")
-                        element.pop("super-positive")
-                
-                self.write({"success": True,
-			"error": False,
-			"result": result,
-                        })
-                self.finish()
+                        query_resolution_instance = QueryResolution(text)
+                        result = query_resolution_instance.run()
+                        print "Result from  the query resolution"
+                        print result
+                        print "Result from the query resolution finished"
+                        return result
+                except Exception as e:
+                        print e
+                        raise StandardError("The request cannot be completed, the reason being %s"%e)
 
 def main():
         http_server = tornado.httpserver.HTTPServer(Application())

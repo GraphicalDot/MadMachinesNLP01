@@ -7,34 +7,32 @@ import time
 from itertools import ifilter
 from sklearn.externals import joblib
 from collections import Counter                
+from topia.termextract import extract
+from query_clustering import QueryClustering
+
+
+parent_dir_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(parent_dir_path)
+
 from Text_Processing.Sentence_Tokenization.Sentence_Tokenization_Classes import SentenceTokenizationOnRegexOnInterjections
 from GlobalConfigs import connection, eateries, reviews, yelp_eateries, yelp_reviews
-
-
-from ProductionEnvironmentApi.text_processing_api import PerReview, EachEatery, DoClusters
-from ProductionEnvironmentApi.text_processing_db_scripts import MongoScriptsReviews, MongoScriptsEateries,\
-        MongoScriptsDoClusters, MongoScripts
-
-from ProductionEnvironmentApi.prod_heuristic_clustering import ProductionHeuristicClustering
-from ProductionEnvironmentApi.join_two_clusters import ProductionJoinClusters
-from ProductionEnvironmentApi.elasticsearch_db import ElasticSearchScripts
-from ProductionEnvironmentApi.prod_heuristic_clustering import ProductionHeuristicClustering
 from Text_Processing.NounPhrases.noun_phrases import NounPhrases
 
 from GlobalAlgorithmNames import TAG_CLASSIFIER_LIB, SENTI_CLASSIFIER_LIB, FOOD_SB_TAG_CLASSIFIER_LIB,\
             COST_SB_TAG_CLASSIFIER_LIB, SERV_SB_TAG_CLASSIFIER_LIB, AMBI_SB_TAG_CLASSIFIER_LIB, FOOD_SUB_TAGS,\
             COST_SUB_TAGS, SERV_SUB_TAGS, AMBI_SUB_TAGS, NOUN_PHSE_ALGORITHM_NAME
 
-from topia.termextract import extract
-from query_clustering import QueryClustering
 
 
 
 topia_extractor = extract.TermExtractor()
 class QueryResolution(object):
-        def __init__(self, text):
-                self.text = "Green Apple Mojito – The bar at HRC is huge and we decided to order the Green Apple Mojito from the ‘Summer’s of the Legends’ Menu. The drink was made from green apples along with Mint. The taste was refreshing. 8/10 Red Hot Chili Fried – Crispy fries with sweet and chili sauce. The fries are topped with cheddar cheese. The dish is served with a portion of tangy salsa dip and cheesy dip. The cheesy dip was so-so and didn’t have any particular flavors. The portion size of this dish was huge and a little more sweet and chili sauce would have been\
-                        icing on the cake. 8/10"
+        def __init__(self, text=None):
+                self.text = text
+                if not text:
+                    self.text = "The ambience was breathtaking. The view was breathtaking"
+                    #self.text = "Green Apple Mojito – The bar at HRC is huge and we decided to order the Green Apple Mojito from the ‘Summer’s of the Legends’ Menu. The drink was made from green apples along with Mint. The taste was refreshing. 8/10 Red Hot Chili Fried – Crispy fries with sweet and chili sauce. The fries are topped with cheddar cheese. The dish is served with a portion of tangy salsa dip and cheesy dip. The cheesy dip was so-so and didn’t have any particular flavors. The portion size of this dish was huge and a little more sweet and chili sauce would have been  icing on the cake. 8/10"
+                
                 self.tokenized_sents, self.food_sents, self.serv_sents,\
                 self.cost_sents, self.ambi_sents = [], [], [], [], []
 
@@ -71,7 +69,10 @@ class QueryResolution(object):
                 deals with the main classification of the sentences
                 """
                 result = zip(self.tokenized_sents, TAG_CLASSIFIER_LIB.predict(self.tokenized_sents))
-                
+                print "Query tag classification result \n"
+                print result
+                print "Query tag classification finished \n"
+
                 self.food_sents = [(sent, tag) for (sent, tag) in result if tag == "food"]
                 self.ambi_sents = [(sent, tag) for (sent, tag) in result if tag == "ambience"]
                 self.cost_sents = [(sent, tag) for (sent, tag) in result if tag == "cost"]
@@ -169,9 +170,11 @@ class QueryResolution(object):
                 self.result.update({"service": filter(lambda x: self.serv_dictionary[x], SERV_SUB_TAGS)})
 
                 [self.food_dictionary.pop(key) for key in filter(lambda x: not self.food_dictionary[x], self.food_dictionary.keys())]
-                self.food_dictionary.pop("null-food")
+                if self.food_dictionary.has_key("null-food"):
+                        self.food_dictionary.pop("null-food")
                 self.result.update({"food": self.food_dictionary})
-                return 
+                return
+
 if __name__ == "__main__":
         ins = QueryResolution(None)
         print ins.run()
