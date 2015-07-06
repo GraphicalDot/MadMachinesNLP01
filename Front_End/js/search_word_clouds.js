@@ -2,6 +2,237 @@ $(document).ready(function(){
 
 
 
+App.ResultView = Backbone.View.extend({
+	className: "container-fluid",
+	template: window.template("result"), 
+	initialize: function(options){
+		console.log("Result view called");
+		this.model = options.model
+		console.log(this.model);
+	},
+	render: function(){
+
+		this.$el.append(this.template(this));
+		var subView = new App.SearchView();
+		this.$el.append(subView.render().el);
+		
+		var subView = new App.FoodResultView({"model": this.model.food.dishes});
+		this.$el.append(subView.render().el);
+		
+		return this;                       
+	},
+
+});
+
+App.SearchView = Backbone.View.extend({
+	className: "row",
+	template: window.template("search"), 
+	initialize: function(){
+	},
+	render: function(){
+		this.$el.append(this.template(this));
+		return this;                       
+	},
+
+	events: {
+		"click newSearchQuery": "newQuery"},
+
+	newQuery: function(event){
+		event.preventDefault();
+	},
+
+});
+
+App.FoodResultView = Backbone.View.extend({
+	initialize: function(options){
+		this.model = options.model
+		console.log(this.model)
+		console.log(this.model.match)
+		console.log(this.model.suggestions)
+	},
+	render: function(){
+		var self = this;
+
+		$.each(this.model, function(iter, __object){
+			self.$el.append("<h2>"+ __object.name + "</h2>");
+			$.each(__object.match, function(iter, dish){
+				var subView = new App.EachObjectView({"model": dish})
+				self.$el.append(subView.render().el);
+				console.log("Prin dish details");
+				console.log(dish)
+		});
+			$.each(__object.suggestions, function(iter, dish){
+				var subView = new App.EachObjectView({"model": dish})
+				self.$el.append(subView.render().el);
+				console.log("Prin dish details");
+				console.log(dish)
+		});
+		});
+		return this
+	},
+
+});
+
+App.EachObjectView = Backbone.View.extend({
+	className: "row",
+	dish_name: function(){return this.model.name}, 
+	template: window.template("each-dish"), 
+	initialize: function(options){
+		console.log("Result view called");
+		this.model = options.model
+		console.log(this.model);
+	},
+	render: function(){
+		var self = this;
+		this.$el.append(this.template(this));
+		this.$(".dish-chart").append("<p>a</p>")
+		console.log(this.$(".dish-chart"))
+		console.log(this.model.categories)
+		console.log(this.model.series)
+       		console.log(this.model.cumulative)
+		this.__HightChartColumn(self.$(".dish-chart"), this.model.categories, this.model.series, this.model.name, this.model.subcategory, this.model.cumulative)
+		return this;                       
+	},
+
+	__HightChartLine: function(className, __categories, __series, __name, __subcategory, __cumulative){
+		var self = this;
+		className.highcharts({
+			chart: {
+				type: "column"
+					},
+			credits: {
+		            enabled: false
+		        },
+
+			title: {
+				text: 'Time series for ' + __name +", "+ __subcategory,
+				style: {"fontSize": ".9em" },
+			},
+			
+			xAxis: {
+				type: "datetime",
+				categories: __categories,
+				dateTimeLabelFormats: {
+			                day: '%e of %b'
+		            	},
+				},
+
+        		yAxis: {
+				title: {
+					text: 'Sentiment Frequency',},
+			labels: {
+				style: {
+					fontWeight: "bold",
+					fontSize: "0.4em" ,
+                		}}
+        			},
+			legend: {
+				align: 'right',
+				x: -30,
+				verticalAlign: 'top',
+         			y: 25,
+            			floating: true,
+            			backgroundColor: (Highcharts.theme && Highcharts.theme.background2) || 'white',
+            			borderColor: '#CCC',
+            			borderWidth: 1,
+            			shadow: false
+        			},
+        		tooltip: {
+            			formatter: function () {
+            			    return '<b>' + this.x + '</b><br/>' +
+              			      this.series.name + ': ' + this.y + '<br/>' +
+       			             'Total: ' + this.point.stackTotal;
+            			}
+        			},
+			series: __cumulative,
+		
+			exporting: {
+				buttons: {
+					customButton: {
+						text: 'Column',
+						onclick: function () {
+							self.__HightChartColumn(className, __categories, __series, __name, __subcategory, __cumulative)
+                }
+			
+                },}}
+		});
+		},
+
+	__HightChartColumn: function(className, __categories, __series, __name, __subcategory, __cumulative){
+		var self = this;
+		className.highcharts({
+			chart: {
+				type: "column"
+					},
+			credits: {
+		            enabled: false
+		        },
+
+			title: {
+				text: 'Time series for ' + __name +", "+ __subcategory,
+				style: {"fontSize": ".9em" },
+			},
+			
+			xAxis: {
+				type: "datetime",
+				categories: __categories,
+				dateTimeLabelFormats: {
+			                day: '%e of %b'
+		            	},
+				},
+
+        		yAxis: {
+				title: {
+					text: 'Sentiment Frequency',},
+			labels: {
+				style: {
+					fontWeight: "bold",
+					fontSize: "0.4em" ,
+                		}}
+        			},
+			legend: {
+				align: 'right',
+				x: -30,
+				verticalAlign: 'top',
+         			y: 25,
+            			floating: true,
+            			backgroundColor: (Highcharts.theme && Highcharts.theme.background2) || 'white',
+            			borderColor: '#CCC',
+            			borderWidth: 1,
+            			shadow: false
+        			},
+        		tooltip: {
+            			formatter: function () {
+            			    return '<b>' + this.x + '</b><br/>' +
+              			      this.series.name + ': ' + this.y + '<br/>' +
+       			             'Total: ' + this.point.stackTotal;
+            			}
+        			},
+			series: __series,
+		
+			exporting: {
+				buttons: {
+					customButton: {
+						text: 'Cumulative',
+						onclick: function () {
+						self.__HightChartLine(className, __categories, __series, __name, __subcategory, __cumulative)
+                }
+                },
+        }
+	}
+
+
+		});
+		},
+});
+
+
+
+
+
+
+
+
 App.TrendingView = Backbone.View.extend({
 	intialize: function(){
 

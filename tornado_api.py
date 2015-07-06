@@ -121,6 +121,7 @@ def time_series(__result):
 
         for element in __result:
                 n_result.append([str(element[0].replace("-", "")), str(element[1].split(" ")[0])])
+        
         sentiments, dates = zip(*n_result)
         dates = sorted(list(set(dates)))
         
@@ -536,6 +537,19 @@ class GetTrending(tornado.web.RequestHandler):
 
 
 
+def process_object(__object):
+            """
+
+            """
+            superpositive = __object.pop("super-positive")
+            supernegative= __object.pop("super-negative")
+            totalsentiments = __object.pop("total_sentiments")
+            __object.update({"totalsentiments": totalsentiments, "superpositive": superpositive, "supernegative": supernegative})
+
+
+            __object.update(time_series(__object["timeline"]))
+            __object.update({"subcategory": __object["eatery_name"]})
+            return __object
 
 class Query(tornado.web.RequestHandler):
         @property
@@ -559,14 +573,45 @@ class Query(tornado.web.RequestHandler):
                 if not text: self.finish(Error())
                
                 try:
+                        l_result = {"food": {}, "ambience": {}, "cost": {}, "service": {}}
+                        processed_dishes = list()
                         __result = yield self._exe(text)
-                        print l
+
+                        """
+                        __result = {"food": {"dishes": [{"match": [], "suggestions": []}, 
+                            {"match": [], "suggestions": []}, 
+                        ],
+                        }
+                        }
+                        """
+                        for element in __result["food"]["dishes"]:
+                                if type(element.get("match")) == list:
+                                        __match = list()
+                                        __suggestions = list()
+                                        for __dish in element.get("match"):
+                                                __match.append(process_object(__dish))
+                                        for __dish in element.get("suggestions"):
+                                                __suggestions.append(process_object(__dish))
+                                        processed_dishes.append({"name": element.get("name"), "match": __match, "suggestions": __suggestions})
+                        l_result["food"]["dishes"] = processed_dishes
+                         
+                        """
+                        for main_category, __out in __result.iteritems():
+                        __list = list()
+                        for item in __out:
+                        result.update({main_category: __list})
+
+
+                        for key, value in result.iteritems():
+                        for __value in value:
+                        """
                         self.write({"success": True,
 			        "error": False,
-			        "result": __result,
+			        "result": l_result,
 			        })
 
                 except StandardError as e:
+                        print e
                         self.write({"success": False,
 			        "error": True,
 			        "messege": "Some error occurred while processing your query",
@@ -582,7 +627,8 @@ class Query(tornado.web.RequestHandler):
                         result = query_resolution_instance.run()
                         print "Result from  the query resolution"
                         print result
-                        print "Result from the query resolution finished"
+                        es_instance  = ElasticSearchScripts()
+                        result = es_instance.elastic_query_processing(result)
                         return result
                 except Exception as e:
                         print e

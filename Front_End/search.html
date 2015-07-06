@@ -46,6 +46,47 @@
 			<img src="css/images/4041.jpg" alt="Page Not Found (404)." style="position: absolute; left: 50%; top: 10%; margin-left: -285px; margin-top: 10%">
 	</script>
 
+	<script type="text/x-mustache-template" id="result-template">
+
+				<div class="row">
+					<div class="col-md-2"></div>
+					<div class="dynamic-display col-md-8" style="margin-top: 2%"></div>
+					<div class="col-md-2"></div>
+				</div>
+				<div class="row" style="margin-top: 2%">		
+					<div class="col-md-2"></div>
+					<div class="trending-bar-highchart col-md-8"></div>
+					<div class="col-md-2"></div>
+				</div>
+				<div class="row" style="margin-top: 2%">		
+					<div class="col-md-2"></div>
+					<div class="trending-bar-chart col-md-8"></div>
+					<div class="col-md-2"></div>
+				</div>
+			</div>
+	</script>
+	<script type="text/x-mustache-template" id="search-template">
+				<div class="row">
+					<div class="col-md-1" style="color: LightSlateGray; margin-bottom: 1px"><h1 style="font-family: 'Slackey', cursive; font-size: 100%; text-align: center; margin-top: 10%; margin-bottom: 0%">doof ..</h1></div>
+					
+					<div class="col-md-5">
+						<div class="form-group">
+							<textarea  class="shadow"  style="width: 90%; margin-top; 10%" type="text" id="newSearchQuery" placeholder="Try me" ></textarea>
+							<button class="btn btn-primary submitButton" style="height: 10%">submit</button>    
+    						</div>
+					</div>
+				</div>
+	</script>
+
+
+	<script type="text/x-mustache-template" id="each-dish-template">
+			<div class="col-md-2">{{dish_name}}</div>
+			<div class="dish-chart col-md-4"></div>
+			<div class="eatery-chart col-md-4"></div>
+	</script>
+
+
+
 
 			<div class="container-fluid">
 				<div class="row">

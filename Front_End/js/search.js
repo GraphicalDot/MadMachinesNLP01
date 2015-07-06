@@ -19,7 +19,7 @@ App.RootView = Backbone.View.extend({
 
 App.MainView = Backbone.View.extend({
 	tagName: "form",
-	className: "fomr-group",
+	className: "form-group",
 	template: window.template("root"),
 	initialize: function(){
 		var self = this;
@@ -58,8 +58,8 @@ App.MainView = Backbone.View.extend({
 		jqhr.done(function(data){
 			if (data.error == false){
 				console.log(data.result)
-				var subView = new App.BarChartView();
-				subView.render().el;	
+				var subView = new App.ResultView({"model": data.result, "text": value});
+				$("body").html(subView.render().el);	
 								
 				/*
 				$.each(data.result, function(iter, eatery){

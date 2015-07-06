@@ -22,9 +22,7 @@ from GlobalAlgorithmNames import FOOD_SUB_TAGS, COST_SUB_TAGS, AMBI_SUB_TAGS, SE
 from elasticsearch import Elasticsearch, helpers
 from elasticsearch import RequestError
 
-print ES_CLIENT
 ES_CLIENT = Elasticsearch(ELASTICSEARCH_IP)
-print ES_CLIENT
 NUMBER_OF_DOCS = 10
 #localhost:9200/test/_analyze?analyzer=whitespace' -d 'this is a test'
 class ElasticSearchScripts(object):
@@ -505,8 +503,47 @@ class ElasticSearchScripts(object):
 
 
 
-        def suggest_dish(self, __dish_name, number_of_dishes=None):
+        def elastic_query_processing(self, __query_dict, number_of_dishes=None, dish_suggestions=None):
                 """
+                Args:
+                    {'ambience': ["decor", "overall-ambience"], 'food': {'dishes': [u'Mango Cowboy', u'mango cyrup', 
+                                                                    u'mango ice cream']}, 'cost': [], 'service': []}
+                
+                Returns:
+                    {"dishes": [{"match" either a string or list, "suggestions": []}, {}, {}, {}], 
+                    "ambience": [{}, {}],
+                    "cost": [{}, {}],
+                    "service": [{}, {}]}
+                
+                """
+                result = {"food": {}}
+                dish_names = __query_dict.get("food").get("dishes")
+                dishes = []
+                if dish_names:
+                        for dish in dish_names:
+                                dishes.append(self.suggest_dish(dish, number_of_dishes, dish_suggestions))
+                
+
+                else:
+                        dishes.append({"match": "No appropriate dishes could be found related to your query", "suggestions": None})
+
+                result["food"]["dishes"] = dishes
+                return result
+
+        def suggest_dish(self, __dish_name, number_of_dishes=None, number_of_suggestions=None):
+                """
+                        dish_suggestions= {
+                                   "query":{
+                                            "match":{
+                                                    "dish_shingle":  __dish_name}},
+
+                                    "from": 0,
+                                   "size": dish_suggestions,
+                                    "sort":[
+                                            {"total_sentiments": {
+                                                    "order" : "desc"}}
+                                            ]
+			            }
                 Args:
                         dish_name must be lower case
                         type(string)
@@ -516,84 +553,120 @@ class ElasticSearchScripts(object):
                 Second it will do the fuzzy search, and find the dish similar considering levenshtein distance algorithm, 
 
                 third it will find the dish_names that sound similar to given dish name on the basis of soundex algorithm
+                
+                Preference of search:
+                        Exact match
+                        Fuzzy match
+                        Phonetic match
+                        Standard match
                 """
+                print "Dish passed in suggest_dish instance of ElasticSearchScripts is %s"%__dish_name
                 if not number_of_dishes:
-                        number_of_dishes = 10
+                        number_of_dishes = 2
                 
-                dish_suggestions= {
-                                "query":{
-                                        "match":{
-                                                "dish_shingle":  __dish_name}},
+                if not number_of_suggestions:
+                        number_of_suggestions = 5
 
-                                "from": 0,
-                                "size": number_of_dishes,
-                                "sort":[
-                                        {"total_sentiments": {
-                                                "order" : "desc"}}
-                                        ]
-			        }
-                
-                suggestions = client.search(index="food", doc_type="dish", body=dish_suggestions)
-                suggestions = ElasticSearchScripts.process_result(dish_suggestions)
+                def find_phonetic_match(__dish_name, number):
+                        
+                        phonetic_search_body = {
+                                "query": {
+                                        "match": {
+                                            "dish_phonetic": {
+                                                    "query": __dish_name,
+                                                            "fuzziness": 10,
+                                                            "prefix_length": 1}
+                                                        }
+                                            },
+                                    "from": 0,
+                                    "size": number_of_dishes,
+                                    "sort": [
+                                            {"total_sentiments": {
+                                                    "order" : "desc"}}
+                                           ]
 
-                exact_dish_search_body =  {
-                            "query":{
-                                    "term":{
-                                                "dish_raw":  __dish_name}},
+                                    }
+                        __result = ES_CLIENT.search(index="food", doc_type="dishes", body=phonetic_search_body)
+                        __result = ElasticSearchScripts.process_result(__result)
+                        return __result
 
-                            "from": 0,
-                            "size": number_of_dishes,
+
+                def find_exact_match(__dish_name, number_of_dishes):
+                        exact_dish_search_body={
+                                    "query":{
+                                            "term":{
+                                                        "dish_raw":  __dish_name}},
+
+                                    "from": 0,
+                                    "size": number_of_dishes,
                                     "sort": [
                                             {"total_sentiments": {
                                                     "order" : "desc"}}
                                            ]
                                 }
 
-                result = client.search(index="food", doc_type="dish", body=exact_dish_search_body)
-                result = ElasticSearchScripts.process_result(result)
-                if result:
-                        return {"match": result,
-                                "suggestions": [eatery["eatery_name"] for eatery in suggestions]}
+                        __result = ES_CLIENT.search(index="food", doc_type="dishes", body=exact_dish_search_body)
+                        __result = ElasticSearchScripts.process_result(__result)
+                        return __result
 
-                #REsult on the basis of Distance algorithm which happens to be levenshtein right now
-                distance_dish_body = {
-                            "query": {
+                def find_fuzzy_match(__dish_name, number_of_dishes):
+                        fuzzy_search_body = {
+                                "query": {
                                     "match": {
                                             "dish_raw": {
                                                     "query": __dish_name,
                                                     "fuzziness": 10,
                                                     "prefix_length": 1
-                                                    }}}}
-                
-                result = client.search(index="food", doc_type="dish", body=distance_dish_body)
-                result = ElasticSearchScripts.process_result(result)
-                if result:
-                        return {"match": result,
-                                "suggestions": [eatery["eatery_name"] for eatery in suggestions]}
-                
+                                                    }}},
+                                            
+                                "from": 0,
+                                "size": number_of_dishes,
+                                "sort": [
+                                            {"total_sentiments": {
+                                                    "order" : "desc"}}
+                                           ]}
+                        __result = ES_CLIENT.search(index="food", doc_type="dishes", body=fuzzy_search_body)
+                        __result = ElasticSearchScripts.process_result(__result)
+                        return __result
 
-                
-                #REsult on the basis of phoneti algorithms
-                phonetic_search_body = {
-                        "query": {
-                                "match": {
-                                    "dish_phonetic": {
-                                            "query": __dish_name,
-                                                    "fuzziness": 10,
-                                                    "prefix_length": 1}
-                                                        }
-                                            }
-                                    }
-                
-                result = client.search(index="food", doc_type="dish", body=phonetic_search_body)
-                result = ElasticSearchScripts.process_result(result)
+
+                def find_standard_match(__dish_name, number_of_dishes):
+                        standard_search_body = {
+                                "query": {
+                                    "match": {
+                                            "name": {
+                                                    "query": __dish_name,
+                                                    }}},
+                                            
+                                "from": 0,
+                                "size": number_of_dishes,
+                                "sort": [
+                                            {"total_sentiments": {
+                                                    "order" : "desc"}}
+                                           ]}
+                        __result = ES_CLIENT.search(index="food", doc_type="dishes", body=standard_search_body)
+                        __result = ElasticSearchScripts.process_result(__result)
+                        return __result
+
+
+                suggestions = find_standard_match(__dish_name, number_of_suggestions)
+
+                print "FInished Dish passed in suggest_dish instance of ElasticSearchScripts is %s"%__dish_name
+                result = find_exact_match(__dish_name, number_of_dishes)
                 if result:
-                        return {"match": result,
-                                "suggestions": [eatery["eatery_name"] for eatery in suggestions]}
-                    
-                return {"match": result,
-                            "suggestions": [eatery["eatery_name"] for eatery in suggestions]}
-                    
+                        return {"name": __dish_name, "match": result, "suggestions": suggestions}
+                
+                result = find_fuzzy_match(__dish_name, number_of_dishes)
+                if result:
+                        return {"name": __dish_name, "match": result, "suggestions": suggestions}
+                
+                result = find_phonetic_match(__dish_name, number_of_dishes)
+                if result:
+                        return {"name": __dish_name, "match": result, "suggestions": suggestions}
+                
+                
+                return {"name": __dish_name, "match": "We couldnt find any dish matching your Query %s"%__dish_name, "suggestions": suggestions}
+
 
 
         def return_dishes(eatery_id, number_of_dishes):
