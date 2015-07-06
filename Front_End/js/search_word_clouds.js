@@ -301,14 +301,14 @@ App.BarChart = Backbone.View.extend({
 		
 		bar
 				.append("rect")
-			.style("fill", "yellowgreen") 
+			.style("fill", "#598C73") 
 			.attr("width", function(d) {return RScale(d.positive); })
 				.transition().delay(function (d,i){ return i * transitionTime;}).duration(transitionTime)	
 				      .attr("height", barHeight - 1)
 			.attr("transform", function(d, i) { return "translate(" + RScale(d.superpositive) +", 0)"; });
 		bar
 				.append("rect")
-			.style("fill", "PaleTurquoise") 
+			.style("fill", "#ADB8C2") 
 			.attr("width", function(d) {return RScale(d.neutral); })
 				.transition().delay(function (d,i){ return i * transitionTime;}).duration(transitionTime)	
 				      .attr("height", barHeight - 1)
@@ -316,7 +316,7 @@ App.BarChart = Backbone.View.extend({
 			.attr("transform", function(d, i) { return "translate(" + RScale(d.superpositive+d.positive) +", 0)"; });
 		bar
 				.append("rect")
-			.style("fill", "lightpink") 
+			.style("fill", "#8B7BA1") 
 			.attr("width", function(d) { console.log(RScale(d.r)); return RScale(d.negative); })
 				.transition().delay(function (d,i){ return i * transitionTime;}).duration(transitionTime)	
 				      .attr("height", barHeight - 1)
@@ -325,7 +325,7 @@ App.BarChart = Backbone.View.extend({
 		
 		bar
 				.append("rect")
-			.style("fill", "red") 
+			.style("fill", "#B46254") 
 			.style("-webkit-box-shadow", "10px 10px 30px 30px #ccc") 
 			
 			.attr("width", function(d) { console.log(RScale(d.r)); return RScale(d.supernegative); })
@@ -345,6 +345,7 @@ App.BarChart = Backbone.View.extend({
 							return 	barHeight/2 + "px"
 							}
 							return barHeight/3 + "px"})
+					.style("fill", "LightSlateGray")
 					.style("font-family", function(d){
 							if (d.r == 0){
 								return "'Indie Flower', cursive";
