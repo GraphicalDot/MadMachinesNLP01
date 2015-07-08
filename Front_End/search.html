@@ -10,7 +10,7 @@
 		<link href="css/search.css" rel="stylesheet">
 		<link href="css/bootstrap-responsive.css" rel="stylesheet">
 		<link href="css/jquery-ui.css" rel="stylesheet">
-		<link href="css/tipsy.css" rel="stylesheet">
+		<link href="css/style.css" rel="stylesheet">
 		<link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css" rel="stylesheet">
 		<link href='http://fonts.googleapis.com/css?family=Playfair+Display:900' rel='stylesheet' type='text/css'>
 		
@@ -28,11 +28,11 @@
 		<script type="text/javascript" src="js/libs/d3/d3.js"></script>
 		<script type="text/javascript" src="js/libs/d3.layout.cloud.js"></script>
 		<script type="text/javascript" src="js/libs/jquery-ui.js"></script>
-		<script type="text/javascript" src="js/libs/jquery.tipsy.js"></script>
 		<script src="http://code.highcharts.com/modules/exporting.js"></script>
 		<link href='http://fonts.googleapis.com/css?family=Indie+Flower' rel='stylesheet' type='text/css'>
 		<link href='http://fonts.googleapis.com/css?family=Homemade+Apple' rel='stylesheet' type='text/css'>
 		<link href='http://fonts.googleapis.com/css?family=Slackey' rel='stylesheet' type='text/css'>
+		<script type="text/javascript" src="js/freewall.js"></script>
 	</head>
 	<body>
 	<script type="text/x-mustache-template" id="root-template">
@@ -47,42 +47,27 @@
 	</script>
 
 	<script type="text/x-mustache-template" id="result-template">
-
-				<div class="row">
-					<div class="col-md-2"></div>
-					<div class="dynamic-display col-md-8" style="margin-top: 2%"></div>
-					<div class="col-md-2"></div>
-				</div>
-				<div class="row" style="margin-top: 2%">		
-					<div class="col-md-2"></div>
-					<div class="trending-bar-highchart col-md-8"></div>
-					<div class="col-md-2"></div>
-				</div>
-				<div class="row" style="margin-top: 2%">		
-					<div class="col-md-2"></div>
-					<div class="trending-bar-chart col-md-8"></div>
-					<div class="col-md-2"></div>
-				</div>
+			<div class="header">
+			</div>
+			<div class="layout">
 			</div>
 	</script>
 	<script type="text/x-mustache-template" id="search-template">
-				<div class="row">
-					<div class="col-md-1" style="color: LightSlateGray; margin-bottom: 1px"><h1 style="font-family: 'Slackey', cursive; font-size: 100%; text-align: center; margin-top: 10%; margin-bottom: 0%">doof ..</h1></div>
+				<div class="clearfix">
+					<div style="color: LightSlateGray; margin-bottom: 1px"><h1 style="font-family: 'Slackey', cursive; font-size: 100%; text-align: center; margin-top: 10%; margin-bottom: 0%">doof ..</h1></div>
 					
-					<div class="col-md-5">
 						<div class="form-group">
 							<textarea  class="shadow"  style="width: 90%; margin-top; 10%" type="text" id="newSearchQuery" placeholder="Try me" ></textarea>
 							<button class="btn btn-primary submitButton" style="height: 10%">submit</button>    
-    						</div>
 					</div>
 				</div>
 	</script>
 
 
 	<script type="text/x-mustache-template" id="each-dish-template">
-			<div class="col-md-2">{{dish_name}}</div>
-			<div class="dish-chart col-md-4"></div>
-			<div class="eatery-chart col-md-4"></div>
+			<div>{{dish_name}}</div>
+			<div class="dish-chart"></div>
+			<div class="eatery-chart"></div>
 	</script>
 
 

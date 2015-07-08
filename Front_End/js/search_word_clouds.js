@@ -12,20 +12,30 @@ App.ResultView = Backbone.View.extend({
 	},
 	render: function(){
 
+		var self = this;
 		this.$el.append(this.template(this));
 		var subView = new App.SearchView();
-		this.$el.append(subView.render().el);
+		this.$(".header").append(subView.render().el);
 		
 		var subView = new App.FoodResultView({"model": this.model.food.dishes});
-		this.$el.append(subView.render().el);
-		
+		this.$(".layout").append(subView.render().el);
+		var wall = new Freewall(self.$("#freewall"));
+				wall.reset({
+					selector: '.brick',
+					cellW: 160,
+					cellH: 160,
+					onResize: function() {
+						wall.fitHeight($(window).height() - 170);
+					}
+				});	
+
 		return this;                       
 	},
 
 });
 
 App.SearchView = Backbone.View.extend({
-	className: "row",
+	className: "float",
 	template: window.template("search"), 
 	initialize: function(){
 	},
@@ -44,25 +54,23 @@ App.SearchView = Backbone.View.extend({
 });
 
 App.FoodResultView = Backbone.View.extend({
+	className: "free-wall",
 	initialize: function(options){
 		this.model = options.model
-		console.log(this.model)
-		console.log(this.model.match)
-		console.log(this.model.suggestions)
 	},
 	render: function(){
 		var self = this;
-
+		this.$el.attr( "id", "freewall");
 		$.each(this.model, function(iter, __object){
 			self.$el.append("<h2>"+ __object.name + "</h2>");
 			$.each(__object.match, function(iter, dish){
-				var subView = new App.EachObjectView({"model": dish})
+				var subView = new App.EachObjectView({"model": dish, "is_what": "match"})
 				self.$el.append(subView.render().el);
 				console.log("Prin dish details");
 				console.log(dish)
 		});
 			$.each(__object.suggestions, function(iter, dish){
-				var subView = new App.EachObjectView({"model": dish})
+				var subView = new App.EachObjectView({"model": dish, "is_what": "suggestion"})
 				self.$el.append(subView.render().el);
 				console.log("Prin dish details");
 				console.log(dish)
@@ -74,22 +82,20 @@ App.FoodResultView = Backbone.View.extend({
 });
 
 App.EachObjectView = Backbone.View.extend({
-	className: "row",
+	className: "brick size22",
 	dish_name: function(){return this.model.name}, 
 	template: window.template("each-dish"), 
 	initialize: function(options){
 		console.log("Result view called");
 		this.model = options.model
-		console.log(this.model);
+		this.is_what = options.is_what; 
 	},
 	render: function(){
 		var self = this;
 		this.$el.append(this.template(this));
+		this.$el.attr("style", 'width:300px; height: 300px; background-color:rgb(142, 68, 173)'); 
+		this.$el.attr("data-handle", ".handle");
 		this.$(".dish-chart").append("<p>a</p>")
-		console.log(this.$(".dish-chart"))
-		console.log(this.model.categories)
-		console.log(this.model.series)
-       		console.log(this.model.cumulative)
 		this.__HightChartColumn(self.$(".dish-chart"), this.model.categories, this.model.series, this.model.name, this.model.subcategory, this.model.cumulative)
 		return this;                       
 	},
