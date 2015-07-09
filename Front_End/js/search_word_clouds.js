@@ -15,20 +15,13 @@ App.ResultView = Backbone.View.extend({
 		var self = this;
 		this.$el.append(this.template(this));
 		var subView = new App.SearchView();
-		this.$(".header").append(subView.render().el);
+		this.$(".head").append(subView.render().el);
 		
 		var subView = new App.FoodResultView({"model": this.model.food.dishes});
-		this.$(".layout").append(subView.render().el);
-		var wall = new Freewall(self.$("#freewall"));
-				wall.reset({
-					selector: '.brick',
-					cellW: 160,
-					cellH: 160,
-					onResize: function() {
-						wall.fitHeight($(window).height() - 170);
-					}
-				});	
-
+		this.$(".slides").append(subView.render().el);
+		this.$('.bxslider').bxSlider({
+			"width": '100%', 
+		});
 		return this;                       
 	},
 
@@ -54,7 +47,8 @@ App.SearchView = Backbone.View.extend({
 });
 
 App.FoodResultView = Backbone.View.extend({
-	className: "free-wall",
+	tagName: "ul",
+	className: "bxslider",
 	initialize: function(options){
 		this.model = options.model
 	},
@@ -62,56 +56,66 @@ App.FoodResultView = Backbone.View.extend({
 		var self = this;
 		this.$el.attr( "id", "freewall");
 		$.each(this.model, function(iter, __object){
-			self.$el.append("<h2>"+ __object.name + "</h2>");
 			$.each(__object.match, function(iter, dish){
 				var subView = new App.EachObjectView({"model": dish, "is_what": "match"})
 				self.$el.append(subView.render().el);
-				console.log("Prin dish details");
-				console.log(dish)
 		});
 			$.each(__object.suggestions, function(iter, dish){
 				var subView = new App.EachObjectView({"model": dish, "is_what": "suggestion"})
 				self.$el.append(subView.render().el);
-				console.log("Prin dish details");
-				console.log(dish)
 		});
 		});
+		
 		return this
 	},
 
 });
 
 App.EachObjectView = Backbone.View.extend({
-	className: "brick size22",
+	className: "li",
 	dish_name: function(){return this.model.name}, 
 	template: window.template("each-dish"), 
 	initialize: function(options){
 		console.log("Result view called");
 		this.model = options.model
+		is_what = options.is_what
 		this.is_what = options.is_what; 
 	},
 	render: function(){
 		var self = this;
 		this.$el.append(this.template(this));
-		this.$el.attr("style", 'width:300px; height: 300px; background-color:rgb(142, 68, 173)'); 
-		this.$el.attr("data-handle", ".handle");
-		this.$(".dish-chart").append("<p>a</p>")
-		this.__HightChartColumn(self.$(".dish-chart"), this.model.categories, this.model.series, this.model.name, this.model.subcategory, this.model.cumulative)
+		this.$el.attr("style", 'font-size: 100%; width:300px; height: 40%;'); 
+		//this.__HightChartColumn(self.$(".dish-chart"), this.model.categories, this.model.series, this.model.name, this.model.subcategory, this.model.cumulative)
 		return this;                       
 	},
 
+
+	events: {
+		"click .seeChart": "seeChart"},
+
+
+	seeChart: function(event){
+		var self = this;
+		event.preventDefault();
+		console.log(this.model.series)
+		console.log("see chart has been clicked")
+		console.log(self.$(".dish-chart"))
+		self.__HightChartColumn(self.$(".dish-chart"), self.model.categories, self.model.series, self.model.name, self.model.subcategory, self.model.cumulative)
+		},
 	__HightChartLine: function(className, __categories, __series, __name, __subcategory, __cumulative){
+		console.log("Fuck the hight chart called")
 		var self = this;
 		className.highcharts({
 			chart: {
-				type: "column"
+				type: "column", 
+				backgroundColor: '#FCFFC5',
 					},
 			credits: {
 		            enabled: false
 		        },
-
+	
 			title: {
-				text: 'Time series for ' + __name +", "+ __subcategory,
+				text: "",
 				style: {"fontSize": ".9em" },
 			},
 			
@@ -168,14 +172,16 @@ App.EachObjectView = Backbone.View.extend({
 		var self = this;
 		className.highcharts({
 			chart: {
-				type: "column"
+				type: "column", 
+				backgroundColor: '#FCFFC5',
 					},
 			credits: {
 		            enabled: false
 		        },
 
 			title: {
-				text: 'Time series for ' + __name +", "+ __subcategory,
+				//text: 'Tddime series for ' + __name +", "+ __subcategory,
+				text: "",
 				style: {"fontSize": ".9em" },
 			},
 			
