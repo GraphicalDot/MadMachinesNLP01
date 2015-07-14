@@ -22,7 +22,7 @@ from GlobalAlgorithmNames import FOOD_SUB_TAGS, COST_SUB_TAGS, AMBI_SUB_TAGS, SE
 from elasticsearch import Elasticsearch, helpers
 from elasticsearch import RequestError
 
-ES_CLIENT = Elasticsearch(ELASTICSEARCH_IP)
+ES_CLIENT = Elasticsearch(ELASTICSEARCH_IP, timeout=30)
 NUMBER_OF_DOCS = 10
 #localhost:9200/test/_analyze?analyzer=whitespace' -d 'this is a test'
 class ElasticSearchScripts(object):
@@ -562,35 +562,35 @@ class ElasticSearchScripts(object):
                 """
                 print "Dish passed in suggest_dish instance of ElasticSearchScripts is %s"%__dish_name
                 if not number_of_dishes:
-                        number_of_dishes = 2
+                        number_of_dishes = 3
                 
                 if not number_of_suggestions:
                         number_of_suggestions = 5
 
-                def find_phonetic_match(__dish_name, number):
-                        
-                        phonetic_search_body = {
+
+                def find_suggestions(__dish_name, number_of_dishes):
+                        fuzzy_search_body = {
                                 "query": {
-                                        "match": {
-                                            "dish_phonetic": {
-                                                    "query": __dish_name,
-                                                            "fuzziness": 10,
-                                                            "prefix_length": 1}
-                                                        }
-                                            },
-                                    "from": 0,
-                                    "size": number_of_dishes,
+                                    "fuzzy_like_this": {
+                                            "fields": ["dish_shingle", "dish_raw"],
+							"like_text": __dish_name,  
+                                                        "fuzziness": 6,
+                                                        "max_query_terms": 25,
+						        "boost": 1, 
+						        "prefix_length": 0, 
+						        "ignore_tf": False,  
+                                                    }},
+                                            
+                                "from": 0,
+                                "size": number_of_suggestions,
                                     "sort": [
                                             {"total_sentiments": {
                                                     "order" : "desc"}}
                                            ]
-
-                                    }
-                        __result = ES_CLIENT.search(index="food", doc_type="dishes", body=phonetic_search_body)
+                                }
+                        __result = ES_CLIENT.search(index="food", doc_type="dishes", body=fuzzy_search_body)
                         __result = ElasticSearchScripts.process_result(__result)
                         return __result
-
-
                 def find_exact_match(__dish_name, number_of_dishes):
                         exact_dish_search_body={
                                     "query":{
@@ -610,21 +610,22 @@ class ElasticSearchScripts(object):
                         return __result
 
                 def find_fuzzy_match(__dish_name, number_of_dishes):
+                        print "Fussy match for %s"%__dish_name
                         fuzzy_search_body = {
                                 "query": {
-                                    "match": {
-                                            "dish_raw": {
-                                                    "query": __dish_name,
-                                                    "fuzziness": 10,
-                                                    "prefix_length": 1
-                                                    }}},
+                                    "fuzzy_like_this": {
+                                            "fields": ["dish_shingle", "dish_raw"],
+							"like_text": __dish_name,  
+                                                        "fuzziness": 6,
+                                                        "max_query_terms": 25,
+						        "boost": 1, 
+						        "prefix_length": 0, 
+						        "ignore_tf": False,  
+                                                    }},
                                             
                                 "from": 0,
                                 "size": number_of_dishes,
-                                "sort": [
-                                            {"total_sentiments": {
-                                                    "order" : "desc"}}
-                                           ]}
+                                }
                         __result = ES_CLIENT.search(index="food", doc_type="dishes", body=fuzzy_search_body)
                         __result = ElasticSearchScripts.process_result(__result)
                         return __result
@@ -648,19 +649,17 @@ class ElasticSearchScripts(object):
                         __result = ElasticSearchScripts.process_result(__result)
                         return __result
 
-
-                suggestions = find_standard_match(__dish_name, number_of_suggestions)
-
+                suggestions = find_suggestions(__dish_name, number_of_suggestions)
+                
                 print "FInished Dish passed in suggest_dish instance of ElasticSearchScripts is %s"%__dish_name
                 result = find_exact_match(__dish_name, number_of_dishes)
                 if result:
                         return {"name": __dish_name, "match": result, "suggestions": suggestions}
+                else:
+                        print "There is no exact result matching the Query %s"%__dish_name
                 
                 result = find_fuzzy_match(__dish_name, number_of_dishes)
-                if result:
-                        return {"name": __dish_name, "match": result, "suggestions": suggestions}
                 
-                result = find_phonetic_match(__dish_name, number_of_dishes)
                 if result:
                         return {"name": __dish_name, "match": result, "suggestions": suggestions}
                 

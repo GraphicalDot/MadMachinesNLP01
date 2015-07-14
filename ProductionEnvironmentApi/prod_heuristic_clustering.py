@@ -32,8 +32,9 @@ sys.path.append(this_file_path)
 from Text_Processing.PosTaggers import PosTaggerDirPath, HunPosModelPath, HunPosTagPath
 from Text_Processing.colored_print import bcolors
 from GlobalConfigs import DEBUG
-
-
+from Text_Processing import SentenceTokenizationOnRegexOnInterjections
+from GlobalConfigs import eateries, eateries_results_collection, reviews, reviews_results_collection, connection
+from GlobalAlgorithmNames import TAG_CLASSIFIER_LIB, SENTI_CLASSIFIER_LIB, FOOD_SB_TAG_CLASSIFIER_LIB 
 
 
 def encoding_helper(__object):
@@ -177,8 +178,7 @@ class ProductionHeuristicClustering:
                         self.common_ners = list(set.intersection(set([e[0] for e in self.ner()]), \
                                                         set([e[0] for e in self.custom_ner()])))
                         self.result = self.filter_on_basis_pos_tag()
-                        self.result = sorted(self.result, reverse=True, key= lambda x: x.get("positive") \
-                                                        + x.get("negative")+ x.get("neutral") + x.get("super-positive")+ x.get("super-negative"))
+                        self.result = sorted(self.result, reverse=True, key= lambda x: x.get("total_sentiments"))
                         return self.add_sentiments(self.result)
                 
                 
@@ -422,7 +422,8 @@ class ProductionHeuristicClustering:
 
         def filter_on_basis_pos_tag(self):
                 """
-                pos tagging of noun phrases will be done, and if the noun phrases contains some adjectives or RB or FW, 
+                pos tagging of noun phrases will be d
+                one, and if the noun phrases contains some adjectives or RB or FW, 
                 it will be removed from the total noun_phrases list
 
                 Any Noun phrases when split, if present in self.list_to_exclude will not be included in the final result
@@ -431,32 +432,15 @@ class ProductionHeuristicClustering:
                 noun_phrase = "great place"
                 
                 """
-                print "{0} These noun phrases will be removed from the noun phrases {1}".format(bcolors.OKBLUE, bcolors.RESET)
-                print "{0} List To Exclude {1}".format(bcolors.OKBLUE, bcolors.RESET)
-                print self.list_to_exclude
-                print "\n"
-                print "{0} Common name entities  {1}".format(bcolors.OKBLUE, bcolors.RESET)
-                print self.common_ners
-                print "\n"
                 hunpos_tagger = HunposTagger(HunPosModelPath, HunPosTagPath)
                 filtered_list = list()
                 for __e in self.result:
-                        try:
-                                __list = [pos_tag for (np, pos_tag) in hunpos_tagger.tag(nltk.wordpunct_tokenize(__e.get("name")))]
-                                if bool(set.intersection(set(__e.get("name").split(" ")),  set(self.list_to_exclude))):
-                                        print __e.get("name")
-                                        pass    
-                        
-                        #elif __e.get("name") in self.common_ners:
-                        #        pass
-                        
-                                elif "RB" == __list[0] or  "CD" in __list or "FW" in __list:
-                                        pass
-                                else:
-                                        filtered_list.append(__e)
+                        __list = [pos_tag for (np, pos_tag) in hunpos_tagger.tag(nltk.wordpunct_tokenize(__e.get("name").encode("ascii", "ignore")))]
+                        if set.intersection(set(__list), set(["FW", "CD", "LS"])):
+                                    print "This will be droppped out of total noun phrases %s"%__e.get("name")
+                        else:
+                            filtered_list.append(__e)
 
-                        except Exception:
-                                pass
 
                 return filtered_list
 
@@ -670,16 +654,14 @@ if __name__ == "__main__":
                 for post in reviews.find({"eatery_id": eatery_id}):
                         reviews_list.extend([[sent, post.get("review_time")] for sent in sent_tokenizer.tokenize(post.get("review_text"))])
                 
-                tag_classifier = joblib.load("Text_Processing/PrepareClassifiers/InMemoryClassifiers/svm_linear_kernel_classifier_tag.lib")
 
-                tags = tag_classifier.predict([e[0] for e in reviews_list])
+                tags = TAG_CLASSIFIER_LIB.predict([e[0] for e in reviews_list])
                 food_sentences = list()
                 for (sent, review_time),  tag in zip(reviews_list, tags):
                         if tag == "food":
                                 food_sentences.append([sent, review_time])
    
-                food_tag_classifier = joblib.load("Text_Processing/PrepareClassifiers/InMemoryClassifiers/svm_linear_kernel_classifier_food_sub_tags.lib")
-                sub_tags = food_tag_classifier.predict([e[0] for e in food_sentences])
+                sub_tags = FOOD_SB_TAG_CLASSIFIER_LIB.predict([e[0] for e in food_sentences])
 
                 dishes_n_drinks = list()
 
@@ -688,9 +670,9 @@ if __name__ == "__main__":
                                 dishes_n_drinks.append([sent, review_time])
                         
     
+  
 
-                sentiment_classifier = joblib.load("Text_Processing/PrepareClassifiers/InMemoryClassifiers/svm_linear_kernel_classifier_sentiment_new_dataset.lib")
-                sentiments = sentiment_classifier.predict([e[0] for e in dishes_n_drinks])
+                sentiments = SENTI_CLASSIFIER_LIB.predict([e[0] for e in dishes_n_drinks])
     
                 from topia.termextract import extract
                 topia_extractor = extract.TermExtractor()
@@ -699,8 +681,9 @@ if __name__ == "__main__":
                         nouns = topia_extractor(sent)
                         noun_phrases.append([tag, [e[0].lower() for e in nouns], review_time])
                         
-                return filter(lambda x: x[1], noun_phrases)
+                return (filter(lambda x: x[1], noun_phrases), [e[0] for e in dishes_n_drinks])
 
+                
 
 
         sentences = [u'do try their Paneer Chilli Pepper starter .',
@@ -734,6 +717,9 @@ if __name__ == "__main__":
                     (u'super-positive', [u'i couldn'], u'2014-05-06 13:06:56'),
                      (u'neutral', [u'chicken pieces', u'veg pasta n'], u'2014-06-20 15:11:42')]
 
+        
+        sentiment_np_time, sentences = return_food_sentences("308322")
+        print sentiment_np_time
         ins = ProductionHeuristicClustering(sentiment_np_time, "dishes", sentences,)
         i = ins.run()
         for e in ins.run():
