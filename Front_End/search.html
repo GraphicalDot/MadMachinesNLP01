@@ -35,7 +35,9 @@
 		<link href='http://fonts.googleapis.com/css?family=Homemade+Apple' rel='stylesheet' type='text/css'>
 		<link href='http://fonts.googleapis.com/css?family=Slackey' rel='stylesheet' type='text/css'>
 		<script type="text/javascript" src="js/freewall.js"></script>
-	</head>
+	
+		
+		</head>
 	<body>
 	<script type="text/x-mustache-template" id="root-template">
 			<div class="form-group">
@@ -82,28 +84,18 @@
 			<div class="container-fluid">
 				<div class="row">
 					<div class="col-md-2"></div>
-					<div class="jumbotron" style="color: LightSlateGray; margin-bottom: 1px"><h1 style="font-family: 'Slackey', cursive; font-size: 1000%; text-align: center; margin-top: 10%; margin-bottom: 0%">doooF ..</h1></div>
+					<div class="jumbotron" style="color: LightSlateGray; margin-bottom: 1px"><h1 style="font-family: 'Slackey', cursive; font-size: 1000%; text-align: center; margin-top: 5%; margin-bottom: 0%">doooF ..</h1></div>
 					<!--<img src="css/images/food_search.jpg"/> -->
 				</div>
 				<div class="row">
-					<div class="col-md-2"></div>
-					<div class="dynamic-display col-md-8" style="margin-top: 2%"></div>
-					<div class="col-md-2"></div>
-				</div>
-				<div class="row" style="margin-top: 2%">		
-					<div class="col-md-2"></div>
-					<div class="trending-bar-highchart col-md-8"></div>
-					<div class="col-md-2"></div>
-				</div>
-				<div class="row" style="margin-top: 2%">		
-					<div class="col-md-2"></div>
-					<div class="trending-bar-chart col-md-8"></div>
-					<div class="col-md-2"></div>
+					<div class="dynamic-display col-md-4"></div>
+					<div class="col-md-4" id="map-canvas" style = "height: 30% ; width: 30%"></div>
 				</div>
 			</div>
 			</div>						
 	<script src="js/Global-variables.js"></script>
 	<script src="js/test-router.js"></script>
+	<script src="js/google_maps.js"></script>
 	<script src="js/search_word_clouds.js"></script>
 	<script src="js/search.js"></script>
     <!-- <script src="js/for_one_page.js"></script> -->

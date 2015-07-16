@@ -13,5 +13,6 @@ $(document).ready(function(){
 	window.update_sentence = window.URL + "change_tag_or_sentiment";
 	window.resolve_query = window.URL + "resolve_query";
 	window.get_trending = window.URL + "get_trending";
+	window.nearest_eateries = window.URL + "nearest_eateries";
 
 });

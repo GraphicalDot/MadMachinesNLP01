@@ -260,7 +260,7 @@ App.TrendingView = Backbone.View.extend({
 			var subview = new App.BarChart({"model": data.result})
 		})
 		 jqhr.fail(function(data){
-			                                 bootbox.alert("fuckk you")
+			                                 bootbox.alert("Crap!! Our system went down")
 						                 });
 
 		},

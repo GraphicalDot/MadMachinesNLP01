@@ -60,7 +60,7 @@ from itertools import ifilter
 from tornado.web import asynchronous
 from tornado.concurrent import run_on_executor
 from concurrent.futures import ThreadPoolExecutor
-
+from bson.son import SON
 from Text_Processing.Sentence_Tokenization.Sentence_Tokenization_Classes import SentenceTokenizationOnRegexOnInterjections
 from GlobalConfigs import connection, eateries, reviews, yelp_eateries, yelp_reviews
          
@@ -300,29 +300,15 @@ class LimitedEateriesList(tornado.web.RequestHandler):
                 """
                 This gives only the limited eatery list like the top on the basis of the reviews count
                 """
-                result = list(eateries.find({"website": "zomato", "area_or_city": "ncr"},  {"eatery_id": True, "_id": False, "eatery_name": True, "area_or_city": True}).limit(100).sort("eatery_total_reviews", -1))
-	
-                for element in result:
-                        eatery_id = element.get("eatery_id")
-                        element.update({"reviews": reviews.find({"eatery_id": eatery_id}).count()})
-                """
-                yelp_result = list(yelp_eateries.find(fields= {"eatery_id": True, "_id": False, "eatery_name": True, "area_or_city": True}).limit(5).sort("eatery_total_reviews", -1))
-                
-                for element in yelp_result:
-                        eatery_id = element.get("eatery_id")
-                        element.update({"reviews": yelp_reviews.find({"eatery_id": eatery_id}).count()})
+                projection={"eatery_id": True, "eatery_name": True, "eatery_address": True, "eatery_coordinates": True, "eatery_total_reviews": True, "_id": False}
+                result = [eatery for eatery in list(eateries.find({"eatery_area_or_city": "ncr"},  projection).limit(100).sort("eatery_total_reviews", -1)) if eatery.get("eatery_coordinates")]
                 self.write({"success": True,
 			"error": False,
-			"result": result +  yelp_result,
-			})
-
-                """
-                self.write({"success": True,
-			"error": False,
-                        "result": result[::-1],
+                        "result": result,
 			})
                 self.finish()
-                
+
+
                 
 
 
@@ -434,6 +420,7 @@ class UpdateClassifier(tornado.web.RequestHandler):
                 args = update_classifiers.parse_args()    
                 whether_allowed = False
                 """
+                
                 if not whether_allowed:
                         return {"success": False,
                                 "error": True,
@@ -473,10 +460,8 @@ class ChangeTagOrSentiment(tornado.web.RequestHandler):
 
 
                 __collection = connection.training_data.training_sentiment_collection
-                print __collection.count()
                 __collection.insert({"review_id": "misc", "sentence": sentence, "sentiment": value, "epoch_time": time.time(), 
                                 "h_r_time": time.asctime()})
-                print __collection.count()
                 return {"success": True,
                         "error": False,
                         "messege": "Updated!!!",
@@ -634,6 +619,39 @@ class Query(tornado.web.RequestHandler):
                         print e
                         raise StandardError("The request cannot be completed, the reason being %s"%e)
 
+class NearestEateries(tornado.web.RequestHandler):
+	@cors
+	@print_execution
+        #@tornado.gen.coroutine
+        @asynchronous
+        def post(self):
+                """
+                This gives only the limited eatery list like the top on the basis of the reviews count
+                """
+                
+                lat =  float(self.get_argument("lat"))
+                long =  float(self.get_argument("long")) 
+                
+                print self.get_argument("range")
+                range = self.get_argument("range")
+                if not range:
+                        range = 5
+                else:
+                        range = int(range)
+                
+
+
+                projection={"eatery_id": True, "eatery_name": True, "eatery_address": True, "eatery_coordinates": True, "eatery_total_reviews": True, "_id": False}
+                result = eateries.find({"eatery_coordinates" : SON([("$near", { "$geometry" : SON([("type", "Point"), ("coordinates", [lat, long]), \
+                        ("$maxDistance", range)])})])}, projection).sort("eatery_total_reviews", -1).limit(10)
+
+                self.write({"success": True,
+			"error": False,
+                        "result": list(result),
+			})
+                self.finish()
+                
+
 def main():
         http_server = tornado.httpserver.HTTPServer(Application())
         tornado.autoreload.start()
@@ -647,7 +665,8 @@ class Application(tornado.web.Application):
                     (r"/limited_eateries_list", LimitedEateriesList),
                     (r"/get_word_cloud", GetWordCloud),
                     (r"/resolve_query", Query),
-                    (r"/get_trending", GetTrending),]
+                    (r"/get_trending", GetTrending),
+                    (r"/nearest_eateries", NearestEateries),]
                 settings = dict(cookie_secret="__TODO:_GENERATE_YOUR_OWN_RANDOM_VALUE_HERE__",)
                 tornado.web.Application.__init__(self, handlers, **settings)
                 self.executor = ThreadPoolExecutor(max_workers=60)
@@ -655,4 +674,5 @@ class Application(tornado.web.Application):
 
 
 if __name__ == '__main__':
+    print "server reloaded Dude"
     main()
