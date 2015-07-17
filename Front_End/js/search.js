@@ -76,7 +76,11 @@ App.MainView = Backbone.View.extend({
 	beforeRender: function(){
 		var subview = new App.TrendingView();
 		subview.render().el;
-		__array = [{'eatery_name': 'Cheese Chaplin', 'eatery_coordinates': [28.5244611111, 77.1919944444]}, {'eatery_name': 'Chef &amp; I', 'eatery_coordinates': [28.5246305556, 77.1914527778]}, {'eatery_name': 'Cafe Seclude', 'eatery_coordinates': [28.5245277778, 77.1909777778]}, {'eatery_name': 'Shroom', 'eatery_coordinates': [28.524948, 77.190225]}, {'eatry_name': 'Lure Switch', 'eatery_coordinates': [28.5291066667, 77.1936133333]}]			
+		__array = [{'eatery_name': 'Cheese Chaplin', 'eatery_coordinates': [28.5244611111, 77.1919944444]}, 
+			{'eatery_name': 'Chef &amp; I', 'eatery_coordinates': [28.5246305556, 77.1914527778]}, 
+			{'eatery_name': 'Cafe Seclude', 'eatery_coordinates': [28.5245277778, 77.1909777778]}, 
+			{'eatery_name': 'Shroom', 'eatery_coordinates': [28.524948, 77.190225]}, 
+			{'eatry_name': 'Lure Switch', 'eatery_coordinates': [28.5291066667, 77.1936133333]}]			
 		__initial_lat = 28.6427138889;
 		__initial_long = 77.1192555556;
 		this.reloadGoogleMap(__initial_lat, __initial_long, __array);
@@ -98,15 +102,7 @@ App.MainView = Backbone.View.extend({
 		jqhr.done(function(data){
 			if (data.error == false){
 				
-				console.log(data.result)
-				console.log(eatery_lat)
-				console.log(eatery_long)
 				self.reloadGoogleMap(eatery_lat, eatery_long, data.result)
-				/*
-				$.each(data.result, function(iter, eatery){
-					var subView = new App.AppendRestaurants({"eatery": eatery});
-					self.$(".append_eatery").append(subView.render().el);	
-				*/
 					}
 			else{
 				var subView = new App.ErrorView();
@@ -124,13 +120,11 @@ App.MainView = Backbone.View.extend({
 
 
 	reloadGoogleMap: function (__initial_lat, __initial_long, eateries_list){
-		console.log("function called is reloadGoogleMap")
-		console.log(eateries_list)
 		function initialize() {
 			var mapCanvas = document.getElementById('map-canvas');
 			var mapOptions = {
 					center: new google.maps.LatLng(__initial_lat, __initial_long),
-					zoom: 12,
+					zoom: 19,
 					mapTypeId: google.maps.MapTypeId.ROADMAP
                                           }
 			var map = new google.maps.Map(mapCanvas, mapOptions)
@@ -144,26 +138,35 @@ App.MainView = Backbone.View.extend({
 							{saturation: 99 }
 							]
 					}]);
-                	var markers= []
 			$.each(eateries_list, function(iter, data){
-				console.log(data)
                                 marker = new google.maps.Marker({
                                 map: map,
                                 position: new google.maps.LatLng(data.eatery_coordinates[0], data.eatery_coordinates[1]),
-                                title: data.name
+                                title: data.eatery_name,
+				eatery_id: data.eatery_id, 
+				address: data.eatery_address,
+				html: "<div id='infobox'>" + data.eatery_name + "</br>" + data.eatery_address + "</div>" 
+
                                 })
-
-                                markers.push(marker)
-                                google.maps.event.addListener(marker, 'click', function() {
-                                                map.setZoom(11);
-                                                map.setCenter(marker.getPosition());
-                                                });
-
-                                markers[markers.length - 1]['infowin'] = new google.maps.InfoWindow({
-                                content: '<div>This is a marker in ' + data.eatery_name + '</div>'
-                                });
+                                google.maps.event.addListener(marker, 'mouseover', function() {
+					infowindow.setContent(this.html);        
+					infowindow.open(map, this);        
+					});
+                                
+				google.maps.event.addListener(marker, 'mouseout', function() {
+					infowindow.close();        
+					});
+				google.maps.event.addListener(marker, 'click', function() {
+					console.log(marker.get("eatery_id"));        
+					});
                         })
-                                                    }
+                       
+		       			
+				var infowindow = new google.maps.InfoWindow({
+					      content: "",
+					  });
+
+		}
 			initialize();
 		},
 

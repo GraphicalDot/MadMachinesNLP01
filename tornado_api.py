@@ -642,8 +642,9 @@ class NearestEateries(tornado.web.RequestHandler):
 
 
                 projection={"eatery_id": True, "eatery_name": True, "eatery_address": True, "eatery_coordinates": True, "eatery_total_reviews": True, "_id": False}
+                #result = eateries.find({"eatery_coordinates": {"$near": [lat, long]}}, projection).sort("eatery_total_reviews", -1).limit(10)
                 result = eateries.find({"eatery_coordinates" : SON([("$near", { "$geometry" : SON([("type", "Point"), ("coordinates", [lat, long]), \
-                        ("$maxDistance", range)])})])}, projection).sort("eatery_total_reviews", -1).limit(10)
+                        ("$maxDistance", range)])})])}, projection).limit(10)
 
                 self.write({"success": True,
 			"error": False,
@@ -651,6 +652,21 @@ class NearestEateries(tornado.web.RequestHandler):
 			})
                 self.finish()
                 
+
+class EateriesDetails(tornado.web.RequestHandler):
+	@cors
+	@print_execution
+        #@tornado.gen.coroutine
+        @asynchronous
+        def post(self):
+                eatery_id =  self.get_argument("eatery_id")
+                
+
+
+
+
+
+
 
 def main():
         http_server = tornado.httpserver.HTTPServer(Application())
