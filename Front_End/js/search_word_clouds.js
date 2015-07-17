@@ -454,7 +454,6 @@ App.BarChart = Backbone.View.extend({
 		var width = $(".trending-bar-chart").width();
 		var height = $(window).height()/2 ;
 
-		console.log(this.model.food)
 		food_data = this.dataFunction(this.model.food, "food")
 		ambience_data = this.dataFunction(this.model.ambience, null)
 		cost_data = this.dataFunction(this.model.service, null)
@@ -467,7 +466,6 @@ App.BarChart = Backbone.View.extend({
 		empty_ambience = [{"name": "Trending in Ambience", "positive": 0, "negative": 0, "neutral": 0, "sentences": 0, "superpositive": 0, "supernegative": 0, "r": 0,}]
 
 		data = empty_food.concat(food_data, empty_service, service_data, empty_ambience, ambience_data, empty_cost, cost_data)
-		console.log(data)
 		var margin = {
 			 'top': 30,
 			 'right': 10,
@@ -560,7 +558,7 @@ App.BarChart = Backbone.View.extend({
 		bar
 				.append("rect")
 			.style("fill", "#8B7BA1") 
-			.attr("width", function(d) { console.log(RScale(d.r)); return RScale(d.negative); })
+			.attr("width", function(d) {return RScale(d.negative); })
 				.transition().delay(function (d,i){ return i * transitionTime;}).duration(transitionTime)	
 				      .attr("height", barHeight - 1)
 			.attr("transform", function(d, i) { return "translate(" + RScale(d.superpositive+d.positive+d.neutral) +", 0)"; });
@@ -571,7 +569,7 @@ App.BarChart = Backbone.View.extend({
 			.style("fill", "#B46254") 
 			.style("-webkit-box-shadow", "10px 10px 30px 30px #ccc") 
 			
-			.attr("width", function(d) { console.log(RScale(d.r)); return RScale(d.supernegative); })
+			.attr("width", function(d) {return RScale(d.supernegative); })
 				.transition().delay(function (d,i){ return i * transitionTime;}).duration(transitionTime)	
 				      .attr("height", barHeight - 1)
 			.attr("transform", function(d, i) { return "translate(" + RScale(d.superpositive+d.positive+d.neutral+d.negative) +", 0)"; });

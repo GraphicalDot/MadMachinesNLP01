@@ -42,7 +42,6 @@ App.MainView = Backbone.View.extend({
 				$.each(data.result, function(iter, eatery){
 					var subView = new App.AppendEateries({"model": eatery});
 					__html = subView.render().el
-					console.log(__html)
 					self.$(".eateries-list").append(__html);	
 				
 				})
@@ -77,6 +76,10 @@ App.MainView = Backbone.View.extend({
 	beforeRender: function(){
 		var subview = new App.TrendingView();
 		subview.render().el;
+		__array = [{'eatery_name': 'Cheese Chaplin', 'eatery_coordinates': [28.5244611111, 77.1919944444]}, {'eatery_name': 'Chef &amp; I', 'eatery_coordinates': [28.5246305556, 77.1914527778]}, {'eatery_name': 'Cafe Seclude', 'eatery_coordinates': [28.5245277778, 77.1909777778]}, {'eatery_name': 'Shroom', 'eatery_coordinates': [28.524948, 77.190225]}, {'eatry_name': 'Lure Switch', 'eatery_coordinates': [28.5291066667, 77.1936133333]}]			
+		__initial_lat = 28.6427138889;
+		__initial_long = 77.1192555556;
+		this.reloadGoogleMap(__initial_lat, __initial_long, __array);
 	},
 	
 	events: {
@@ -87,7 +90,6 @@ App.MainView = Backbone.View.extend({
 	changeMap: function(event){
 		event.preventDefault();
 		var self = this;
-		console.log("change map clicked")
 		eatery_lat = $(".eatery-list-button").attr("lat")
 		eatery_long = 	$(".eatery-list-button").attr("long")
 		range = $(".range-button").val()
@@ -95,7 +97,10 @@ App.MainView = Backbone.View.extend({
 		var jqhr = $.post(window.nearest_eateries, {"lat": eatery_lat, "long": eatery_long, "range": range})	
 		jqhr.done(function(data){
 			if (data.error == false){
+				
 				console.log(data.result)
+				console.log(eatery_lat)
+				console.log(eatery_long)
 				self.reloadGoogleMap(eatery_lat, eatery_long, data.result)
 				/*
 				$.each(data.result, function(iter, eatery){
@@ -120,6 +125,7 @@ App.MainView = Backbone.View.extend({
 
 	reloadGoogleMap: function (__initial_lat, __initial_long, eateries_list){
 		console.log("function called is reloadGoogleMap")
+		console.log(eateries_list)
 		function initialize() {
 			var mapCanvas = document.getElementById('map-canvas');
 			var mapOptions = {
@@ -140,10 +146,10 @@ App.MainView = Backbone.View.extend({
 					}]);
                 	var markers= []
 			$.each(eateries_list, function(iter, data){
-				console.log(data);
+				console.log(data)
                                 marker = new google.maps.Marker({
                                 map: map,
-                                position: new google.maps.LatLng(data.eatery_coordinates[0], eatery_data.coordinates[1]),
+                                position: new google.maps.LatLng(data.eatery_coordinates[0], data.eatery_coordinates[1]),
                                 title: data.name
                                 })
 
@@ -157,18 +163,8 @@ App.MainView = Backbone.View.extend({
                                 content: '<div>This is a marker in ' + data.eatery_name + '</div>'
                                 });
                         })
-
                                                     }
-                	google.maps.event.addDomListener(window, 'load', initialize);
-                	/*
-			 * google.maps.event.addListener(loc.marker, 'click', (function (key) {
-			 * 	                return function () {
-			 * 	                	                    infowindow.setContent(locations[key].info);
-			 * 	                	                    	                    infowindow.open(map, locations[key].marker);
-			 * 	                	                    	                    	                }
-			 * 	                	                    	                    	                	            })(key));
-			 */
-		
+			initialize();
 		},
 
 
