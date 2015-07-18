@@ -69,7 +69,12 @@ App.MainView = Backbone.View.extend({
 			      $(".range-button:first-child").text($(this).text());
 			            $(".range-button:first-child").val($(this).val());
 				       });
-			
+		
+		$('#hideshow').on('click', function(event) {        
+				        console.log("button clicked")     
+					$('.dynamic-display').toggle('show');
+					         });
+
 		return this;
 	},
 
@@ -157,7 +162,9 @@ App.MainView = Backbone.View.extend({
 					infowindow.close();        
 					});
 				google.maps.event.addListener(marker, 'click', function() {
-					console.log(marker.get("eatery_id"));        
+					console.log(this.get("eatery_id"));     
+				     	var subView = new App.EateryDetails({"model": {"eatery_id": this.get("eatery_id"), "eatery_name": this.get("title")}});	
+					$(".trending-bar-chart").html(subView.render().el);
 					});
                         })
                        
@@ -226,6 +233,92 @@ App.MainView = Backbone.View.extend({
 	});
 
 
+
+
+
+App.EateryDetails = Backbone.View.extend({
+	className: "carousel slide", 
+	template: window.template("cloud-carousel"),
+	initialize: function(options){
+		this.model = options.model;
+		console.log("Called from Eatery details");
+		console.log(this.model.eatery_id);
+		console.log(this.model.eatery_name);
+		},
+
+	render: function(){
+		var self = this;
+		var jqhr = $.post(window.eatery_details, {"eatery_id": this.model.eatery_id})	
+		jqhr.done(function(data){
+			if (data.error == false){
+				console.log(data.result)
+				$.each(["food", "ambience", "cost", "service"], function(iter, value){
+					__object = self.$("." + value);	
+					self.makeChart(__object, data.result[value], self.model.eatery_name, value);
+				})
+					}
+			else{
+				var subView = new App.ErrorView();
+				$(".trending-bar-chart").html(subView.render().el);	
+			}
+		})
+		
+		jqhr.fail(function(data){
+				var subView = new App.ErrorView();
+				$(".dynamic-display").html(subView.render().el);	
+						
+		});
+		this.$el.append(this.template(this));
+		this.$el.attr("id", "myCarousel")
+		this.$el.attr("data-ride", "carousel");
+		return this;
+	},
+
+	makeChart: function(__object,  __data, eatery_name, category){
+			__object.highcharts({
+				chart: {
+					type: 'bar',
+		       			height: 600,	
+        				},
+
+				credits: {
+					enabled: false
+				                        },
+        			title: {
+            				text: category + " word cloud, " + eatery_name
+        				},
+        			xAxis: {
+            				categories: __data.categories,
+        				},
+        			yAxis: {
+            				min: 0,
+            				title: {
+                				text: 'total frequency'
+            					}
+        				},
+        			legend: {
+            				reversed: true
+        				},
+        			plotOptions: {
+					   groupPadding:0.1,
+					                     pointWidth:20,
+							                       pointPadding: 0,
+            				
+					
+					series: {
+						animation: {
+							                    duration: 2000,
+									                        easing: 'easeOutBounce'
+													                },
+                				stacking: 'normal'
+            					}
+        					},
+        			series: __data.series, 
+				exporting: { enabled: false }	
+    						});
+			}, 
+
+});
 App.AppendEateries = Backbone.View.extend({
 	tagName: "li",
 	name: function(){return this.model.eatery_name},
@@ -244,7 +337,8 @@ App.AppendEateries = Backbone.View.extend({
 		return this;
 	},
 
-	})
+	});
+
 App.ErrorView = Backbone.View.extend({
 	tagName: "div",
 	template: window.template("error"),

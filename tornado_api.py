@@ -62,7 +62,7 @@ from tornado.concurrent import run_on_executor
 from concurrent.futures import ThreadPoolExecutor
 from bson.son import SON
 from Text_Processing.Sentence_Tokenization.Sentence_Tokenization_Classes import SentenceTokenizationOnRegexOnInterjections
-from GlobalConfigs import connection, eateries, reviews, yelp_eateries, yelp_reviews
+from GlobalConfigs import connection, eateries, reviews, yelp_eateries, yelp_reviews, eateries_results_collection
          
 
 from ProductionEnvironmentApi.text_processing_api import PerReview, EachEatery, DoClusters
@@ -653,18 +653,100 @@ class NearestEateries(tornado.web.RequestHandler):
                 self.finish()
                 
 
-class EateriesDetails(tornado.web.RequestHandler):
+class EateryDetails(tornado.web.RequestHandler):
 	@cors
 	@print_execution
         #@tornado.gen.coroutine
         @asynchronous
         def post(self):
-                eatery_id =  self.get_argument("eatery_id")
+                """
+                NUmber of dishes to be returne is 14 , and the overfood is to be included also
+
+
+                keys of each dict in food key of result are
+                [u'name', 'series', 'cumulative', u'negative', 'supernegative', u'neutral', u'timeline', 'superpositive', 
+                'totalsentiments', u'similar', u'positive', 'categories']
+
+                """
                 
+                number_of_dishes = 14
+                eatery_id =  self.get_argument("eatery_id")
+                print eatery_id
+                result = eateries_results_collection.find_one({"eatery_id": eatery_id})
+                if not result:
+                        self.write({"success": False,
+			        "error": True,
+                                "messege": "eatery id not present in the database" ,
+	        		})
+                        self.finish()
+                        return  
+                
+                dishes = result["food"]["dishes"][0: number_of_dishes]
+                overall_food = result["food"]["overall-food"]
+                ambience = result["ambience"]
+                cost = result["cost"]
+                service = result["service"]
+
+                """
+                
+                def convert_for_highcharts(__dict):
+                        superpositive = __dict.pop("super-positive")
+                        supernegative= __dict.pop("super-negative")
+                        totalsentiments = __dict.pop("total_sentiments")
+                        __dict.update({"totalsentiments": totalsentiments, "superpositive": superpositive, "supernegative": supernegative})
+                        timeline = __dict.pop("timeline")
+                        __dict.update(time_series(timeline))
+                        return __dict
+
+                food = [convert_for_highcharts(dish) for dish in dishes]
+                overall_food_dict = convert_for_highcharts(overall_food)
+                overall_food.update({"name": "overall-food"})
+                food.append(overall_food)
+                """
 
 
+                def convert_for(data):
+                        highchart_categories = []
+                        supernegative, superpositive, negative, neutral, positive = [], [], [], [], []
+                        if type(data) == list:
+                                for __data in data:
+                            
+                                        highchart_categories.append(__data.get("name"))
+                                        supernegative.append(__data.get("super-negative"))
+                                        superpositive.append(__data.get("super-positive"))
+                                        negative.append(__data.get("negative"))
+                                        positive.append(__data.get("positive"))
+                                        neutral.append(__data.get("neutral"))
+                        
+                        if type(data) == dict:
+                            for name, __data in data.iteritems():
+                                        highchart_categories.append(name)
+                                        supernegative.append(__data.get("super-negative"))
+                                        superpositive.append(__data.get("super-positive"))
+                                        negative.append(__data.get("negative"))
+                                        positive.append(__data.get("positive"))
+                                        neutral.append(__data.get("neutral"))
 
+                        highchart_series = [
+                                    {"name": "supernegative", "data": supernegative, 'color': "#B46254"},
+                                    {"name": "negative", "data": negative, 'color': "#8B7BA1"},
+                                    {"name": "neutral", "data": neutral, 'color': "#ADB8C2"},
+                                    {"name": "positive", "data": positive, 'color': "#598C73"},
+                                    {"name": "superpositive", "data": superpositive, 'color': "green"}, 
+                                    ]
 
+                        return {"categories": highchart_categories, "series": highchart_series}
+
+                result = {"food": convert_for(dishes),
+                                    "ambience": convert_for(ambience), 
+                                    "cost": convert_for(cost), 
+                                    "service": convert_for(service)}
+
+                print result
+                self.write({"success": True,
+			"error": False,
+                        "result": result})
+                self.finish()
 
 
 
@@ -682,7 +764,8 @@ class Application(tornado.web.Application):
                     (r"/get_word_cloud", GetWordCloud),
                     (r"/resolve_query", Query),
                     (r"/get_trending", GetTrending),
-                    (r"/nearest_eateries", NearestEateries),]
+                    (r"/nearest_eateries", NearestEateries),
+                    (r"/eatery_details", EateryDetails),]
                 settings = dict(cookie_secret="__TODO:_GENERATE_YOUR_OWN_RANDOM_VALUE_HERE__",)
                 tornado.web.Application.__init__(self, handlers, **settings)
                 self.executor = ThreadPoolExecutor(max_workers=60)

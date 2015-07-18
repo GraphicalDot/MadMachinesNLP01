@@ -7,7 +7,7 @@ Purpose: This file has all the config variables stored in it,
 import pymongo
 import elasticsearch
 
-ELASTICSEARCH_IP = "192.168.1.3"
+ELASTICSEARCH_IP = "192.168.1.6"
 ELASTICSEARCH_PORT = 9200
 
 ES_CLIENT = elasticsearch.Elasticsearch(ELASTICSEARCH_IP)

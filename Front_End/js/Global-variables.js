@@ -14,5 +14,6 @@ $(document).ready(function(){
 	window.resolve_query = window.URL + "resolve_query";
 	window.get_trending = window.URL + "get_trending";
 	window.nearest_eateries = window.URL + "nearest_eateries";
+	window.eatery_details = window.URL + "eatery_details";
 
 });

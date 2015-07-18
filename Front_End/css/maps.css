@@ -8,6 +8,23 @@ body {
 	  /*  background-image: url("images/bg_1_4.jpg"); */.
 	}
 
+
+/*
+.carousel-outer {
+	    margin-top: 20px;
+	        padding: 18px 0;
+		    border-top: 1px solid #b8bec2;
+		        border-bottom: 1px solid #b8bec2;
+		}
+*/
+
+	   .highchart-container {
+	    border-radius: 20px !important;
+	        border: 2px solid #8AC007 !important;
+		overflow: hidden !important;
+
+	   }
+
 .scrollable-menu {
 	    	height: auto;
 		max-height: 200px;
@@ -39,12 +56,14 @@ body {
 	box-shadow: 0 0 8px #000;
 						    }
 
-
-
 #rcorners2 {
 	    border-radius: 20px;
 	        border: 2px solid #8AC007;
 		    padding: 20px; 
+		    }
+#rcorners3 {
+	    border-radius: 20px;
+	        border: 2px solid #8AC007;
 		    }
 .searchbox{
     background-color:#fffbf8;
