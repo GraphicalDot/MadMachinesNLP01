@@ -92,7 +92,7 @@
 			</div>	
         </script>
         <script type="text/x-mustache-template" id="display-suggestions-template">
-			<b>{{dish_name}}</b>
+		<b>{{name}}</b><br><p>{{suggestions}}</p>
 	</script>
         <script type="text/x-mustache-template" id="append-eatery-template">
 			<a>{{name}}</a>	
@@ -175,13 +175,11 @@
 							<div class="col-xs-12" ><div class="dynamic-display"></div></div>
 							<button class = "btn-primary" id='hideshow' style="display: block; width: 100%;">search</button>
 						</div>
-						<!--
-						<div class="row" id="rcorners2" >
-							<div class="col-xs-12"><div class="trending-bar-highchart"></div></div>
+						<div class="row">
+							<div class="col-xs-12" style="margin-top: 3px; padding: 1px"><div class="show-sentences scrollable-menu" style="margin: 3px; padding: 6px; background: AntiqueWhite ; border-radius: 20px; border: 2px solid #8AC007;"></div></div>
             					</div>
-						-->
-						<div class="row" id="rcorners3">
-							<div class="col-xs-12" style="margin: 0; padding: 0"><div class="trending-bar-chart" style="margin: 0; padding: 0"></div></div>
+						<div class="row">
+							<div class="col-xs-12" style="margin: 0; padding: 0"><div class="trending-bar-chart" style="margin: 0; padding: 0; background: AntiqueWhite ; border-radius: 20px; border: 2px solid #8AC007; font-color: black;"></div></div>
             					</div>
         					</div>
 					<div class="col-xs-8" id="rcorners2" >

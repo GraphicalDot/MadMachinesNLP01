@@ -9,14 +9,16 @@ body {
 	}
 
 
-/*
-.carousel-outer {
+.item {
+		    border-top: 1px solid #b8bec2;
+		        border-bottom: 1px solid #b8bec2;
+		}
+.carousel-inner {
 	    margin-top: 20px;
 	        padding: 18px 0;
 		    border-top: 1px solid #b8bec2;
 		        border-bottom: 1px solid #b8bec2;
 		}
-*/
 
 	   .highchart-container {
 	    border-radius: 20px !important;
@@ -29,8 +31,6 @@ body {
 	    	height: auto;
 		max-height: 200px;
 		overflow-x: hidden;
-	    	width: 15px;
-		max-width: 20px;
 }
 
 .shadow {
@@ -38,6 +38,11 @@ body {
 	                filter: drop-shadow( -5px -5px 5px #000 ); /* Same syntax as box-shadow */
 		}
 
+
+.changeText {
+		    overflow: hidden !important;
+		    color: black !important;
+	    }
 
 
 #infobox {

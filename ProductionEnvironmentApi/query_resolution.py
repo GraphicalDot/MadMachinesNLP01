@@ -54,7 +54,7 @@ class QueryResolution(object):
                 self.noun_phrase_extraction()
                 self.populate_result()
                 sentences = {"food": self.food_sub_sents, "ambience": self.ambi_sub_sents, "cost": self.cost_sub_sents, 
-                                "service": self.serv_sub_sents}
+                        "service": self.serv_sub_sents, "overall": self.over_sents}
                 self.result.update({"sentences": sentences})
                 return self.result
 
@@ -80,6 +80,8 @@ class QueryResolution(object):
                 self.ambi_sents = [(sent, tag) for (sent, tag) in result if tag == "ambience"]
                 self.cost_sents = [(sent, tag) for (sent, tag) in result if tag == "cost"]
                 self.serv_sents = [(sent, tag) for (sent, tag) in result if tag == "service"]
+                self.over_sents = [(sent, tag) for (sent, tag) in result if tag == "overall"]
+                
                 return 
 
                 

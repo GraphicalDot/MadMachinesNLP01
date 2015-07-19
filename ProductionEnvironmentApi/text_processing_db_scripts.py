@@ -139,7 +139,7 @@ class MongoScriptsEateries(object):
                 print self.eatery_id
                 result = eateries_results_collection.find_one({"eatery_id": self.eatery_id})
                 if category == "food":
-                        return result["food"]["dishes"][0: number_of_nps]
+                        return sorted(result["food"]["dishes"], key= lambda x: x.get("total_sentiments"), reverse=True)[0: number_of_nps]
                 else:
                         print category
                         print result[category]

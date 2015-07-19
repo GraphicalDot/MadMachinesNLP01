@@ -685,7 +685,7 @@ class EateryDetails(tornado.web.RequestHandler):
                         self.finish()
                         return  
                 
-                dishes = result["food"]["dishes"][0: number_of_dishes]
+                dishes = sorted(result["food"]["dishes"], key=lambda x: x.get("total_sentiments"), reverse=True)[0: number_of_dishes]
                 overall_food = result["food"]["overall-food"]
                 ambience = result["ambience"]
                 cost = result["cost"]

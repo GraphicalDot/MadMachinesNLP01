@@ -196,8 +196,20 @@ App.MainView = Backbone.View.extend({
 				 * 'sentences': {'food': [(u'i want to have awesome chicken tikka t', u'dishes')], 
 				 * 'ambience': [(u'would have nice decor .', u'decor')], 'cost': [], 'service': []}}
 				 */
+				$(".show-sentences").html("");
 				console.log(data.result)
-
+				$.each(["food", "service", "cost", "ambience"], function(iter, tag){
+						
+						var subView = new App.DisplaySuggestion({"model": {"name": tag, "data": data["result"][tag]}})
+						$(".show-sentences").append(subView.render().el);
+				})
+				$.each(["food", "service", "cost", "ambience", "overall"], function(iter, tag){
+						$.each(data["result"]["sentences"][tag], function(__iter, __data){
+						
+						var subView = new App.DisplaySuggestion({"model": {"name": tag + " sentences", "data": __data}})
+						$(".show-sentences").append(subView.render().el);
+						})	
+				})
 				
 								
 				/*
@@ -239,7 +251,13 @@ App.MainView = Backbone.View.extend({
 
 App.DisplaySuggestion = Backbone.View.extend({
 	tagName: "p",
+	className: "changeText",
 	template: window.template("display-suggestions"),
+	name : function(){return this.model.name},
+	suggestions : function(){ if (this.model.name == "food"){
+					return this.model.data["dishes"]}
+				else{
+					return this.model.data}},
 	intialize: function(options){
 		this.model = options.model;
 
