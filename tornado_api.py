@@ -545,7 +545,12 @@ class Query(tornado.web.RequestHandler):
 	@print_execution
 	@tornado.gen.coroutine
         def post(self):
-                print "post calles"
+                """
+               result returned :
+               {'ambience': ['decor'], 'food': {}, 'cost': [], 'service': [], 
+                'sentences': {'food': [(u'i want to have awesome chicken tikka t', u'dishes')], 
+                'ambience': [(u'would have nice decor .', u'decor')], 'cost': [], 'service': []}}
+                """
                 def Error(arg):
                         self.write({"error": True,
                                 "success": False,
@@ -568,7 +573,6 @@ class Query(tornado.web.RequestHandler):
                         ],
                         }
                         }
-                        """
                         for element in __result["food"]["dishes"]:
                                 if type(element.get("match")) == list:
                                         __match = list()
@@ -580,7 +584,6 @@ class Query(tornado.web.RequestHandler):
                                         processed_dishes.append({"name": element.get("name"), "match": __match, "suggestions": __suggestions})
                         l_result["food"]["dishes"] = processed_dishes
                          
-                        """
                         for main_category, __out in __result.iteritems():
                         __list = list()
                         for item in __out:
@@ -592,7 +595,7 @@ class Query(tornado.web.RequestHandler):
                         """
                         self.write({"success": True,
 			        "error": False,
-			        "result": l_result,
+			        "result": __result,
 			        })
 
                 except StandardError as e:
@@ -612,8 +615,9 @@ class Query(tornado.web.RequestHandler):
                         result = query_resolution_instance.run()
                         print "Result from  the query resolution"
                         print result
-                        es_instance  = ElasticSearchScripts()
-                        result = es_instance.elastic_query_processing(result)
+                        
+                        #es_instance  = ElasticSearchScripts()
+                        #result = es_instance.elastic_query_processing(result)
                         return result
                 except Exception as e:
                         print e

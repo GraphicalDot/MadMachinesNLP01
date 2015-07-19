@@ -192,9 +192,13 @@ App.MainView = Backbone.View.extend({
 		var jqhr = $.post(window.resolve_query, {"text": value})	
 		jqhr.done(function(data){
 			if (data.error == false){
+				/*{'ambience': ['decor'], 'food': {}, 'cost': [], 'service': [], 
+				 * 'sentences': {'food': [(u'i want to have awesome chicken tikka t', u'dishes')], 
+				 * 'ambience': [(u'would have nice decor .', u'decor')], 'cost': [], 'service': []}}
+				 */
 				console.log(data.result)
-				var subView = new App.ResultView({"model": data.result, "text": value});
-				$("body").html(subView.render().el);	
+
+				
 								
 				/*
 				$.each(data.result, function(iter, eatery){
@@ -233,7 +237,21 @@ App.MainView = Backbone.View.extend({
 	});
 
 
+App.DisplaySuggestion = Backbone.View.extend({
+	tagName: "p",
+	template: window.template("display-suggestions"),
+	intialize: function(options){
+		this.model = options.model;
 
+	},
+
+	render: function(){
+		this.$el.append(this.template(this));
+		return this;
+
+	},
+
+});
 
 
 App.EateryDetails = Backbone.View.extend({

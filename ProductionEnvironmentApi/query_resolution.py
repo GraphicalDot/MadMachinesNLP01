@@ -53,6 +53,9 @@ class QueryResolution(object):
                 self.initiate_dictionaries()
                 self.noun_phrase_extraction()
                 self.populate_result()
+                sentences = {"food": self.food_sub_sents, "ambience": self.ambi_sub_sents, "cost": self.cost_sub_sents, 
+                                "service": self.serv_sub_sents}
+                self.result.update({"sentences": sentences})
                 return self.result
 
 
