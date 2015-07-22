@@ -62,7 +62,7 @@ from tornado.concurrent import run_on_executor
 from concurrent.futures import ThreadPoolExecutor
 from bson.son import SON
 from Text_Processing.Sentence_Tokenization.Sentence_Tokenization_Classes import SentenceTokenizationOnRegexOnInterjections
-from GlobalConfigs import connection, eateries, reviews, yelp_eateries, yelp_reviews, eateries_results_collection
+from GlobalConfigs import connection, eateries, reviews, yelp_eateries, yelp_reviews, eateries_results_collection, elasticsearch
          
 
 from ProductionEnvironmentApi.text_processing_api import PerReview, EachEatery, DoClusters
@@ -650,9 +650,11 @@ class NearestEateries(tornado.web.RequestHandler):
                 result = eateries.find({"eatery_coordinates" : SON([("$near", { "$geometry" : SON([("type", "Point"), ("coordinates", [lat, long]), \
                         ("$maxDistance", range)])})])}, projection).limit(10)
 
+                __result  = list(result)
+                print __result
                 self.write({"success": True,
 			"error": False,
-                        "result": list(result),
+                        "result": __result,
 			})
                 self.finish()
                 

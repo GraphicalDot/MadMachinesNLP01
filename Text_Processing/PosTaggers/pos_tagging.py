@@ -20,7 +20,7 @@ stanford_file_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dir
 sys.path.append(os.path.join(stanford_file_path))  
 
 dir_name = os.path.dirname(os.path.abspath(__file__))                           
-
+print '{0}/hunpos-1.0-linux/en_wsj.model'.format(dir_name)
 def need_word_tokenization(word_tokenize):
         def tags_decorator(func):
                 @wraps(func)

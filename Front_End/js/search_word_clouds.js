@@ -498,7 +498,7 @@ App.BarChart = Backbone.View.extend({
 		var svg = d3.select(".trending-bar-chart").append("svg")
 			.attr("width", width)
 			.attr("height", height)
-			.attr("class", "shadow")
+			//.attr("class", "shadow")
 			.style("shape-rendering", "crispEdges")	
 			//.style("margin-top", height/15)	
 			.attr("margin", margin)
