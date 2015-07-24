@@ -277,6 +277,12 @@ class ElasticSearchScripts(object):
                                         'total_sentiment': {
                                                     'type': 'integer', 
                                                     },
+                                        'trending_factor': {
+                                                    'type': 'float', 
+                                                    },
+                                        'mention_factor': {
+                                                    'type': 'float', 
+                                                    },
                                         'timeline': {
                                             'type': 'string'}}}}
                 

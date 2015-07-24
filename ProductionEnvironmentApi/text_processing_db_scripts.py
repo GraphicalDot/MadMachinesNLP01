@@ -52,7 +52,7 @@ class MongoScriptsReviews(object):
         @staticmethod
         def return_all_reviews_with_text(eatery_id):
                 review_list = [(post.get("review_id"), post.get("review_text"), post.get("review_time")) for post \
-                        in reviews.find({"eatery_id" :eatery_id})]
+                        in reviews.find({"eatery_id" :eatery_id}) if bool(post.get("review_text")) and post.get("review_text") != " "]
                 return review_list
 
 
@@ -62,7 +62,9 @@ class MongoScriptsReviews(object):
                 for review_id in reviews_ids:
                         review = reviews.find_one({"review_id": review_id})
                         review_text, review_time = review.get("review_text"), review.get("review_time")
-                        review_list.append((review_id, review_text, review_time))
+                        
+                        if bool(review_text) and review_text != " ":
+                                review_list.append((review_id, review_text, review_time))
                 return review_list
 
 
@@ -70,7 +72,12 @@ class MongoScriptsReviews(object):
 class MongoScriptsEateries(object):
         def __init__(self, eatery_id):
                     self.eatery_id = eatery_id
-                    self.eatery_name = eateries.find_one({"eatery_id": self.eatery_id}).get("eatery_name")
+                    self.eatery_result = eateries.find_one({"eatery_id": self.eatery_id})
+                    self.eatery_name = self.eatery_result.get("eatery_name")
+                    self.eatery_highlights = self.eatery_result.get("eatery_highlights")
+                    self.eatery_coordinates = self.eatery_result.get('eatery_coordinates')
+                    self.eatery_address = self.eatery_result.get('eatery_address')
+
 
         def check_algorithms(self):
                 
@@ -114,6 +121,9 @@ class MongoScriptsEateries(object):
                 
                 eateries_results_collection.update({"eatery_id": self.eatery_id}, {"$set": {
                     "eatery_name": self.eatery_name,
+                    "eatery_highlights": self.eatery_highlights,
+                    "eatery_coordinates": self.eatery_coordinates,
+                    "eatery_address": self.eatery_address, 
                     "tag_anlysis_algorithm_name": TAG_CLASSIFY_ALG_NME,
                     "sentiment_analysis_algorithm_name": SENTI_CLSSFY_ALG_NME,
                     "food_classification_algorithm_name": FOOD_SB_CLSSFY_ALG_NME,
