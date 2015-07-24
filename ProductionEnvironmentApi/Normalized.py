@@ -7,7 +7,6 @@ import pymongo
 
 
 class NormalizingFactor(object):
-
         def __init__(self, eatery_result, date_format=None):
                 """
                 keys = {'total_sentiments': int(), 'positive': int(),  'negative': int(), 'super-positive': int(), 
@@ -43,7 +42,7 @@ class NormalizingFactor(object):
                 else:
                         self.date_format = date_format
                 
-                start_date = datetime.now() + timedelta(-30)
+                start_date = datetime.now() + timedelta(-360)
                 self.last_30_date = start_date.strftime(self.date_format)
                 
                 self.dishes = sorted(eatery_result.get("food").get("dishes"), key=lambda x: x.get("total_sentiments"), reverse=True)
@@ -113,7 +112,6 @@ class NormalizingFactor(object):
                 self.result_dict["ambience"] = self.if_object(eatery_result.get("ambience"), self.ambience_overall_factor, self.ambience_positive_factor)
                 self.result_dict["cost"] = self.if_object(eatery_result.get("cost"), self.cost_overall_factor, self.cost_positive_factor)
                 self.result_dict["service"] = self.if_object(eatery_result.get("service"), self.service_overall_factor, self.service_positive_factor)
-
                 return 
 
 
@@ -146,20 +144,18 @@ class NormalizingFactor(object):
                                 category_factor overall or positive *category_overall_factor
                 """
                 
-                print __object_list 
                 total_positive_sentiments  = sum([__object.get("positive") for __object in __object_list])
                 total_sentiments  = sum([__object.get("total_sentiments") for __object in __object_list])
 
                         
-
                 for __object in __object_list:
                         trending_factor = self.trending_sentiment_factor(__object, total_positive_sentiments)*\
                                             self.moving_average_last_30_days(__object, self.last_30_date)*\
-                                            category_positive_factor*100    
+                                            category_positive_factor*1000
                         
                         mention_factor = self.mentioned_sentiment_factor(__object, total_sentiments)*\
                                                 self.moving_average_last_30_days(__object, self.last_30_date)*\
-                                                category_overall_factor*100    
+                                                category_overall_factor*1000
 
                         __object.update({"trending_factor": trending_factor, "mention_factor": mention_factor})
 
@@ -171,25 +167,24 @@ class NormalizingFactor(object):
                 Valid for every other category other than "dishes", "sub-food", "place-food", 
                 ambience, cost, service
                 """
-                result = ()
+                
+                result = {}
                 keys = __object.keys()
                 total_positive_sentiments  = sum([__object.get(key)["positive"] for key in keys])
-                total_sentiments  = sum([__object.get("total_sentiments") for key in keys])
+                total_sentiments  = sum([__object.get(key).get("total_sentiments") for key in keys])
                 
                 for name, value_dict in __object.iteritems():
-                        
                         trending_factor = self.trending_sentiment_factor(value_dict, total_positive_sentiments)*\
                                             self.moving_average_last_30_days(value_dict, self.last_30_date)*\
-                                            category_positive_factor*100    
-                        
+                                            category_positive_factor*1000
+                         
                         mention_factor = self.mentioned_sentiment_factor(value_dict, total_sentiments)*\
                                                 self.moving_average_last_30_days(value_dict, self.last_30_date)*\
-                                                category_overall_factor*100    
+                                                category_overall_factor*1000  
+                        print trending_factor, mention_factor
 
                         value_dict.update({"trending_factor": trending_factor, "mention_factor": mention_factor})
                         result[name] = value_dict
-
-
                 return result
 
 
@@ -210,10 +205,10 @@ class NormalizingFactor(object):
                 people
                 """
                 try:
-                        return float(__object.get("positive"))/total_positive_sentiments
+                        ratio = float(__object.get("positive"))/total_positive_sentiments
                 except Exception as e:
-                        return 0.00
-
+                        ratio =  0.00
+                return ratio
 
         def mentioned_sentiment_factor(self, __object, total_sentiments):
                 """
@@ -244,6 +239,9 @@ if __name__ == "__main__":
         print "\n\n"                
         for element in result["food"]["dishes"][-10:]:
                 print element.get("name"), [element.get(e) for e in ["super-negative", "negative", "positive", "super-positive","neutral"]], element.get("trending_factor"), element.get("mention_factor")
+
+        for name, key in result["ambience"].iteritems():
+                print name, [key.get(e) for e in ["super-negative", "negative", "positive", "super-positive","neutral"]], key.get("trending_factor"), key.get("mention_factor")
 
 
 
