@@ -120,7 +120,7 @@ class NormalizingFactor(object):
                 if self.sub_food:
                         self.result_dict["food"]["sub-food"] = self.if_object_a_list(self.sub_food, self.food_overall_factor, self.food_positive_factor)                       
                 else:
-                        self.result_dict["food"]["sub-fod"] = []
+                        self.result_dict["food"]["sub-food"] = []
                 if self.place_food:
                         self.result_dict["food"]["place-food"] = self.if_object_a_list(self.place_food, self.food_overall_factor, self.food_positive_factor)                       
                 else:
@@ -145,6 +145,7 @@ class NormalizingFactor(object):
                 self.result_dict["service"] = self.if_object(self.eatery_result.get("service"), self.service_overall_factor, self.service_positive_factor)
                
 
+                print self.result_dict
                 ##Updating results in the eateries_results_collection with objects with trending_factor and mention_factor
                 eateries_results_collection.update({"eatery_id": self.eatery_id}, {"$set": 
                     {"food": self.result_dict["food"],

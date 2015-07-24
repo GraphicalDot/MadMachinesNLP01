@@ -490,7 +490,8 @@ class DoClusters(object):
 
                 ##NOw all the reviews has been classified, tokenized, in short processed, 
                 ##time to populate elastic search
-                NormalizingFactor(self.eatery_id)
+                instance = NormalizingFactor(self.eatery_id)
+                instance.run()
                 ElasticSearchScripts.insert_eatery(self.eatery_id)
 
 
