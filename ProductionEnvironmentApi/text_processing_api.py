@@ -17,6 +17,7 @@ from sklearn.externals import joblib
 from collections import Counter
 from text_processing_db_scripts import MongoScripts, MongoScriptsEateries, MongoScriptsReviews, MongoScriptsDoClusters
 from prod_heuristic_clustering import ProductionHeuristicClustering
+
 from join_two_clusters import ProductionJoinClusters
 
 parent_dir_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -33,7 +34,7 @@ from Text_Processing.MainAlgorithms.Algorithms_Helpers import get_all_algorithms
 from Text_Processing.MainAlgorithms.In_Memory_Main_Classification import timeit, cd
 from encoding_helpers import SolveEncoding
 from elasticsearch_db import ElasticSearchScripts
-
+from Normalized import NormalizingFactor
 
 from GlobalAlgorithmNames import TAGS
 #Algortihms of the form .lib
@@ -489,6 +490,7 @@ class DoClusters(object):
 
                 ##NOw all the reviews has been classified, tokenized, in short processed, 
                 ##time to populate elastic search
+                NormalizingFactor(self.eatery_id)
                 ElasticSearchScripts.insert_eatery(self.eatery_id)
 
 
