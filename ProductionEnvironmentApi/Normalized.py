@@ -193,13 +193,22 @@ class NormalizingFactor(object):
 
                         
                 for __object in __object_list:
-                        trending_factor = self.trending_sentiment_factor(__object, total_positive_sentiments)*\
+                        try:
+
+                                trending_factor = self.trending_sentiment_factor(__object, total_positive_sentiments)*\
                                             self.moving_average_last_30_days(__object, self.last_30_date)*\
                                             category_positive_factor*1000
                         
-                        mention_factor = self.mentioned_sentiment_factor(__object, total_sentiments)*\
+                        except ZeroDivisionError:
+                                trending_factor = 0
+
+                        try:
+                                mention_factor = self.mentioned_sentiment_factor(__object, total_sentiments)*\
                                                 self.moving_average_last_30_days(__object, self.last_30_date)*\
                                                 category_overall_factor*1000
+                        except ZeroDivisionError:
+                                mention_factor = 0
+
 
                         __object.update({"trending_factor": trending_factor, "mention_factor": mention_factor})
 
@@ -221,13 +230,19 @@ class NormalizingFactor(object):
                 total_sentiments  = sum([__object.get(key).get("total_sentiments") for key in keys])
                 
                 for name, value_dict in __object.iteritems():
-                        trending_factor = self.trending_sentiment_factor(value_dict, total_positive_sentiments)*\
+                        try:
+                                trending_factor = self.trending_sentiment_factor(value_dict, total_positive_sentiments)*\
                                             self.moving_average_last_30_days(value_dict, self.last_30_date)*\
                                             category_positive_factor*1000
                          
-                        mention_factor = self.mentioned_sentiment_factor(value_dict, total_sentiments)*\
+                        except ZeroDivisionError:
+                                trending_factor = 0
+                        try:
+                                mention_factor = self.mentioned_sentiment_factor(value_dict, total_sentiments)*\
                                                 self.moving_average_last_30_days(value_dict, self.last_30_date)*\
                                                 category_overall_factor*1000  
+                        except ZeroDivisionError:
+                                mention_factor = 0
                         print trending_factor, mention_factor
 
                         value_dict.update({"trending_factor": trending_factor, "mention_factor": mention_factor})
@@ -245,13 +260,19 @@ class NormalizingFactor(object):
                 total_sentiments  = __object.get("total_sentiments")
 
                         
-                trending_factor = self.trending_sentiment_factor(__object, total_positive_sentiments)*\
+                try:
+                        trending_factor = self.trending_sentiment_factor(__object, total_positive_sentiments)*\
                                             self.moving_average_last_30_days(__object, self.last_30_date)*\
                                             category_positive_factor*1000
-                        
-                mention_factor = self.mentioned_sentiment_factor(__object, total_sentiments)*\
+                except ZeroDivisionError:
+                        trending_factor = 0
+
+                try:
+                        mention_factor = self.mentioned_sentiment_factor(__object, total_sentiments)*\
                                                 self.moving_average_last_30_days(__object, self.last_30_date)*\
                                                 category_overall_factor*1000
+                except ZeroDivisionError:
+                        mention_factor = 0
 
                 __object.update({"trending_factor": trending_factor, "mention_factor": mention_factor})
 

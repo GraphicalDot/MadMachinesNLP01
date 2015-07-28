@@ -26,10 +26,8 @@
 		
 		-->
 
-                <script type="text/javascript" src="js/libs/handlebars/handlebars-1.0.rc.1.min.js"></script>
                 <script type="text/javascript" src="js/libs/mustache/mustache.js"></script>
                 <script type="text/javascript" src="js/libs/underscore/underscore.js"></script>
-                <script type="text/javascript" src="js/libs/underscore/underscore.string.min.js"></script>
                 <script type="text/javascript" src="js/libs/bootbox/bootbox.min.js"></script>
                 <script type="text/javascript" src="js/libs/backbone/backbone.js"></script>
                 <script type="text/javascript" src="js/libs/d3/d3.js"></script>
@@ -47,24 +45,20 @@
 
 				</head>
 	<body>
-  <script type="text/x-mustache-template" id="root-template">
-      				<div class="row">
+	<script type="text/x-mustache-template" id="root-template">
 					 <form class="col s12">
         						<div class="row">
 								<div class="input-field col s10">
 									<textarea id="textarea1" class="materialize-textarea" id="searchQuery"></textarea>
-          								<label for="textarea1">Whats up??</label>
+          								<label for="textarea1">Enter your query</label>
 								</div>
-								<div class="input-field col s2">
+								<div class="col s2">
 									<a class="waves-effect waves-light submitButton btn-flat">Submit <i class="material-icons">send</i></a>
         						</div>
 							</div>
 					</form>
-				</div>
-      				<div class="row">
-					<div class="col s12">
-        					<div class="card-panel grey lighten-5 z-depth-1">
-          						<div class="row valign-wrapper">
+        </script>
+	<script type="text/x-mustache-template" id="append-eatery-main-template">
             							<div class="col s2">
            								<img src="css/Restaurant_Icon_web.png" alt="" class="circle responsive-img"> <!-- notice the "circle" class -->
      								</div>
@@ -75,10 +69,6 @@
                 							</ul>
 									</span>
 								</div>
-          						</div>
-        				</div>
-      				</div>
-
         </script>
         <script type="text/x-mustache-template" id="display-suggestions-template">
 		<b>{{name}}</b><br><p>{{suggestions}}</p>
@@ -90,6 +80,20 @@
                         <h3>Ooppsss!, Some problem occurred while processing your request, Please try again</h3>
                         <img src="css/images/4041.jpg" alt="Page Not Found (404)." style="position: absolute; left: 50%; top: 10%; margin-left: -285px; margin-top: 10%">
         </script>
+        <script type="text/x-mustache-template" id="display-template">
+				<li>
+      					<div class="collapsible-header"><i class="material-icons">send</i>First</div>
+      					<div class="collapsible-body"><p>Lorem ipsum dolor sit amet.</p></div>
+				</li>
+				<li>
+					<div class="collapsible-header"><i class="material-icons">send</i>Second</div>
+					<div class="collapsible-body"><p>Lorem ipsum dolor sit amet.</p></div>
+				</li>
+				<li>
+					<div class="collapsible-header"><i class="material-icons">send</i>Third</div>
+					<div class="collapsible-body"><p>Lorem ipsum dolor sit amet.</p></div>
+				</li>
+	</script>
 
         <script type="text/x-mustache-template" id="result-template">
                         <div class="container-fluid">
@@ -120,50 +124,16 @@
 
         </script>
 
-
-	<script type="text/x-mustache-template" id="cloud-carousel-template">
-                                <!-- Wrapper for slides -->
-                                                <div class="carousel-inner" role="listbox" style = "width: 100%; margin: 0; border: 0;padding: 0">
-                                                        <div class="item active">
-                                                                <div class="food"></div>
-
-                                                        </div>
-
-                                                        <div class="item">
-                                                                <div class="cost"></div>
-                                                        </div>
-
-                                                        <div class="item">
-                                                                <div class="ambience"></div>
-                                                        </div>
-
-                                                        <div class="item">
-                                                                <div class="service"></div>
-                                                        </div>
-                                                </div>
-				<!-- Left and right controls -->
-                                                <a class="left carousel-control" href="#myCarousel" role="button" data-slide="prev">
-                                                        <span class="glyphicon glyphicon-chevron-left" aria-hidden="true"></span>
-                                                        <span class="sr-only">Previous</span>
-                                                </a>
-                                                <a class="right carousel-control" href="#myCarousel" role="button" data-slide="next">
-                                                        <span class="glyphicon glyphicon-chevron-right" aria-hidden="true"></span>
-                                                        <span class="sr-only">Next</span>
-                                                </a>
-                                        </div>
-
-	</script>
-
-
                                 <div class="row" >
-					<div class="col s4 section scrollspy">
-						<h1 class="z-depth-5" style="font-family: 'Slackey', cursive; font-size: 200%; text-align: center; margin-top: 2%; margin-bottom: 0% color: black; ">doooF..</h1>   
-						<p class="dynamic-display card-panel hoverable z-depth-5"></p>
-						<p><div class="show-sentences scrollable-menu"></div></p>
-						<p class="trending-bar-highchart"></p>
-						<div class="card large white  lighten-2 hoverable lighten-4" style="width: 100%">
+					<div class="col s12 m4 l4 section scrollspy">
+						<h1 class="z-depth-3" style="font-family: 'Slackey', cursive; font-size: 200%; text-align: center; margin-top: 2%; margin-bottom: 0% color: black; ">doooF..</h1>   
+						<p class="dynamic-display card-panel hoverable z-depth-3"></p>
+						<p class="eatery card-panel hoverable z-depth-3"></p>
+						<div class="show-sentences card-panel hoverable z-depth-3"></div>
+						<p class="trending-bar-highchart z-depth-3"></p>
+						<div class="card large white  lighten-2 hoverable lighten-4 z-depth-3" style="width: 100%">
 								<ul class="tabs">
-									<li class="tab col s3"><a href="#food">dishes</a></li>
+									<li class="tab col s3"><a href="#food">food</a></li>
 									<li class="tab col s3"><a href="#ambience">ambience</a></li>
 									<li class="tab col s3"><a href="#cost">cost</a></li>
 									<li class="tab col s3"><a href="#service">service</a></li>
@@ -175,11 +145,10 @@
 							<div id="service" class="col s12">service</div>
 							</div>
 						
-						
 					</div>
 
-					<div class="col s8">
-						<div id="map-canvas" class="card-panel hoverable #bbdefb blue lighten-4" style="height: 100%"></div>
+					<div class="col s12 m8 l8">
+						<div id="map-canvas" class="card-panel hoverable #bbdefb blue lighten-4 z-depth-3" style="height: 100%"></div>
     					</div>
 						</div>
 

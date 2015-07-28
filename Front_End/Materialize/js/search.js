@@ -12,7 +12,12 @@ App.RootView = Backbone.View.extend({
 	render: function(){
 		var subView = new App.MainView();
 		$(".dynamic-display").append(subView.render().el);	
+		var subView = new App.AppendEateriesMain();
+		$(".eatery").append(subView.render().el);	
 		self.$('.dropdown-button').dropdown()
+		this.$('.collapsible').collapsible({
+			      accordion : false // A setting that changes the collapsible behavior to expandable instead of the default accordion style
+			    });
 		return this;
 	},
 
@@ -20,6 +25,7 @@ App.RootView = Backbone.View.extend({
 
 
 App.MainView = Backbone.View.extend({
+	className: "row",
 	template: window.template("root"),
 	initialize: function(){
 		var self = this;
@@ -32,50 +38,8 @@ App.MainView = Backbone.View.extend({
 	render: function(){
 		var self = this;
 		this.beforeRender();	
-
 		this.$el.append(this.template(this));
-		
-		var jqhr = $.get(window.limited_eateries_list)	
-		jqhr.done(function(data){
-			if (data.error == false){
-				$.each(data.result, function(iter, eatery){
-					var subView = new App.AppendEateries({"model": eatery});
-					__html = subView.render().el
-					self.$(".eateries-list").append(__html);	
-				
-				})
-				/*
-				$.each(data.result, function(iter, eatery){
-					var subView = new App.AppendRestaurants({"eatery": eatery});
-					self.$(".append_eatery").append(subView.render().el);	
-				*/
-				self.$(".eateries-list li").on('click', function(){
-			       			self.$(".eatery-list-button:first-child").attr("eatery_id", $(this).attr("eatery_id"));
-			       			self.$(".eatery-list-button:first-child").attr("lat", $(this).attr("lat"));
-			       			self.$(".eatery-list-button:first-child").attr("long", $(this).attr("long"));
-						       
-				});
-
-					}
-
-
-
-			else{
-			}
-		})
-	
-		this.$(".range li").on('click', function(){
-			      $(".range-button:first-child").text($(this).text());
-			            $(".range-button:first-child").val($(this).val());
-				       });
-		
-		$('#hideshow').on('click', function(event) {        
-				        console.log("button clicked")     
-					$('.dynamic-display').toggle('show');
-					         });
-				
-		
-
+		this.$el.attr("style",  "margin-bottom: 0px");
 		return this;
 	},
 
@@ -94,7 +58,6 @@ App.MainView = Backbone.View.extend({
 	
 	events: {
 		'click .submitButton': 'Submit', 	
-		'click .change-map': 'changeMap',
 		},
 
 	changeMap: function(event){
@@ -184,7 +147,7 @@ App.MainView = Backbone.View.extend({
 	Submit: function(event){
 		event.preventDefault();
 		console.log("Button pressed");
-		value = $("#searchQuery").val();
+		value = $("textarea").val();
 			
 		if (value == ""){
 				console.log("No result");
@@ -199,6 +162,10 @@ App.MainView = Backbone.View.extend({
 				 */
 				$(".show-sentences").html("");
 				console.log(data.result)
+				var subView = new App.DisplaySuggestion({"model": data.result})
+				$(".show-sentences").append(subView.render().el);
+
+				/*
 				$.each(["food", "service", "cost", "ambience"], function(iter, tag){
 						
 						var subView = new App.DisplaySuggestion({"model": {"name": tag, "data": data["result"][tag]}})
@@ -212,7 +179,7 @@ App.MainView = Backbone.View.extend({
 						})	
 				})
 				
-								
+				*/				
 				/*
 				$.each(data.result, function(iter, eatery){
 					var subView = new App.AppendRestaurants({"eatery": eatery});
@@ -250,10 +217,145 @@ App.MainView = Backbone.View.extend({
 	});
 
 
+App.AppendEateriesMain = Backbone.View.extend({
+	className: "row valign-wrapper",
+	template: window.template("append-eatery-main"),
+	initialize: function(){
+		var self = this;
+		/*
+		
+		$(".side-bar").html(this.render().el);
+			*/
+		},
+
+	render: function(){
+		var self = this;
+		this.$el.append(this.template(this));
+		
+		var jqhr = $.get(window.limited_eateries_list)	
+		jqhr.done(function(data){
+			if (data.error == false){
+				$.each(data.result, function(iter, eatery){
+					var subView = new App.AppendEateries({"model": eatery});
+					__html = subView.render().el
+					self.$(".eateries-list").append(__html);	
+				
+				})
+				/*
+				$.each(data.result, function(iter, eatery){
+					var subView = new App.AppendRestaurants({"eatery": eatery});
+					self.$(".append_eatery").append(subView.render().el);	
+				*/
+				self.$(".eateries-list li").on('click', function(){
+			       			self.$(".eatery-list-button:first-child").attr("eatery_id", $(this).attr("eatery_id"));
+			       			self.$(".eatery-list-button:first-child").attr("lat", $(this).attr("lat"));
+			       			self.$(".eatery-list-button:first-child").attr("long", $(this).attr("long"));
+						       
+				});
+
+					}
+
+
+
+			else{
+			}
+		})
+	
+		return this;
+	},
+
+	
+	events: {
+		'click .change-map': 'changeMap',
+		},
+
+	changeMap: function(event){
+		event.preventDefault();
+		var self = this;
+		eatery_lat = $(".eatery-list-button").attr("lat")
+		eatery_long = 	$(".eatery-list-button").attr("long")
+		range = 10;
+		
+		var jqhr = $.post(window.nearest_eateries, {"lat": eatery_lat, "long": eatery_long, "range": range})	
+		jqhr.done(function(data){
+			if (data.error == false){
+				
+				self.reloadGoogleMap(eatery_lat, eatery_long, data.result)
+					}
+			else{
+				var subView = new App.ErrorView();
+				$(".trending-bar-chart").html(subView.render().el);	
+			}
+		})
+		
+		jqhr.fail(function(data){
+				var subView = new App.ErrorView();
+				$(".dynamic-display").html(subView.render().el);	
+						
+		});
+		
+		},
+
+
+	reloadGoogleMap: function (__initial_lat, __initial_long, eateries_list){
+		function initialize() {
+			var mapCanvas = document.getElementById('map-canvas');
+			var mapOptions = {
+					center: new google.maps.LatLng(__initial_lat, __initial_long),
+					zoom: 19,
+					mapTypeId: google.maps.MapTypeId.ROADMAP
+                                          }
+			var map = new google.maps.Map(mapCanvas, mapOptions)
+			map.set('styles', [
+					{
+						featureType: 'poi',
+						elementType: 'geometry',
+						stylers: [
+							{hue: '#fff700' },
+							{lightness: -15 },
+							{saturation: 99 }
+							]
+					}]);
+			$.each(eateries_list, function(iter, data){
+                                marker = new google.maps.Marker({
+                                map: map,
+                                position: new google.maps.LatLng(data.eatery_coordinates[0], data.eatery_coordinates[1]),
+                                title: data.eatery_name,
+				eatery_id: data.eatery_id, 
+				address: data.eatery_address,
+				html: "<div id='infobox'>" + data.eatery_name + "</br>" + data.eatery_address + "</div>" 
+
+                                })
+                                google.maps.event.addListener(marker, 'mouseover', function() {
+					infowindow.setContent(this.html);        
+					infowindow.open(map, this);        
+					});
+                                
+				google.maps.event.addListener(marker, 'mouseout', function() {
+					infowindow.close();        
+					});
+				google.maps.event.addListener(marker, 'click', function() {
+					console.log(this.get("eatery_id"));     
+				     	var subView = new App.EateryDetails({"model": {"eatery_id": this.get("eatery_id"), "eatery_name": this.get("title")}});	
+					subView.render().el;
+					});
+                        })
+                       
+		       			
+				var infowindow = new google.maps.InfoWindow({
+					      content: "",
+					  });
+
+		}
+			initialize();
+		},
+
+});
+
 App.DisplaySuggestion = Backbone.View.extend({
-	tagName: "p",
-	className: "changeText",
-	template: window.template("display-suggestions"),
+	tagName: "ul", 
+	className: "collapsible",
+	template: window.template("display"),
 	name : function(){return this.model.name},
 	suggestions : function(){ if (this.model.name == "food"){
 					return this.model.data["dishes"]}
@@ -266,6 +368,7 @@ App.DisplaySuggestion = Backbone.View.extend({
 
 	render: function(){
 		this.$el.append(this.template(this));
+		this.$el.attr("data-collapsible", "accordion");
 		return this;
 
 	},
@@ -328,7 +431,8 @@ App.EateryDetails = Backbone.View.extend({
 					enabled: false
 				                        },
         			title: {
-            				text: category + " word cloud, " + eatery_name
+            				//text: category + " word cloud, " + eatery_name
+            				text: ""
         				},
         			xAxis: {
             				categories: __data.categories,
@@ -337,7 +441,10 @@ App.EateryDetails = Backbone.View.extend({
             				min: 0,
             				title: {
                 				text: 'total frequency'
-            					}
+            					}, 
+					lineColor: '#339',
+							        tickColor: '#339',
+									        minorTickColor: '#339',
         				},
         			legend: {
             				reversed: true
