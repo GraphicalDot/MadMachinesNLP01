@@ -50,8 +50,6 @@ App.MainView = Backbone.View.extend({
 					self.$(".append_eatery").append(subView.render().el);	
 				*/
 				self.$(".eateries-list li").on('click', function(){
-						self.$(".eatery-list-button:first-child").text($(this).text());
-			       			self.$(".eatery-list-button:first-child").val($(this).text());
 			       			self.$(".eatery-list-button:first-child").attr("eatery_id", $(this).attr("eatery_id"));
 			       			self.$(".eatery-list-button:first-child").attr("lat", $(this).attr("lat"));
 			       			self.$(".eatery-list-button:first-child").attr("long", $(this).attr("long"));
@@ -104,7 +102,7 @@ App.MainView = Backbone.View.extend({
 		var self = this;
 		eatery_lat = $(".eatery-list-button").attr("lat")
 		eatery_long = 	$(".eatery-list-button").attr("long")
-		range = $(".range-button").val()
+		range = 10;
 		
 		var jqhr = $.post(window.nearest_eateries, {"lat": eatery_lat, "long": eatery_long, "range": range})	
 		jqhr.done(function(data){
@@ -167,7 +165,7 @@ App.MainView = Backbone.View.extend({
 				google.maps.event.addListener(marker, 'click', function() {
 					console.log(this.get("eatery_id"));     
 				     	var subView = new App.EateryDetails({"model": {"eatery_id": this.get("eatery_id"), "eatery_name": this.get("title")}});	
-					$(".trending-bar-chart").html(subView.render().el);
+					subView.render().el;
 					});
                         })
                        
@@ -276,10 +274,9 @@ App.DisplaySuggestion = Backbone.View.extend({
 
 
 App.EateryDetails = Backbone.View.extend({
-	className: "carousel slide", 
-	template: window.template("cloud-carousel"),
 	initialize: function(options){
 		this.model = options.model;
+		
 		console.log("Called from Eatery details");
 		console.log(this.model.eatery_id);
 		console.log(this.model.eatery_name);
@@ -292,7 +289,7 @@ App.EateryDetails = Backbone.View.extend({
 			if (data.error == false){
 				console.log(data.result)
 				$.each(["food", "ambience", "cost", "service"], function(iter, value){
-					__object = self.$("." + value);	
+					__object = $("#" + value);	
 					self.makeChart(__object, data.result[value], self.model.eatery_name, value);
 				})
 					}
@@ -307,19 +304,26 @@ App.EateryDetails = Backbone.View.extend({
 				$(".dynamic-display").html(subView.render().el);	
 						
 		});
-		this.$el.append(this.template(this));
-		this.$el.attr("id", "myCarousel")
-		this.$el.attr("data-ride", "carousel");
 		return this;
 	},
 
 	makeChart: function(__object,  __data, eatery_name, category){
 			__object.highcharts({
-				chart: {
-					type: 'bar',
-		       			height: 600,	
-        				},
 
+				chart: {
+						        renderTo: 'container',
+				        type: 'bar',
+				        alignTicks: false,
+				        plotBackgroundColor: null,
+				        plotBackgroundImage: null,
+				        plotBorderWidth: 0,
+				        plotShadow: false,
+			            spacingTop: 5,
+			            spacingLeft: 5,
+			            spacingRight: 5,
+			            spacingBottom: 5,
+					    },
+				
 				credits: {
 					enabled: false
 				                        },

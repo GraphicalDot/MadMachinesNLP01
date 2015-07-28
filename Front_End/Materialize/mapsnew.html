@@ -49,42 +49,42 @@
 	<body>
   <script type="text/x-mustache-template" id="root-template">
       				<div class="row">
-        				<div class="input-field col s12">
-						<div class="input-field col s12">
-							<textarea id="textarea1" class="materialize-textarea" id="searchQuery"></textarea>
-          						<label for="textarea1">Whats up??</label>
-						</div>
+					 <form class="col s12">
+        						<div class="row">
+								<div class="input-field col s10">
+									<textarea id="textarea1" class="materialize-textarea" id="searchQuery"></textarea>
+          								<label for="textarea1">Whats up??</label>
+								</div>
+								<div class="input-field col s2">
+									<a class="waves-effect waves-light submitButton btn-flat">Submit <i class="material-icons">send</i></a>
+        						</div>
+							</div>
+					</form>
+				</div>
+      				<div class="row">
+					<div class="col s12">
+        					<div class="card-panel grey lighten-5 z-depth-1">
+          						<div class="row valign-wrapper">
+            							<div class="col s2">
+           								<img src="css/Restaurant_Icon_web.png" alt="" class="circle responsive-img"> <!-- notice the "circle" class -->
+     								</div>
+         							<div class="col s10">
+           								<span class="black-text">
+									<a class='dropdown-button btn-flat eatery-list-button' href='#' data-beloworigin="true" data-activates='dropdown1'> choose restaurant</a>
+                							<ul id = "dropdown1" class="dropdown-content scrollable-menu eateries-list change-map">
+                							</ul>
+									</span>
+								</div>
+          						</div>
         				</div>
       				</div>
-      				<div class="row">
-				 	<div class="col s2">
-								<a class="waves-effect waves-light submitButton btn-flat">Submit <i class="material-icons">send</i></a>
-					</div>
 
-				 	<div class="col s5">
-								<a class='dropdown-button btn eatery-list-button' href='#' data-beloworigin="true" data-activates='dropdown1'>Choose restaurant</a>
-                						<ul id = "dropdown1" class="dropdown-content scrollable-menu eateries-list change-map">
-                						</ul>
-				 		</div>
-				 	<div class="col s3">
-
-								<a class='dropdown-button btn range-button' href='#'  data-beloworigin="true" data-activates='dropdown2'>Kms Range</a>
-                						<ul id = "dropdown2" class="dropdown-content range change-map" >
-                    							<li class="range-5" value="5"><a href="#!">Within 5 kms</a></li>
-                    							<li class="range-10" value="10"><a href="#!">Within 10 kms</a></li>
-                    							<li class="range-15" value="10"><a href="#!">Within 15 kms</a></li>
-                    							<li class="range-20" value="20"><a href="#!">Within 20 kms</a></li>
-									<li class="range-0" value="0"><a href="#!">Impress me</a></li>
-							</ul>
-					</div>			
-
-				</div>	
         </script>
         <script type="text/x-mustache-template" id="display-suggestions-template">
 		<b>{{name}}</b><br><p>{{suggestions}}</p>
 	</script>
         <script type="text/x-mustache-template" id="append-eatery-template">
-			<a  href="#!">{{name}}</a>	
+			{{name}}
 	</script>
         <script type="text/x-mustache-template" id="error-template">
                         <h3>Ooppsss!, Some problem occurred while processing your request, Please try again</h3>
@@ -156,32 +156,32 @@
 
 
                                 <div class="row" >
-					<div class="col s12 m5 18">
-						<h1 style="font-family: 'Slackey', cursive; font-size: 200%; text-align: center; margin-top: 2%; margin-bottom: 0% color: black; ">doooF..</h1>   
-						<form class="dynamic-display card-panel hoverable"></form>
+					<div class="col s4 section scrollspy">
+						<h1 class="z-depth-5" style="font-family: 'Slackey', cursive; font-size: 200%; text-align: center; margin-top: 2%; margin-bottom: 0% color: black; ">doooF..</h1>   
+						<p class="dynamic-display card-panel hoverable z-depth-5"></p>
 						<p><div class="show-sentences scrollable-menu"></div></p>
 						<p class="trending-bar-highchart"></p>
-						<div class="card large white  lighten-2 hoverable  #cfd8dc blue-grey lighten-4" style="width: 100%">
+						<div class="card large white  lighten-2 hoverable lighten-4" style="width: 100%">
 								<ul class="tabs">
-									<li class="tab col s3"><a href="#dishes">dishes</a></li>
-									<li class="tab col s3"><a class="active" href="#ambience">ambience</a></li>
+									<li class="tab col s3"><a href="#food">dishes</a></li>
+									<li class="tab col s3"><a href="#ambience">ambience</a></li>
 									<li class="tab col s3"><a href="#cost">cost</a></li>
 									<li class="tab col s3"><a href="#service">service</a></li>
 								</ul>
-							</div>
 							
-							<div id="dishes" class="col s12">dishes</div>
+							<div id="food" class="col s12">dishes</div>
 							<div id="ambience" class="col s12">ambience</div>
 							<div id="cost" class="col s12">cost</div>
 							<div id="service" class="col s12">service</div>
+							</div>
 						
 						
-						</div>
 					</div>
 
-					<div class="col s12 m7 14">
+					<div class="col s8">
 						<div id="map-canvas" class="card-panel hoverable #bbdefb blue lighten-4" style="height: 100%"></div>
     					</div>
+						</div>
 
 
 <script src="js/Global-variables.js"></script> 

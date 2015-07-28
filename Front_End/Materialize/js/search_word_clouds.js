@@ -451,8 +451,8 @@ App.BarChart = Backbone.View.extend({
 	BarLayout: function(){
 		function DATA(){return this.dataFunction(_data)}
 		var self = this;	
-		var width = $(".trending-bar-chart").width();
-		var height = $(window).height()/2 ;
+		var width = $("#food").width();
+		var height = $("#food").height()*19 ;
 
 		food_data = this.dataFunction(this.model.food, "food")
 		ambience_data = this.dataFunction(this.model.ambience, null)
@@ -467,10 +467,10 @@ App.BarChart = Backbone.View.extend({
 
 		data = empty_food.concat(food_data, empty_service, service_data, empty_ambience, ambience_data, empty_cost, cost_data)
 		var margin = {
-			 'top': 30,
-			 'right': 10,
-			 'bottom': 10,
-			 'left': 10};
+			 'top': 2,
+			 'right': 2,
+			 'bottom': 2,
+			 'left': 2};
 		
 		var barHeight = (height -margin.top - margin.bottom)/data.length;
 
@@ -495,7 +495,7 @@ App.BarChart = Backbone.View.extend({
 				.tickSubdivide(true)
 				 .orient("bottom")
 
-		var svg = d3.select(".trending-bar-chart").append("svg")
+		var svg = d3.select("#food").append("svg")
 			.attr("width", width)
 			.attr("height", height)
 			//.attr("class", "shadow")

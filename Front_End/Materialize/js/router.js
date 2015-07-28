@@ -11,7 +11,11 @@ App.Router = Backbone.Router.extend({
 	},
 	
 	welcome: function(){
+		var deferred = $.Deferred();
+		deferred.done(function(){
 		var str = new App.RootView()
+		return 
+		})
 		//var str = new App.WordCloudWith_D3({model: {"el": this.el}})
 	},
 
