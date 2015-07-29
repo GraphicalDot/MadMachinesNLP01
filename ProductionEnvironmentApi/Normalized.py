@@ -93,17 +93,46 @@ class NormalizingFactor(object):
                             sum([self.eatery_result["food"][key].get("total_sentiments") for key in ["overall-food", "menu-food"]])\
                             + sum(flatten([[_.get("total_sentiments")for _ in self.eatery_result["food"][key] ] for key in ["dishes", "sub-food", "place-food"]]))
 
-                self.food_positive_factor = float(self.food_positives)/self.overall_positive_sentiments
-                self.food_overall_factor =  float(self.food_overall)/self.overall_total_sentiments
+                try:
+                        self.food_positive_factor = float(self.food_positives)/self.overall_positive_sentiments
+                except ZeroDivisionError as e:
+                        self.food_positive_factor = 0
+               
+                try:
+                        self.food_overall_factor =  float(self.food_overall)/self.overall_total_sentiments
+                except ZeroDivisionError as e:
+                        self.food_overall_factor = 0
 
-                self.ambience_positive_factor = float(self.per_category_positives("ambience"))/self.overall_positive_sentiments
-                self.ambience_overall_factor = float(self.per_category_positives("ambience"))/self.overall_total_sentiments
+                try:
+                        self.ambience_positive_factor = float(self.per_category_positives("ambience"))/self.overall_positive_sentiments
+                except ZeroDivisionError as e:
+                        self.ambience_positive_factor = 0
+
+                try:
+                        self.ambience_overall_factor = float(self.per_category_positives("ambience"))/self.overall_total_sentiments
+                except ZeroDivisionError as e:
+                        self.ambience_overall_factor = 0
                 
-                self.cost_positive_factor = float(self.per_category_positives("cost"))/self.overall_positive_sentiments
-                self.cost_overall_factor = float(self.per_category_positives("cost"))/self.overall_total_sentiments
+                try:
+                        self.cost_positive_factor = float(self.per_category_positives("cost"))/self.overall_positive_sentiments
+                except ZeroDivisionError as e:
+                        self.cost_positive_factor = 0
+
+                try:
+                        self.cost_overall_factor = float(self.per_category_positives("cost"))/self.overall_total_sentiments
+                except ZeroDivisionError as e:
+                        self.cost_overall_factor = 0
                 
-                self.service_positive_factor = float(self.per_category_positives("service"))/self.overall_positive_sentiments
-                self.service_overall_factor = float(self.per_category_positives("service"))/self.overall_total_sentiments
+                try:
+                        self.service_positive_factor = float(self.per_category_positives("service"))/self.overall_positive_sentiments
+                except ZeroDivisionError as e:
+                        self.service_positive_factor = 0 
+                
+                try:
+                        self.service_overall_factor = float(self.per_category_positives("service"))/self.overall_total_sentiments
+                except ZeroDivisionError as e:
+                        self.service_overall_factor = 0
+
 
                 print self.food_overall_factor, self.food_positive_factor
                 print self.ambience_overall_factor, self.ambience_positive_factor

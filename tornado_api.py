@@ -552,16 +552,8 @@ class Query(tornado.web.RequestHandler):
                 'sentences': {'food': [(u'i want to have awesome chicken tikka t', u'dishes')], 
                 'ambience': [(u'would have nice decor .', u'decor')], 'cost': [], 'service': []}}
                 """
-                def Error(arg):
-                        self.write({"error": True,
-                                "success": False,
-                                "messege": "Text is required in the form",
-                                })
-                        self.finish()
-
 
                 text = self.get_argument("text")
-                if not text: self.finish(Error())
                
                 try:
                         l_result = {"food": {}, "ambience": {}, "cost": {}, "service": {}}

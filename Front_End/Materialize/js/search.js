@@ -1,4 +1,41 @@
 $(document).ready(function(){
+ $('.scrollspy').scrollSpy();
+$('.modal-trigger').leanModal({
+	dismissible: true, // Modal can be dismissed by clicking outside of the modal
+	opacity: .5, // Opacity of modal background
+	in_duration: 300, // Transition in duration
+	out_duration: 200, // Transition out duration
+	complete: function() { 
+			var result = {"name": $("#feedback input")[0].value, 
+					"telephone": $("#feedback input")[1].value,
+					"email": $("#feedback input")[2].value,
+					"feedback": $("#feedback textarea").val()
+			
+			}
+			console.log(result);
+			Materialize.toast('Thank you for your feedback', 2000)
+	} // Callback for Modal close
+		    }
+		      );
+$('.modal-trigger2').leanModal({
+	dismissible: true, // Modal can be dismissed by clicking outside of the modal
+	opacity: .5, // Opacity of modal background
+	in_duration: 300, // Transition in duration
+	out_duration: 200, // Transition out duration
+	complete: function() { 
+			var result = {"name": $("#feedback input")[0].value, 
+					"telephone": $("#feedback input")[1].value,
+					"email": $("#feedback input")[2].value,
+					"feedback": $("#feedback textarea").val()
+			
+			}
+			console.log(result);
+			Materialize.toast('Thank you for your feedback', 2000)
+	} // Callback for Modal close
+		    }
+		      );
+
+
 
 window.make_request = function make_request(data, algorithm){ url =  window.process_text_url ; return $.post(url, {"text": data, "algorithm": algorithm}) }
 App.RootView = Backbone.View.extend({
@@ -9,6 +46,16 @@ App.RootView = Backbone.View.extend({
 		var self = this;
 			},
 	
+	events: {
+		'click .feedbackForm': 'feedbackForm', 	
+		},
+
+
+
+	feedbackForm: function(event){
+		event.preventDefault();
+		console.log("feedback form clicked");
+		},
 	render: function(){
 		var subView = new App.MainView();
 		$(".dynamic-display").append(subView.render().el);	
@@ -58,6 +105,14 @@ App.MainView = Backbone.View.extend({
 	
 	events: {
 		'click .submitButton': 'Submit', 	
+		'click .feedbackForm': 'feedbackForm', 	
+		},
+
+
+
+	feedbackForm: function(event){
+		event.preventDefault();
+		console.log("feedback form clicked");
 		},
 
 	changeMap: function(event){
@@ -218,7 +273,7 @@ App.MainView = Backbone.View.extend({
 
 
 App.AppendEateriesMain = Backbone.View.extend({
-	className: "row valign-wrapper",
+	className: "row",
 	template: window.template("append-eatery-main"),
 	initialize: function(){
 		var self = this;
@@ -419,12 +474,8 @@ App.EateryDetails = Backbone.View.extend({
 				        alignTicks: false,
 				        plotBackgroundColor: null,
 				        plotBackgroundImage: null,
-				        plotBorderWidth: 0,
+				        plotBorderWidth: 2,
 				        plotShadow: false,
-			            spacingTop: 5,
-			            spacingLeft: 5,
-			            spacingRight: 5,
-			            spacingBottom: 5,
 					    },
 				
 				credits: {
