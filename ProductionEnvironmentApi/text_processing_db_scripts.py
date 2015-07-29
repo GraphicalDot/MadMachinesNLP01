@@ -319,6 +319,16 @@ class MongoScriptsDoClusters(object):
                     result = reviews.find_one({"review_id": review_id}, {"_id": False, "review_time": True})
                     print "The review_id --<<{0}>>-- with review time --<<{1}>>--".format(review_id, result.get("review_time")), "\n"
 
+
+        def if_no_reviews_till_date(self):
+            """
+            If no reviews has been written for this eatery till date, 
+            which implies that there is no need to run doclusters 
+            """
+            return reviews.find({"eatery_id": self.eatery_id}).count()
+
+
+
         def processed_clusters(self):
                 """
                 This returns all the noun phrases that already have been processed for

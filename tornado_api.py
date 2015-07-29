@@ -330,30 +330,29 @@ class GetWordCloud(tornado.web.RequestHandler):
                     category
                 """
             
-                def Error(arg):
-                        return {"error": True,
-                                "success": False,
-                                "messege": "{0} is required in the form".format(arg),
-                                }
-
-
                 eatery_id = self.get_argument("eatery_id")
-                if not eatery_id: self.finish(Error("eatery_id"))
-                
                 category = self.get_argument("category")
-                if not category: self.finish(Error("category"))
 
 
                         
-                if not reviews.find({"eatery_id": eatery_id}):
-                        self.finish({"error": True, "success": False, "error_messege": "The eatery id  {0} is not present".format(eatery_id),})
+                if not bool(reviews.find({"eatery_id": eatery_id}).count()):
+                        self.set_status(400)
+                        self.write({"error": True, "success": False, "error_messege": "The eatery id  {0} is not present".format(eatery_id),})
+                        self.finish()
+                        return 
 
+                if reviews.find({"eatery_id": eatery_id}).count() == 0:
+                        self.set_status(400)
+                        self.finish({"error": True, "success": False, "error_messege": "The eatery id  {0} has no reviews prsent in the database".format(eatery_id),})
+                        return 
 
                 category = category.lower()
                 #name of the eatery
                 eatery_name = eateries.find_one({"eatery_id": eatery_id}).get("eatery_name")
                 if category not in ["service", "food", "ambience", "cost"]:
+                        self.set_status(400)
                         self.finish({"error": True, "success": False, "error_messege": "This is a n invalid tag %s"%category,})
+                        return 
        
                 """
                 if start_epoch and end_epoch:
@@ -386,7 +385,9 @@ class GetWordCloud(tornado.web.RequestHandler):
 			"result": __result,
                         })
                 self.finish()
-        
+                return 
+
+
         @run_on_executor
         def _exe(self, eatery_id, category):
                 celery_chain = (EachEateryWorker.s(eatery_id)| MappingListWorker.s(eatery_id, PerReviewWorker.s()))()

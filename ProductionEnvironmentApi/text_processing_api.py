@@ -391,6 +391,12 @@ class DoClusters(object):
 
                 """
 
+                if self.mongo_instance.if_no_reviews_till_date() == 0:
+                        ##This implies that this eatery has no reviews present in the database
+                        print "{0} No reviews are present for the eatery_id in reviews colllection\
+                                = <<{1}>> {2}".format(bcolors.OKBLUE, self.eatery_id, bcolors.RESET)
+                        return 
+
                 old_considered_ids = self.mongo_instance.old_considered_ids()
                 if not old_considered_ids:
                         #That clustering is running for the first time
