@@ -56,6 +56,7 @@ class QueryResolution(object):
                 sentences = {"food": self.food_sub_sents, "ambience": self.ambi_sub_sents, "cost": self.cost_sub_sents, 
                         "service": self.serv_sub_sents, "overall": self.over_sents}
                 self.result.update({"sentences": sentences})
+                
                 return self.result
 
 

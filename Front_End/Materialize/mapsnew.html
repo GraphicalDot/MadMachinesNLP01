@@ -144,7 +144,7 @@
       											<div class="row">
 												<div class="input-field col s12">
 													<textarea id="textarea1" class="materialize-textarea"></textarea>
-													<label for="textarea1">Textarea</label>
+													<label for="textarea1">feedback</label>
 												</div>
       											</div>
     										</form>
@@ -172,30 +172,21 @@
 								</div>
 							</div>
 						</br>
-						<a class="waves-effect waves-light feedbackForm modal-trigger2" style="text-align: right;margin-bottom: 0% color: black; " href="#modal3"><i class="small material-icons">hearing</i>Enter your query</a>
+						<a class="waves-effect waves-light modal-trigger2" style="text-align: right;margin-bottom: 0% color: black; " href="#modal3"><i class="small material-icons">search</i>  Enter your query</a>
 							<div id="modal3" class="modal bottom-sheet">
 								<div class="modal-content">
 									<div class="row">
-				   						<form class="col s12">
-      											<div class="row">
-        											<div class="input-field col s4">
-													<i class="material-icons prefix">email</i>
-            												<input id="email" type="email" class="validate">
-          												<label for="email">Email</label>
-        											</div>
-      											</div>
-      											<div class="row">
-												<div class="input-field col s12">
-													<textarea id="textarea1" class="materialize-textarea"></textarea>
-													<label for="textarea1">Textarea</label>
-												</div>
-      											</div>
+				   						<form id="searchQuery">
+								<div class="input-field col s10">
+									<textarea id="textarea1" class="materialize-textarea"></textarea>
+          								<label for="textarea1">Enter your query</label>
+								</div>
+								<div class="col s2">
+									<a class="waves-effect waves-light modal-action modal-close btn-flat" ><i class="material-icons">done_all</i>Submit</a>
+								</div>
     										</form>
   									</div>    
 								</div>
-		     						<div class="modal-footer">
-									<a class=" modal-action modal-close waves-effect waves-green btn-flat">submit feedback</a>
-    								</div>
   							</div>    
 					</div>
 						<p class="dynamic-display card-panel hoverable z-depth-3"></p>

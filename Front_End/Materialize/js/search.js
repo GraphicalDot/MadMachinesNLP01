@@ -1,5 +1,7 @@
 $(document).ready(function(){
- $('.scrollspy').scrollSpy();
+$('.scrollspy').scrollSpy();
+
+
 $('.modal-trigger').leanModal({
 	dismissible: true, // Modal can be dismissed by clicking outside of the modal
 	opacity: .5, // Opacity of modal background
@@ -23,16 +25,16 @@ $('.modal-trigger2').leanModal({
 	in_duration: 300, // Transition in duration
 	out_duration: 200, // Transition out duration
 	complete: function() { 
-			var result = {"name": $("#feedback input")[0].value, 
-					"telephone": $("#feedback input")[1].value,
-					"email": $("#feedback input")[2].value,
-					"feedback": $("#feedback textarea").val()
+					query  = $("#searchQuery textarea").val()
+					console.log(query)
+			if (query == ""){
+				Materialize.toast('Please write something to let us, help you finding the awesomeness', 2000)
+				}
+			else{
+				Materialize.toast('Please wait while we process your Query', 2000)
 			
 			}
-			console.log(result);
-			Materialize.toast('Thank you for your feedback', 2000)
-	} // Callback for Modal close
-		    }
+			}}
 		      );
 
 
