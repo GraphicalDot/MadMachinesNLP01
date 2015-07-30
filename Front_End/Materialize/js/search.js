@@ -1,7 +1,22 @@
 $(document).ready(function(){
 $('.scrollspy').scrollSpy();
+       
 
-
+$('.modal-trigger3').leanModal({
+	dismissible: true, // Modal can be dismissed by clicking outside of the modal
+	opacity: .5, // Opacity of modal background
+	in_duration: 300, // Transition in duration
+	out_duration: 200, // Transition out duration
+	complete: function() { 
+			var result = {"name": $("#feedback input")[0].value, 
+					"telephone": $("#feedback input")[1].value,
+					"email": $("#feedback input")[2].value,
+					"feedback": $("#feedback textarea").val()
+			
+			}
+	} // Callback for Modal close
+		    }
+		      );
 $('.modal-trigger').leanModal({
 	dismissible: true, // Modal can be dismissed by clicking outside of the modal
 	opacity: .5, // Opacity of modal background
@@ -40,6 +55,118 @@ $('.modal-trigger2').leanModal({
 
 
 window.make_request = function make_request(data, algorithm){ url =  window.process_text_url ; return $.post(url, {"text": data, "algorithm": algorithm}) }
+var jqhr = $.get(window.limited_eateries_list)	
+jqhr.done(function(data){
+			if (data.error == false){
+				$.each(data.result, function(iter, eatery){
+					var subView = new App.AppendEateries({"model": eatery});
+					__html = subView.render().el
+					$(".eateries-list").append(__html);	
+				
+				})
+				/*
+				$.each(data.result, function(iter, eatery){
+					var subView = new App.AppendRestaurants({"eatery": eatery});
+					self.$(".append_eatery").append(subView.render().el);	
+				*/
+
+				$("#change-map li").on("click", function(){
+						eatery_lat = $(this).attr("lat")
+						eatery_long = 	$(this).attr("long")
+						range = 10;
+		
+						var jqhr = $.post(window.nearest_eateries, {"lat": eatery_lat, "long": eatery_long, "range": range})	
+						jqhr.done(function(data){
+							if (data.error == false){
+				
+								self.reloadGoogleMap(eatery_lat, eatery_long, data.result)
+								}
+							else{
+								var subView = new App.ErrorView();
+								$(".trending-bar-chart").html(subView.render().el);	
+								}
+						})
+		
+						jqhr.fail(function(data){
+							var subView = new App.ErrorView();
+							$(".dynamic-display").html(subView.render().el);	
+						
+							});
+							});
+							}
+
+
+		
+						else{
+						}
+					})
+$('.dropdown-button').dropdown({
+	      inDuration: 300,
+	      outDuration: 225,
+	      constrain_width: false, // Does not change width of dropdown to that of the activator
+	      hover: true, // Activate on hover
+	      gutter: 0, // Spacing from edge
+	      belowOrigin: false // Displays dropdown below the button
+	    }
+	      );
+	
+		
+
+
+reloadGoogleMap =  function (__initial_lat, __initial_long, eateries_list){
+		function initialize() {
+			var mapCanvas = document.getElementById('map-canvas');
+			var mapOptions = {
+					center: new google.maps.LatLng(__initial_lat, __initial_long),
+					zoom: 19,
+					mapTypeId: google.maps.MapTypeId.ROADMAP
+                                          }
+			var map = new google.maps.Map(mapCanvas, mapOptions)
+			map.set('styles', [
+					{
+						featureType: 'poi',
+						elementType: 'geometry',
+						stylers: [
+							{hue: '#fff700' },
+							{lightness: -15 },
+							{saturation: 99 }
+							]
+					}]);
+			$.each(eateries_list, function(iter, data){
+                                marker = new google.maps.Marker({
+                                map: map,
+                                position: new google.maps.LatLng(data.eatery_coordinates[0], data.eatery_coordinates[1]),
+                                title: data.eatery_name,
+				eatery_id: data.eatery_id, 
+				address: data.eatery_address,
+				html: "<div id='infobox'>" + data.eatery_name + "</br>" + data.eatery_address + "</div>" 
+
+                                })
+                                google.maps.event.addListener(marker, 'mouseover', function() {
+					infowindow.setContent(this.html);        
+					infowindow.open(map, this);        
+					});
+                                
+				google.maps.event.addListener(marker, 'mouseout', function() {
+					infowindow.close();        
+					});
+				google.maps.event.addListener(marker, 'click', function() {
+					console.log(this.get("eatery_id"));     
+				     	var subView = new App.EateryDetails({"model": {"eatery_id": this.get("eatery_id"), "eatery_name": this.get("title")}});	
+					subView.render().el;
+					});
+                        })
+                       
+		       			
+				var infowindow = new google.maps.InfoWindow({
+					      content: "",
+					  });
+
+		}
+			initialize();
+
+		};
+
 App.RootView = Backbone.View.extend({
 	//tagName: "fieldset",
 	//className: "well-lg plan",
@@ -61,9 +188,6 @@ App.RootView = Backbone.View.extend({
 	render: function(){
 		var subView = new App.MainView();
 		$(".dynamic-display").append(subView.render().el);	
-		var subView = new App.AppendEateriesMain();
-		$(".eatery").append(subView.render().el);	
-		self.$('.dropdown-button').dropdown()
 		this.$('.collapsible').collapsible({
 			      accordion : false // A setting that changes the collapsible behavior to expandable instead of the default accordion style
 			    });
@@ -274,141 +398,6 @@ App.MainView = Backbone.View.extend({
 	});
 
 
-App.AppendEateriesMain = Backbone.View.extend({
-	className: "row",
-	template: window.template("append-eatery-main"),
-	initialize: function(){
-		var self = this;
-		/*
-		
-		$(".side-bar").html(this.render().el);
-			*/
-		},
-
-	render: function(){
-		var self = this;
-		this.$el.append(this.template(this));
-		
-		var jqhr = $.get(window.limited_eateries_list)	
-		jqhr.done(function(data){
-			if (data.error == false){
-				$.each(data.result, function(iter, eatery){
-					var subView = new App.AppendEateries({"model": eatery});
-					__html = subView.render().el
-					self.$(".eateries-list").append(__html);	
-				
-				})
-				/*
-				$.each(data.result, function(iter, eatery){
-					var subView = new App.AppendRestaurants({"eatery": eatery});
-					self.$(".append_eatery").append(subView.render().el);	
-				*/
-				self.$(".eateries-list li").on('click', function(){
-			       			self.$(".eatery-list-button:first-child").attr("eatery_id", $(this).attr("eatery_id"));
-			       			self.$(".eatery-list-button:first-child").attr("lat", $(this).attr("lat"));
-			       			self.$(".eatery-list-button:first-child").attr("long", $(this).attr("long"));
-						       
-				});
-
-					}
-
-
-
-			else{
-			}
-		})
-	
-		return this;
-	},
-
-	
-	events: {
-		'click .change-map': 'changeMap',
-		},
-
-	changeMap: function(event){
-		event.preventDefault();
-		var self = this;
-		eatery_lat = $(".eatery-list-button").attr("lat")
-		eatery_long = 	$(".eatery-list-button").attr("long")
-		range = 10;
-		
-		var jqhr = $.post(window.nearest_eateries, {"lat": eatery_lat, "long": eatery_long, "range": range})	
-		jqhr.done(function(data){
-			if (data.error == false){
-				
-				self.reloadGoogleMap(eatery_lat, eatery_long, data.result)
-					}
-			else{
-				var subView = new App.ErrorView();
-				$(".trending-bar-chart").html(subView.render().el);	
-			}
-		})
-		
-		jqhr.fail(function(data){
-				var subView = new App.ErrorView();
-				$(".dynamic-display").html(subView.render().el);	
-						
-		});
-		
-		},
-
-
-	reloadGoogleMap: function (__initial_lat, __initial_long, eateries_list){
-		function initialize() {
-			var mapCanvas = document.getElementById('map-canvas');
-			var mapOptions = {
-					center: new google.maps.LatLng(__initial_lat, __initial_long),
-					zoom: 19,
-					mapTypeId: google.maps.MapTypeId.ROADMAP
-                                          }
-			var map = new google.maps.Map(mapCanvas, mapOptions)
-			map.set('styles', [
-					{
-						featureType: 'poi',
-						elementType: 'geometry',
-						stylers: [
-							{hue: '#fff700' },
-							{lightness: -15 },
-							{saturation: 99 }
-							]
-					}]);
-			$.each(eateries_list, function(iter, data){
-                                marker = new google.maps.Marker({
-                                map: map,
-                                position: new google.maps.LatLng(data.eatery_coordinates[0], data.eatery_coordinates[1]),
-                                title: data.eatery_name,
-				eatery_id: data.eatery_id, 
-				address: data.eatery_address,
-				html: "<div id='infobox'>" + data.eatery_name + "</br>" + data.eatery_address + "</div>" 
-
-                                })
-                                google.maps.event.addListener(marker, 'mouseover', function() {
-					infowindow.setContent(this.html);        
-					infowindow.open(map, this);        
-					});
-                                
-				google.maps.event.addListener(marker, 'mouseout', function() {
-					infowindow.close();        
-					});
-				google.maps.event.addListener(marker, 'click', function() {
-					console.log(this.get("eatery_id"));     
-				     	var subView = new App.EateryDetails({"model": {"eatery_id": this.get("eatery_id"), "eatery_name": this.get("title")}});	
-					subView.render().el;
-					});
-                        })
-                       
-		       			
-				var infowindow = new google.maps.InfoWindow({
-					      content: "",
-					  });
-
-		}
-			initialize();
-		},
-
-});
-
 App.DisplaySuggestion = Backbone.View.extend({
 	tagName: "ul", 
 	className: "collapsible",
@@ -522,6 +511,7 @@ App.EateryDetails = Backbone.View.extend({
 			}, 
 
 });
+
 App.AppendEateries = Backbone.View.extend({
 	tagName: "li",
 	name: function(){return this.model.eatery_name},
