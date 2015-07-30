@@ -91,6 +91,7 @@ class QueryResolution(object):
                         self.food_sub_sents = []
                         return 
                 only_food_sent, food_tags = zip(*self.food_sents)
+                self.only_food_sent = only_food_sent
                 self.food_sub_sents = zip(only_food_sent, FOOD_SB_TAG_CLASSIFIER_LIB.predict(only_food_sent))
                 return 
         
@@ -155,7 +156,11 @@ class QueryResolution(object):
                 for __sub_food_tag in ["dishes", "place-food", "sub-food"]:
                         if self.food_dictionary.get(__sub_food_tag):
                                 sentences = self.food_dictionary.get(__sub_food_tag)
-                                self.food_dictionary.update({__sub_food_tag: self.clustering(sentences)})
+                                
+                                result = self.clustering(sentences)
+                                if result == []:
+                                        result = self.clustering(self.only_food_sent)
+                                self.food_dictionary.update({__sub_food_tag: result})
                 return 
 
 

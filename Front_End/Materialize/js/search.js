@@ -40,14 +40,38 @@ $('.modal-trigger2').leanModal({
 	in_duration: 300, // Transition in duration
 	out_duration: 200, // Transition out duration
 	complete: function() { 
-					query  = $("#searchQuery textarea").val()
-					console.log(query)
-			if (query == ""){
+					value  = $("#searchQuery textarea").val()
+					console.log(value)
+			if (value == ""){
 				Materialize.toast('Please write something to let us, help you finding the awesomeness', 2000)
 				}
 			else{
 				Materialize.toast('Please wait while we process your Query', 2000)
 			
+		var jqhr = $.post(window.resolve_query, {"text": value})	
+		jqhr.done(function(data){
+			if (data.error == false){
+				$(".show-sentences").html("");
+				console.log(data.result)
+				var subView = new App.DisplaySuggestion({"model": data.result})
+				$(".show-sentences").append(subView.render().el);
+
+					}
+			else{
+				/*
+				var subView = new App.ErrorView();
+				$(".trending-bar-chart").html(subView.render().el);	
+				*/
+			}
+		})
+		
+		jqhr.fail(function(data){
+				/*
+				var subView = new App.ErrorView();
+				$(".dynamic-display").html(subView.render().el);	
+				*/
+						
+		});
 			}
 			}}
 		      );
@@ -337,35 +361,11 @@ App.MainView = Backbone.View.extend({
 		var jqhr = $.post(window.resolve_query, {"text": value})	
 		jqhr.done(function(data){
 			if (data.error == false){
-				/*{'ambience': ['decor'], 'food': {}, 'cost': [], 'service': [], 
-				 * 'sentences': {'food': [(u'i want to have awesome chicken tikka t', u'dishes')], 
-				 * 'ambience': [(u'would have nice decor .', u'decor')], 'cost': [], 'service': []}}
-				 */
 				$(".show-sentences").html("");
 				console.log(data.result)
 				var subView = new App.DisplaySuggestion({"model": data.result})
 				$(".show-sentences").append(subView.render().el);
 
-				/*
-				$.each(["food", "service", "cost", "ambience"], function(iter, tag){
-						
-						var subView = new App.DisplaySuggestion({"model": {"name": tag, "data": data["result"][tag]}})
-						$(".show-sentences").append(subView.render().el);
-				})
-				$.each(["food", "service", "cost", "ambience", "overall"], function(iter, tag){
-						$.each(data["result"]["sentences"][tag], function(__iter, __data){
-						
-						var subView = new App.DisplaySuggestion({"model": {"name": tag + " sentences", "data": __data}})
-						$(".show-sentences").append(subView.render().el);
-						})	
-				})
-				
-				*/				
-				/*
-				$.each(data.result, function(iter, eatery){
-					var subView = new App.AppendRestaurants({"eatery": eatery});
-					self.$(".append_eatery").append(subView.render().el);	
-				*/
 					}
 			else{
 				var subView = new App.ErrorView();
@@ -399,27 +399,82 @@ App.MainView = Backbone.View.extend({
 
 
 App.DisplaySuggestion = Backbone.View.extend({
-	tagName: "ul", 
-	className: "collapsible",
-	template: window.template("display"),
-	name : function(){return this.model.name},
-	suggestions : function(){ if (this.model.name == "food"){
-					return this.model.data["dishes"]}
-				else{
-					return this.model.data}},
-	intialize: function(options){
+	
+	initialize: function(options){
 		this.model = options.model;
-
 	},
 
 	render: function(){
-		this.$el.append(this.template(this));
-		this.$el.attr("data-collapsible", "accordion");
+		var self = this;
+		if (this.model.food.dishes != []){
+			self.$el.append("<p> Are you looking for these dishes?</p>")
+			$.each(this.model.food.dishes, function(iter, dish_name){
+				var subView = new App.SuccessSuggestion({"model": dish_name })
+				self.$el.append(subView.render().el);	
+			})
+		}
+		else {
+				self.$el.append("<p>We couldnt get you on the dishes</p>")
+				var subView = new App.ErrorSuggestion()
+				self.$el.append(subView.render().el);	
+
+		}
+		
+		if (this.model.cost != []){
+
+		}
+		if (this.model.service != []){
+
+		}
+		if (this.model.ambience != []){
+
+		}
+		
+
 		return this;
 
 	},
 
 });
+
+App.SuccessSuggestion = Backbone.View.extend({
+	tagName: "div", 
+	className: "row",
+	template: window.template("success-suggestions"),
+	name: function(){ return this.model.model},
+	initialize: function(options){
+			this.model = this.options;
+			console.log(this.model);
+	},
+	
+	render: function(){
+		this.$el.append(this.template(this));
+		return this;
+
+	},
+
+	events: {
+		"click #textareaSuggestions": "suggestions",	
+	},
+		
+	suggestions: function(event){
+		console.log("clicked")
+		console.log(self.$("#textareaSuggestions").val())
+
+	},
+});
+
+App.ErrorSuggestion = Backbone.View.extend({
+	template: window.template("error-suggestions"),
+	className: "input-field col s12",
+
+	render: function(){
+		this.$el.append(this.template(this));
+		return this;
+	},
+});
+
+
 
 
 App.EateryDetails = Backbone.View.extend({

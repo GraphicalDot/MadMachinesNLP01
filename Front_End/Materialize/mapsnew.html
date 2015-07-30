@@ -58,9 +58,18 @@
                 							<ul id = "dropdown1" class="dropdown-content scrollable-menu eateries-list change-map">
                 							</ul>
         </script>
-        <script type="text/x-mustache-template" id="display-suggestions-template">
-		<b>{{name}}</b><br><p>{{suggestions}}</p>
+        <script type="text/x-mustache-template" id="success-suggestions-template">
+		<div class="input-field">
+				<textarea id="textareaSuggestions" class="materialize-textarea">{{name}}</textarea>
+		</div>
 	</script>
+        
+	<script type="text/x-mustache-template" id="error-suggestions-template">
+			<textarea id="textarea1" class="materialize-textarea" id="searchQuery"></textarea>
+	
+	</script>
+
+
         <script type="text/x-mustache-template" id="append-eatery-template">
 			{{name}}
 	</script>
@@ -116,7 +125,7 @@
 					<div class="col s12 m4 l4 section scrollspy #33691e light-green lighten-4 z-depth-5">
 						<div class="card-panel hoverable z-depth-3">
 						<h4 style="text-align: center; margin-top: 2%; margin-bottom: 0% color: black; ">doooF..</h4> 
-						<a class="waves-effect waves-light feedbackForm modal-trigger" style="text-align: right;margin-bottom: 0% color: black; " href="#modal1"><i class="small material-icons">hearing</i>feedback</a>
+						<a class="waves-effect waves-light feedbackForm modal-trigger" style="text-align: right;margin-bottom: 0% color: black; " href="#modal1"><i class="small material-icons">hearing</i>  feedback</a>
 							<div id="modal1" class="modal bottom-sheet">
 								<div class="modal-content">
 									<div class="row">
