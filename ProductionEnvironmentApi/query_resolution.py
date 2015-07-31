@@ -30,9 +30,16 @@ class QueryResolution(object):
         def __init__(self, text=None):
                 self.text = text
                 if not text:
+                    """
                     self.text = "The ambience was breathtaking. The view was breathtaking"
-                    #self.text = "Green Apple Mojito – The bar at HRC is huge and we decided to order the Green Apple Mojito from the ‘Summer’s of the Legends’ Menu. The drink was made from green apples along with Mint. The taste was refreshing. 8/10 Red Hot Chili Fried – Crispy fries with sweet and chili sauce. The fries are topped with cheddar cheese. The dish is served with a portion of tangy salsa dip and cheesy dip. The cheesy dip was so-so and didn’t have any particular flavors. The portion size of this dish was huge and a little more sweet and chili sauce would have been  icing on the cake. 8/10"
-                
+                    self.text = "Green Apple Mojito – The bar at HRC is huge and we decided to order the Green Apple Mojito from the ‘Summer’s of the Legends’ Menu. The drink was made from green apples along with Mint. The taste was refreshing. 8/10 Red Hot Chili Fried – Crispy fries with sweet and chili sauce. The fries are topped with cheddar cheese. The dish is served with a portion of tangy salsa dip and cheesy dip. The cheesy dip was so-so and didn’t have any particular flavors. The portion size of this dish was huge and a little more sweet and chili sauce would have been  icing on the cake. 8/10"
+
+                    self.text = "These guys who sell Amritsari chaaps must specify soya in bold letters on top of their menu, for the sake of carnivores like me. Amidst my lunchtime hunger pangs, when I browsed through their menu on Zomato, everything was chap this and chap that. Reading the huge varieties of Chaap on the menu, my meat thinking mind imagined juicy mutton chaaps done on the tava. Food took more than an hour to be delivered, even though my office is 10 minutes away from this place. I opened the pack in anticipation and the first bite deflated my expectation like a risen Souffle, collapsing suddenly under its own weight. The Malai Chaap and the tawa biryani I ordered, were average. The gravy for the malai chap was too much of tomato puree thrown in and the biryani is more like a vegetable pulao with paneer and capsicum."
+                    self.text = "I want to have chicken tikka with good ambience"
+                    self.text = "I want to have chicken tikka and hummas pita bread with good decor and value for money"
+                    """
+                    self.text = "suggest me amazing chicken tikka with sausages and margarita .. good decor preffererd"
+
                 self.tokenized_sents, self.food_sents, self.serv_sents,\
                 self.cost_sents, self.ambi_sents = [], [], [], [], []
 
@@ -56,7 +63,10 @@ class QueryResolution(object):
                 sentences = {"food": self.food_sub_sents, "ambience": self.ambi_sub_sents, "cost": self.cost_sub_sents, 
                         "service": self.serv_sub_sents, "overall": self.over_sents}
                 self.result.update({"sentences": sentences})
-                
+                self.removing_null_categories()
+                print "\n\n"
+                print "Result wchi has been filtered"
+                print self.result
                 return self.result
 
 
@@ -78,9 +88,16 @@ class QueryResolution(object):
                 print "Query tag classification finished \n"
 
                 self.food_sents = [(sent, tag) for (sent, tag) in result if tag == "food"]
+                
                 self.ambi_sents = [(sent, tag) for (sent, tag) in result if tag == "ambience"]
+                self.ambi_sents = [self.ambi_sents, [(sent, "ambience") for sent in self.tokenized_sents]][self.ambi_sents == []]
+                
                 self.cost_sents = [(sent, tag) for (sent, tag) in result if tag == "cost"]
+                #self.cost_sents = [self.cost_sents, [(sent, "cost") for sent in self.tokenized_sents]][self.cost_sents == []]
+                
                 self.serv_sents = [(sent, tag) for (sent, tag) in result if tag == "service"]
+                self.serv_sents = [self.serv_sents, [(sent, "service") for sent in self.tokenized_sents]][self.serv_sents == []]
+                
                 self.over_sents = [(sent, tag) for (sent, tag) in result if tag == "overall"]
                 
                 return 
@@ -88,10 +105,14 @@ class QueryResolution(object):
                 
         def food_sub_classification(self):
                 if not self.food_sents:
+                        self.only_food_sent = []
                         self.food_sub_sents = []
                         return 
                 only_food_sent, food_tags = zip(*self.food_sents)
+                print "From food sub classification"
                 self.only_food_sent = only_food_sent
+                print only_food_sent
+                print self.only_food_sent
                 self.food_sub_sents = zip(only_food_sent, FOOD_SB_TAG_CLASSIFIER_LIB.predict(only_food_sent))
                 return 
         
@@ -153,23 +174,41 @@ class QueryResolution(object):
                 map(lambda __list: __list.append(self.review_time), self.all_food_with_nps) 
                 """
 
-                for __sub_food_tag in ["dishes", "place-food", "sub-food"]:
-                        if self.food_dictionary.get(__sub_food_tag):
-                                sentences = self.food_dictionary.get(__sub_food_tag)
+                def __some(__sub_food_tag):
+                        sentences = self.food_dictionary.get(__sub_food_tag)
+                        result = self.clustering(sentences)
+                        print "result from clustering"
+                        print result
+                        if result == []:
+                                print "NPs for dishes sentences empty"
+                                result = self.clustering(self.only_food_sent)
                                 
-                                result = self.clustering(sentences)
-                                if result == []:
-                                        result = self.clustering(self.only_food_sent)
+                        if result == []:
+                                print "NPs for only food sentences is empty"
+                                result = self.clustering(self.tokenized_sents)
+                                print result
+                        return result
+
+                for __sub_food_tag in ["place-food", "sub-food"]:
+                        if self.food_dictionary.get(__sub_food_tag):
+                                result = __some(__sub_food_tag)
                                 self.food_dictionary.update({__sub_food_tag: result})
+                            
+                            
+                            
+                self.food_dictionary.update({"dishes": __some("dishes")})
+                
+
                 return 
 
 
         def clustering(self, sentences_list):
                 nouns = topia_extractor(" ".join(sentences_list)) 
-                noun_phrases = Counter([e[0] for e in nouns]).keys()
+                noun_phrases = Counter([e[0].lower() for e in nouns]).keys()
+                print noun_phrases
                 ins = QueryClustering(noun_phrases, sub_category="dishes", sentences= sentences_list)
-                return ins.run()
-                
+                result = ins.run()
+                return result
 
         def populate_result(self):
                 """
@@ -185,6 +224,23 @@ class QueryResolution(object):
                         self.food_dictionary.pop("null-food")
                 self.result.update({"food": self.food_dictionary})
                 return
+
+        def removing_null_categories(self):
+                for key in ["ambience", "cost", "service"]:
+                        new_list = list()
+                        print self.result[key]
+                        for __category in self.result[key]:
+                                if "null" in __category.split("-"):
+                                        pass
+                                else:
+                                    new_list.append(__category)
+
+                        print new_list
+                        self.result[key] = new_list
+
+                return
+
+
 
 if __name__ == "__main__":
         ins = QueryResolution(None)

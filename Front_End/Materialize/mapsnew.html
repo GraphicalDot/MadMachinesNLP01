@@ -33,6 +33,8 @@
                 <script type="text/javascript" src="js/libs/d3/d3.js"></script>
                 <script type="text/javascript" src="js/libs/d3.layout.cloud.js"></script>
                 <script type="text/javascript" src="js/libs/jquery-ui.js"></script>
+                <script type="text/javascript" src="js/jquery.jeditable.mini.js"></script>
+                <script type="text/javascript" src="js/jinplace-1.2.1.min.js"></script>
                 <script src="http://code.highcharts.com/modules/exporting.js"></script>
 		<link href='http://fonts.googleapis.com/css?family=Josefin+Slab:600' rel='stylesheet' type='text/css'> 
 		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.0/css/materialize.min.css">
@@ -59,14 +61,11 @@
                 							</ul>
         </script>
         <script type="text/x-mustache-template" id="success-suggestions-template">
-		<div class="input-field">
-				<textarea id="textareaSuggestions" class="materialize-textarea">{{name}}</textarea>
-		</div>
+		<textarea class="materialize-textarea" style="padding: 0">{{name}}</textarea>
+	
 	</script>
         
 	<script type="text/x-mustache-template" id="error-suggestions-template">
-			<textarea id="textarea1" class="materialize-textarea" id="searchQuery"></textarea>
-	
 	</script>
 
 
@@ -112,7 +111,7 @@
 								<textarea  class="shadow"  style="width: 80%; margin-top; 10%" type="text" id="newSearchQuery" placeholder="Try me" ></textarea>
 							</di>
 							<button class="btn waves-effect waves-light submitButton" style="height: 10%">submiti <i class="material-icons">send</i></button>
-                                        </div>
+                            			</div>
         </script>
 
 	<script type="text/x-mustache-template" id="each-dish-template">

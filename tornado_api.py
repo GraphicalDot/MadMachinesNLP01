@@ -651,7 +651,6 @@ class NearestEateries(tornado.web.RequestHandler):
 			})
                 self.finish()
                 
-
 class EateryDetails(tornado.web.RequestHandler):
 	@cors
 	@print_execution

@@ -277,17 +277,24 @@ class QueryClustering:
                 hunpos_tagger = HunposTagger(HunPosModelPath, HunPosTagPath)
                 filtered_list = list()
                 def check_np(np):
-                    print "Actual NP %s\n"%np
-                    try:
-                            #__list = hunpos_tagger.tag(nltk.wordpunct_tokenize(np.encode("utf-8")))
-                            __list = hunpos_tagger.tag(nltk.wordpunct_tokenize(np))
-                            print __list
-                    except Exception as e:
-                            print "This bullsht string is being ignored %s"%np
-                            return None
-                    result = [__token for (__token, __tag) in __list if not __tag in ["RB", "CD", "FW"]]
-                    print "Stripped off NP %s \n"%" ".join(result)
-                    return " ".join(result)
+                        print "Actual NP %s\n"%np
+                        try:
+                                #__list = hunpos_tagger.tag(nltk.wordpunct_tokenize(np.encode("utf-8")))
+                                __list = hunpos_tagger.tag(nltk.wordpunct_tokenize(np))
+                                print __list
+                        except Exception as e:
+                                print "This bullsht string is being ignored %s"%np
+                                return None
+                        
+                
+                        if not set.intersection(set(["NNP", "NN", "NNS"]), set([__tag for (token, __tag) in __list])):     
+                                return None
+                
+
+
+                        result = [__token for (__token, __tag) in __list if not __tag in ["RB", "CD", "FW"]]
+                        print "Stripped off NP %s \n"%" ".join(result)
+                        return " ".join(result)
                 
                 for __e in self.result:
                         filtered_list.append(check_np(__e))

@@ -406,7 +406,7 @@ App.DisplaySuggestion = Backbone.View.extend({
 
 	render: function(){
 		var self = this;
-		if (this.model.food.dishes != []){
+		if (!$.isEmptyObject(this.model.food.dishes)){
 			self.$el.append("<p> Are you looking for these dishes?</p>")
 			$.each(this.model.food.dishes, function(iter, dish_name){
 				var subView = new App.SuccessSuggestion({"model": dish_name })
@@ -420,16 +420,52 @@ App.DisplaySuggestion = Backbone.View.extend({
 
 		}
 		
-		if (this.model.cost != []){
+		if (!$.isEmptyObject(this.model.cost)){
+
+			var __html = " " 
+			$.each(this.model.cost, function(iter, __name){
+				if (iter > 0){
+					__html = __html + ", " + "<i>"+ __name + "</i>"	
+
+				}
+				else{
+				__html = __html + " " + "<i>"+ __name + "</i>"	
+				}
+			})
+			self.$el.append("<p> Are you looking for" + __html + " food</p>")
+		}
+		else {
 
 		}
-		if (this.model.service != []){
+		if (!$.isEmptyObject(this.model.service)){
+			var __html = " " 
+			$.each(this.model.service, function(iter, __name){
+				if (iter > 0){
+					__html = __html + ", " + "<i>"+ __name + "</i>"	
+
+				}
+				else{
+				__html = __html + " " + "<i>"+ __name + "</i>"	
+				}
+			})
+			self.$el.append("<p> Are you looking for" + __html + " in service </p>")
 
 		}
-		if (this.model.ambience != []){
+		if (!$.isEmptyObject(this.model.ambience)){
+			var __html = " " 
+			$.each(this.model.ambience, function(iter, __name){
+				if (iter > 0){
+					__html = __html + ", " + "<i>"+ __name + "</i>"	
 
+				}
+				else{
+				__html = __html + " " + "<i>"+ __name + "</i>"	
+				}
+			})
+			self.$el.append("<p> Are you looking for good " + __html + " in ambience</p>")
 		}
 		
+		this.$el.attr("style", "margin-left: auto; margin-right: auto; overflow-y: auto; height: 200px;")
 
 		return this;
 
@@ -438,8 +474,6 @@ App.DisplaySuggestion = Backbone.View.extend({
 });
 
 App.SuccessSuggestion = Backbone.View.extend({
-	tagName: "div", 
-	className: "row",
 	template: window.template("success-suggestions"),
 	name: function(){ return this.model.model},
 	initialize: function(options){
@@ -458,9 +492,12 @@ App.SuccessSuggestion = Backbone.View.extend({
 	},
 		
 	suggestions: function(event){
-		console.log("clicked")
-		console.log(self.$("#textareaSuggestions").val())
-
+		event.preventDefault()
+		/*
+		console.log(this.$("#textareaSuggestions").text())
+		var value = this.$("#textareaSuggestions").text()
+		this.$("#textareaSuggestions").html('<textarea class="materialize-textarea">' + value + '</textarea>')  	
+		*/
 	},
 });
 
