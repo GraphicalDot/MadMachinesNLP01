@@ -309,6 +309,38 @@ class LimitedEateriesList(tornado.web.RequestHandler):
 			})
                 self.finish()
 
+class EateriesOnCharacter(tornado.web.RequestHandler):
+	@cors
+	@print_execution
+        #@tornado.gen.coroutine
+        @asynchronous
+        def post(self):
+                """
+                Returns eateries on the basis of the character starting the name of the eatery
+                
+                """
+                page_num = int(self.get_argument("page_num"))
+                skip = page_num*10
+                projection={"eatery_id": True, "eatery_name": True, "eatery_address": True, "eatery_coordinates": True, "_id": False}
+                result = [eatery for eatery in list(eateries.find({"eatery_area_or_city": "ncr"},  projection).skip(skip).limit(10).sort("eatery_total_reviews", -1)) \
+                        if eatery.get("eatery_coordinates")]
+                
+                for eatery in result:
+                        eatery_data = eateries_results_collection.find_one({"eatery_id": eatery.get("eatery_id")})
+                        if eatery_data:
+                                    eatery.update({"favourite1": eatery_data["food"]["dishes"][0].get("name")})
+                                    eatery.update({"favourite2": eatery_data["food"]["dishes"][1].get("name")})
+                        else:
+                                eatery.update({"favourite1": "abc"})
+                                eatery.update({"favourite2": "def"})
+               
+                print result
+                self.write({"success": True,
+			"error": False,
+                        "result": result,
+			})
+                self.finish()
+
 
                 
 
@@ -765,6 +797,7 @@ class Application(tornado.web.Application):
                     (r"/resolve_query", Query),
                     (r"/get_trending", GetTrending),
                     (r"/nearest_eateries", NearestEateries),
+                    (r"/eateries_on_character", EateriesOnCharacter),
                     (r"/eatery_details", EateryDetails),]
                 settings = dict(cookie_secret="__TODO:_GENERATE_YOUR_OWN_RANDOM_VALUE_HERE__",)
                 tornado.web.Application.__init__(self, handlers, **settings)

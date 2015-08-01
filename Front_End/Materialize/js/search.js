@@ -76,6 +76,111 @@ $('.modal-trigger2').leanModal({
 			}}
 		      );
 
+$('.modal-trigger4').leanModal({
+	dismissible: true, // Modal can be dismissed by clicking outside of the modal
+	opacity: .5, // Opacity of modal background
+	in_duration: 300, // Transition in duration
+	out_duration: 200, // Transition out duration
+	complete: function() { 
+			var result = {"name": $("#feedback input")[0].value, 
+					"telephone": $("#feedback input")[1].value,
+					"email": $("#feedback input")[2].value,
+					"feedback": $("#feedback textarea").val()
+			
+			}
+			console.log(result);
+			Materialize.toast('Thank you for your feedback', 2000)
+	} // Callback for Modal close
+		    });
+
+		      
+App.PickEatery = Backbone.View.extend({
+	//tagName: "fieldset",
+	//className: "well-lg plan",
+	
+	initialize: function(options){
+		this.model = options.model
+			},
+	
+	render: function(){
+		var table = '<table>'+
+				'<thead>'+
+					'<tr>'+
+						'<th data-field="id">eatery name</th>'+
+						'<th data-field="name">favourite 1</th>'+
+						'<th data-field="price">favourite 2</th>'+
+					'</tr>'+
+				'</thead>'+
+      				'<tbody id="table-body">'+
+				'<tbody>'+
+			'</table>'	
+		this.$el.append(table)
+		this.beforerender();
+		return this;
+	},
+	
+	beforerender: function(){
+		var self = this;
+		var jqhr = $.post(window.eateries_on_character, {"page_num": self.model.page_num})	
+		jqhr.done(function(data){
+			if (data.error == false){
+				$.each(data.result, function(iter, eatery){
+					var subView = new App.PickEateryChild({"model": eatery});
+					self.$("#table-body").append(subView.render().el)
+				
+				})
+			}
+		})
+		return 
+	},
+	
+
+});
+
+
+App.PickEateryChild = Backbone.View.extend({
+	tagName: "tr",
+	template: window.template("pick-eatery-child"),
+	eatery_name: function(){ return this.model.eatery_name},
+	favourite1: function(){ return this.model.favourite1},
+	favourite2: function(){ return this.model.favourite2},
+
+	initialize: function(options){
+		this.model = options.model;
+			},
+	
+	render: function(){
+		this.$el.append(this.template(this));
+		this.$el.attr("lat", this.model.eatery_coordinates[0]);
+		this.$el.attr("long", this.model.eatery_coordinates[1]);
+		this.$el.attr("eatery_id", this.model.eatery_id);
+		return this;
+
+	},
+
+	events: {
+		"click eatery-row":  "clicked"
+	},
+
+	clicked: function(event){
+		event.preventDefault();
+		console.log(clicked + this.model.eatery_id)
+	},
+})
+
+
+var subview = new App.PickEatery({"model": {"page_num": 0}})
+$("#eatery-content").html(subview.render().el); // or some ajax content loading...
+
+$('#eatery-page-selection').bootpag({
+	   total: 26,
+	   page: 1,
+	   maxVisible: 10
+	}).on('page', function(event, num){
+		subview = new App.PickEatery({"model": {"page_num": num}})
+		$("#eatery-content").html(subview.render().el); // or some ajax content loading...
+});
+
 
 
 window.make_request = function make_request(data, algorithm){ url =  window.process_text_url ; return $.post(url, {"text": data, "algorithm": algorithm}) }
