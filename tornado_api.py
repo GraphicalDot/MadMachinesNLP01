@@ -23,6 +23,7 @@ import tornado.ioloop
 import tornado.web
 import tornado.autoreload
 from tornado.httpclient import AsyncHTTPClient
+from tornado.log import enable_pretty_logging
 import hashlib
 import subprocess
 import shutil
@@ -667,7 +668,7 @@ class EateryDetails(tornado.web.RequestHandler):
 
                 """
                 
-                number_of_dishes = 14
+                number_of_dishes = 20
                 eatery_id =  self.get_argument("eatery_id")
                 print eatery_id
                 result = eateries_results_collection.find_one({"eatery_id": eatery_id})
@@ -752,6 +753,7 @@ def main():
         http_server = tornado.httpserver.HTTPServer(Application())
         tornado.autoreload.start()
         http_server.listen("8000")
+        enable_pretty_logging()
         tornado.ioloop.IOLoop.current().start()
 
 

@@ -407,7 +407,7 @@ App.DisplaySuggestion = Backbone.View.extend({
 	render: function(){
 		var self = this;
 		if (!$.isEmptyObject(this.model.food.dishes)){
-			self.$el.append("<p> Are you looking for these dishes?</p>")
+			self.$el.append('<p><a class="tooltipped col s8" data-position="right" data-delay="50" data-tooltip="If you are not looking for these dishes, please edit the dishes listed below to help us locate the desired.">Are you looking for these dishes?</a><a class="waves-effect waves-light submitButton col s4" href="#"><i class="material-icons">done_all</i>Submit</a></p>')
 			$.each(this.model.food.dishes, function(iter, dish_name){
 				var subView = new App.SuccessSuggestion({"model": dish_name })
 				self.$el.append(subView.render().el);	
@@ -466,9 +466,25 @@ App.DisplaySuggestion = Backbone.View.extend({
 		}
 		
 		this.$el.attr("style", "margin-left: auto; margin-right: auto; overflow-y: auto; height: 200px;")
-
+		this.$('.tooltipped').tooltip({delay: 50});
 		return this;
 
+	},
+
+
+	events: {
+		"click .submitButton": "submitButton",
+	},
+
+	submitButton: function(event){
+			var dishes_name = [];
+			event.preventDefault();
+			$.each($(".suggestions"), function(iter, value){
+				if ($(this).val()){
+					dishes_name.push($(this).val())
+					}
+				})
+			console.log(dishes_name);
 	},
 
 });
@@ -488,11 +504,16 @@ App.SuccessSuggestion = Backbone.View.extend({
 	},
 
 	events: {
-		"click #textareaSuggestions": "suggestions",	
+		"mouseleave": "suggestions", 
 	},
 		
 	suggestions: function(event){
+		var self = this;
 		event.preventDefault()
+		if (!this.$(".suggestions").val()){
+			self.$(".suggestions").hide()
+
+		}
 		/*
 		console.log(this.$("#textareaSuggestions").text())
 		var value = this.$("#textareaSuggestions").text()
