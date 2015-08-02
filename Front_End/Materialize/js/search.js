@@ -1,40 +1,63 @@
 $(document).ready(function(){
+
+window.loaderstring = '<div class="preloader-wrapper big active loaderstring">'+
+	    			'<div class="spinner-layer spinner-blue-only">'+
+	      				'<div class="circle-clipper left">'+
+	        				'<div class="circle">'+
+					'</div>'+
+	      				'</div>'+
+						'<div class="gap-patch">'+
+	        				'<div class="circle">'+
+					'</div>'+
+	      				'</div>'+
+					'<div class="circle-clipper right">'+
+	        				'<div class="circle">' +
+					'</div>'+
+	      				'</div>'+
+	    			'</div>'+
+	  		'</div>'
+	        
+
+
+
 $('.scrollspy').scrollSpy();
        
 
 $('.modal-trigger3').leanModal({
+
+	//This is for how it works options, Whihch hasnt been implemented yet
 	dismissible: true, // Modal can be dismissed by clicking outside of the modal
 	opacity: .5, // Opacity of modal background
 	in_duration: 300, // Transition in duration
 	out_duration: 200, // Transition out duration
 	complete: function() { 
-			var result = {"name": $("#feedback input")[0].value, 
-					"telephone": $("#feedback input")[1].value,
-					"email": $("#feedback input")[2].value,
-					"feedback": $("#feedback textarea").val()
 			
 			}
-	} // Callback for Modal close
 		    }
 		      );
 $('.modal-trigger').leanModal({
+	//This is for the feedback form 
 	dismissible: true, // Modal can be dismissed by clicking outside of the modal
 	opacity: .5, // Opacity of modal background
 	in_duration: 300, // Transition in duration
 	out_duration: 200, // Transition out duration
 	complete: function() { 
-			var result = {"name": $("#feedback input")[0].value, 
-					"telephone": $("#feedback input")[1].value,
-					"email": $("#feedback input")[2].value,
-					"feedback": $("#feedback textarea").val()
 			
-			}
-			console.log(result);
-			Materialize.toast('Thank you for your feedback', 2000)
+			if ($("#feedback textarea").val()){
+				Materialize.toast('Thank you for your feedback', 2000)
+				
+				$.post(window.users_feedback, {"feedback": $("#feedback textarea").val(), 
+								"telephone": $("#feedback input")[1].value,
+								"email": $("#feedback input")[2].value,
+								"name": $("#feedback input")[0].value, 
+								})
+			
+				}
 	} // Callback for Modal close
-		    }
-		      );
+		    });
 $('.modal-trigger2').leanModal({
+	//This is for taking in user query for the search
+
 	dismissible: true, // Modal can be dismissed by clicking outside of the modal
 	opacity: .5, // Opacity of modal background
 	in_duration: 300, // Transition in duration
@@ -77,19 +100,12 @@ $('.modal-trigger2').leanModal({
 		      );
 
 $('.modal-trigger4').leanModal({
+	//This is for pick eatery
 	dismissible: true, // Modal can be dismissed by clicking outside of the modal
 	opacity: .5, // Opacity of modal background
 	in_duration: 300, // Transition in duration
 	out_duration: 200, // Transition out duration
 	complete: function() { 
-			var result = {"name": $("#feedback input")[0].value, 
-					"telephone": $("#feedback input")[1].value,
-					"email": $("#feedback input")[2].value,
-					"feedback": $("#feedback textarea").val()
-			
-			}
-			console.log(result);
-			Materialize.toast('Thank you for your feedback', 2000)
 	} // Callback for Modal close
 		    });
 
@@ -159,12 +175,17 @@ App.PickEateryChild = Backbone.View.extend({
 	},
 
 	events: {
-		"click eatery-row":  "clicked"
+		"click .eatery-row":  "clicked"
 	},
 
 	clicked: function(event){
 		event.preventDefault();
-		console.log(clicked + this.model.eatery_id)
+		console.log("clicked" + this.model.eatery_id)
+		lat = this.model.eatery_coordinates[0]
+		lon = this.model.eatery_coordinates[1]
+		var subView = new App.EateryDetails({"model": {"eatery_id": this.model.eatery_id, "eatery_name": this.model.eatery_name}});	
+		subView.render().el;
+
 	},
 })
 
@@ -177,8 +198,10 @@ $('#eatery-page-selection').bootpag({
 	   page: 1,
 	   maxVisible: 10
 	}).on('page', function(event, num){
+		console.log('<p>Let it be loaded</p>')
 		subview = new App.PickEatery({"model": {"page_num": num}})
-		$("#eatery-content").html(subview.render().el); // or some ajax content loading...
+		$("#eatery-content").html(window.loaderstring);
+		$("#eatery-content").html(subview.render().el);
 });
 
 

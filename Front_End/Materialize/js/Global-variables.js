@@ -16,5 +16,6 @@ $(document).ready(function(){
 	window.nearest_eateries = window.URL + "nearest_eateries";
 	window.eatery_details = window.URL + "eatery_details";
 	window.eateries_on_character = window.URL + "eateries_on_character";
+	window.users_feedback = window.URL + "users_feedback";
 
 });

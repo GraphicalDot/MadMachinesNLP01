@@ -63,7 +63,8 @@ from tornado.concurrent import run_on_executor
 from concurrent.futures import ThreadPoolExecutor
 from bson.son import SON
 from Text_Processing.Sentence_Tokenization.Sentence_Tokenization_Classes import SentenceTokenizationOnRegexOnInterjections
-from GlobalConfigs import connection, eateries, reviews, yelp_eateries, yelp_reviews, eateries_results_collection, elasticsearch
+from GlobalConfigs import connection, eateries, reviews, yelp_eateries, yelp_reviews, eateries_results_collection,\
+                    elasticsearch, users_details, users_feedback, users_queries
          
 
 from ProductionEnvironmentApi.text_processing_api import PerReview, EachEatery, DoClusters
@@ -140,156 +141,31 @@ def time_series(__result):
                 "cumulative": [{"name": "cumulative", "data": list(cumulative), "color": "LightSlateGray"}]}
 
 
-class FBLogin(tornado.web.RequestHandler):
+
+class UsersFeedback(tornado.web.RequestHandler):
 	@cors
 	@tornado.gen.coroutine
-	def post(self):
-                """
-                If the length of the new user_friends pposted ont he api uis greater than the length
-                of the user_friends present in the database,
-                then the list of user_friends shall be updated in the database
-                """
-
-		args = fb_login_parser.parse_args()
-                print args
-                if not android_users.find_one({"fb_id": args["fb_id"]}):
-                        android_users.update({"fb_id": args["fb_id"]}, {"$set": {
-                                                "user_name": args["user_name"],
-                                                "email": args["email"],
-                                                "gender": args["gender"], 
-                                                "date_of_birth": args["date_of_birth"],
-                                                "location": args["location"],
-                                                "user_friends": args["user_friends"],}} , upsert=True) 
+	@asynchronous
+        def post(self):
                 
-                        return {"error": False,
-                                "success": True,
-                                "error_code": 0,
-                                "messege": "The user with fb_id {0} and name {1} has been inserted correctly".
-                                                    format(args["fb_id"], args["user_name"] ),}
-                
-                
-                if android_users.find_one({"fb_id": args["fb_id"]}):
-                        if len(android_users.find_one({"fb_id": args["fb_id"]}).get("user_friends")) < len(args["user_friends"]):
-                                android_users.update({"fb_id": args["fb_id"]}, {"$set": {
-                                                "user_friends": args["user_friends"],}} , upsert=False) 
-                                
-                    
-                                return {"error": False,
-                                        "success": True,
-                                        "error_code": 0,
-                                        "messege": "The user with fb_id {0} and name {1} has been updated with new user_friends".
-                                                    format(args["fb_id"], args["user_name"] ),}
-                
-                        return {"error": True,
-                                "success": False,
-                                "error_code": 0, 
-                                "messege": "The user with fb_id {0} and name {1} already exists".
-                                                    format(args["fb_id"], args["user_name"] ),}
-                
+                feedback = self.get_argument("feedback")
+                name = self.get_argument("name")
+                telephone = self.get_argument("telephone")
+                email = self.get_argument("email")
+                print feedback
+                users_feedback.insert({"feedback": feedback, "name": name, "telephone": telephone, "email": email, "timestamp": time.time()})
+                self.write({"success": True,
+			"error": False,
+			})
+                self.finish()
                 return
 
-
-class PostComment(tornado.web.RequestHandler):
+class UsersDetails(tornado.web.RequestHandler):
 	@cors
-	
 	@tornado.gen.coroutine
+	@asynchronous
         def post(self):
-                args = post_comment_parser.parse_args()
-                if not android_users.find_one({"fb_id": args["fb_id"]}):
-                        return {"error": True,
-                                "success": False,
-                                "messege": "Please register the user first before posting the comment",}
-                
-                android_users.update({"fb_id": args["fb_id"]}, {"$push": {
-                                                "comments": args["comment"],}}) 
-            
-                return {"error": False,
-                        "success": True,
-                        "messege": "The comment has been posted successfully",}
-                        
-
-
-
-class SuggestName(tornado.web.RequestHandler):
-	@cors
-	@tornado.gen.coroutine
-	def post(self):
-                args = suggest_name_parser.parse_args()
-                if not android_users.find_one({"fb_id": args["fb_id"]}):
-                        return {"error": True,
-                                "success": False,
-                                "messege": "Please register the user first before posting the comment",}
-                
-                android_users.update({"fb_id": args["fb_id"]}, {"$push": {
-                                                "name_suggestion": args["name_suggestion"],}}) 
-            
-                return {"error": False,
-                        "success": True,
-                        "messege": "The suggestion for the name has been taken successfully",}
-
-
-
-            
-class PostPicture(tornado.web.RequestHandler):
-	@cors
-	@tornado.gen.coroutine
-        def post(self):
-                args = post_pic_parser.parse_args()
-                if not android_users.find_one({"fb_id": args["fb_id"]}):
-                        return {"error": True,
-                                "success": False,
-                                "messege": "Please register the user first before posting the image",}
-
-                try:
-                        base64.decodestring(args["image_string"])
-
-                except Exception as e:
-                        return {"error": True,
-                                "success": False,
-                                "messege": "The pic cannot be posted because of the error {0}".format(e),}
-
-                
-                #md5 checksum of the base64 encoded image, to form its unique id
-                image_id = hashlib.md5(args["image_string"]).hexdigest() 
-
-
-                #to check whether the same user is going to upload the same pic again
-                if users_pic.find_one({"fb_id": args["fb_id"], "image_id": image_id }):
-                        return {"error": True,
-                                "success": False,
-                                "messege": "This pic for this user has already been posted",}
-                        
-
-
-                android_users.update({"fb_id": args["fb_id"]}, {"$push": {
-                                            "pics": image_id,}}) 
-                
-                users_pic.insert({"image_id": image_id, "image_name": args["image_name"], "fb_id": args["fb_id"], 
-                                "image_base64_encoded_string": args["image_string"]})
-
-
-                return {"error": False,
-                        "success": True,
-                        "messege": "The pic has been posted successfully",}
-
-
-                #do we have image name options to be selected from
-            
-class GetPics(tornado.web.RequestHandler):
-	@cors
-	@tornado.gen.coroutine
-	def get(self):
-                args = get_pics_parser.parse_args()
-                args["dish_name"]
-                return {"error": False,
-                        "success": True,
-                        "result": result,}
-
-
-
-
-
-
+                return
 
 
 class LimitedEateriesList(tornado.web.RequestHandler):
@@ -309,6 +185,10 @@ class LimitedEateriesList(tornado.web.RequestHandler):
 			})
                 self.finish()
 
+
+
+
+
 class EateriesOnCharacter(tornado.web.RequestHandler):
 	@cors
 	@print_execution
@@ -319,6 +199,7 @@ class EateriesOnCharacter(tornado.web.RequestHandler):
                 Returns eateries on the basis of the character starting the name of the eatery
                 
                 """
+                time.sleep(5)
                 page_num = int(self.get_argument("page_num"))
                 skip = page_num*10
                 projection={"eatery_id": True, "eatery_name": True, "eatery_address": True, "eatery_coordinates": True, "_id": False}
@@ -619,11 +500,12 @@ class Query(tornado.web.RequestHandler):
                         for key, value in result.iteritems():
                         for __value in value:
                         """
+                        users_queries.insert({"query": text, "result": __result, "timestamp": time.time()})
                         self.write({"success": True,
 			        "error": False,
 			        "result": __result,
 			        })
-
+                    
                 except StandardError as e:
                         print e
                         self.write({"success": False,
@@ -798,6 +680,8 @@ class Application(tornado.web.Application):
                     (r"/get_trending", GetTrending),
                     (r"/nearest_eateries", NearestEateries),
                     (r"/eateries_on_character", EateriesOnCharacter),
+                    (r"/users_details", UsersDetails),
+                    (r"/users_feedback", UsersFeedback),
                     (r"/eatery_details", EateryDetails),]
                 settings = dict(cookie_secret="__TODO:_GENERATE_YOUR_OWN_RANDOM_VALUE_HERE__",)
                 tornado.web.Application.__init__(self, handlers, **settings)

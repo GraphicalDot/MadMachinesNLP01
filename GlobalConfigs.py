@@ -7,7 +7,7 @@ Purpose: This file has all the config variables stored in it,
 import pymongo
 import elasticsearch
 
-ELASTICSEARCH_IP = "192.168.1.6"
+ELASTICSEARCH_IP = "localhost"
 ELASTICSEARCH_PORT = 9200
 
 ES_CLIENT = elasticsearch.Elasticsearch(ELASTICSEARCH_IP)
@@ -74,13 +74,19 @@ connection = pymongo.MongoClient(MONGO_REVIEWS_IP, MONGO_REVIEWS_PORT)
 users_connection = pymongo.MongoClient(MONGO_IP, MONGO_PORT)
 
 
-user_details = eval("users_connection.{db_name}.{collection_name}".format(
+users_details = eval("users_connection.{db_name}.{collection_name}".format(
                                                         db_name=MONGO_APP_USERS_DB,
                                                         collection_name=MONGO_APP_USERS_DETAILS))
 
-users = eval("connection.{db_name}.{collection_name}".format(
-                                                        db_name=MONGO_REVIEWS_DB,
-                                                        collection_name=MONGO_REVIEWS_EATERIES_COLLECTION))
+users_feedback = eval("connection.{db_name}.{collection_name}".format(
+                                                        db_name=MONGO_APP_USERS_DB,
+                                                        collection_name=MONGO_APP_USERS_FEEDBACK))
+
+users_queries = eval("connection.{db_name}.{collection_name}".format(
+                                                        db_name=MONGO_APP_USERS_DB,
+                                                        collection_name=MONGO_APP_USERS_QUERIES))
+
+
 eateries = eval("connection.{db_name}.{collection_name}".format(
                                                         db_name=MONGO_REVIEWS_DB,
                                                         collection_name=MONGO_REVIEWS_EATERIES_COLLECTION))
