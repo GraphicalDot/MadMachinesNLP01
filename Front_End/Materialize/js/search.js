@@ -1,6 +1,19 @@
 $(document).ready(function(){
 
-  var height = Math.max($("#left").height(), $("#right").height());
+function getLocation() {
+	    if (navigator.geolocation) {
+		            navigator.geolocation.getCurrentPosition(showPosition);
+			        } else {
+					        x.innerHTML = "Geolocation is not supported by this browser.";
+						    }
+}
+function showPosition(position) {
+	    console.log("Latitude: " + position.coords.latitude + "Longitude: " + position.coords.longitude) 
+}
+
+getLocation()
+
+var height = Math.max($("#left").height(), $("#right").height());
           $("#left").height(height);
 	          $("#right").height(height);
 
@@ -199,7 +212,29 @@ App.PickEateryChild = Backbone.View.extend({
 		lon = this.model.eatery_coordinates[1]
 		var subView = new App.EateryDetails({"model": {"eatery_id": this.model.eatery_id, "eatery_name": this.model.eatery_name}});	
 		subView.render().el;
-
+		
+		range = 10;
+		
+		var jqhr = $.post(window.nearest_eateries, {"lat": lat, "long": lon, "range": range})	
+		jqhr.done(function(data){
+			if (data.error == false){
+			
+				console.log(data.result)	
+				reloadGoogleMap(lat, lon, data.result)
+					}
+			else{
+				var subView = new App.ErrorView();
+				$(".trending-bar-chart").html(subView.render().el);	
+			}
+		})
+		
+		jqhr.fail(function(data){
+				var subView = new App.ErrorView();
+				$(".dynamic-display").html(subView.render().el);	
+						
+		});
+		//Closing the parent eatery modal box
+		$('#modal4').closeModal();
 	},
 })
 
@@ -405,7 +440,7 @@ App.MainView = Backbone.View.extend({
 			{'eatry_name': 'Lure Switch', 'eatery_coordinates': [28.5291066667, 77.1936133333]}]			
 		__initial_lat = 28.6427138889;
 		__initial_long = 77.1192555556;
-		this.reloadGoogleMap(__initial_lat, __initial_long, __array);
+		reloadGoogleMap(__initial_lat, __initial_long, __array);
 	},
 	
 	events: {
