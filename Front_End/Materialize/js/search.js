@@ -1,8 +1,12 @@
 $(document).ready(function(){
 
-window.loaderstring = '<div class="preloader-wrapper big active loaderstring">'+
+  var height = Math.max($("#left").height(), $("#right").height());
+          $("#left").height(height);
+	          $("#right").height(height);
+
+	window.loaderstring = '<div class="preloader-wrapper big active loaderstring" style="height: 100%">'+
 	    			'<div class="spinner-layer spinner-blue-only">'+
-	      				'<div class="circle-clipper left">'+
+	      				'<div class="circle-clipper right">'+
 	        				'<div class="circle">'+
 					'</div>'+
 	      				'</div>'+
@@ -17,7 +21,6 @@ window.loaderstring = '<div class="preloader-wrapper big active loaderstring">'+
 	    			'</div>'+
 	  		'</div>'
 	        
-
 
 
 $('.scrollspy').scrollSpy();
@@ -119,12 +122,15 @@ App.PickEatery = Backbone.View.extend({
 			},
 	
 	render: function(){
-		var table = '<table>'+
+		var table = '<table id="pickEatery">'+
 				'<thead>'+
 					'<tr>'+
 						'<th data-field="id">eatery name</th>'+
-						'<th data-field="name">favourite 1</th>'+
-						'<th data-field="price">favourite 2</th>'+
+						'<th data-field="trending1">Trending 1</th>'+
+						'<th data-field="trending2">Trending 2</th>'+
+						'<th data-field="cost">cost</th>'+
+						'<th data-field="service">service</th>'+
+						'<th data-field="ambience">ambience</th>'+
 					'</tr>'+
 				'</thead>'+
       				'<tbody id="table-body">'+
@@ -146,7 +152,11 @@ App.PickEatery = Backbone.View.extend({
 				
 				})
 			}
+
+		//Deals with the sorting of the pick eatery table
+		self.$("#pickEatery").tablesorter();
 		})
+		
 		return 
 	},
 	
@@ -158,8 +168,11 @@ App.PickEateryChild = Backbone.View.extend({
 	tagName: "tr",
 	template: window.template("pick-eatery-child"),
 	eatery_name: function(){ return this.model.eatery_name},
-	favourite1: function(){ return this.model.favourite1},
-	favourite2: function(){ return this.model.favourite2},
+	trending1: function(){ return this.model.trending1},
+	trending2: function(){ return this.model.trending2},
+	cost: function(){ return this.model.cost},
+	service: function(){ return this.model.service},
+	ambience: function(){ return this.model.ambience},
 
 	initialize: function(options){
 		this.model = options.model;
@@ -181,6 +194,7 @@ App.PickEateryChild = Backbone.View.extend({
 	clicked: function(event){
 		event.preventDefault();
 		console.log("clicked" + this.model.eatery_id)
+		$("#food").html(window.loaderstring)
 		lat = this.model.eatery_coordinates[0]
 		lon = this.model.eatery_coordinates[1]
 		var subView = new App.EateryDetails({"model": {"eatery_id": this.model.eatery_id, "eatery_name": this.model.eatery_name}});	
@@ -194,11 +208,24 @@ var subview = new App.PickEatery({"model": {"page_num": 0}})
 $("#eatery-content").html(subview.render().el); // or some ajax content loading...
 
 $('#eatery-page-selection').bootpag({
-	   total: 26,
-	   page: 1,
-	   maxVisible: 10
-	}).on('page', function(event, num){
+	total: 26,
+	page: 1,
+	maxVisible: 10,
+	leaps: true,
+	firstLastUse: true,
+	first: '←',
+	last: '→',
+	wrapClass: 'pagination',
+	activeClass: 'active',
+	disabledClass: 'disabled',
+	nextClass: 'next',
+	prevClass: 'prev',
+	lastClass: 'last',
+	firstClass: 'first'
+	
+		}).on('page', function(event, num){
 		console.log('<p>Let it be loaded</p>')
+		
 		subview = new App.PickEatery({"model": {"page_num": num}})
 		$("#eatery-content").html(window.loaderstring);
 		$("#eatery-content").html(subview.render().el);
@@ -682,7 +709,10 @@ App.EateryDetails = Backbone.View.extend({
 					__object = $("#" + value);	
 					self.makeChart(__object, data.result[value], self.model.eatery_name, value);
 				})
-					}
+					
+				var subView = new App.ReviewForEatery({"model": {"eatery_name": self.model.eatery_name, "eatery_id": self.model.eatery_id, "eatery_address": data.result.eatery_address}})
+				$("#do-review").html(subView.render().el)
+			}
 			else{
 				var subView = new App.ErrorView();
 				$(".trending-bar-chart").html(subView.render().el);	
@@ -694,6 +724,9 @@ App.EateryDetails = Backbone.View.extend({
 				$(".dynamic-display").html(subView.render().el);	
 						
 		});
+		
+		
+		
 		return this;
 	},
 
@@ -704,7 +737,7 @@ App.EateryDetails = Backbone.View.extend({
 						        renderTo: 'container',
 				        type: 'bar',
 				        alignTicks: false,
-				        plotBackgroundColor: null,
+				        plotBackgroundColor: "#006064",
 				        plotBackgroundImage: null,
 				        plotBorderWidth: 2,
 				        plotShadow: false,
@@ -752,6 +785,41 @@ App.EateryDetails = Backbone.View.extend({
 			}, 
 
 });
+
+App.ReviewForEatery = Backbone.View.extend({
+	tagName: "form",
+       	className: "col s12 #006064 cyan darken-4",
+	template: window.template("write-review"),
+	eatery_name: function(){return this.model.eatery_name},
+	eatery_address: function(){return this.model.eatery_address},
+	initialize: function(options){
+		this.model = options.model;
+		console.log(this.model.eatery_name)
+		var self = this;
+		},
+
+	render: function(){
+		this.$el.append(this.template(this));
+		return this;
+
+	},
+
+	events: {
+		"click .submit-review": "submitReview"},
+	submitReview: function(event){
+		event.preventDefault();
+		console.log("Submit review clicked")
+		console.log($("#submit-review-textarea").val())
+		/*Api call to submit the review written by the user , The args will be the eatery id and the facebook id of the 
+		 * user and obviously the review written by him or her
+		 */
+
+	
+	},
+
+});
+
+
 
 App.AppendEateries = Backbone.View.extend({
 	tagName: "li",

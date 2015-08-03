@@ -278,10 +278,10 @@ class ElasticSearchScripts(object):
                                                     'type': 'integer', 
                                                     },
                                         'trending_factor': {
-                                                    'type': 'float', 
+                                                    'type': 'double', 
                                                     },
                                         'mention_factor': {
-                                                    'type': 'float', 
+                                                    'type': 'double', 
                                                     },
                                         'timeline': {
                                             'type': 'string'}}}}
@@ -365,7 +365,7 @@ class ElasticSearchScripts(object):
                                                 __dish.update({"eatery_id": eatery_id})
                                                 __dish.update({"eatery_name": eatery_name})
                                                 l = ES_CLIENT.index(index="food", doc_type=sub_category, body=__dish)
-                            
+                                                print l 
                                 else:
 					try:
                                         	sub_data = data[sub_category]
@@ -447,7 +447,7 @@ class ElasticSearchScripts(object):
                                   "match_all": {}
                                      },
                               "sort" : [
-                                        {"total_sentiments" : {"order" : "desc"}}
+                                        {"trending_factor" : {"order" : "desc"}}
                                            ]
                               }
 
@@ -460,7 +460,7 @@ class ElasticSearchScripts(object):
                                     "match_all": {}
                                      },
                             "sort": [
-                                    {"total_sentiments": {
+                                    {"trending_factor": {
                                                 "order" : "desc"}}
                                            ]
                               }
@@ -473,7 +473,7 @@ class ElasticSearchScripts(object):
                                     "match_all": {}
                                      },
                             "sort": [
-                                    {"total_sentiments": {
+                                    {"trending_factor": {
                                             "order" : "desc"}}
                                            ]
                               }
@@ -487,7 +487,7 @@ class ElasticSearchScripts(object):
                                     "match_all": {}
                                      },
                             "sort": [
-                                    {"total_sentiments": {
+                                    {"trending_factor": {
                                             "order" : "desc"}}
                                            ]
                               }

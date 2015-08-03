@@ -37,16 +37,20 @@
                 <script type="text/javascript" src="js/libs/d3.layout.cloud.js"></script>
                 <script type="text/javascript" src="js/libs/jquery-ui.js"></script>
                 <script type="text/javascript" src="js/jquery.jeditable.mini.js"></script>
+                <script type="text/javascript" src="js/jquery.tablesorter.min.js"></script>
                 <script src="http://code.highcharts.com/modules/exporting.js"></script>
 		<link href='http://fonts.googleapis.com/css?family=Josefin+Slab:600' rel='stylesheet' type='text/css'> 
 		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.0/css/materialize.min.css">
-		  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+		
+		<link href="css/blue/style.css" rel="stylesheet">		
+		  
+		<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 		   <!-- Compiled and minified JavaScript -->
 		     <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.0/js/materialize.min.js"></script>
 
 		     </head>
-	<body style="font-family: 'Josefin Slab', serif;">
-	<script type="text/x-mustache-template" id="root-template">
+			<body style="font-family: 'Josefin Slab', serif; color: white; font-weight: bold;" class="#616161 grey darken-2">
+			<script type="text/x-mustache-template" id="root-template">
 					 <form>
 								<div class="input-field col s10">
 									<textarea id="textarea1" class="materialize-textarea" id="searchQuery"></textarea>
@@ -123,23 +127,23 @@
         </script>
 	<script type="text/x-mustache-template" id="pick-eatery-child-template">
 			<td class="eatery-row">{{eatery_name}}</td>
-			<td>{{favourite1}}</td>
-			<td>{{favourite2}}</td>
+			<td>{{trending1}}</td>
+			<td>{{trending2}}</td>
+			<td>{{cost}}</td>
+			<td>{{service}}</td>
+			<td>{{ambience}}</td>
+			
         </script>
 
-                                <div class="row" >
-					<div class="col s12 m4 l4  white z-depth-5">
+	<div class="row" >
+		<div class="col s12 m4 l4 z-depth-5" style="height: 100%">
+				<div class="card-panel hoverable #006064 cyan darken-4 z-depth-5">
+					<h4 style="text-align: center; margin-top: 2%; margin-bottom: 0%; color: #202020;  letter-spacing: .1em; text-shadow:  -1px -1px 1px #111, 2px 2px 1px #363636;">doooF..</h4> 
 
-						<ul class="collapsible" data-collapsible="accordion">
-							    <li>
-						<div class="collapsible-header">
-						<h4 style="text-align: center; margin-top: 2%; margin-bottom: 0% color: black; ">doooF..</h4> 
-
-							</div>
-							<div class="collapsible-body">
-						<a class="waves-effect waves-light feedbackForm modal-trigger" style="text-align: right;margin-bottom: 0% color: black; " href="#modal1"><i class="small material-icons">hearing</i>  feedback</a>
-							<div id="modal1" class="modal bottom-sheet">
-								<div class="modal-content">
+						<!-- feedback button-->
+						<a class="waves-effect waves-light feedbackForm modal-trigger" style="text-align: right;margin-bottom: 0% color: white; " href="#modal1"><i class="small material-icons">hearing</i>  feedback</a>
+						<div id="modal1" class="modal bottom-sheet #006064 cyan darken-4">
+							<div class="modal-content #006064 cyan darken-4">
 									<div class="row">
 				   						<form class="col s12" id="feedback">
 					    						<div class="row">
@@ -168,16 +172,17 @@
 													<label for="textarea1">feedback</label>
 												</div>
       											</div>
+      											<div class="row">
+												<a class="modal-action modal-close waves-effect waves-green">submit feedback</a>
+      											</div>
     										</form>
   									</div>    
 								</div>
-		     						<div class="modal-footer">
-									<a class=" modal-action modal-close waves-effect waves-green btn-flat">submit feedback</a>
-    								</div>
   							</div>    
-						
-						
+						<!-- feedback button finished-->
 						</br>
+						
+						<!-- How it works button started-->
 						<a class="waves-effect waves-light modal-trigger3" style="text-align: right; margin-top: 2%; margin-bottom: 0% color: black; " href="#modal2"><i class="small material-icons">description</i>  how it works</a>
 							<div id="modal2" class="modal bottom-sheet">
 								<div class="modal-content">
@@ -192,31 +197,36 @@
 
 								</div>
 							</div>
+						<!-- How it works button finished-->
 						</br>
-						<a class="waves-effect waves-light modal-trigger2 tool-tipped" style="text-align: right;margin-bottom: 0% color: black; " href="#modal3"><i class="small material-icons">search</i>  Enter your query</a>
-							<div id="modal3" class="modal bottom-sheet">
-								<div class="modal-content">
+
+						<!-- Enter your query button started-->
+						<a class="waves-effect waves-light modal-trigger2 tool-tipped " style="text-align: right;margin-bottom: 0% color: black; " href="#modal3"><i class="small material-icons">search</i>  Enter your query</a>
+							<div id="modal3" class="modal bottom-sheet  #006064 cyan darken-4">
+								<div class="modal-content  #006064 cyan darken-4">
 									<div class="row">
 				   						<form id="searchQuery">
-								<div class="input-field col s10">
-									<textarea id="textarea1" class="materialize-textarea"></textarea>
-          								<label for="textarea1">Enter your query</label>
-								</div>
-								<div class="col s2">
-									<a class="waves-effect waves-light modal-action modal-close btn-flat" ><i class="material-icons">done_all</i>Submit</a>
-								</div>
+											<div class="input-field col s12">
+												<textarea id="textarea1" class="materialize-textarea"></textarea>
+          											<label for="textarea1">Where to go, What to eat?</label>
+											</div>
+											<a class="waves-effect waves-light modal-action modal-close" ><i class="material-icons">done_all</i>Submit</a>
     										</form>
   									</div>    
 								</div>
   							</div>    
+						
+						<!-- Enter your query button finished-->
 						</br>
+
+						<!-- dropdown for eatery button started-->
 						<a  class='dropdown-button waves-effect waves-light eatery-list-button' data-beloworigin="true" data-activates='change-map'> <i class="small material-icons">room</i>choose restaurant</a>
                 							<ul class="dropdown-content scrollable-menu eateries-list" id="change-map">
                 							</ul>
 						</br>
 						<a class="waves-effect waves-light modal-trigger4" style="text-align: right; margin-top: 2%; margin-bottom: 0% color: black; " href="#modal4"><i class="small material-icons">description</i>  pick eatery</a>
 							<div id="modal4" class="modal bottom-sheet">
-								<div class="modal-content">
+								<div class="modal-content #006064 cyan darken-4">
 
                 							<div id="eatery-content">Dynamic Content goes here</div>
 									<div id="eatery-page-selection"></div>		
@@ -224,38 +234,49 @@
 							</div>
 						</br>
 						
+						<!-- dropdown for eatery button finished-->
 						
-						
-						</div>
-					</li>
-				</ul>
-					
+					</div><!-- card panel doof finished -->
 			
-			
-			
-						<div class="show-sentences card-panel hoverable z-depth-3"></div>
-						<p class="trending-bar-highchart z-depth-3"></p>
-						<div class="card large white  lighten-2 hoverable lighten-4 z-depth-3">
+					<div class="show-sentences card-panel hoverable z-depth-3"></div>
+					<p class="trending-bar-highchart z-depth-3"></p>
+					<div class="card  hoverable z-depth-3">
 								<ul class="tabs">
-									<li class="tab col s3"><a href="#food">food</a></li>
-									<li class="tab col s3"><a href="#ambience">ambience</a></li>
-									<li class="tab col s3"><a href="#cost">cost</a></li>
-									<li class="tab col s3"><a href="#service">service</a></li>
+									<li class="tab col s2"><a href="#food">food</a></li>
+									<li class="tab col s2"><a href="#ambience">ambience</a></li>
+									<li class="tab col s2"><a href="#cost">cost</a></li>
+									<li class="tab col s2"><a href="#service">service</a></li>
+									<li class="tab col s2"><a href="#do-review">do review</a></li>
 								</ul>
 							
-							<div id="food" class="col s12">dishes</div>
-							<div id="ambience" class="col s12">ambience</div>
-							<div id="cost" class="col s12">cost</div>
-							<div id="service" class="col s12">service</div>
-							</div>
-						
+								<div id="food" class="col s12">dishes</div>
+								<div id="ambience" class="col s12">ambience</div>
+								<div id="cost" class="col s12">cost</div>
+								<div id="service" class="col s12">service</div>
+								<div id="do-review" class="col s12">
+								</div>
 					</div>
+						
+			</div><!--column left finished -->
 
-					<div class="col s12 m8 l8 #33691e light-green lighten-4 z-depth-5">
-						<div id="map-canvas" class="card-panel hoverable z-depth-5" style="height: 100%"></div>
-    					</div>
-						</div>
-
+			<div class="col s12 m8 l8 #33691e light-green lighten-4 z-depth-5">
+				<div id="map-canvas" class="card-panel hoverable z-depth-5" style="height: 100%">
+				</div>
+    			</div>
+		</div>
+				   						
+				
+<script type="text/x-mustache-template" id="write-review-template">
+      		<div class="row">
+			<div class="input-field col s12">
+				<textarea id="submit-review-textarea" class="materialize-textarea"></textarea>
+						<label for="textarea1">Write review for <i><b>{{eatery_name}}</b></i> located at <i><b>{{eatery_address}}</b></i></label>
+			</div>
+      		</div>
+      		<div class="row">
+			<a class="waves-effect waves-green submit-review">submit review</a>
+      		</div>
+</script>							
 
 <script src="js/Global-variables.js"></script> 
 		<script src="js/Global-variables.js"></script>

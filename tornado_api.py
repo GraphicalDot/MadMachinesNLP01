@@ -199,21 +199,40 @@ class EateriesOnCharacter(tornado.web.RequestHandler):
                 Returns eateries on the basis of the character starting the name of the eatery
                 
                 """
-                time.sleep(5)
                 page_num = int(self.get_argument("page_num"))
                 skip = page_num*10
-                projection={"eatery_id": True, "eatery_name": True, "eatery_address": True, "eatery_coordinates": True, "_id": False}
+                projection={"eatery_id": True, "eatery_name": True, "eatery_address": True, "eatery_coordinates": True, "_id": False, "trending_factor": True}
                 result = [eatery for eatery in list(eateries.find({"eatery_area_or_city": "ncr"},  projection).skip(skip).limit(10).sort("eatery_total_reviews", -1)) \
                         if eatery.get("eatery_coordinates")]
                 
+
+                def highest_trending(eatery_data, category):
+                        result = sorted([[eatery_data[category][key].get("trending_factor"), key] for key in eatery_data[category].keys()], reverse=True, key=lambda x: x[0])
+                        if not "null" in result[0][1].split("-"):
+                                return result[0][1]
+                        return result[1][1]
+
+
+
                 for eatery in result:
                         eatery_data = eateries_results_collection.find_one({"eatery_id": eatery.get("eatery_id")})
+                        sorted_by_trending = sorted(eatery_data["food"]["dishes"], reverse=True, key = lambda x: x.get("trending_factor"))
+                        
                         if eatery_data:
-                                    eatery.update({"favourite1": eatery_data["food"]["dishes"][0].get("name")})
-                                    eatery.update({"favourite2": eatery_data["food"]["dishes"][1].get("name")})
+                                    try:
+                                            eatery.update({"trending1": sorted_by_trending[0].get("name")})
+                                            eatery.update({"trending2": sorted_by_trending[1].get("name")})
+                                    except Exception as e:
+                                            print e
+                                            eatery.update({"trending1": "Not enough data"})
+                                            eatery.update({"trending2": "Not enough data"})
+                                            
+                                    eatery.update({"cost": highest_trending(eatery_data, "cost")})
+                                    eatery.update({"service": highest_trending(eatery_data, "service")})
+                                    eatery.update({"ambience": highest_trending(eatery_data, "ambience")})
                         else:
-                                eatery.update({"favourite1": "abc"})
-                                eatery.update({"favourite2": "def"})
+                                eatery.update({"trending1": "abc"})
+                                eatery.update({"trending2": "def"})
                
                 print result
                 self.write({"success": True,
@@ -581,7 +600,6 @@ class EateryDetails(tornado.web.RequestHandler):
                 'totalsentiments', u'similar', u'positive', 'categories']
 
                 """
-                
                 number_of_dishes = 20
                 eatery_id =  self.get_argument("eatery_id")
                 print eatery_id
@@ -653,7 +671,9 @@ class EateryDetails(tornado.web.RequestHandler):
                 result = {"food": convert_for(dishes),
                                     "ambience": convert_for(ambience), 
                                     "cost": convert_for(cost), 
-                                    "service": convert_for(service)}
+                                    "service": convert_for(service), 
+                                    "eatery_address": result["eatery_address"],
+                                    }
 
                 print result
                 self.write({"success": True,
