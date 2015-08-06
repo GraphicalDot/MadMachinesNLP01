@@ -1,179 +1,281 @@
 <html>
-
-
 	<head>
-		<title img=>Mad Machines REProE</title>
-		<meta name="description" content="Mad Machines REProEPOC">
-		<meta charset="UTF-8">
-		<link href="css/bootstrap.css" rel="stylesheet">
-		<link href='http://fonts.googleapis.com/css?family=Source+Sans+Pro:200' rel='stylesheet' type='text/css'>
-		<link href="css/main.css" rel="stylesheet">
-		<link href="css/another.css" rel="stylesheet">
-		<link href="css/bootstrap-responsive.css" rel="stylesheet">
-		<link href="css/jquery-ui.css" rel="stylesheet">
-		<link href="css/tablecloth.css" rel="stylesheet">
-		<link href="css/tipsy.css" rel="stylesheet">
-		<link href="css/jquery.vegas.css" rel="stylesheet">
-		<script type="text/javascript" src="js/libs/jquery/jquery.min.js"></script>
-		<script type="text/javascript" src="js/libs/chart.min.js"></script>
-		<script type="text/javascript" src="js/libs/bootstrap/bootstrap.js"></script>
-		<script type="text/javascript" src="js/libs/bootstrap/bootstrap-tooltip.js"></script>
-		<script type="text/javascript" src="js/libs/bootstrap/bootstrap-popover.js"></script>
-		<script type="text/javascript" src="js/libs/bootstrap/bootstrap-transition.js"></script>
-		<script type="text/javascript" src="js/libs/bootstrap/bootstrap-dropdown.js"></script>
-		<script type="text/javascript" src="js/libs/bootstrap/twitter-bootstrap-hover-dropdown.js"></script>
-		<script type="text/javascript" src="js/libs/handlebars/handlebars-1.0.rc.1.min.js"></script>
-		<script type="text/javascript" src="js/libs/mustache/mustache.js"></script>
-		<script type="text/javascript" src="js/libs/underscore/underscore.js"></script>
-		<script type="text/javascript" src="js/libs/underscore/underscore.string.min.js"></script>
-		<script type="text/javascript" src="js/libs/bootbox/bootbox.min.js"></script>
-		<script type="text/javascript" src="js/libs/tablecloth/jquery.metadata.js"></script>
-		<script type="text/javascript" src="js/libs/tablecloth/jquery.tablesorter.js"></script>
-		<script type="text/javascript" src="js/libs/tablecloth/jquery.tablecloth.js"></script>
-		<script type="text/javascript" src="js/libs/backbone/backbone.js"></script>
-		<script type="text/javascript" src="js/libs/Jquery-validate/jquery.validate.js"></script>
-		<script type="text/javascript" src="js/libs/jquery-cookie/jquery.cookie.js"></script>
-		<script type="text/javascript" src="js/libs/jquery.tagcloud.js"></script>
-		<script type="text/javascript" src="js/libs/d3/d3.js"></script>
-		<script type="text/javascript" src="js/libs/d3.layout.cloud.js"></script>
-		<script type="text/javascript" src="js/libs/jquery-ui.js"></script>
-		<script type="text/javascript" src="js/libs/jquery.tipsy.js"></script>
-		<script type="text/javascript" src="js/libs/cola.v3.min.js"></script>
-		<script type="text/javascript" src="js/libs/d3.tip.v0.6.3.js"></script>
-		<script type="text/javascript" src="js/libs/jquery.vegas.min.js"></script>
-		<script type="text/javascript" src="js/hovercard.js"></script>
-
-	</head>
-	<body>
-
-	<script type="text/x-mustache-template" id="fb-login-template">
-		window.fbAsyncInit = function(){
-				FB.init({
-				appId : '767935519986527',
-				xfbml : true,
-				version : 'v2.3'});
-				};
-
-		(function(d, s, id){
-			var js, fjs = d.getElementsByTagName(s)[0];
-			if (d.getElementById(id)) {return;}
-			js = d.createElement(s); js.id = id;
-			js.src = "//connect.facebook.net/en_US/sdk.js";
-			fjs.parentNode.insertBefore(js, fjs);
-			}(document, 'script', 'facebook-jssdk'));
-
-	</script>
-	<script type="text/x-mustache-template" id="root-row-template">
-                <div class="span8">
-                        <p style="text-align: center">{{sentence}}</p>
-                </div>
+				
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+		<script src="https://maps.googleapis.com/maps/api/js?sensor=false"></script>
+		<meta name="viewport" content="width=device-width, initial-scale=1">
                 
-		<div class="span2">
-                        <div class="btn-group">
-                                <select id="ddpFiltersentiment" class="btn btn-success dropdown-toggle btn-xs" data-toggle="dropdown" style="width: 98%">
-                                        <option value="1" disabled>super-positive</option>
-                                        <option value="2" disabled>positive</option>
-                                        <option value="3" disabled>neutral</option>
-                                        <option value="4" disabled>negative</option>
-                                        <option value="5" disabled>super-negative</option>
-                                        <option value="6" disabled>mixed</option>
-                                </select>
-                        </div>
-                        </div>
+		<script type="text/javascript" src="http://google-maps-utility-library-v3.googlecode.com/svn/trunk/infobox/src/infobox.js"></script>		 
+		<title img=>HyPostt</title>
+                <meta name="description" content="HyPost">
+                <meta charset="UTF-8">
+		<script type="text/javascript" src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
+                <script type="text/javascript" src="js/jquery.bootpag.min.js"></script>
+                <link href="css/jquery-ui.css" rel="stylesheet">
+                <link href="css/main.css" rel="stylesheet">
+                <link href='http://fonts.googleapis.com/css?family=Playfair+Display:900' rel='stylesheet' type='text/css'>
+
+                <script type="text/javascript" src="js/libs/chart.min.js"></script>
+                <script type="text/javascript" src="js/highchart.js"></script>
+		<!--	
+	       	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script> 
+		
+                <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap-theme.min.css">
+		
+		-->
+
+                <script type="text/javascript" src="js/libs/mustache/mustache.js"></script>
+                <script type="text/javascript" src="js/libs/underscore/underscore.js"></script>
+                <script type="text/javascript" src="js/libs/bootbox/bootbox.min.js"></script>
+                <script type="text/javascript" src="js/libs/backbone/backbone.js"></script>
+                <script type="text/javascript" src="js/libs/d3/d3.js"></script>
+                <script type="text/javascript" src="js/libs/d3.layout.cloud.js"></script>
+                <script type="text/javascript" src="js/libs/jquery-ui.js"></script>
+                <script type="text/javascript" src="js/jquery.jeditable.mini.js"></script>
+                <script type="text/javascript" src="js/jquery.tablesorter.min.js"></script>
+                <script type="text/javascript" src="js/isotope.pkgd.min.js"></script>
+                <script type="text/javascript" src="js/masonry.pkgd.min.js"></script>
+                <script src="http://code.highcharts.com/modules/exporting.js"></script>
+		<link href='http://fonts.googleapis.com/css?family=Josefin+Slab:600' rel='stylesheet' type='text/css'> 
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.0/css/materialize.min.css">
+		
+		<link href="css/blue/style.css" rel="stylesheet">		
+		  
+		<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+		   <!-- Compiled and minified JavaScript -->
+		     <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.0/js/materialize.min.js"></script>
+
+		     </head>
+			<body style="font-family: 'Josefin Slab', serif;;">
+			<script type="text/x-mustache-template" id="root-template">
+					 <form>
+								<div class="input-field col s10">
+									<textarea id="textarea1" class="materialize-textarea" id="searchQuery"></textarea>
+          								<label for="textarea1">Enter your query</label>
+								</div>
+								<div class="col s2">
+									<a class="waves-effect waves-light submitButton btn-flat" ><i class="material-icons">done_all</i>Submit</a>
+								</div>
+					</form>
+        </script>
+	<script type="text/x-mustache-template" id="append-eatery-main-template">
+									<a  class='dropdown-button btn-flat eatery-list-button' data-beloworigin="true" data-activates='dropdown1'> choose restaurant</a>
+                							<ul id = "dropdown1" class="dropdown-content scrollable-menu eateries-list change-map">
+                							</ul>
+        </script>
+        <script type="text/x-mustache-template" id="success-suggestions-template">
+		<textarea class="materialize-textarea suggestions" style="padding: 0">{{name}}</textarea>
+	
+	</script>
+        
+	<script type="text/x-mustache-template" id="error-suggestions-template">
 	</script>
 
 
-	<script type="text/x-mustache-template" id="see-word-cloud-date-selection-template">
-		<div class="control-group">
-				<label  class="control-label">Word Cloud Category</label>
-					<div class="controls">
-						<select id="wordCloudCategory">
-							<ul id="wordCloudCategory" class="dropdown-menu">
-								<option>Food</option>
-								<option>Service</option>
-								<option>Ambience</option>
-								<option>Cost</option>
-							</ul>	
-						</select>
-					</div>
+        <script type="text/x-mustache-template" id="append-eatery-template">
+			{{name}}
+	</script>
+        <script type="text/x-mustache-template" id="error-template">
+                        <h3>Ooppsss!, Some problem occurred while processing your request, Please try again</h3>
+                        <img src="css/images/4041.jpg" alt="Page Not Found (404)." style="position: absolute; left: 50%; top: 10%; margin-left: -285px; margin-top: 10%">
+        </script>
+        <script type="text/x-mustache-template" id="display-template">
+				<li>
+      					<div class="collapsible-header"><i class="material-icons">send</i>First</div>
+      					<div class="collapsible-body"><p>Lorem ipsum dolor sit amet.</p></div>
+				</li>
+				<li>
+					<div class="collapsible-header"><i class="material-icons">send</i>Second</div>
+					<div class="collapsible-body"><p>Lorem ipsum dolor sit amet.</p></div>
+				</li>
+				<li>
+					<div class="collapsible-header"><i class="material-icons">send</i>Third</div>
+					<div class="collapsible-body"><p>Lorem ipsum dolor sit amet.</p></div>
+				</li>
+	</script>
+
+        <script type="text/x-mustache-template" id="result-template">
+                        <div class="container-fluid">
+                                <div class="row" style="margin-right: 5%; margin-left: 3%">
+                                        <div class="head">
+                                        </div>
+                                </div>
+                                <div class="row" style="margin-top: 10%; margin-right: 5%; margin-left: 3%">
+
+                                        <div class="slides">
+                                </div>
+                        </div>
+        </script>
+        <script type="text/x-mustache-template" id="search-template">
+
+                                                <div class="form-group">
+                                                        <div style="color: LightSlateGray; margin-bottom: 1px"><h1 style="text-align: center; margin-top: 2%; margin-bottom: 0%">doof ..</$
+                                                	<div class="input-field col s12">        
+								<textarea  class="shadow"  style="width: 80%; margin-top; 10%" type="text" id="newSearchQuery" placeholder="Try me" ></textarea>
+							</di>
+							<button class="btn waves-effect waves-light submitButton" style="height: 10%">submiti <i class="material-icons">send</i></button>
+                            			</div>
+        </script>
+
+	<script type="text/x-mustache-template" id="each-dish-template">
+                        <div class="seeChart" style="font-size: 100%; text-align: center">{{dish_name}}</div>
+                        <div class="dish-chart">{{is_what}}</div>
+
+        </script>
+	<script type="text/x-mustache-template" id="pick-eatery-child-template">
+			<td class="eatery-row">{{eatery_name}}</td>
+			<td>{{trending1}}</td>
+			<td>{{trending2}}</td>
+			<td>{{cost}}</td>
+			<td>{{service}}</td>
+			<td>{{ambience}}</td>
+			
+        </script>
+
+	<div class="row" >
+		<div class="col s12 m2 l2 #616161 grey darken-2" style="height: 100%;  text-align: center; ">
+					<h4 style="text-align: center; margin-top: 10%; margin-bottom: 0%;" class="deepshadow">HyPOST</h4> 
+
+						<!-- feedback button-->
+						<a class="waves-effect waves-light feedbackForm modal-trigger" style="margin-top: 30% ; margin-bottom: 0; color: black" href="#modal1">  feedback</a>
+											<p> What you think of us or do you have any suggestions for us</p>
+						<div id="modal1" class="modal bottom-sheet #006064 cyan darken-4">
+							<div class="modal-content #006064 cyan darken-4">
+									<div class="row">
+				   						<form class="col s12" id="feedback">
+					    						<div class="row">
+            											<div class="input-field col s6">
+													<i class="material-icons prefix">account_circle</i>
+													<input id="icon_prefix" type="text" class="validate">
+													<label for="icon_prefix">First Name</label>
+												</div>
+												<div class="input-field col s6">
+													<i class="material-icons prefix">phone</i>
+													<input id="icon_telephone" type="tel" class="validate">
+													<label for="icon_telephone">Telephone</label>
+												</div>
+											
+											</div>
+      											<div class="row">
+        											<div class="input-field col s4">
+													<i class="material-icons prefix">email</i>
+            												<input id="email" type="email" class="validate">
+          												<label for="email">Email</label>
+        											</div>
+      											</div>
+      											<div class="row">
+												<div class="input-field col s12">
+													<textarea id="textarea1" class="materialize-textarea"></textarea>
+													<label for="textarea1">feedback</label>
+												</div>
+      											</div>
+      											<div class="row">
+												<a class="modal-action modal-close waves-effect waves-green">submit feedback</a>
+      											</div>
+    										</form>
+  									</div>    
+								</div>
+  							</div>    
+						<!-- feedback button finished-->
+						</br>
+						
+						<!-- How it works button started-->
+						<a class="waves-effect waves-light modal-trigger3" style="margin-top: 15%; color: black; " href="#modal2">how it works</a>
+											<p>To see how we did everything and what problem it is solving</p>
+							<div id="modal2" class="modal bottom-sheet">
+								<div class="modal-content">
+										<div class="row valign-wrapper">
+											<div class="col s2">
+												<img src="css/images/404-error.png" alt="" class="circle responsive-img"> <!-- notice the "circle" class -->
+											</div>
+											<div class="col s10">
+												<span class="black-text">Sorry, Havent implemented yet, Please check with us after sometime.</span>
+											</div>
+																																	               </div>
+
+								</div>
+							</div>
+						<!-- How it works button finished-->
+						</br>
+
+						<!-- Enter your query button started-->
+						<a class="waves-effect waves-light modal-trigger2 tool-tipped " style="margin-top: 15%; color: black; " href="#modal3">  Enter your query</a>
+											<p>Let us help you finding, what you are looking for</p>
+							<div id="modal3" class="modal bottom-sheet  #006064 cyan darken-4">
+								<div class="modal-content  #006064 cyan darken-4">
+									<div class="row">
+				   						<form id="searchQuery">
+											<div class="input-field col s12">
+												<textarea id="textarea1" class="materialize-textarea"></textarea>
+          											<label for="textarea1">Where to go, What to eat?</label>
+											</div>
+											<a class="waves-effect waves-light modal-action modal-close" ><i class="material-icons">done_all</i>Submit</a>
+    										</form>
+  									</div>    
+								</div>
+  							</div>    
+						
+						<!-- Enter your query button finished-->
+						</br>
+
+						<a class="waves-effect waves-light modal-trigger4" style="margin-top: 15%; color: black; " href="#modal4">pick eatery</a>
+											<p>Choose from our list of eateries</p>
+							<div id="modal4" class="modal bottom-sheet">
+								<div class="modal-content #006064 cyan darken-4">
+
+                							<div id="eatery-content">Dynamic Content goes here</div>
+									<div id="eatery-page-selection"></div>		
+								</div>
+							</div>
+						</br>
+						
+						<!-- dropdown for eatery button finished-->
+						
+			
+			</div><!--column left finished -->
+
+			<div class="col s12 m10 l10 #33691e light-green lighten-4 z-depth-5">
+				<div id="map-canvas" style="height: 40%">
+				</div>
+				
+				<div id="popular-or-trending">
+						<div class="grid">
+							  <!-- .grid-sizer empty element, only used for element sizing -->
+							    <div class="grid-sizer"></div>
+							      <div class="grid-item"></div>
+							        <div class="grid-item grid-item--width2"></div>
+						</div>
+
+
+
+				</div>
+    			</div>
 		</div>
-			
-		<button id="idSubmit" class="btn btn-primary" style="text-align: center">Submit</button>
-		<button id="idCancel" class="btn btn-primary" style="text-align: center">Cancel</button>
 	
-		
-	</script>	
-	<script type="text/x-mustache-template" id="root-template">
-		<caption><b>Restaurants</b></caption>	
-		 <tbody class="append_eatery" >
-
-			
-		 </tbody>
-		
-
-
-	</script>
-	<script type="text/x-mustache-template" id="append-restaurant-template">
-		<td>
-			<label class="checkbox">
-				<input type="checkbox" value="{{eatery_name}}" id={{eatery_id}} class="change_eatery_id">
-				{{eatery_name}}
-			</label>
-		</td>
-	</script>
-
-
-
-<div class="container-fluid">                                                                                                              
-            <div class="row-fluid">   
-		                
-                
-		    <div class="navbar">
-			    <div class="page-header panel panel-default">
-			<h4>Mad Machines REProE<span class="label label-default" id="version">version 3.00</span></h4>       
+				
+<script type="text/x-mustache-template" id="write-review-template">
+      		<div class="row">
+			<div class="input-field col s12">
+				<textarea id="submit-review-textarea" class="materialize-textarea"></textarea>
+						<label for="textarea1">Write review for <i><b>{{eatery_name}}</b></i> located at <i><b>{{eatery_address}}</b></i></label>
 			</div>
-            </div>
-        	</div>
+      		</div>
+      		<div class="row">
+			<a class="waves-effect waves-green submit-review">submit review</a>
+      		</div>
+</script>							
 
-            
-        <div class="row-fluid new_body">
-        	<div class="row-fluid">
-			<div class="span2 side-bar">
-				<!--Sidebar content-->
-			</div>
-			<div class="span10 main-body">
-				<!--Body content-->
-			</div>
-		</div>	
-	
-        	<div class="row-fluid">
-			<div class="sentences">
-		</div>	
-		</div>	
-	
-	
-	
-	</div>
-	<!--
-	<script>
-		$("#version")
-		.mouseover(function() {
-			bootbox.alert("From now on, The version number will be based on git commits, so that we can keep up the track of code, on which this front end is running")
-    });
-</script>   
--->
-	<script src="js/Global-variables.js"></script>
-    <script src="js/router.js"></script>
-    <script src="js/main-backbone.js"></script>
-    <script src="js/word_cloud.js"></script>
-    <!-- <script src="js/for_one_page.js"></script> -->
-    
-    <script>$(function() { App.boot($('.dynamic_display_header')); });</script> 
+<script src="js/Global-variables.js"></script> 
+		<script src="js/Global-variables.js"></script>
+		<script src="js/router.js"></script>
+		<script src="js/search_word_clouds.js"></script>                                                                                          
+		<script src="js/index.js"></script>
+		<script>$(function() {App.boot($('body')); });</script>   
 
 
-    </body>
+	</body>
 </html>
-
-
-
 

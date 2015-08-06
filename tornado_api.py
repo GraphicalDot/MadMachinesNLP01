@@ -403,55 +403,17 @@ class ChangeTagOrSentiment(tornado.web.RequestHandler):
 
 
 class GetTrending(tornado.web.RequestHandler):
-        @property
-        def executor(self):
-                return self.application.executor
-
         @cors
 	@print_execution
 	@tornado.gen.coroutine
         def post(self):
                 """
-                Args:
-                    Location:
-                x_real_ip = self.request.headers.get("X-Real-IP")            
-                print self.request.remote_ip
-
-                location = self.get_argument("location")
-                if not location:
-                        location = None
-                
-                
-
                 """
                         
-                __result = yield self._exe("location")
-                result = dict()
-                for main_category, __out in __result.iteritems():
-                        __list = list()
-                        for item in __out:
-                                superpositive = item.pop("super-positive")
-                                supernegative= item.pop("super-negative")
-                                totalsentiments = item.pop("total_sentiments")
-                                item.update({"totalsentiments": totalsentiments, "superpositive": superpositive, "supernegative": supernegative})
-                                __list.append(item)
-                        result.update({main_category: __list})
-
-
-                for key, value in result.iteritems():
-                        for __value in value:
-                                __value.update(time_series(__value["timeline"]))
-                                __value.update({"subcategory": key})
-
-                self.write({"success": True,
-			"error": False,
-			"result": result,
-                        })
-                self.finish()
-        
-        @run_on_executor
-        def _exe(self, location):
-                result = ElasticSearchScripts.get_trending(location)
+                latitude = float(self.get_argument("lat"))
+                longitude = float(self.get_argument("lng"))
+                print type(longitude)
+                result = ElasticSearchScripts.get_trending(latitude, longitude)
                 return result
 
 

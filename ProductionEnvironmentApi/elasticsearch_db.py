@@ -72,52 +72,83 @@ class ElasticSearchScripts(object):
                                 __type: waitinghours
                     
                 """
-                
+                self.other_mappings = {'properties': {'eatery_id': {'type': 'string'},
+                                                    'eatery_name': {'type': 'string'},
+                                                    'location': {'type': 'geo_point'},
+                                                    'mention_factor': {'type': 'double'},
+                                                    'negative': {'type': 'long'},
+                                                    'neutral': {'type': 'long'},
+                                                    'positive': {'type': 'long'},
+                                                    'super-negative': {'type': 'long'},
+                                                    'super-positive': {'type': 'long'},
+                                                    'timeline': {'type': 'string'},
+                                                    'total_sentiments': {'type': 'long'},
+                                                    'trending_factor': {'type': 'double'}}}
+
+                """
                 if not ES_CLIENT.indices.exists("food"):
-                        ElasticSearchScripts.prep_food_index()
+                        self.prep_food_index()
                         
                 
                 if not ES_CLIENT.indices.exists("ambience"):
-                        ElasticSearchScripts.prep_ambience_index()
+                        self.prep_ambience_index()
                 
                 if not ES_CLIENT.indices.exists("cost"):
-                        ElasticSearchScripts.prep_cost_index()
+                        self.prep_cost_index()
                 
                 if not ES_CLIENT.indices.exists("service"):
-                        ElasticSearchScripts.prep_service_index()
-
+                        self.prep_service_index()
+                """
                 if renew_indexes:
-                        ElasticSearchScripts.prep_food_index()
+                        self.prep_food_index()
+                        
                         print "{0}Deleting INDEX=<<ambience>> {1}".format(bcolors.FAIL, bcolors.RESET)
-                        ES_CLIENT.indices.delete(index="ambience")
+                        try:
+                                ES_CLIENT.indices.delete(index="ambience")
+                        except Exception as e:
+                                print e
+                        
                         print "{0}Deleting INDEX=<<cost>> {1}".format(bcolors.FAIL, bcolors.RESET)
-                        ES_CLIENT.indices.delete(index="cost")
+                        try:
+                                ES_CLIENT.indices.delete(index="cost")
+                        except Exception as e:
+                                print e
                         print "{0}Deleting INDEX=<<service>> {1}".format(bcolors.FAIL, bcolors.RESET)
-                        ES_CLIENT.indices.delete(index="service")
+                        try:
+                                ES_CLIENT.indices.delete(index="service")
+                        except Exception as e:
+                                print e
 
                         print "{0}Creating INDEX=<<ambience>> {1}".format(bcolors.OKGREEN, bcolors.RESET)
-                        ElasticSearchScripts.prep_ambience_index()
+                        self.prep_ambience_index()
+                        
                         print "{0}Creating INDEX=<<cost>> {1}".format(bcolors.OKGREEN, bcolors.RESET)
-                        ElasticSearchScripts.prep_cost_index()
+                        self.prep_cost_index()
+                        
                         print "{0}Creating INDEX=<<service>> {1}".format(bcolors.OKGREEN, bcolors.RESET)
-                        ElasticSearchScripts.prep_service_index()
+                        self.prep_service_index()
                 return 
 
-        @staticmethod
-        def prep_ambience_index():
+        def prep_ambience_index(self):
                 ES_CLIENT.indices.create(index="ambience")
+                for __sub_category in AMBI_SUB_TAGS:
+                                ES_CLIENT.indices.put_mapping(index="ambience", doc_type=__sub_category, body = {__sub_category: self.other_mappings })
+                                print "{0}Mappings updated for  {1}  {2}".format(bcolors.OKGREEN, __sub_category, bcolors.RESET)
             
-        @staticmethod
-        def prep_cost_index():
+        def prep_cost_index(self):
                 ES_CLIENT.indices.create(index="cost")
+                for __sub_category in COST_SUB_TAGS:
+                                ES_CLIENT.indices.put_mapping(index="cost", doc_type=__sub_category, body = {__sub_category: self.other_mappings })
+                                print "{0}Mappings updated {1} for {2}".format(bcolors.OKGREEN, __sub_category, bcolors.RESET)
         
             
-        @staticmethod
-        def prep_service_index():
+        def prep_service_index(self):
                 ES_CLIENT.indices.create(index="service")
+                for __sub_category in SERV_SUB_TAGS:
+                                ES_CLIENT.indices.put_mapping(index="service", doc_type=__sub_category, body = {__sub_category: self.other_mappings })
+                                print "{0}Mappings updated {1} for {2}".format(bcolors.OKGREEN, __sub_category, bcolors.RESET)
 
-        @staticmethod
-        def prep_food_index():
+        def prep_food_index(self):
                 """
                 Two indexes will be created one for the restaurants and one for the dishes
                 index:
@@ -135,163 +166,97 @@ class ElasticSearchScripts(object):
                         print "{0} Index Food doesnt exists {1}".format(bcolors.FAIL, bcolors.RESET)
                         print e
 
-                __settings = {
-                                "settings": {
-                                        "analysis": {
-                                                "analyzer": {
-                                                        "phonetic_analyzer": {
-                                                            "type": "custom",
-                                                            "tokenizer" : "whitespace",
-                                                            "filter": ["lowercase", "asciifolding", "standard", "custom_metaphone"],
-                                                                    },
-                                                        "keyword_analyzer": {
-                                                            "type": "custom",
-                                                            "tokenizer" : "keyword",
-                                                            "filter": ["lowercase", "asciifolding"],
-                                                                    },
-                                                        "shingle_analyzer": {
-                                                            "type": "custom",
-                                                            "tokenizer" : "ngram_tokenizer",
-                                                            "filter": ["lowercase", "asciifolding", "shingle_tokenizer"],
-                                                                    },
-                                                        "custom_analyzer": {
-                                                            "type": "custom",
-                                                            "tokenizer" : "ngram_tokenizer",
-                                                            "filter": ["lowercase", "asciifolding"],
-                                                                    },
-                                                        "custom_analyzer_two": {
-                                                            "type": "custom",
-                                                            "tokenizer" : "limited_tokenizer",
-                                                            "filter": ["lowercase", "asciifolding"],
-                                                                    },
-                                                        "standard_analyzer": {
-                                                                "type": "custom", 
-                                                                "tokenizer": "standard",
-                                                                "filter": ["lowercase", "asciifolding"],
-                                                                }
-                                                        },
-                                                "tokenizer": {
-                                                        "ngram_tokenizer": {
-                                                                "type" : "edgeNGram",
-                                                                "min_gram" : 2,
-                                                                "max_gram" : 100,
-                                                                "token_chars": [ "letter", "digit" ]
-                                                                },
-                                                        "limited_tokenizer": {
-                                                                "type" : "edgeNGram",
-                                                                "min_gram" : "2",
-                                                                "max_gram" : "10",
-                                                                "token_chars": [ "letter", "digit" ]
-                                                                },
-                                                        }, 
-                                                "filter": {
-                                                            "shingle_tokenizer": {
-                                                                "type" : "shingle",
-                                                                "min_shingle_size" : 2,
-                                                                "max_shingle_size" : 5,
-                                                                },
+                __settings = {'settings': {'analysis': {'analyzer': {'custom_analyzer': {'filter': ['lowercase',
+                              'asciifolding'],
+                                   'tokenizer': 'ngram_tokenizer',
+                                        'type': 'custom'},
+                                            'custom_analyzer_two': {'filter': ['lowercase', 'asciifolding'],
+                                                     'tokenizer': 'limited_tokenizer',
+                                                          'type': 'custom'},
+                                                'keyword_analyzer': {'filter': ['lowercase', 'asciifolding'],
+                                                         'tokenizer': 'keyword',
+                                                              'type': 'custom'},
+                                                    'phonetic_analyzer': {'filter': ['lowercase',
+                                                              'asciifolding',
+                                                                    'standard',
+                                                                          'custom_metaphone'],
+                                                                               'tokenizer': 'whitespace',
+                                                                                    'type': 'custom'},
+                                                        'shingle_analyzer': {'filter': ['lowercase',
+                                                                  'asciifolding',
+                                                                        'shingle_tokenizer'],
+                                                                             'tokenizer': 'ngram_tokenizer',
+                                                                                  'type': 'custom'},
+                                                            'standard_analyzer': {'filter': ['lowercase', 'asciifolding'],
+                                                                     'tokenizer': 'standard',
+                                                                          'type': 'custom'}},
+                                                               'filter': {'custom_metaphone': {'encoder': 'metaphone',
+                                                                        'replace': False,
+                                                                             'type': 'phonetic'},
+                                                                                 'shingle_tokenizer': {'max_shingle_size': 5,
+                                                                                          'min_shingle_size': 2,
+                                                                                               'type': 'shingle'}},
+                                                                                    'tokenizer': {'limited_tokenizer': {'max_gram': '10',
+                                                                                             'min_gram': '2',
+                                                                                                  'token_chars': ['letter', 'digit'],
+                                                                                                       'type': 'edgeNGram'},
+                                                                                                           'ngram_tokenizer': {'max_gram': 100,
+                                                                                                                    'min_gram': 2,
+                                                                                                                         'token_chars': ['letter', 'digit'],
+                                                                                                                              'type': 'edgeNGram'}}}}}
 
-                                                            "custom_metaphone": {
-                                                                    "type" : "phonetic",
-                                                                    "encoder" : "metaphone",
-                                                                    "replace" : False
-                                                                    }
-                                                            }
-                                                }
-                                        }}
+
+
+
+
+
+
 
                 print "{0}Settings updated {1}".format(bcolors.OKGREEN, bcolors.RESET)
 
                 ES_CLIENT.indices.create(index="food", body=__settings)
-                __mappings = {'dishes': {
-                                 '_all' : {'enabled' : True},
-                                'properties': 
-                                                {'name': 
-                                                        {
-                                                            #'analyzer': 'custom_analyzer', 
-                                                            'type': 'string', 
-                                                            'copy_to': ['dish_raw', 'dish_shingle', "dish_phonetic"],
-                                                            },
-                                                    
-                                                    
-                                        'dish_phonetic': {
-                                                    'type': 'string', 
-                                                    'analyzer': 'phonetic_analyzer',
-                                                    },
-                                        'dish_shingle': {
-                                                    'type': 'string', 
-                                                    'analyzer': 'shingle_analyzer',
-                                                    },
-                                        'dish_raw': {
-                                                    'type': 'string', 
-                                                    'analyzer': 'keyword_analyzer',
-                                                    },
+                __mappings = {'dishes': {'_all': {'enabled': True},
+                          'properties': {'dish_phonetic': {'analyzer': 'phonetic_analyzer',
+                                  'type': 'string'},
+                                     'dish_raw': {'analyzer': 'keyword_analyzer', 'type': 'string'},
+                                        'dish_shingle': {'analyzer': 'shingle_analyzer', 'type': 'string'},
+                                           'eatery_id': {'index': 'not_analyzed', 'type': 'string'},
+                                              'eatery_name': {'copy_to': ['eatery_shingle', 'eatery_raw'],
+                                                      'type': 'string'},
+                                                 'eatery_raw': {'analyzer': 'keyword_analyzer', 'type': 'string'},
+                                                    'eatery_shingle': {'analyzer': 'shingle_analyzer', 'type': 'string'},
+                                                       'location': {'type': 'geo_point'},
+                                                          'mention_factor': {'type': 'double'},
+                                                             'name': {'copy_to': ['dish_raw', 'dish_shingle', 'dish_phonetic'],
+                                                                     'type': 'string'},
+                                                                'negative': {'type': 'long'},
+                                                                   'neutral': {'type': 'long'},
+                                                                      'positive': {'type': 'long'},
+                                                                         'similar': {'properties': {'name': {'copy_to': ['dish_raw',
+                                                                                    'dish_shingle',
+                                                                                           'dish_phonetic'],
+                                                                                                 'type': 'string'},
+                                                                                                      'negative': {'type': 'long'},
+                                                                                                           'neutral': {'type': 'long'},
+                                                                                                                'positive': {'type': 'long'},
+                                                                                                                     'super-negative': {'type': 'long'},
+                                                                                                                          'super-positive': {'type': 'long'},
+                                                                                                                               'timeline': {'type': 'string'}}},
+                                                                            'super-negative': {'type': 'long'},
+                                                                               'super-positive': {'type': 'long'},
+                                                                                  'timeline': {'type': 'string'},
+                                                                                     'total_sentiment': {'type': 'integer'},
+                                                                                        'trending_factor': {'type': 'double'}}}}
 
-                                        'eatery_shingle': {
-                                                    'type': 'string', 
-                                                    'analyzer': 'shingle_analyzer',
-                                                    },
+                    
+                    
+                    
 
-                                        'eatery_raw': {
-                                                    'type': 'string', 
-                                                    'analyzer': 'keyword_analyzer',
-                                                    },
-                                        
-                                        'negative': {'type': 'long'},
-                                        'neutral': {'type': 'long'},
-                                        'positive': {'type': 'long'},
-                                        'similar': {
-                                                'properties': {'name': 
-                                                                    {
-                                                                        'type': 'string', 
-                                                                        'copy_to': ['dish_raw', 'dish_shingle', "dish_phonetic"],
-                                                                    
-                                                                    },
-                                                            'negative': {
-                                                                     'type': 'long'},
-                                                            'neutral': {
-                                                                    'type': 'long'},
-                                                            'positive': {
-                                                                    'type': 'long'},
-                                                            'super-negative': {
-                                                                    'type': 'long'},
-                                                            'super-positive': {
-                                                                    'type': 'long'},
-                                                            'timeline': {
-                                                                'type': 'string'}
-                                                            }
-                                                },
-   
-                                        'super-negative': {
-                                                    'type': 'long'},
-                                        'super-positive': {
-                                                    'type': 'long'},
-                                        'eatery_name': {
-                                                            'type': 'string', 
-                                                            'copy_to': ['eatery_shingle', "eatery_raw"],
-                                                    },
-                                        'eatery_id': {
-                                                    'type': 'string', 
-                                                    'index': 'not_analyzed',
-                                                    },
-                                        'total_sentiment': {
-                                                    'type': 'integer', 
-                                                    },
-                                        'trending_factor': {
-                                                    'type': 'double', 
-                                                    },
-                                        'mention_factor': {
-                                                    'type': 'double', 
-                                                    },
-                                        'location': {
-                                                    'type': 'geo_point',
-                                                },
-                                        'timeline': {
-                                            'type': 'string'}}}}
-                
                 try:
                         ES_CLIENT.indices.put_mapping(index="food", doc_type="dishes", body = __mappings)
                         print "{0}Mappings updated {1}".format(bcolors.OKGREEN, bcolors.RESET)
+                
+                
                 except Exception as e:
                         print "{0}Mappings update Failed with error {1} {2}".format(bcolors.FAIL, e, bcolors.RESET)
 
@@ -443,60 +408,94 @@ class ElasticSearchScripts(object):
 
 
         @staticmethod
-        def get_trending(location):
+        def get_trending(latitude, longitude):
                 """
                 """
-                food_body = {"_source": ["name", "eatery_name", "positive", "negative", "neutral", "super-positive", "super-negative", "total_sentiments",  "timeline"],
-                            "from": 0, 
-                            "size": 4, 
-                            "query" : {
-                                  "match_all": {}
-                                     },
-                              "sort" : [
-                                        {"trending_factor" : {"order" : "desc"}}
-                                           ]
-                              }
+
+                food_body = {"_source": ["name", "eatery_name", "positive", "negative", "neutral", "super-positive", "super-negative", "total_sentiments"],
+                        "from": 0, 
+                        "size": 5, 
+                        "sort": [
+                                {"trending_factor" : {"order" : "desc"}}
+                                ],
+                        "query": {
+                                "match_all": {}
+                                            },
+                        "filter": {
+                                "geo_distance": {
+                                        "distance": "5km",
+                                        "location": {
+                                                "lat": latitude,
+                                                "lon": longitude
+                                                    }
+                                                }     
+                                }
+                        }
 
                 trending_dishes = ES_CLIENT.search(index="food", doc_type="dishes", body=food_body)
                 
-                ambience_body = { "_source": ["name", "eatery_name", "positive", "negative", "neutral", "super-positive", "super-negative", "total_sentiments", "timeline"], 
-                            "from": 0, 
-                            "size": 2,
-                            "query": {
-                                    "match_all": {}
-                                     },
-                            "sort": [
-                                    {"trending_factor": {
-                                                "order" : "desc"}}
-                                           ]
-                              }
+                ambience_body = {"_source": ["name", "eatery_name", "positive", "negative", "neutral", "super-positive", "super-negative", "total_sentiments"],
+                        "from": 0, 
+                        "size": 1, 
+                        "sort": [
+                                {"trending_factor" : {"order" : "desc"}}
+                                ],
+                        "query": {
+                                "match_all": {}
+                                            },
+                        "filter": {
+                                "geo_distance": {
+                                        "distance": "5km",
+                                        "location": {
+                                                "lat": latitude,
+                                                "lon": longitude
+                                                    }
+                                                }     
+                                }
+                        }
                 
                 trending_ambience = ES_CLIENT.search(index="ambience", doc_type="ambience-overall", body=ambience_body)
-                cost_body = { "_source": ["name", "eatery_name", "positive", "negative", "neutral", "super-positive", "super-negative", "total_sentiments",  "timeline"], 
-                            "from": 0, 
-                            "size": 2,
-                            "query": {
-                                    "match_all": {}
-                                     },
-                            "sort": [
-                                    {"trending_factor": {
-                                            "order" : "desc"}}
-                                           ]
-                              }
-
+                cost_body = {"_source": ["name", "eatery_name", "positive", "negative", "neutral", "super-positive", "super-negative", "total_sentiments"],
+                        "from": 0, 
+                        "size": 1, 
+                        "sort": [
+                                {"trending_factor" : {"order" : "desc"}}
+                                ],
+                        "query": {
+                                "match_all": {}
+                                            },
+                        "filter": {
+                                "geo_distance": {
+                                        "distance": "5km",
+                                        "location": {
+                                                "lat": latitude,
+                                                "lon": longitude
+                                                    }
+                                                }     
+                                }
+                        }
                 
                 trending_cost = ES_CLIENT.search(index="cost", doc_type="value for money", body=cost_body)
-                service_body = { "_source": ["name", "eatery_name", "positive", "negative", "neutral", "super-positive", "super-negative", "total_sentiments", "timeline"], 
-                            "from": 0, 
-                            "size": 2,
-                            "query": {
-                                    "match_all": {}
-                                     },
-                            "sort": [
-                                    {"trending_factor": {
-                                            "order" : "desc"}}
-                                           ]
-                              }
+                
+                service_body = {"_source": ["name", "eatery_name", "positive", "negative", "neutral", "super-positive", "super-negative", "total_sentiments"],
+                        "from": 0, 
+                        "size": 1, 
+                        "sort": [
+                                {"trending_factor" : {"order" : "desc"}}
+                                ],
+                        "query": {
+                                "match_all": {}
+                                            },
+                        "filter": {
+                                "geo_distance": {
+                                        "distance": "5km",
+                                        "location": {
+                                                "lat": latitude,
+                                                "lon": longitude
+                                                    }
+                                                }     
+                                }
+                        }
                 trending_service = ES_CLIENT.search(index="service", doc_type="service-overall", body=service_body)
                 return {
                         "food": ElasticSearchScripts.process_result(trending_dishes),  
@@ -843,5 +842,8 @@ class ElasticSearchScripts(object):
                 result = ES.search(index='food', doc_type='dishes', body=body)
 
 if __name__ == "__main__":
-        ElasticSearchScripts(renew_indexes=True)
+            """
+    
+            """
+            ElasticSearchScripts(renew_indexes=True)
 
