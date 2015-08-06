@@ -283,6 +283,9 @@ class ElasticSearchScripts(object):
                                         'mention_factor': {
                                                     'type': 'double', 
                                                     },
+                                        'location': {
+                                                    'type': 'geo_point',
+                                                },
                                         'timeline': {
                                             'type': 'string'}}}}
                 
@@ -349,6 +352,7 @@ class ElasticSearchScripts(object):
                 
 
                 eatery = eateries_results_collection.find_one({"eatery_id": eatery_id})
+                latitude, longitude = eatery.get("eatery_coordinates")
                 eatery_name = eatery.get("eatery_name")
                 food_data = eatery["food"]
                 ambience_data = eatery["ambience"]
@@ -364,6 +368,7 @@ class ElasticSearchScripts(object):
                                         for __dish in sub_data:
                                                 __dish.update({"eatery_id": eatery_id})
                                                 __dish.update({"eatery_name": eatery_name})
+                                                __dish.update({"location": {"lon": longitude, "lat": latitude}})
                                                 l = ES_CLIENT.index(index="food", doc_type=sub_category, body=__dish)
                                                 print l 
                                 else:
@@ -371,6 +376,7 @@ class ElasticSearchScripts(object):
                                         	sub_data = data[sub_category]
                                         	sub_data.update({"eatery_id": eatery_id})
                                         	sub_data.update({"eatery_name": eatery_name})
+                                                sub_data.update({"location": {"lon": longitude, "lat": latitude}})
 
                                         	l = ES_CLIENT.index(index=category, doc_type=sub_category, body=sub_data)
                                 	except Exception as e:
