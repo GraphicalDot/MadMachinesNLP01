@@ -1,28 +1,60 @@
 <html>
 <head>
-<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
- <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?sensor=false"></script>
- <script type="text/javascript">
-function myIP(){
-	$("#btn").click(function(){
+<link href="js/rotating//bootstrap.css" rel="stylesheet" />
+              <link href="js/rotating/rotating-card.css" rel="stylesheet" />
+              <link href="http://netdna.bootstrapcdn.com/font-awesome/4.1.0/css/font-awesome.min.css" rel="stylesheet" />
 
-			            var geocoder =  new google.maps.Geocoder();
-				        geocoder.geocode( { 'address': $('#city').val()}, function(results, status) {
-						          if (status == google.maps.GeocoderStatus.OK) {
-							              $('.push-down').text("location : " + results[0].geometry.location.lat() + " " +results[0].geometry.location.lng()); 
-								                } else {
-										            $('.push-down').text("Something got wrong " + status);
-											              }
-												              });
-					});
-}
- </script>
-   <style>
-    .push-down {margin-top: 25px;}</style>
-   </head>
-   <body onload="myIP()">
-   <input type="text" id= "city">
-   <input id="btn" type="button" value="get Lat&Long" />
-     <div class="push-down"></div>
-     </body>
-     </html>
+</head>
+<body>
+	<div class="card-container">
+                <div class="card">
+                    <div class="front">
+                        <div class="cover">
+                            <img src="images/rotating_card_thumb3.png"/>
+                        </div>
+                        <div class="user">
+                            <img class="img-circle" src="images/rotating_card_profile.png"/>
+                        </div>
+                        <div class="content">
+                            <div class="main">
+                                <h3 class="name">Inna Corman</h3>
+                                <p class="profession">Product Manager</p>
+                                <h5><i class="fa fa-map-marker fa-fw text-muted"></i> Paris, France</h5>
+                                <h5><i class="fa fa-building-o fa-fw text-muted"></i> Creative Tim Inc. </h5>
+                                <h5><i class="fa fa-envelope-o fa-fw text-muted"></i> inna@creative-tim.com</h5>
+                            </div>
+                            <div class="footer">
+                                <div class="rating">
+                                    <i class="fa fa-star"></i>
+                                    <i class="fa fa-star"></i>
+                                    <i class="fa fa-star"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div> <!-- end front panel -->
+                    <div class="back">
+                        <div class="header">
+                            <h5 class="motto">"To be or not to be, this is my awesome motto!"</h5>
+                        </div> 
+                        <div class="content">
+                            <div class="main">
+                                <h4 class="text-center">Experince</h4>
+                                <p>Inna was working with our team since 2012.</p>
+                                <h4 class="text-center">Areas of Expertise</h4>
+                                <p>Web design, Adobe Photoshop, HTML5, CSS3, Corel and many others...</p>
+                            </div>
+                        </div>
+                        <div class="footer">
+                            <div class="social-links text-center">
+                                <a href="http://creative-tim.com" class="facebook"><i class="fa fa-facebook fa-fw"></i></a>
+                                <a href="http://creative-tim.com" class="google"><i class="fa fa-google-plus fa-fw"></i></a>
+                                <a href="http://creative-tim.com" class="twitter"><i class="fa fa-twitter fa-fw"></i></a>
+                            </div>
+                        </div>
+                    </div> <!-- end back panel -->
+                </div> <!-- end card -->
+            </div> <!-- end card-container -->
+            
+
+</body>
+</html>

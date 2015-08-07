@@ -11,7 +11,7 @@
 	  content: '';
 	    display: block;
 	      clear: both;
-      }
+}
 
       /* ---- .element-item ---- */
 
@@ -23,7 +23,6 @@
 
 	.grid-item {
 		  float: left;
-		  margin: 1px 1px 1px 10px;
 	  }
 
 		  .grid-item--width2 { width: 40%; }

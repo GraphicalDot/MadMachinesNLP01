@@ -407,6 +407,10 @@ App.BodyView = Backbone.View.extend({
 					$(".trending-bar-chart").html(subView.render().el);	
 				}
 			
+				  $('.collapsible').collapsible({
+				        accordion : false // A setting that changes the collapsible behavior to expandable instead of the default accordion style
+				    });	 
+				 /* 
 				$('#popular-or-trending').isotope({
 					  itemSelector: '.grid-item',
 					  percentPosition: true, animationEngine: 'css',  resizable: false,
@@ -415,8 +419,7 @@ App.BodyView = Backbone.View.extend({
 						           columnWidth: '.grid-sizer'
 						             }
 						            })
-			
-			
+				*/
 			})
 			};
 
