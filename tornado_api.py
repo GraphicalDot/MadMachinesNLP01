@@ -414,7 +414,12 @@ class GetTrending(tornado.web.RequestHandler):
                 longitude = float(self.get_argument("lng"))
                 print type(longitude)
                 result = ElasticSearchScripts.get_trending(latitude, longitude)
-                return result
+                self.write({"success": True,
+			        "error": False,
+			        "result": result,
+			        })
+                self.finish()
+                return 
 
 
 

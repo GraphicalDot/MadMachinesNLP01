@@ -237,7 +237,7 @@
 			
 			</div><!--column left finished -->
 
-			<div class="col s12 m10 l10 #33691e light-green lighten-4 z-depth-5">
+			<div class="col s12 m10 l10">
 				<div id="map-canvas" style="height: 40%">
 				</div>
 				
@@ -245,8 +245,6 @@
 						<div class="grid">
 							  <!-- .grid-sizer empty element, only used for element sizing -->
 							    <div class="grid-sizer"></div>
-							      <div class="grid-item"></div>
-							        <div class="grid-item grid-item--width2"></div>
 						</div>
 
 
@@ -255,7 +253,29 @@
     			</div>
 		</div>
 	
-				
+<script type="text/x-mustache-template" id="data-template">
+		<p>Trending in {{category}}</p>
+		<p>name: {{name}}</p>
+		<p>positive: {{positive}}</p>
+		<p>negative: {{negative}}</p>
+		<p>At {{eatery_name}}</p>
+</script>
+<script type="text/x-mustache-template" id="olddata-template">
+	<div class="flip-container" ontouchstart="this.classList.toggle('hover');">
+	<div class="flipper">
+		<div class="front">
+		<p>Trending in {{category}}</p>
+		<p>name: {{name}}</p>
+		<p>At {{eatery_name}}</p>
+		</div>
+		<div class="back">
+		<p>positive: {{positive}}</p>
+		<p>negative: {{negative}}</p>
+		</div>
+	</div>
+</div>
+
+</script>
 <script type="text/x-mustache-template" id="write-review-template">
       		<div class="row">
 			<div class="input-field col s12">

@@ -10,6 +10,7 @@ cffi==1.1.0
 cluster==1.1.2
 cryptography==0.9
 cssselect==0.9.1
+dnspython==1.12.0
 ecdsa==0.13
 elasticsearch==1.5.0
 enum34==1.0.4
@@ -19,12 +20,12 @@ Flask==0.10.1
 Flask-RESTful==0.2.12
 flower==0.7.3
 futures==3.0.2
-Fuzzy==1.0.post0
 gevent==1.0.1
 goose-extractor==1.0.22
 greenlet==0.4.2
 gunicorn==19.1.0
 idna==2.0
+ipaddr==2.1.11
 ipaddress==1.0.7
 ipwhois==0.10.2
 ipython==3.1.0

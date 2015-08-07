@@ -5,12 +5,29 @@
 @import url(http://fonts.googleapis.com/css?family=Marko+One);
 
 
-.grid-sizer,
-.grid-item { width: 20%; }
-/* 2 columns wide */
-.grid-item--width2 { width: 40%; }
 
 
+.grid:after {
+	  content: '';
+	    display: block;
+	      clear: both;
+      }
+
+      /* ---- .element-item ---- */
+
+      /* 5 columns, percentage width */
+      .grid-item,
+      .grid-sizer {
+	        width: 20%;
+	}
+
+	.grid-item {
+		  float: left;
+		  margin: 1px 1px 1px 10px;
+	  }
+
+		  .grid-item--width2 { width: 40%; }
+		  .grid-item--height2 { height: 200px; }
 
 
 

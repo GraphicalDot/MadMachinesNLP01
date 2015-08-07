@@ -384,6 +384,39 @@ App.BodyView = Backbone.View.extend({
 					var subView = new App.ErrorView();
 					$(".trending-bar-chart").html(subView.render().el);	
 				}
+			
+			})
+			var jqhr = $.post(window.get_trending, {"lat": latitude, "lng": longitude,})	
+			jqhr.done(function(data){
+				console.log(data.result);
+				if (data.error == false){
+					$.each(["food", "service", "cost", "ambience"], function(iter, category){
+						$.each(data.result[category], function(iter2, model){
+							console.log(model)
+							model["category"] = category   
+							var subview = new App.DataView({"model": model})
+							$(".grid-sizer").append(subview.render().el);
+						   }) 
+						 });   		 
+				
+				
+				
+				}
+				else{
+					var subView = new App.ErrorView();
+					$(".trending-bar-chart").html(subView.render().el);	
+				}
+			
+				$('#popular-or-trending').isotope({
+					  itemSelector: '.grid-item',
+					  percentPosition: true, animationEngine: 'css',  resizable: false,
+					  masonry: {
+						      // use outer width of grid-sizer for columnWidth
+						           columnWidth: '.grid-sizer'
+						             }
+						            })
+			
+			
 			})
 			};
 
@@ -454,6 +487,29 @@ App.BodyView = Backbone.View.extend({
 });
 
 
+App.DataView = Backbone.View.extend({
+	className: "grid-item card-panel teal lighten-2 z-depth-3",
+	template: window.template("data"),
+	category : function(){ return this.model.category},
+	name : function(){ return this.model.name},
+	positive : function(){ return this.model.positive},
+	negative : function(){ return this.model.negative},
+	eatery_name : function(){ return this.model.eatery_name},
+	initialize: function(options){
+		var self = this;
+		this.model = options.model;
+		},
+
+	render: function(){
+		var self = this;
+		this.$el.append(this.template(this));
+		this.$el.attr("width",  "20%");
+		return this;
+	},
+
+});
+	
+	
 App.MainView = Backbone.View.extend({
 	className: "row",
 	template: window.template("root"),
