@@ -163,29 +163,24 @@ App.PickEateryChild = Backbone.View.extend({
 		//Closing the parent eatery modal box
 		$('#modal4').closeModal();
 			var jqhr = $.post(window.get_trending, {"lat": lat, "lng": lon,})	
-			$(".grid-sizer").html("")
+
 			jqhr.done(function(data){
 				console.log(data.result);
 				if (data.error == false){
-					var toRemove = $(".grid").data('isotope').$filteredAtoms;
-
-					$(".grid").isotope('remove',toRemove);
-					var list = []
+					//This removes existing isotopes elements
+					$.each($(".grid-item"), function(iter, element){ $(".grid").isotope("remove", $(element)) })
+					
+				
 					$.each(["food", "service", "cost", "ambience"], function(iter, category){
 						$.each(data.result[category], function(iter2, model){
-							
-							console.log(model)
 							model["category"] = category   
 							var subview = new App.DataView({"model": model})
-							list.push(subview.render().el);	
-							
-							
-							
-							//$(".grid-sizer").append(subview.render().el);
-						   })
-					       		console.log(list)	
-							$(".grid").isotope('insert',$(list));
+							//list.push(subview.render().el);	
+							$(".grid").isotope('insert', subview.render().el);
+					    		$(".grid").isotope('layout');	
 					    		$(".grid").isotope('shuffle');	
+							
+						   })
 						 });   		 
 				
 				
@@ -373,7 +368,7 @@ App.BodyView = Backbone.View.extend({
 							console.log(model)
 							model["category"] = category   
 							var subview = new App.DataView({"model": model})
-							$(".grid-sizer").append(subview.render().el);
+							$(".grid").append(subview.render().el);
 						   }) 
 						 });   		 
 				
@@ -388,15 +383,21 @@ App.BodyView = Backbone.View.extend({
 				  $('.collapsible').collapsible({
 				        accordion : false // A setting that changes the collapsible behavior to expandable instead of the default accordion style
 				    });	 
-				$('.grid').isotope({
+				var $grid = $('.grid').isotope({
 						 transitionDuration: '0.8s',	
 						itemSelector: '.grid-item',
-					  percentPosition: true, animationEngine: 'css',  resizable: false,
+					  percentPosition: true,
 					  masonry: {
 						      // use outer width of grid-sizer for columnWidth
-						           columnWidth: '.grid-sizer'
+						           columnWidth: 200, 
 						             }
-						            })
+					            })
+
+				$grid.isotope( 'on', 'arrangeComplete', function() {
+					    console.log('arrange is complete');
+					      });
+				  // manually trigger initial layout
+				  $grid.isotope();
 			})
 			
 		};
@@ -419,7 +420,7 @@ App.BodyView = Backbone.View.extend({
 		$("#eatery-content").html(subview.render().el); // or some ajax content loading...
 
 		$('#eatery-page-selection').bootpag({
-				total: 26,
+				total: 700,
 				page: 1,
 				maxVisible: 10,
 				leaps: true,
@@ -540,7 +541,7 @@ App.BodyView = Backbone.View.extend({
 
 
 App.DataView = Backbone.View.extend({
-	className: "grid-item card-panel teal lighten-2 z-depth-3",
+	className: "grid-item card-panel teal lighten-2 z-depth-3 grid-item--width2 grid-item--height2",
 	template: window.template("data"),
 	category : function(){ return this.model.category},
 	name : function(){ return this.model.name},
@@ -555,9 +556,6 @@ App.DataView = Backbone.View.extend({
 	render: function(){
 		var self = this;
 		this.$el.append(this.template(this));
-		
-		this.$el.attr("width",  "20%");
-		this.$el.attr("id",  "f1_container");
 		return this;
 	},
 
