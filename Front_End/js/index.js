@@ -410,7 +410,6 @@ App.BodyView = Backbone.View.extend({
 				  $('.collapsible').collapsible({
 				        accordion : false // A setting that changes the collapsible behavior to expandable instead of the default accordion style
 				    });	 
-				 /* 
 				$('#popular-or-trending').isotope({
 					  itemSelector: '.grid-item',
 					  percentPosition: true, animationEngine: 'css',  resizable: false,
@@ -419,7 +418,6 @@ App.BodyView = Backbone.View.extend({
 						           columnWidth: '.grid-sizer'
 						             }
 						            })
-				*/
 			})
 			};
 
@@ -506,7 +504,9 @@ App.DataView = Backbone.View.extend({
 	render: function(){
 		var self = this;
 		this.$el.append(this.template(this));
+		
 		this.$el.attr("width",  "20%");
+		this.$el.attr("id",  "f1_container");
 		return this;
 	},
 
