@@ -27,18 +27,6 @@ var height = Math.max($("#left").height(), $("#right").height());
 $('.scrollspy').scrollSpy();
        
 
-$('.modal-trigger3').leanModal({
-
-	//This is for how it works options, Whihch hasnt been implemented yet
-	dismissible: true, // Modal can be dismissed by clicking outside of the modal
-	opacity: .5, // Opacity of modal background
-	in_duration: 300, // Transition in duration
-	out_duration: 200, // Transition out duration
-	complete: function() { 
-			
-			}
-		    }
-		      );
 $('.modal-trigger').leanModal({
 	//This is for the feedback form 
 	dismissible: true, // Modal can be dismissed by clicking outside of the modal
@@ -59,52 +47,10 @@ $('.modal-trigger').leanModal({
 				}
 	} // Callback for Modal close
 		    });
-$('.modal-trigger2').leanModal({
-	//This is for taking in user query for the search
 
-	dismissible: true, // Modal can be dismissed by clicking outside of the modal
-	opacity: .5, // Opacity of modal background
-	in_duration: 300, // Transition in duration
-	out_duration: 200, // Transition out duration
-	complete: function() { 
-					value  = $("#searchQuery textarea").val()
-					console.log(value)
-			if (value == ""){
-				Materialize.toast('Please write something to let us, help you finding the awesomeness', 2000)
-				}
-			else{
-				Materialize.toast('Please wait while we process your Query', 2000)
-			
-		var jqhr = $.post(window.resolve_query, {"text": value})	
-		jqhr.done(function(data){
-			if (data.error == false){
-				$(".show-sentences").html("");
-				console.log(data.result)
-				var subView = new App.DisplaySuggestion({"model": data.result})
-				$(".show-sentences").append(subView.render().el);
 
-					}
-			else{
-			}
-		})
-		
-		jqhr.fail(function(data){
-						
-		});
-			}
-			}}
-		      );
 
-$('.modal-trigger4').leanModal({
-	//This is for pick eatery
-	dismissible: true, // Modal can be dismissed by clicking outside of the modal
-	opacity: .5, // Opacity of modal background
-	in_duration: 300, // Transition in duration
-	out_duration: 200, // Transition out duration
-	complete: function() { 
-	} // Callback for Modal close
-		    });
-
+*/
 		      
 App.PickEatery = Backbone.View.extend({
 	//tagName: "fieldset",
@@ -117,7 +63,7 @@ App.PickEatery = Backbone.View.extend({
 	render: function(){
 		var table = '<table id="pickEatery">'+
 				'<thead>'+
-					'<tr>'+
+					'<tr style="color: #4EB1BA; font-weight: bold">'+
 						'<th data-field="id">eatery name</th>'+
 						'<th data-field="trending1">Trending 1</th>'+
 						'<th data-field="trending2">Trending 2</th>'+
@@ -176,6 +122,7 @@ App.PickEateryChild = Backbone.View.extend({
 		this.$el.attr("lat", this.model.eatery_coordinates[0]);
 		this.$el.attr("long", this.model.eatery_coordinates[1]);
 		this.$el.attr("eatery_id", this.model.eatery_id);
+		this.$el.attr("style", "color: #E9E9E9");
 		return this;
 
 	},
@@ -215,37 +162,49 @@ App.PickEateryChild = Backbone.View.extend({
 		});
 		//Closing the parent eatery modal box
 		$('#modal4').closeModal();
+			var jqhr = $.post(window.get_trending, {"lat": lat, "lng": lon,})	
+			$(".grid-sizer").html("")
+			jqhr.done(function(data){
+				console.log(data.result);
+				if (data.error == false){
+					var toRemove = $(".grid").data('isotope').$filteredAtoms;
+
+					$(".grid").isotope('remove',toRemove);
+					var list = []
+					$.each(["food", "service", "cost", "ambience"], function(iter, category){
+						$.each(data.result[category], function(iter2, model){
+							
+							console.log(model)
+							model["category"] = category   
+							var subview = new App.DataView({"model": model})
+							list.push(subview.render().el);	
+							
+							
+							
+							//$(".grid-sizer").append(subview.render().el);
+						   })
+					       		console.log(list)	
+							$(".grid").isotope('insert',$(list));
+					    		$(".grid").isotope('shuffle');	
+						 });   		 
+				
+				
+				
+				}
+				else{
+					var subView = new App.ErrorView();
+					$(".trending-bar-chart").html(subView.render().el);	
+				}
+		
+			})
+			
 	},
 })
 
 
-var subview = new App.PickEatery({"model": {"page_num": 0}})
-$("#eatery-content").html(subview.render().el); // or some ajax content loading...
 
-$('#eatery-page-selection').bootpag({
-	total: 26,
-	page: 1,
-	maxVisible: 10,
-	leaps: true,
-	firstLastUse: true,
-	first: '←',
-	last: '→',
-	wrapClass: 'pagination',
-	activeClass: 'active',
-	disabledClass: 'disabled',
-	nextClass: 'next',
-	prevClass: 'prev',
-	lastClass: 'last',
-	firstClass: 'first'
-	
-		}).on('page', function(event, num){
-		console.log('<p>Let it be loaded</p>')
-		
-		subview = new App.PickEatery({"model": {"page_num": num}})
-		$("#eatery-content").html(window.loaderstring);
-		$("#eatery-content").html(subview.render().el);
-});
 
+/*
 
 
 window.make_request = function make_request(data, algorithm){ url =  window.process_text_url ; return $.post(url, {"text": data, "algorithm": algorithm}) }
@@ -320,6 +279,9 @@ reloadGoogleMap =  function (__initial_lat, __initial_long, eateries_list){
 							{saturation: 99 }
 							]
 					}]);
+
+
+
 			$.each(eateries_list, function(iter, data){
                                 marker = new google.maps.Marker({
                                 map: map,
@@ -360,7 +322,23 @@ App.BodyView = Backbone.View.extend({
 	//className: "well-lg plan",
 	
 	initialize: function(){
-			},
+		var self = this;
+		$('.modal-trigger3').leanModal({
+				//This is for how it works options, Whihch hasnt been implemented yet
+				dismissible: true, // Modal can be dismissed by clicking outside of the modal
+				opacity: .5, // Opacity of modal background
+				in_duration: 300, // Transition in duration
+				out_duration: 200, // Transition out duration
+				complete: function() { }, });
+		
+		$("#pickEatery").on("click", function(){
+			console.log("pick eatery clicked");
+			self.clickPickEatery()
+				});
+		},
+
+
+
 	
 	render: function(){
 		var self = this;
@@ -410,8 +388,9 @@ App.BodyView = Backbone.View.extend({
 				  $('.collapsible').collapsible({
 				        accordion : false // A setting that changes the collapsible behavior to expandable instead of the default accordion style
 				    });	 
-				$('#popular-or-trending').isotope({
-					  itemSelector: '.grid-item',
+				$('.grid').isotope({
+						 transitionDuration: '0.8s',	
+						itemSelector: '.grid-item',
 					  percentPosition: true, animationEngine: 'css',  resizable: false,
 					  masonry: {
 						      // use outer width of grid-sizer for columnWidth
@@ -419,10 +398,49 @@ App.BodyView = Backbone.View.extend({
 						             }
 						            })
 			})
-			};
+			
+		};
 
+
+			this.intiateEnterQuery();	
 
 		return this;
+	},
+		//Appends eateries to the etery selection id of the body, PickEateryChild is the view which binds a click event 
+		//on the every eatery present in the bootpeg table, When clicks it should render all the details of the eatery and then fetches the details of the eatery 
+		
+	events: {
+	
+	},
+
+	clickPickEatery: function(){
+		console.log("click eatery has been clicked");	
+		var subview = new App.PickEatery({"model": {"page_num": 0}})
+		$("#eatery-content").html(subview.render().el); // or some ajax content loading...
+
+		$('#eatery-page-selection').bootpag({
+				total: 26,
+				page: 1,
+				maxVisible: 10,
+				leaps: true,
+				firstLastUse: true,
+				first: '←',
+				last: '→',
+				wrapClass: 'pagination',
+				activeClass: 'active',
+				disabledClass: 'disabled',
+				nextClass: 'next',
+				prevClass: 'prev',
+				lastClass: 'last',
+				firstClass: 'first'}).on('page', function(event, num){
+							console.log('<p>Let it be loaded</p>')
+							subview = new App.PickEatery({"model": {"page_num": num}})
+							$("#eatery-content").html(window.loaderstring);
+							$("#eatery-content").html(subview.render().el);
+					});
+			
+		 var container = $(".pickEateryRow");
+			
 	},
 
 	reloadGoogleMap: function (__initial_lat, __initial_long, eateries_list){
@@ -485,6 +503,39 @@ App.BodyView = Backbone.View.extend({
 			initialize();
 		},
 
+
+		intiateEnterQuery:  function (){ 
+			$('.modal-trigger2').leanModal({
+				//This is for taking in user query for the search
+				dismissible: true, // Modal can be dismissed by clicking outside of the modal
+				opacity: .5, // Opacity of modal background
+				in_duration: 300, // Transition in duration
+				out_duration: 200, // Transition out duration
+				complete: function() { 
+					value  = $("#searchQuery textarea").val()
+					console.log(value)
+					if (value == ""){
+						Materialize.toast('Please write something to let us, help you finding the awesomeness', 2000)
+					}
+				else{
+						Materialize.toast('Please wait while we process your Query', 2000)
+					var jqhr = $.post(window.resolve_query, {"text": value})	
+					jqhr.done(function(data){
+					if (data.error == false){
+						$(".queryResult").html("");
+						console.log(data.result)
+						var subView = new App.DisplaySuggestion({"model": data.result})
+						$(".queryResult").append(subView.render().el);
+					}
+		})
+		
+		jqhr.fail(function(data){
+						
+		});
+			}
+			}}
+		      );
+		},
 });
 
 
@@ -779,7 +830,7 @@ App.EateryDetails = Backbone.View.extend({
 			if (data.error == false){
 				console.log(data.result)
 				$.each(["food", "ambience", "cost", "service"], function(iter, value){
-					__object = $("#" + value);	
+					__object = $("." + value);	
 					self.makeChart(__object, data.result[value], self.model.eatery_name, value);
 				})
 					
@@ -810,7 +861,7 @@ App.EateryDetails = Backbone.View.extend({
 						        renderTo: 'container',
 				        type: 'bar',
 				        alignTicks: false,
-				        plotBackgroundColor: "#006064",
+				        plotBackgroundColor: "#263238",
 				        plotBackgroundImage: null,
 				        plotBorderWidth: 2,
 				        plotShadow: false,

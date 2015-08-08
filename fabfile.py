@@ -168,7 +168,7 @@ def download_corpora():
 	with cd(VIRTUAL_ENVIRONMENT):
 		with prefix("source bin/activate"):
                         print(_yellow("Now downloading nltk packages"))	
-		        run("sudo {0}/bin/python -m nltk.downloader all".format(VIRTUAL_ENVIRONMENT))
+		        run("sudo {0}/bin/python -m nltk.downloader punkt maxent_ne_chunker maxent_treebank_pos_tagger words".format(VIRTUAL_ENVIRONMENT))
 			print(_yellow("Now downloading textblob packages"))	
 
 def change_permission_api():
