@@ -27,26 +27,6 @@ var height = Math.max($("#left").height(), $("#right").height());
 $('.scrollspy').scrollSpy();
        
 
-$('.modal-trigger').leanModal({
-	//This is for the feedback form 
-	dismissible: true, // Modal can be dismissed by clicking outside of the modal
-	opacity: .5, // Opacity of modal background
-	in_duration: 300, // Transition in duration
-	out_duration: 200, // Transition out duration
-	complete: function() { 
-			
-			if ($("#feedback textarea").val()){
-				Materialize.toast('Thank you for your feedback', 2000)
-				
-				$.post(window.users_feedback, {"feedback": $("#feedback textarea").val(), 
-								"telephone": $("#feedback input")[1].value,
-								"email": $("#feedback input")[2].value,
-								"name": $("#feedback input")[0].value, 
-								})
-			
-				}
-	} // Callback for Modal close
-		    });
 
 
 
@@ -404,7 +384,7 @@ App.BodyView = Backbone.View.extend({
 
 
 			this.intiateEnterQuery();	
-
+			this.intiateFeedback();
 		return this;
 	},
 		//Appends eateries to the etery selection id of the body, PickEateryChild is the view which binds a click event 
@@ -412,6 +392,30 @@ App.BodyView = Backbone.View.extend({
 		
 	events: {
 	
+	},
+
+
+	intiateFeedback: function(){
+		$('.modal-trigger').leanModal({
+			//This is for the feedback form 
+			dismissible: true, // Modal can be dismissed by clicking outside of the modal
+			opacity: .5, // Opacity of modal background
+			in_duration: 300, // Transition in duration
+			out_duration: 200, // Transition out duration
+			complete: function() { 
+				if ($("#feedback textarea").val()){
+						Materialize.toast('Thank you for your feedback', 2000)
+						$.post(window.users_feedback, {"feedback": $("#feedback textarea").val(), 
+								"telephone": $("#feedback input")[1].value,
+								"email": $("#feedback input")[2].value,
+								"name": $("#feedback input")[0].value, 
+								})
+			
+				}
+					} // Callback for Modal close
+		    		});
+
+
 	},
 
 	clickPickEatery: function(){

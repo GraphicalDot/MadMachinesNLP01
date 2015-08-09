@@ -28,7 +28,9 @@
 
 
 
-
+ul.side-nav.fixed li:hover, ul.side-nav.fixed li.active {
+	   background-color: rgba(0, 0, 0, 0.05);
+   }
 .grid {
 	    max-width: 1200px;
     }
