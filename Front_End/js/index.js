@@ -286,6 +286,9 @@ reloadGoogleMap =  function (__initial_lat, __initial_long, eateries_list){
 				var infowindow = new google.maps.InfoWindow({
 					      content: "",
 					  });
+		       		google.maps.event.addListener(map, 'click', function(event) {
+					    marker = new google.maps.Marker({position: event.latLng, map: map});
+				});
 
 		}
 			initialize();
@@ -468,6 +471,20 @@ App.BodyView = Backbone.View.extend({
 							]
 					}]);
 			console.log("From the function reload google map");
+					    marker = new google.maps.Marker({position: new google.maps.LatLng(__initial_lat, __initial_long), map: map});
+				
+					var circleSettings = {
+						      strokeColor: '#FF0000',
+				      strokeOpacity: 0.8,
+				      strokeWeight: 2,
+				      fillColor: '#FF0000',
+				      fillOpacity: 0.35,
+				      map: map,
+				      center:  new google.maps.LatLng(__initial_lat, __initial_long),
+				      radius: 1000
+					    };
+					circle = new google.maps.Circle(circleSettings);
+					map.fitBounds(circle.getBounds());	
 
 			var trafficLayer = new google.maps.TrafficLayer();
 			  trafficLayer.setMap(map);
@@ -494,12 +511,15 @@ App.BodyView = Backbone.View.extend({
 					});
 				google.maps.event.addListener(marker, 'click', function() {
 					console.log(this.get("eatery_id"));     
-				     	//var subView = new App.EateryDetails({"model": {"eatery_id": this.get("eatery_id"), "eatery_name": this.get("title")}});	
+				     	var subView = new App.EateryDetails({"model": {"eatery_id": this.get("eatery_id"), "eatery_name": this.get("title")}});	
+					subView.render().el;
 					//subView.render().el;
 					});
                         })
                        
-		       			
+		       		google.maps.event.addListener(map, 'click', function(event) {
+				
+				});
 				var infowindow = new google.maps.InfoWindow({
 					      content: "",
 					  });
