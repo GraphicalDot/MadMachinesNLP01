@@ -541,7 +541,7 @@ App.BodyView = Backbone.View.extend({
 
 
 App.DataView = Backbone.View.extend({
-	className: "grid-item card-panel teal lighten-2 z-depth-3 grid-item--width2 grid-item--height2",
+	className: "grid-item card-panel #222930 blue-grey darken-4 grid-item--width2 grid-item--height2",
 	template: window.template("data"),
 	category : function(){ return this.model.category},
 	name : function(){ return this.model.name},
@@ -747,7 +747,6 @@ App.DisplaySuggestion = Backbone.View.extend({
 		return this;
 
 	},
-
 
 	events: {
 		"click .submitButton": "submitButton",

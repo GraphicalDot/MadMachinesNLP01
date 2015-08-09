@@ -16,7 +16,6 @@
                 <link href="css/main.css" rel="stylesheet">
                 <link href='http://fonts.googleapis.com/css?family=Playfair+Display:900' rel='stylesheet' type='text/css'>
 
-                <script type="text/javascript" src="js/libs/chart.min.js"></script>
                 <script type="text/javascript" src="js/highchart.js"></script>
 		<!--	
 	       	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script> 
@@ -66,7 +65,7 @@
                 							</ul>
         </script>
         <script type="text/x-mustache-template" id="success-suggestions-template">
-		<textarea class="materialize-textarea suggestions" style="padding: 0">{{name}}</textarea>
+		<textarea class="materialize-textarea suggestions" style="padding: 10">{{name}}</textarea>
 	
 	</script>
         
@@ -206,15 +205,15 @@
 						<!-- Enter your query button started-->
 						<a class="waves-effect waves-light modal-trigger2 tool-tipped " style="margin-top: 15%; color: white; " href="#modal3">  Enter your query</a>
 											<p style="color: #4EB1BA ">Let us help you finding, what you are looking for</p>
-							<div id="modal3" class="modal #006064 cyan darken-4">
-								<div class="modal-content  #006064 cyan darken-4">
+							<div id="modal3" class="modal #222930 blue-grey darken-4">
+								<div class="modal-content  #222930 blue-grey darken-4">
 									<div class="row">
-				   						<form id="searchQuery">
-											<div class="input-field col s12">
+				   						<form id="searchQuery" style="color: #4EB1BA">
+											<div class="input-field col s11">
 												<textarea id="textarea1" class="materialize-textarea"></textarea>
           											<label for="textarea1">Where to go, What to eat?</label>
 											</div>
-											<a class="waves-effect waves-light modal-action modal-close" ><i class="material-icons">done_all</i>Submit</a>
+											<a class="waves-effect waves-light modal-action modal-close"><i class="material-icons">done_all</i>Submit</a>
     										</form>
   									</div>    
 								</div>
@@ -254,13 +253,13 @@
 				</div>
 				<div class ="row #006064 cyan darken-4 z-depth-5">
 				</div>
-				<div id="map-canvas" class="z-depth-5 " style="height: 50%">
-				</div>
 				
 				<div id="popular-or-trending">
 						<div class="grid">
 						    
 						    </div>
+				<div id="map-canvas" class="z-depth-5 " style="height: 50%">
+				</div>
 
 
 
@@ -274,7 +273,7 @@
 					<p>name: {{name}}</p>
 					<p>positive: {{positive}}</p>
 					<p>negative: {{negative}}</p>
-					<p>At {{eatery_name}}</p>
+					<p >At {{eatery_name}}</p>
 </script>
 <script type="text/x-mustache-template" id="write-review-template">
       		<div class="row">
