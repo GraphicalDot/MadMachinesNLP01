@@ -436,7 +436,7 @@ class ElasticSearchScripts(object):
                 
                 ambience_body = {"_source": ["name", "eatery_name", "positive", "negative", "neutral", "super-positive", "super-negative", "total_sentiments"],
                         "from": 0, 
-                        "size": 1, 
+                        "size": 2, 
                         "sort": [
                                 {"trending_factor" : {"order" : "desc"}}
                                 ],
@@ -457,7 +457,7 @@ class ElasticSearchScripts(object):
                 trending_ambience = ES_CLIENT.search(index="ambience", doc_type="ambience-overall", body=ambience_body)
                 cost_body = {"_source": ["name", "eatery_name", "positive", "negative", "neutral", "super-positive", "super-negative", "total_sentiments"],
                         "from": 0, 
-                        "size": 1, 
+                        "size": 2, 
                         "sort": [
                                 {"trending_factor" : {"order" : "desc"}}
                                 ],
@@ -479,7 +479,7 @@ class ElasticSearchScripts(object):
                 
                 service_body = {"_source": ["name", "eatery_name", "positive", "negative", "neutral", "super-positive", "super-negative", "total_sentiments"],
                         "from": 0, 
-                        "size": 1, 
+                        "size": 2, 
                         "sort": [
                                 {"trending_factor" : {"order" : "desc"}}
                                 ],

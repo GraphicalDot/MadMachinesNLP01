@@ -142,26 +142,42 @@ App.PickEateryChild = Backbone.View.extend({
 		});
 		//Closing the parent eatery modal box
 		$('#modal4').closeModal();
+
+
+
+			//http://suprb.com/apps/gridalicious/			
 			var jqhr = $.post(window.get_trending, {"lat": lat, "lng": lon,})	
 
 			jqhr.done(function(data){
 				console.log(data.result);
 				if (data.error == false){
 					//This removes existing isotopes elements
-					$.each($(".grid-item"), function(iter, element){ $(".grid").isotope("remove", $(element)) })
-					
+						
+							
+					$(".grid-grid").html("");
 				
 					$.each(["food", "service", "cost", "ambience"], function(iter, category){
 						$.each(data.result[category], function(iter2, model){
 							model["category"] = category   
 							var subview = new App.DataView({"model": model})
 							//list.push(subview.render().el);	
-							$(".grid").isotope('insert', subview.render().el);
-					    		$(".grid").isotope('layout');	
-					    		$(".grid").isotope('shuffle');	
+							$(".grid-grid").append(subview.render().el);
 							
 						   })
 						 });   		 
+				$(".grid-grid").gridalicious({selector: '.grid-item-new',
+						gutter: 1, 
+						width: 200,
+						animate: true,
+					  animationOptions: {
+						      queue: true,
+					    speed: 200,
+					    duration: 300,
+					    effect: 'fadeInOnAppear',
+					  }
+				
+				})
+			
 				
 				
 				
@@ -351,10 +367,14 @@ App.BodyView = Backbone.View.extend({
 							console.log(model)
 							model["category"] = category   
 							var subview = new App.DataView({"model": model})
-							$(".grid").append(subview.render().el);
+							$(".grid-grid").append(subview.render().el);
+							
+
+						//For testing new grid plugins , but the fuck 
+						//
+						//*
 						   }) 
 						 });   		 
-				
 				
 				
 				}
@@ -365,12 +385,13 @@ App.BodyView = Backbone.View.extend({
 			
 				  $('.collapsible').collapsible({
 				        accordion : false // A setting that changes the collapsible behavior to expandable instead of the default accordion style
-				    });	 
+				    });	
+
+				 /* 
 				var $grid = $('.grid').isotope({
-						 transitionDuration: '0.8s',	
 						itemSelector: '.grid-item',
-					  percentPosition: true,
-					  masonry: {
+						  percentPosition: true,
+						  masonry: {
 						      // use outer width of grid-sizer for columnWidth
 						           columnWidth: 200, 
 						             }
@@ -381,6 +402,20 @@ App.BodyView = Backbone.View.extend({
 					      });
 				  // manually trigger initial layout
 				  $grid.isotope();
+				  */
+				$(".grid-grid").gridalicious({selector: '.grid-item-new',
+						gutter: 1, 
+						width: 150,
+						animate: true,
+					  animationOptions: {
+						      queue: true,
+					    speed: 200,
+					    duration: 300,
+					    effect: 'fadeInOnAppear',
+					  }
+				
+				})
+			
 			})
 			
 		};
@@ -562,12 +597,15 @@ App.BodyView = Backbone.View.extend({
 
 
 App.DataView = Backbone.View.extend({
-	className: "grid-item card-panel #222930 blue-grey darken-4 grid-item--width2 grid-item--height2",
+	className: "grid-item-new  card #222930 blue-grey darken-4",
 	template: window.template("data"),
 	category : function(){ return this.model.category},
 	name : function(){ return this.model.name},
 	positive : function(){ return this.model.positive},
 	negative : function(){ return this.model.negative},
+	neutral : function(){ return this.model.neutral},
+	supernegative : function(){ return this.model.supernegative},
+	superpositive : function(){ return this.model.superpositive},
 	eatery_name : function(){ return this.model.eatery_name},
 	initialize: function(options){
 		var self = this;
@@ -577,10 +615,13 @@ App.DataView = Backbone.View.extend({
 	render: function(){
 		var self = this;
 		this.$el.append(this.template(this));
+		this.$el.attr("color", "white");
+
 		return this;
 	},
 
 });
+	
 	
 	
 App.MainView = Backbone.View.extend({

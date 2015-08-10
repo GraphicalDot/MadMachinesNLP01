@@ -5,54 +5,9 @@
 @import url(http://fonts.googleapis.com/css?family=Marko+One);
 
 
-
-
-.isotope,
-.isotope .isotope-item {
-	  -webkit-transition-duration: 0.8s;
-	       -moz-transition-duration: 0.8s;
-	             -ms-transition-duration: 0.8s;
-		            -o-transition-duration: 0.8s;
-			              transition-duration: 0.8s;
-			      }
-
-			      .isotope {
-				        -webkit-transition-property: height, width;
-					     -moz-transition-property: height, width;
-					           -ms-transition-property: height, width;
-						          -o-transition-property: height, width;
-							            transition-property: height, width;
-							    }
-
-
-
-
-
 ul.side-nav.fixed li:hover, ul.side-nav.fixed li.active {
 	   background-color: #4EB1BA;
    }
-.grid {
-	    max-width: 1200px;
-    }
-.grid:after {
-		content: '';
-		  display: block;
-		    clear: both;
-      }
-
-.grid-item p{ margin:0 }
-.grid-item {
-		    height: 100px;
-			  float: left;  
-		    background: #0D8;
-		        border: 2px solid #333;
-			  border-color: hsla(0, 0%, 0%, 0.7);
-		  	color: #4EB1BA;
-		  }
-
-		  .grid-item--width2 { width: 15%; }
-		  .grid-item--height2 { height: 200px; }
-
 
 .elegantshadow {
     color: #131313;

@@ -23,8 +23,11 @@
                 <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
 		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap-theme.min.css">
 		
-		-->
 
+                <script type="text/javascript" src="js/jquery.nested.js"></script>
+                <script type="text/javascript" src="js/makeboxes.js"></script>
+		-->
+                <script type="text/javascript" src="js/jquery.grid-a-licious.min.js"></script>
                 <script type="text/javascript" src="js/libs/mustache/mustache.js"></script>
                 <script type="text/javascript" src="js/libs/underscore/underscore.js"></script>
                 <script type="text/javascript" src="js/libs/bootbox/bootbox.min.js"></script>
@@ -248,24 +251,38 @@
 				<div class ="row #006064 cyan darken-4 z-depth-5">
 				</div>
 				
-				<div id="popular-or-trending">
-						<div class="grid">
+				<div class="row" id="popular-or-trending" style="color: white !important;">
+				
+						<div class="grid-grid">
 						    
 						    </div>
+						</div>
 				<div id="map-canvas" class="z-depth-5 " style="height: 50%">
 				</div>
 
 
 
-				</div>
     			</div>
 			</div>
 <script type="text/x-mustache-template" id="data-template">
-					<p>Trending in {{category}}</p>
-					<p>name: {{name}}</p>
-					<p>positive: {{positive}}</p>
-					<p>negative: {{negative}}</p>
-					<p >At {{eatery_name}}</p>
+			<div class="card-image waves-effect waves-block waves-light">
+      <img class="activator" src="css/{{category}}.png">
+    </div>
+    <div class="card-content">
+      <span class="card-title activator" style="font-size: 80%">{{name}}<i class="material-icons right">more_vert</i></span>
+      <p><a href="#" style="font-size: 80%">{{eatery_name}}</a></p>
+    </div>
+    <div class="card-reveal">
+      <span class="card-title grey-text text-darken-4" style="font-size: 80%">
+				<p>superpositive: {{superpositive}}</p>
+				<p>positive: {{positive}}</p>
+				<p>neutral: {{neutral}}</p>
+				<p>negative: {{negative}}</p>
+				<p>supernegative: {{supernegative}}</p>
+	<i class="material-icons right">close</i></span>
+    </div>
+
+
 </script>
 <script type="text/x-mustache-template" id="write-review-template">
       		<div class="row">
