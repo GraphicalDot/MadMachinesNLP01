@@ -1,37 +1,5 @@
 $(document).ready(function(){
 
-/*
-var height = Math.max($("#left").height(), $("#right").height());
-          $("#left").height(height);
-	          $("#right").height(height);
-
-	window.loaderstring = '<div class="preloader-wrapper big active loaderstring" style="height: 100%">'+
-	    			'<div class="spinner-layer spinner-blue-only">'+
-	      				'<div class="circle-clipper right">'+
-	        				'<div class="circle">'+
-					'</div>'+
-	      				'</div>'+
-						'<div class="gap-patch">'+
-	        				'<div class="circle">'+
-					'</div>'+
-	      				'</div>'+
-					'<div class="circle-clipper right">'+
-	        				'<div class="circle">' +
-					'</div>'+
-	      				'</div>'+
-	    			'</div>'+
-	  		'</div>'
-	        
-
-
-$('.scrollspy').scrollSpy();
-       
-
-
-
-
-*/
-		      
 App.PickEatery = Backbone.View.extend({
 	//tagName: "fieldset",
 	//className: "well-lg plan",
@@ -75,11 +43,9 @@ App.PickEatery = Backbone.View.extend({
 		//Deals with the sorting of the pick eatery table
 		self.$("#pickEatery").tablesorter();
 		})
-		
 		return 
 	},
 	
-
 });
 
 
@@ -112,6 +78,7 @@ App.PickEateryChild = Backbone.View.extend({
 	},
 
 	clicked: function(event){
+		var self = this;
 		event.preventDefault();
 		console.log("clicked" + this.model.eatery_id)
 		$("#food").html(window.loaderstring)
@@ -155,7 +122,8 @@ App.PickEateryChild = Backbone.View.extend({
 						
 							
 					$(".grid-grid").html("");
-				
+					$(".grid-grid").append('<div class="grid-item-new  card #222930 blue-grey darken-4 z-depth-3"style="text-align: center"> <p>Trending </p><p>near</p><p>' + self.model.eatery_name + '</p>')
+
 					$.each(["food", "service", "cost", "ambience"], function(iter, category){
 						$.each(data.result[category], function(iter2, model){
 							model["category"] = category   
@@ -193,63 +161,6 @@ App.PickEateryChild = Backbone.View.extend({
 })
 
 
-
-
-/*
-
-
-window.make_request = function make_request(data, algorithm){ url =  window.process_text_url ; return $.post(url, {"text": data, "algorithm": algorithm}) }
-var jqhr = $.get(window.limited_eateries_list)	
-jqhr.done(function(data){
-			if (data.error == false){
-				$.each(data.result, function(iter, eatery){
-					var subView = new App.AppendEateries({"model": eatery});
-					__html = subView.render().el
-					$(".eateries-list").append(__html);	
-				
-				})
-				$("#change-map li").on("click", function(){
-						eatery_lat = $(this).attr("lat")
-						eatery_long = 	$(this).attr("long")
-						range = 10;
-		
-						var jqhr = $.post(window.nearest_eateries, {"lat": eatery_lat, "long": eatery_long, "range": range})	
-						jqhr.done(function(data){
-							if (data.error == false){
-				
-								self.reloadGoogleMap(eatery_lat, eatery_long, data.result)
-								}
-							else{
-								var subView = new App.ErrorView();
-								$(".trending-bar-chart").html(subView.render().el);	
-								}
-						})
-		
-						jqhr.fail(function(data){
-							var subView = new App.ErrorView();
-							$(".dynamic-display").html(subView.render().el);	
-						
-							});
-							});
-							}
-
-
-		
-						else{
-						}
-					})
-$('.dropdown-button').dropdown({
-	      inDuration: 300,
-	      outDuration: 225,
-	      constrain_width: false, // Does not change width of dropdown to that of the activator
-	      hover: true, // Activate on hover
-	      gutter: 0, // Spacing from edge
-	      belowOrigin: false // Displays dropdown below the button
-	    }
-	      );
-	
-		
-*/
 
 reloadGoogleMap =  function (__initial_lat, __initial_long, eateries_list){
 		function initialize() {
@@ -597,7 +508,7 @@ App.BodyView = Backbone.View.extend({
 
 
 App.DataView = Backbone.View.extend({
-	className: "grid-item-new  card #222930 blue-grey darken-4",
+	className: "grid-item-new  card #222930 blue-grey darken-4 z-depth-3",
 	template: window.template("data"),
 	category : function(){ return this.model.category},
 	name : function(){ return this.model.name},
@@ -618,6 +529,19 @@ App.DataView = Backbone.View.extend({
 		this.$el.attr("color", "white");
 
 		return this;
+	},
+
+	events: {
+		"click .data-click-eatery": "ClickEatery",
+	
+	},
+
+	ClickEatery: function(event){
+		var self = this;
+		event.preventDefault();
+		console.log("Eatery has been clicked");
+		console.log(self.model.eatery_id);
+
 	},
 
 });

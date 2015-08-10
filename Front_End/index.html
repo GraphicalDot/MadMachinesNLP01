@@ -230,6 +230,7 @@
 			
 			<div class="container" style="width: 100%">
 			<div class="col s12 m12 l12">
+				</br>
 				<div class ="row #222930 blue-grey darken-4 z-depth-5 pickEateryRow">
                 			<div id="eatery-content"></div>
 					<div id="eatery-page-selection"></div>
@@ -254,8 +255,12 @@
 				<div class="row" id="popular-or-trending" style="color: white !important;">
 				
 						<div class="grid-grid">
-						    
-						    </div>
+							<div class="grid-item-new  card #222930 blue-grey darken-4 z-depth-3"style="text-align: center">
+								<p>Trending </p>
+								<p>At Your</p> 
+								<p>Location</p>
+							 </div>	
+						</div>
 						</div>
 				<div id="map-canvas" class="z-depth-5 " style="height: 50%">
 				</div>
@@ -270,7 +275,7 @@
     </div>
     <div class="card-content">
       <span class="card-title activator" style="font-size: 80%">{{name}}<i class="material-icons right">more_vert</i></span>
-      <p><a href="#" style="font-size: 80%">{{eatery_name}}</a></p>
+      <p><a style="font-size: 80%" class="data-click-eatery">{{eatery_name}}</a></p>
     </div>
     <div class="card-reveal">
       <span class="card-title grey-text text-darken-4" style="font-size: 80%">

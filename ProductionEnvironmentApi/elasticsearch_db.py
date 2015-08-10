@@ -412,7 +412,7 @@ class ElasticSearchScripts(object):
                 """
                 """
 
-                food_body = {"_source": ["name", "eatery_name", "positive", "negative", "neutral", "super-positive", "super-negative", "total_sentiments"],
+                food_body = {"_source": ["name", "eatery_name", "eatery_id", "positive", "negative", "neutral", "super-positive", "super-negative", "total_sentiments"],
                         "from": 0, 
                         "size": 10, 
                         "sort": [
