@@ -457,27 +457,28 @@ App.BodyView = Backbone.View.extend({
 			var mapOptions = {
 					center: new google.maps.LatLng(__initial_lat, __initial_long),
 					zoom: 19,
-					mapTypeId: google.maps.MapTypeId.ROADMAP
-                                          }
+					mapTypeId: google.maps.MapTypeId.ROADMAP,
+                                        styles: [{"featureType": "all",
+							"elementType": "all",
+							"stylers": [
+								{"invert_lightness": true},
+								{"saturation": 10},
+								{"lightness": 30},
+								{"gamma": 0.5},
+								{"hue": "#435158"},]
+						}],
+					draggable: true,
+					
+			};
 			var map = new google.maps.Map(mapCanvas, mapOptions)
-			map.set('styles', [
-					{
-						featureType: 'poi',
-						elementType: 'geometry',
-						stylers: [
-							{hue: '#fff700' },
-							{lightness: -15 },
-							{saturation: 99 }
-							]
-					}]);
 			console.log("From the function reload google map");
 					    marker = new google.maps.Marker({position: new google.maps.LatLng(__initial_lat, __initial_long), map: map});
 				
 					var circleSettings = {
-						      strokeColor: '#FF0000',
+						      strokeColor: '#4EB1BA',
 				      strokeOpacity: 0.8,
 				      strokeWeight: 2,
-				      fillColor: '#FF0000',
+				      fillColor: '#4EB1BA',
 				      fillOpacity: 0.35,
 				      map: map,
 				      center:  new google.maps.LatLng(__initial_lat, __initial_long),
@@ -485,7 +486,6 @@ App.BodyView = Backbone.View.extend({
 					    };
 					circle = new google.maps.Circle(circleSettings);
 					map.fitBounds(circle.getBounds());	
-
 			var trafficLayer = new google.maps.TrafficLayer();
 			  trafficLayer.setMap(map);
 			console.log(eateries_list)
@@ -520,9 +520,6 @@ App.BodyView = Backbone.View.extend({
 		       		google.maps.event.addListener(map, 'click', function(event) {
 				
 				});
-				var infowindow = new google.maps.InfoWindow({
-					      content: "",
-					  });
 
 		}
 			initialize();
