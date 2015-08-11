@@ -650,6 +650,46 @@ class EateryDetails(tornado.web.RequestHandler):
                 self.finish()
 
 
+class GetDishSuggestions(tornado.web.RequestHandler):
+        @cors
+	@print_execution
+	@tornado.gen.coroutine
+        def get(self):
+                """
+                """
+                        
+                dish_name = self.get_argument("query")
+                
+                result = ElasticSearchScripts.dish_suggestions(dish_name)
+                result = list(set(["{0}".format(element["name"]) for element in result]))
+                print result 
+                self.write({"success": True,
+			        "error": False,
+			        "options": result,
+			        })
+                self.finish()
+                return 
+
+class GetEaterySuggestions(tornado.web.RequestHandler):
+        @cors
+	@print_execution
+	@tornado.gen.coroutine
+        def get(self):
+                """
+                """
+                        
+                dish_name = self.get_argument("query")
+                
+                result = ElasticSearchScripts.eatery_suggestions(dish_name)
+                result = list(set(["{0}".format(element["eatery_name"]) for element in result]))
+                print result
+                self.write({"success": True,
+			        "error": False,
+			        "options": result,
+			        })
+                self.finish()
+                return 
+
 
 def main():
         http_server = tornado.httpserver.HTTPServer(Application())
@@ -670,6 +710,8 @@ class Application(tornado.web.Application):
                     (r"/eateries_on_character", EateriesOnCharacter),
                     (r"/users_details", UsersDetails),
                     (r"/users_feedback", UsersFeedback),
+                    (r"/get_dish_suggestions", GetDishSuggestions),
+                    (r"/get_eatery_suggestions", GetEaterySuggestions),
                     (r"/eatery_details", EateryDetails),]
                 settings = dict(cookie_secret="__TODO:_GENERATE_YOUR_OWN_RANDOM_VALUE_HERE__",)
                 tornado.web.Application.__init__(self, handlers, **settings)

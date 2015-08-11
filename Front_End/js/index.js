@@ -1,4 +1,27 @@
 $(document).ready(function(){
+$.fn.enterKey = function (fnc) {
+	    return this.each(function () {
+		            $(this).keypress(function (ev) {
+				                var keycode = (ev.keyCode ? ev.keyCode : ev.which);
+						            if (keycode == '13') {
+								                    fnc.call(this, ev);
+										                }
+							            })
+			        })
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 App.PickEatery = Backbone.View.extend({
 	//tagName: "fieldset",
@@ -334,6 +357,10 @@ App.BodyView = Backbone.View.extend({
 
 			this.intiateEnterQuery();	
 			this.intiateFeedback();
+			this.initiateAutoComplete();
+
+
+
 		return this;
 	},
 		//Appends eateries to the etery selection id of the body, PickEateryChild is the view which binds a click event 
@@ -343,6 +370,66 @@ App.BodyView = Backbone.View.extend({
 	
 	},
 
+	initiateAutoComplete: function(){
+			$('.search-dish').typeahead({
+					  hint: true,
+					  highlight: true,
+					  minLength: 4,
+				},
+				{
+					limit: 12,
+					async: true,
+					select: function(event, name) {
+							console.log(name)		            
+					},
+					source: function (query, processSync, processAsync) {
+						          return $.ajax({
+								        url: window.get_dish_suggestions, 
+								       type: 'GET',
+								       data: {query: query},
+								       dataType: 'json',
+								       success: function (json) {
+										       return processAsync(json.options);
+										     }
+									});
+							}
+			});
+
+			
+			$(".search-dish").enterKey(function () {
+					
+
+			})
+
+			$('.search-dish').bind('typeahead:select', function(ev, suggestion) {
+				  console.log('Selection: ' + suggestion);
+			});
+
+			$('.search-eatery').typeahead({
+					  hint: true,
+					  highlight: true,
+					  minLength: 4,
+				},
+				{
+					  limit: 12,
+					  async: true,
+					  source: function (query, processSync, processAsync) {
+						          return $.ajax({
+								        url: window.get_eatery_suggestions, 
+								       type: 'GET',
+								       data: {query: query},
+								       dataType: 'json',
+								       success: function (json) {
+										       return processAsync(json.options);
+										     }
+									});
+							}
+			});
+			
+			$(".search-eatery").enterKey(function () {
+				alert('Enter pressed n search-eatery');
+			})
+	},
 
 	intiateFeedback: function(){
 		$('.modal-trigger').leanModal({
