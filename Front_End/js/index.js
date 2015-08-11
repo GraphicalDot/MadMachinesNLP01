@@ -146,6 +146,7 @@ App.PickEateryChild = Backbone.View.extend({
 							
 					$(".grid-grid").html("");
 					$(".grid-grid").append('<div class="grid-item-new  card #222930 blue-grey darken-4 z-depth-3"style="text-align: center"> <p>Trending </p><p>near</p><p>' + self.model.eatery_name + '</p>')
+					$(".grid-grid").append('<div class="grid-item-new  card #222930 blue-grey darken-4 z-depth-3"style="text-align: center"> <p>Write review for<p>' + self.model.eatery_name + '</p>')
 
 					$.each(["food", "service", "cost", "ambience"], function(iter, category){
 						$.each(data.result[category], function(iter2, model){
@@ -408,7 +409,7 @@ App.BodyView = Backbone.View.extend({
 			$('.search-eatery').typeahead({
 					  hint: true,
 					  highlight: true,
-					  minLength: 4,
+					  minLength: 2,
 				},
 				{
 					  limit: 12,
@@ -595,7 +596,7 @@ App.BodyView = Backbone.View.extend({
 
 
 App.DataView = Backbone.View.extend({
-	className: "grid-item-new  card #222930 blue-grey darken-4 z-depth-3",
+	className: "grid-item-new  card #222930 z-depth-3",
 	template: window.template("data"),
 	category : function(){ return this.model.category},
 	name : function(){ return this.model.name},

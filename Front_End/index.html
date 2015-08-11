@@ -7,7 +7,7 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1">
                 
 		<script type="text/javascript" src="http://google-maps-utility-library-v3.googlecode.com/svn/trunk/infobox/src/infobox.js"></script>		 
-		<title img=>HyPostt</title>
+		<title img=>HyPost</title>
                 <meta name="description" content="HyPost">
                 <meta charset="UTF-8">
 		<script type="text/javascript" src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
@@ -44,7 +44,10 @@
 		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.0/css/materialize.min.css">
 		 <link href="http://netdna.bootstrapcdn.com/font-awesome/4.1.0/css/font-awesome.min.css" rel="stylesheet" />	
 		<link href="css/blue/style.css" rel="stylesheet">		
-		  
+	
+      		<script type="text/javascript">var switchTo5x=true;</script>
+		<script type="text/javascript" src="http://w.sharethis.com/button/buttons.js"></script>
+		<script type="text/javascript">stLight.options({publisher: "405aeb64-ded6-4c10-b5ba-3065f3dec6c4", doNotHash: false, doNotCopy: false, hashAddressBar: false});</script>		
 		<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 		   <!-- Compiled and minified JavaScript -->
 		     <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.0/js/materialize.min.js"></script>
@@ -230,6 +233,14 @@
 			
 			<div class="container" style="width: 100%">
 			<div class="col s12 m12 l12">
+				<div class="row">
+					<span class='st_sharethis_large' displayText='ShareThis'></span>
+					<span class='st_facebook_large' displayText='Facebook'></span>
+					<span class='st_twitter_large' displayText='Tweet'></span>
+					<span class='st_linkedin_large' displayText='LinkedIn'></span>
+					<span class='st_pinterest_large' displayText='Pinterest'></span>
+					<span class='st_email_large' displayText='Email'></span>
+				</div>
 				</br>
 				<div class ="row">
 						</br>
@@ -281,16 +292,18 @@
 						</div>
 				<div id="map-canvas" class="z-depth-5 " style="height: 50%">
 				</div>
+				</br>
+				</br>
 
 
 
     			</div>
 			</div>
 <script type="text/x-mustache-template" id="data-template">
-			<div class="card-image waves-effect waves-block waves-light">
+			<div class="card-image waves-effect waves-block waves-light" style="color: white !important;">
       <img class="activator" src="css/{{category}}.png">
     </div>
-    <div class="card-content">
+    <div class="card-content #222930 blue-grey darken-4">
       <span class="card-title activator" style="font-size: 80%">{{name}}<i class="material-icons right">more_vert</i></span>
       <p><a style="font-size: 80%" class="data-click-eatery">{{eatery_name}}</a></p>
     </div>
