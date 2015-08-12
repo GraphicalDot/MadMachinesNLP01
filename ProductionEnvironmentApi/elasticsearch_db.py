@@ -606,7 +606,7 @@ class ElasticSearchScripts(object):
                 result["food"]["dishes"] = dishes
                 return result
 
-        def suggest_dish(self, __dish_name, number_of_dishes=None, number_of_suggestions=None):
+        def get_dishes(self, __dish_name, number_of_dishes=None, number_of_suggestions=None):
                 """
                         dish_suggestions= {
                                    "query":{
@@ -638,37 +638,12 @@ class ElasticSearchScripts(object):
                 """
                 print "Dish passed in suggest_dish instance of ElasticSearchScripts is %s"%__dish_name
                 if not number_of_dishes:
-                        number_of_dishes = 3
+                        number_of_dishes = 5
                 
-                if not number_of_suggestions:
-                        number_of_suggestions = 5
 
 
-                def find_suggestions(__dish_name, number_of_dishes):
-                        fuzzy_search_body = {
-                                "query": {
-                                    "fuzzy_like_this": {
-                                            "fields": ["dish_shingle", "dish_raw"],
-							"like_text": __dish_name,  
-                                                        "fuzziness": 6,
-                                                        "max_query_terms": 25,
-						        "boost": 1, 
-						        "prefix_length": 0, 
-						        "ignore_tf": False,  
-                                                    }},
-                                            
-                                "from": 0,
-                                "size": number_of_suggestions,
-                                    "sort": [
-                                            {"total_sentiments": {
-                                                    "order" : "desc"}}
-                                           ]
-                                }
-                        __result = ES_CLIENT.search(index="food", doc_type="dishes", body=fuzzy_search_body)
-                        __result = ElasticSearchScripts.process_result(__result)
-                        return __result
                 def find_exact_match(__dish_name, number_of_dishes):
-                        exact_dish_search_body={
+                        exact_dish_search_body={"_source": ["name", "eatery_name", "positive", "negative", "neutral", "super-positive", "super-negative", "total_sentiments"],
                                     "query":{
                                             "term":{
                                                         "dish_raw":  __dish_name}},
@@ -676,7 +651,7 @@ class ElasticSearchScripts(object):
                                     "from": 0,
                                     "size": number_of_dishes,
                                     "sort": [
-                                            {"total_sentiments": {
+                                            {"trending_factor": {
                                                     "order" : "desc"}}
                                            ]
                                 }
@@ -687,7 +662,7 @@ class ElasticSearchScripts(object):
 
                 def find_fuzzy_match(__dish_name, number_of_dishes):
                         print "Fussy match for %s"%__dish_name
-                        fuzzy_search_body = {
+                        fuzzy_search_body = {"_source": ["name", "eatery_name", "positive", "negative", "neutral", "super-positive", "super-negative", "total_sentiments"],
                                 "query": {
                                     "fuzzy_like_this": {
                                             "fields": ["dish_shingle", "dish_raw"],
@@ -699,6 +674,10 @@ class ElasticSearchScripts(object):
 						        "ignore_tf": False,  
                                                     }},
                                             
+                                    "sort": [
+                                            {"trending_factor": {
+                                                    "order" : "desc"}}
+                                           ],
                                 "from": 0,
                                 "size": number_of_dishes,
                                 }
@@ -708,7 +687,7 @@ class ElasticSearchScripts(object):
 
 
                 def find_standard_match(__dish_name, number_of_dishes):
-                        standard_search_body = {
+                        standard_search_body = {"_source": ["name", "eatery_name", "positive", "negative", "neutral", "super-positive", "super-negative", "total_sentiments"],
                                 "query": {
                                     "match": {
                                             "name": {
@@ -718,9 +697,10 @@ class ElasticSearchScripts(object):
                                 "from": 0,
                                 "size": number_of_dishes,
                                 "sort": [
-                                            {"total_sentiments": {
+                                            {"trending_factor": {
                                                     "order" : "desc"}}
-                                           ]}
+                                           ],
+                                }
                         __result = ES_CLIENT.search(index="food", doc_type="dishes", body=standard_search_body)
                         __result = ElasticSearchScripts.process_result(__result)
                         return __result

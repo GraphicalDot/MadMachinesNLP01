@@ -105,19 +105,40 @@ App.PickEateryChild = Backbone.View.extend({
 		event.preventDefault();
 		console.log("clicked" + this.model.eatery_id)
 		$("#food").html(window.loaderstring)
-		lat = this.model.eatery_coordinates[0]
-		lon = this.model.eatery_coordinates[1]
+		eatery_lat = this.model.eatery_coordinates[0]
+		eatery_lng = this.model.eatery_coordinates[1]
+		var subView = new App.ModifyViewOnEatery({"model": {"eatery_id": this.model.eatery_id, "eatery_name": this.model.eatery_name, "eatery_lat": eatery_lat, "eatery_lng": eatery_lng}});	
+		subView.render().el
+	},
+})
+
+
+
+App.ModifyViewOnEatery = Backbone.View.extend({
+
+	initialize: function(options){
+			//eatery_id, eatery_name, eatery_lat, eatery_lng)
+			this.model = options.model;
+			console.log(this.model)
+		},
+		/*this is a function which will change tranding view and eatery details view when a eatery is clicked either from the
+		 * pick eatery menu or search eatery bar
+		 */
+	
+	
+	render: function(){
+		var self = this;
 		var subView = new App.EateryDetails({"model": {"eatery_id": this.model.eatery_id, "eatery_name": this.model.eatery_name}});	
 		subView.render().el;
 		
 		range = 10;
 		
-		var jqhr = $.post(window.nearest_eateries, {"lat": lat, "long": lon, "range": range})	
+		var jqhr = $.post(window.nearest_eateries, {"lat": this.model.eatery_lat, "long": this.model.eatery_lng, "range": range})	
 		jqhr.done(function(data){
 			if (data.error == false){
 			
 				console.log(data.result)	
-				reloadGoogleMap(lat, lon, data.result)
+				reloadGoogleMap(self.model.eatery_lat, self.model.eatery_lng, data.result)
 					}
 			else{
 				var subView = new App.ErrorView();
@@ -130,25 +151,21 @@ App.PickEateryChild = Backbone.View.extend({
 				$(".dynamic-display").html(subView.render().el);	
 						
 		});
-		//Closing the parent eatery modal box
-		$('#modal4').closeModal();
-
-
 
 			//http://suprb.com/apps/gridalicious/			
-			var jqhr = $.post(window.get_trending, {"lat": lat, "lng": lon,})	
+		//Updating trending view 	
+		var jqhr = $.post(window.get_trending, {"lat": this.model.eatery_lat, "lng": this.model.eatery_lng,})	
+		jqhr.done(function(data){
+			if (data.error == false){
+				$(".grid-grid").html("");
+				
+				
+				$(".grid-grid").append('<div class="grid-item-new  card #222930 blue-grey darken-4 z-depth-3" style="text-align: center"> <p>Trending </p><p>near</p><p>' + self.model.eatery_name + '</p>')
+				var subView = new App.WriteReview({"model": {"eatery_id": self.model.eatery_id, "eatery_name": self.model.eatery_name}});
+				$(".grid-grid").append(subView.render().el);	
+				//$(".grid-grid").append('<div class="grid-item-new  card #222930 blue-grey darken-4 z-depth-3" style="text-align: center"> <p>Write review for<p>' + self.model.eatery_name + '</p>')
 
-			jqhr.done(function(data){
-				console.log(data.result);
-				if (data.error == false){
-					//This removes existing isotopes elements
-						
-							
-					$(".grid-grid").html("");
-					$(".grid-grid").append('<div class="grid-item-new  card #222930 blue-grey darken-4 z-depth-3"style="text-align: center"> <p>Trending </p><p>near</p><p>' + self.model.eatery_name + '</p>')
-					$(".grid-grid").append('<div class="grid-item-new  card #222930 blue-grey darken-4 z-depth-3"style="text-align: center"> <p>Write review for<p>' + self.model.eatery_name + '</p>')
-
-					$.each(["food", "service", "cost", "ambience"], function(iter, category){
+				$.each(["food", "service", "cost", "ambience"], function(iter, category){
 						$.each(data.result[category], function(iter2, model){
 							model["category"] = category   
 							var subview = new App.DataView({"model": model})
@@ -180,11 +197,94 @@ App.PickEateryChild = Backbone.View.extend({
 				}
 		
 			})
+			return this;
+			}, 
+
+
+		});
+
+
+
+
+
+
+App.WriteReview = Backbone.View.extend({
+	className: "grid-item-new  card #222930 blue-grey darken-4 z-depth-3",
+	template: window.template("write-review"),
+	eatery_name : function(){ return this.model.eatery_name},
+	eatery_id: function(){ return this.model.eatery_id},
+	initialize: function(options){
+			this.model = options.model;
+	},
+
+	render: function(){
+		this.$el.append(this.template(this));
+		this.$el.attr("eatery_id", this.model.eatery_id);
+		this.$el.attr("style", "text-align: center");
+		return this;
+	},
+
+	events: {
+		"click .write-review": "writeReviewfunction", 
+	},
+
+	writeReviewfunction: function(event){
+		var self = this;
+		event.preventDefault();
+		console.log("Write review has been clicked with" + this.model.eatery_id);
+		var subView = new App.WriteReviewChild({"model": {"eatery_id": this.model.eatery_id, "eatery_name": this.model.eatery_name}})
+		$("body").append(subView.render().el);
+		$('.modal-trigger').leanModal({
+			       dismissible: true, // Modal can be dismissed by clicking outside of the modal
+			       opacity: .5, // Opacity of modal background
+			       ready: function() {
+				      	console.log($("modal32").attr("eatery_id")) 
+					$("#modal32 label").text("write review for" + self.model.eatery_name);
+			       		alert('Ready');		
+			       
+			       
+			       }, // Callback for Modal open
+			       complete: function() { 
+				       
+			       } // Callback for Modal close
+		     }
+		       );
+		$("#modal32").openModal();
+	},
+});
+
+
+App.WriteReviewChild = Backbone.View.extend({
+	className: "modal-trigger modal #222930 blue-grey darken-4",
+	template: window.template("write-review-child"),
+	eatery_name: function(){ return this.model.eatery_name},
+
+
+	initialize: function(options){
+		this.model = options.model;  
+	},
+
+	render: function(){
+		this.$el.append(this.template(this));
+		this.$el.attr("id", "modal32");
+		this.$el.attr("eatery_id", this.model.eatery_id);
+		return this;
+	},
+
+
+	events: {
+	},
+
+	submitReview: function(event){
+		var self = this;
+		event.preventDefault();
+		$("#modal32").closeModal();
 			
 	},
-})
 
 
+
+});
 
 reloadGoogleMap =  function (__initial_lat, __initial_long, eateries_list){
 		function initialize() {
@@ -506,7 +606,9 @@ App.BodyView = Backbone.View.extend({
 			};
 			var map = new google.maps.Map(mapCanvas, mapOptions)
 			console.log("From the function reload google map");
-					    marker = new google.maps.Marker({position: new google.maps.LatLng(__initial_lat, __initial_long), map: map});
+					    marker = new google.maps.Marker({position: new google.maps.LatLng(__initial_lat, __initial_long), 
+						    map: map, 
+					    		icon: 'css/location-icon.png',});
 				
 					var circleSettings = {
 						      strokeColor: '#4EB1BA',
@@ -896,7 +998,7 @@ App.EateryDetails = Backbone.View.extend({
 
 	render: function(){
 		var self = this;
-		var jqhr = $.post(window.eatery_details, {"eatery_id": this.model.eatery_id})	
+		var jqhr = $.post(window.eatery_details, {"eatery_id": this.model.eatery_id, "eatery_name": this.model.eatery_name})	
 		jqhr.done(function(data){
 			if (data.error == false){
 				console.log(data.result)

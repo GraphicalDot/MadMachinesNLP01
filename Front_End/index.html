@@ -44,10 +44,6 @@
 		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.0/css/materialize.min.css">
 		 <link href="http://netdna.bootstrapcdn.com/font-awesome/4.1.0/css/font-awesome.min.css" rel="stylesheet" />	
 		<link href="css/blue/style.css" rel="stylesheet">		
-	
-      		<script type="text/javascript">var switchTo5x=true;</script>
-		<script type="text/javascript" src="http://w.sharethis.com/button/buttons.js"></script>
-		<script type="text/javascript">stLight.options({publisher: "405aeb64-ded6-4c10-b5ba-3065f3dec6c4", doNotHash: false, doNotCopy: false, hashAddressBar: false});</script>		
 		<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 		   <!-- Compiled and minified JavaScript -->
 		     <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.0/js/materialize.min.js"></script>
@@ -76,6 +72,10 @@
 	
 	</script>
         
+	<script type="text/x-mustache-template" id="write-review-template">
+			 <p>Write review for<p><a id={{eatery_id}} class="write-review">{{eatery_name}}</a></p>
+	
+	</script>
 	<script type="text/x-mustache-template" id="error-suggestions-template">
 	</script>
 
@@ -231,15 +231,17 @@
 								</div>
   							</div>    
 			
+			
 			<div class="container" style="width: 100%">
 			<div class="col s12 m12 l12">
 				<div class="row">
-					<span class='st_sharethis_large' displayText='ShareThis'></span>
-					<span class='st_facebook_large' displayText='Facebook'></span>
-					<span class='st_twitter_large' displayText='Tweet'></span>
-					<span class='st_linkedin_large' displayText='LinkedIn'></span>
-					<span class='st_pinterest_large' displayText='Pinterest'></span>
-					<span class='st_email_large' displayText='Email'></span>
+					<span><a class="twitter-share-button" href="https://twitter.com/intent/tweet?text=Now discover what you want to eat exactly by taking others opinion at <a>www.dooof.com</a>"  data-size="large">Tweet</a></span>
+					 
+					<span><div class="fb-share-button" 
+						         data-href="http://www.your-domain.com/your-page.html" 
+							         data-layout="button_count">
+								     </div>
+					</span>
 				</div>
 				</br>
 				<div class ="row">
@@ -319,6 +321,25 @@
 
 
 </script>
+<script type="text/x-mustache-template" id="write-review-child-template">
+							<div class="modal-content #222930 blue-grey darken-4">
+									<div class="row">
+				   						<form class="col s12" id="feedback" style="color: white">
+					    						<div class="row">
+            											<div class="input-field col s11">
+													<i class="material-icons prefix">input</i>
+													<textarea id="textarea1" class="materialize-textarea"></textarea>
+													<label for="icon_prefix">Write review for {{eatery_name}}</label>
+												</div>
+											</div>
+      											<div class="row">
+												<a class="waves-effect waves-light modal-action modal-close"><i class="material-icons">done_all</i>Submit</a>
+      											</div>
+    										</form>
+  									</div>    
+								</div>
+
+</script>    
 <script type="text/x-mustache-template" id="write-review-template">
       		<div class="row">
 			<div class="input-field col s12">
