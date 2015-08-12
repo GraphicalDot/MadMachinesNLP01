@@ -665,7 +665,7 @@ class GetDishSuggestions(tornado.web.RequestHandler):
                 print result 
                 self.write({"success": True,
 			        "error": False,
-			        "options": result,
+			        "result": result,
 			        })
                 self.finish()
                 return 
@@ -678,11 +678,9 @@ class GetDishes(tornado.web.RequestHandler):
                 """
                 """
                         
-                dish_name = self.get_argument("query")
+                dish_name = self.get_argument("dish_name")
                 
-                result = ElasticSearchScripts.dish_suggestions(dish_name)
-                result = list(set(["{0}".format(element["name"]) for element in result]))
-                print result 
+                result = ElasticSearchScripts.get_dishes(dish_name)
                 self.write({"success": True,
 			        "error": False,
 			        "options": result,
@@ -730,6 +728,7 @@ class Application(tornado.web.Application):
                     (r"/eateries_on_character", EateriesOnCharacter),
                     (r"/users_details", UsersDetails),
                     (r"/users_feedback", UsersFeedback),
+                    (r"/get_dishes", GetDishes),
                     (r"/get_dish_suggestions", GetDishSuggestions),
                     (r"/get_eatery_suggestions", GetEaterySuggestions),
                     (r"/eatery_details", EateryDetails),]

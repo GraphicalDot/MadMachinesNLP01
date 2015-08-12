@@ -503,7 +503,7 @@ App.BodyView = Backbone.View.extend({
 			})
 
 			$('.search-dish').bind('typeahead:select', function(ev, suggestion) {
-				  console.log('Selection: ' + suggestion);
+				  alert('Selection: ' + suggestion);
 			});
 
 			$('.search-eatery').typeahead({

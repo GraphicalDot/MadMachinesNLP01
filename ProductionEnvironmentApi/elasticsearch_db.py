@@ -606,7 +606,8 @@ class ElasticSearchScripts(object):
                 result["food"]["dishes"] = dishes
                 return result
 
-        def get_dishes(self, __dish_name, number_of_dishes=None, number_of_suggestions=None):
+        @staticmethod
+        def get_dishes(__dish_name, number_of_dishes=None, number_of_suggestions=None):
                 """
                         dish_suggestions= {
                                    "query":{
@@ -674,10 +675,6 @@ class ElasticSearchScripts(object):
 						        "ignore_tf": False,  
                                                     }},
                                             
-                                    "sort": [
-                                            {"trending_factor": {
-                                                    "order" : "desc"}}
-                                           ],
                                 "from": 0,
                                 "size": number_of_dishes,
                                 }
@@ -705,23 +702,21 @@ class ElasticSearchScripts(object):
                         __result = ElasticSearchScripts.process_result(__result)
                         return __result
 
-                suggestions = find_suggestions(__dish_name, number_of_suggestions)
                 
                 print "FInished Dish passed in suggest_dish instance of ElasticSearchScripts is %s"%__dish_name
                 result = find_exact_match(__dish_name, number_of_dishes)
                 if result:
-                        return {"name": __dish_name, "match": result, "suggestions": suggestions}
+                        return result
                 else:
                         print "There is no exact result matching the Query %s"%__dish_name
                 
                 result = find_fuzzy_match(__dish_name, number_of_dishes)
                 
                 if result:
-                        return {"name": __dish_name, "match": result, "suggestions": suggestions}
+                        return result
                 
                 
-                return {"name": __dish_name, "match": "We couldnt find any dish matching your Query %s"%__dish_name, "suggestions": suggestions}
-
+                return None
 
 
         def return_dishes(eatery_id, number_of_dishes):
