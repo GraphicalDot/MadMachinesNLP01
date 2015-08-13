@@ -348,7 +348,9 @@ App.BodyView = Backbone.View.extend({
 			console.log("pick eatery clicked");
 			self.clickPickEatery()
 				});
-		},
+		
+		$(".button-collapse").sideNav();
+	},
 
 
 
