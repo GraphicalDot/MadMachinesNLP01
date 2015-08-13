@@ -639,7 +639,7 @@ class ElasticSearchScripts(object):
                 """
                 print "Dish passed in suggest_dish instance of ElasticSearchScripts is %s"%__dish_name
                 if not number_of_dishes:
-                        number_of_dishes = 5
+                        number_of_dishes = 30
                 
 
 

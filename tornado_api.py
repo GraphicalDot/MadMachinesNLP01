@@ -665,7 +665,7 @@ class GetDishSuggestions(tornado.web.RequestHandler):
                 print result 
                 self.write({"success": True,
 			        "error": False,
-			        "result": result,
+			        "options": result,
 			        })
                 self.finish()
                 return 
@@ -674,16 +674,17 @@ class GetDishes(tornado.web.RequestHandler):
         @cors
 	@print_execution
 	@tornado.gen.coroutine
-        def get(self):
+        def post(self):
                 """
                 """
                         
                 dish_name = self.get_argument("dish_name")
                 
                 result = ElasticSearchScripts.get_dishes(dish_name)
+                print result
                 self.write({"success": True,
 			        "error": False,
-			        "options": result,
+			        "result": result,
 			        })
                 self.finish()
                 return 

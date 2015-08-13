@@ -279,7 +279,11 @@
 						</div>
 
 				</div>
-				<div class ="row #006064 cyan darken-4 z-depth-5">
+				<div class="row" style="color: white !important;">
+						<div class="grid-dish-suggestions">
+							<div class="grid-item-dish-suggestions  card #222930 blue-grey darken-4 z-depth-3"style="text-align: center">
+							 </div>	
+						</div>
 				</div>
 				
 				<div class="row" id="popular-or-trending" style="color: white !important;">
@@ -301,6 +305,24 @@
 
     			</div>
 			</div>
+<script type="text/x-mustache-template" id="data-dish-suggestions-template">
+    <div class="card-content #222930 blue-grey darken-4">
+      <span class="card-title activator" style="font-size: 80%">{{name}}<i class="material-icons right">more_vert</i></span>
+      <p><a style="font-size: 80%" class="data-click-eatery">{{eatery_name}}</a></p>
+    </div>
+    <div class="card-reveal">
+      <span class="card-title grey-text text-darken-4" style="font-size: 80%">
+				<p>superpositive: {{superpositive}}</p>
+				<p>positive: {{positive}}</p>
+				<p>neutral: {{neutral}}</p>
+				<p>negative: {{negative}}</p>
+				<p>supernegative: {{supernegative}}</p>
+	<i class="material-icons right">close</i></span>
+    </div>
+
+
+</script>
+
 <script type="text/x-mustache-template" id="data-template">
 			<div class="card-image waves-effect waves-block waves-light" style="color: white !important;">
       <img class="activator" src="css/{{category}}.png">
@@ -321,6 +343,9 @@
 
 
 </script>
+
+
+
 <script type="text/x-mustache-template" id="write-review-child-template">
 							<div class="modal-content #222930 blue-grey darken-4">
 									<div class="row">

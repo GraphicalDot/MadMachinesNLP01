@@ -472,6 +472,7 @@ App.BodyView = Backbone.View.extend({
 	},
 
 	initiateAutoComplete: function(){
+			var self = this;
 			$('.search-dish').typeahead({
 					  hint: true,
 					  highlight: true,
@@ -496,16 +497,16 @@ App.BodyView = Backbone.View.extend({
 							}
 			});
 
-			
 			$(".search-dish").enterKey(function () {
-					
-
+				var dish_name = $(this).val();
+				self.dishSuggestions(dish_name)
 			})
-
+		
 			$('.search-dish').bind('typeahead:select', function(ev, suggestion) {
 				  alert('Selection: ' + suggestion);
 			});
 
+			
 			$('.search-eatery').typeahead({
 					  hint: true,
 					  highlight: true,
@@ -531,6 +532,53 @@ App.BodyView = Backbone.View.extend({
 				alert('Enter pressed n search-eatery');
 			})
 	},
+
+
+	dishSuggestions: function(dish_name){
+		var jqhr = $.post(window.get_dishes, {"dish_name": dish_name})	
+		jqhr.done(function(data){
+			if (data.error == false){
+				$(".grid-dish-suggestions").html("");
+				
+				
+				$(".grid-dish-suggestions").append('<div class="grid-item-dish-suggestions  card #222930 blue-grey darken-4 z-depth-3" style="text-align: center"> <p>Match </p><p>for</p><p>' + dish_name + '</p>')
+
+				console.log(data.result);
+				$.each(data.result, function(iter, model){
+							var subview = new App.DataDishSuggestionsView({"model": model})
+							//list.push(subview.render().el);	
+							$(".grid-dish-suggestions").append(subview.render().el);
+							
+						   })
+				$(".grid-dish-suggestions").gridalicious({selector: '.grid-item-dish-suggestions',
+						gutter: 1, 
+						width: 200,
+						animate: true,
+					  animationOptions: {
+						      queue: true,
+					    speed: 200,
+					    duration: 300,
+					    effect: 'fadeInOnAppear',
+					  }
+				
+				})
+			
+				
+				
+				
+				}
+				else{
+					var subView = new App.ErrorView();
+					$(".trending-bar-chart").html(subView.render().el);	
+				}
+		
+			})
+
+
+	},
+
+
+
 
 	intiateFeedback: function(){
 		$('.modal-trigger').leanModal({
@@ -697,6 +745,45 @@ App.BodyView = Backbone.View.extend({
 });
 
 
+App.DataDishSuggestionsView = Backbone.View.extend({
+	className: "grid-item-dish-suggestions  card #222930 z-depth-3",
+	template: window.template("data-dish-suggestions"),
+	name : function(){ return this.model.name},
+	positive : function(){ return this.model.positive},
+	negative : function(){ return this.model.negative},
+	neutral : function(){ return this.model.neutral},
+	supernegative : function(){ return this.model.supernegative},
+	superpositive : function(){ return this.model.superpositive},
+	eatery_name : function(){ return this.model.eatery_name},
+	initialize: function(options){
+		var self = this;
+		this.model = options.model;
+		},
+
+	render: function(){
+		var self = this;
+		this.$el.append(this.template(this));
+		this.$el.attr("color", "white");
+
+		return this;
+	},
+
+	events: {
+		"click .data-click-eatery": "ClickEatery",
+	
+	},
+
+	ClickEatery: function(event){
+		var self = this;
+		event.preventDefault();
+		console.log("Eatery has been clicked");
+		console.log(self.model.eatery_id);
+
+	},
+
+});
+	
+	
 App.DataView = Backbone.View.extend({
 	className: "grid-item-new  card #222930 z-depth-3",
 	template: window.template("data"),
