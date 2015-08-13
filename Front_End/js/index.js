@@ -1,24 +1,14 @@
 $(document).ready(function(){
 $.fn.enterKey = function (fnc) {
-	    return this.each(function () {
-		            $(this).keypress(function (ev) {
-				                var keycode = (ev.keyCode ? ev.keyCode : ev.which);
-						            if (keycode == '13') {
-								                    fnc.call(this, ev);
-										                }
-							            })
-			        })
+		return this.each(function () {
+			$(this).keypress(function (ev) {
+				var keycode = (ev.keyCode ? ev.keyCode : ev.which);
+				if (keycode == '13') {
+					fnc.call(this, ev);
+						}
+					})
+			})
 }
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -185,17 +175,11 @@ App.ModifyViewOnEatery = Backbone.View.extend({
 					    effect: 'fadeInOnAppear',
 					  }
 				
-				})
-			
-				
-				
-				
-				}
+				})}
 				else{
 					var subView = new App.ErrorView();
 					$(".trending-bar-chart").html(subView.render().el);	
 				}
-		
 			})
 			return this;
 			}, 
@@ -381,6 +365,9 @@ App.BodyView = Backbone.View.extend({
 			console.log("Latitude: " + position.coords.latitude + "Longitude: " + position.coords.longitude) 
 			var latitude = position.coords.latitude;
 			var longitude = position.coords.longitude
+
+
+			//On the basis of the current location gets the trending dishes, mbienece, service and cost clouds
 			var jqhr = $.post(window.nearest_eateries, {"lat": latitude, "long": longitude, "range": 10})	
 			jqhr.done(function(data){
 				console.log(data.result);
@@ -403,11 +390,6 @@ App.BodyView = Backbone.View.extend({
 							model["category"] = category   
 							var subview = new App.DataView({"model": model})
 							$(".grid-grid").append(subview.render().el);
-							
-
-						//For testing new grid plugins , but the fuck 
-						//
-						//*
 						   }) 
 						 });   		 
 				
@@ -418,26 +400,6 @@ App.BodyView = Backbone.View.extend({
 					$(".trending-bar-chart").html(subView.render().el);	
 				}
 			
-				  $('.collapsible').collapsible({
-				        accordion : false // A setting that changes the collapsible behavior to expandable instead of the default accordion style
-				    });	
-
-				 /* 
-				var $grid = $('.grid').isotope({
-						itemSelector: '.grid-item',
-						  percentPosition: true,
-						  masonry: {
-						      // use outer width of grid-sizer for columnWidth
-						           columnWidth: 200, 
-						             }
-					            })
-
-				$grid.isotope( 'on', 'arrangeComplete', function() {
-					    console.log('arrange is complete');
-					      });
-				  // manually trigger initial layout
-				  $grid.isotope();
-				  */
 				$(".grid-grid").gridalicious({selector: '.grid-item-new',
 						gutter: 1, 
 						width: 150,
@@ -456,8 +418,13 @@ App.BodyView = Backbone.View.extend({
 		};
 
 
+			//Deals with if somebody wants to enetr a query out of which we have to figure out what he wants and a which eatery he wants
 			this.intiateEnterQuery();	
+
+			//Deals with if somebdy wants to provide feedback
 			this.intiateFeedback();
+
+			//Deals with the two search bars which will have enter dish name and enter eatery name
 			this.initiateAutoComplete();
 
 
@@ -472,6 +439,11 @@ App.BodyView = Backbone.View.extend({
 	},
 
 	initiateAutoComplete: function(){
+			//deals with the autocomplete by rendering data from elastic search and using typeahead.js library
+			//binds two events, one is  selection from typehead and enter key from typehead and the event is 
+			//to call dishSuggestions method of this view with the dish name
+			//and on eatery selection calls the eatery details view in this file which will generate the 
+			//fur clouds for the particular eatery
 			var self = this;
 			$('.search-dish').typeahead({
 					  hint: true,
@@ -535,6 +507,7 @@ App.BodyView = Backbone.View.extend({
 
 
 	dishSuggestions: function(dish_name){
+		//Fetches relevant matched from elastic search ont he basis of the dish_name given to it
 		var jqhr = $.post(window.get_dishes, {"dish_name": dish_name})	
 		jqhr.done(function(data){
 			if (data.error == false){
@@ -543,7 +516,6 @@ App.BodyView = Backbone.View.extend({
 				
 				$(".grid-dish-suggestions").append('<div class="grid-item-dish-suggestions  card #222930 blue-grey darken-4 z-depth-3" style="text-align: center"> <p>Match </p><p>for</p><p>' + dish_name + '</p>')
 
-				console.log(data.result);
 				$.each(data.result, function(iter, model){
 							var subview = new App.DataDishSuggestionsView({"model": model})
 							//list.push(subview.render().el);	
@@ -562,10 +534,6 @@ App.BodyView = Backbone.View.extend({
 					  }
 				
 				})
-			
-				
-				
-				
 				}
 				else{
 					var subView = new App.ErrorView();
@@ -573,8 +541,6 @@ App.BodyView = Backbone.View.extend({
 				}
 		
 			})
-
-
 	},
 
 
@@ -604,6 +570,8 @@ App.BodyView = Backbone.View.extend({
 	},
 
 	clickPickEatery: function(){
+		//Generates a table with bootpeg.js for the eateries right now sorted on the basis of the data present in the database.
+		//alo implements the pagination for the eateries by calling in PickEatery view in the file
 		console.log("click eatery has been clicked");	
 		var subview = new App.PickEatery({"model": {"page_num": 0}})
 		$("#eatery-content").html(subview.render().el); // or some ajax content loading...
@@ -778,6 +746,8 @@ App.DataDishSuggestionsView = Backbone.View.extend({
 		event.preventDefault();
 		console.log("Eatery has been clicked");
 		console.log(self.model.eatery_id);
+		var subView = new App.ModifyViewOnEatery({"model": {"eatery_id": self.model.eatery_id, "eatery_name": self.model.eatery_name, "eatery_lat": self.model.location.lat, "eatery_lng": self.model.location.lon}});	
+		subView.render().el
 
 	},
 
@@ -818,126 +788,13 @@ App.DataView = Backbone.View.extend({
 		event.preventDefault();
 		console.log("Eatery has been clicked");
 		console.log(self.model.eatery_id);
+		var subView = new App.ModifyViewOnEatery({"model": {"eatery_id": self.model.eatery_id, "eatery_name": self.model.eatery_name, "eatery_lat": self.model.location.lat, "eatery_lng": self.model.location.lon}});	
+		subView.render().el
 
 	},
 
 });
 	
-	
-	
-App.MainView = Backbone.View.extend({
-	className: "row",
-	template: window.template("root"),
-	initialize: function(){
-		var self = this;
-		/*
-		
-		$(".side-bar").html(this.render().el);
-			*/
-		},
-
-	render: function(){
-		var self = this;
-		this.beforeRender();	
-		this.$el.append(this.template(this));
-		this.$el.attr("style",  "margin-bottom: 0px");
-		return this;
-	},
-
-	beforeRender: function(){
-		var subview = new App.TrendingView();
-		subview.render().el;
-		__array = [{'eatery_name': 'Cheese Chaplin', 'eatery_coordinates': [28.5244611111, 77.1919944444]}, 
-			{'eatery_name': 'Chef &amp; I', 'eatery_coordinates': [28.5246305556, 77.1914527778]}, 
-			{'eatery_name': 'Cafe Seclude', 'eatery_coordinates': [28.5245277778, 77.1909777778]}, 
-			{'eatery_name': 'Shroom', 'eatery_coordinates': [28.524948, 77.190225]}, 
-			{'eatry_name': 'Lure Switch', 'eatery_coordinates': [28.5291066667, 77.1936133333]}]			
-		__initial_lat = 28.6427138889;
-		__initial_long = 77.1192555556;
-		reloadGoogleMap(__initial_lat, __initial_long, __array);
-	},
-	
-	events: {
-		'click .submitButton': 'Submit', 	
-		'click .feedbackForm': 'feedbackForm', 	
-		},
-
-
-
-	feedbackForm: function(event){
-		event.preventDefault();
-		console.log("feedback form clicked");
-		},
-
-	changeMap: function(event){
-		event.preventDefault();
-		var self = this;
-		eatery_lat = $(".eatery-list-button").attr("lat")
-		eatery_long = 	$(".eatery-list-button").attr("long")
-		range = 10;
-		
-		
-		jqhr.fail(function(data){
-				var subView = new App.ErrorView();
-				$(".dynamic-display").html(subView.render().el);	
-						
-		});
-		
-		},
-
-
-
-
-
-	Submit: function(event){
-		event.preventDefault();
-		console.log("Button pressed");
-		value = $("textarea").val();
-			
-		if (value == ""){
-				console.log("No result");
-			}
-		console.log(value)
-		var jqhr = $.post(window.resolve_query, {"text": value})	
-		jqhr.done(function(data){
-			if (data.error == false){
-				$(".show-sentences").html("");
-				console.log(data.result)
-				var subView = new App.DisplaySuggestion({"model": data.result})
-				$(".show-sentences").append(subView.render().el);
-
-					}
-			else{
-				var subView = new App.ErrorView();
-				$(".trending-bar-chart").html(subView.render().el);	
-			}
-		})
-		
-		jqhr.fail(function(data){
-				var subView = new App.ErrorView();
-				$(".dynamic-display").html(subView.render().el);	
-						
-		});
-		}, 
-			
-
-
-	seeWordCloud: function(eatery_id){
-		$(".main-body").empty()
-		
-			
-		var subView = new App.SeeWordCloudDateSelectionView();
-		bootbox.dialog({
-			"title": "Word Cloud: " + $(":checkbox:checked").val() ,
-			"message": subView.render().el,
-			"animate": true,
-			"closeButton": true,
-			"className": "data_selection",
-			})
-	},
-	});
-
-
 App.DisplaySuggestion = Backbone.View.extend({
 	
 	initialize: function(options){

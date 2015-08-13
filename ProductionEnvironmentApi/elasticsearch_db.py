@@ -477,7 +477,7 @@ class ElasticSearchScripts(object):
                 """
                 """
 
-                food_body = {"_source": ["name", "eatery_name", "eatery_id", "positive", "negative", "neutral", "super-positive", "super-negative", "total_sentiments"],
+                food_body = {"_source": ["name", "location", "eatery_name", "eatery_id", "positive", "negative", "neutral", "super-positive", "super-negative", "total_sentiments"],
                         "from": 0, 
                         "size": 10, 
                         "sort": [
@@ -499,7 +499,7 @@ class ElasticSearchScripts(object):
 
                 trending_dishes = ES_CLIENT.search(index="food", doc_type="dishes", body=food_body)
                 
-                ambience_body = {"_source": ["name", "eatery_name", "positive", "negative", "neutral", "super-positive", "super-negative", "total_sentiments"],
+                ambience_body = {"_source": ["name", "location", "eatery_name", "positive", "negative", "neutral", "super-positive", "super-negative", "total_sentiments"],
                         "from": 0, 
                         "size": 2, 
                         "sort": [
@@ -520,7 +520,7 @@ class ElasticSearchScripts(object):
                         }
                 
                 trending_ambience = ES_CLIENT.search(index="ambience", doc_type="ambience-overall", body=ambience_body)
-                cost_body = {"_source": ["name", "eatery_name", "positive", "negative", "neutral", "super-positive", "super-negative", "total_sentiments"],
+                cost_body = {"_source": ["name", "eatery_name", "location", "positive", "negative", "neutral", "super-positive", "super-negative", "total_sentiments"],
                         "from": 0, 
                         "size": 2, 
                         "sort": [
@@ -542,7 +542,7 @@ class ElasticSearchScripts(object):
                 
                 trending_cost = ES_CLIENT.search(index="cost", doc_type="value for money", body=cost_body)
                 
-                service_body = {"_source": ["name", "eatery_name", "positive", "negative", "neutral", "super-positive", "super-negative", "total_sentiments"],
+                service_body = {"_source": ["name", "eatery_name", "location", "positive", "negative", "neutral", "super-positive", "super-negative", "total_sentiments"],
                         "from": 0, 
                         "size": 2, 
                         "sort": [
@@ -644,7 +644,7 @@ class ElasticSearchScripts(object):
 
 
                 def find_exact_match(__dish_name, number_of_dishes):
-                        exact_dish_search_body={"_source": ["name", "eatery_name", "positive", "negative", "neutral", "super-positive", "super-negative", "total_sentiments"],
+                        exact_dish_search_body={"_source": ["name", "eatery_name", "eatery_id", "location", "positive", "negative", "neutral", "super-positive", "super-negative", "total_sentiments"],
                                     "query":{
                                             "term":{
                                                         "dish_raw":  __dish_name}},
@@ -663,7 +663,7 @@ class ElasticSearchScripts(object):
 
                 def find_fuzzy_match(__dish_name, number_of_dishes):
                         print "Fussy match for %s"%__dish_name
-                        fuzzy_search_body = {"_source": ["name", "eatery_name", "positive", "negative", "neutral", "super-positive", "super-negative", "total_sentiments"],
+                        fuzzy_search_body = {"_source": ["name", "eatery_name", "eatery_id", "location", "positive", "negative", "neutral", "super-positive", "super-negative", "total_sentiments"],
                                 "query": {
                                     "fuzzy_like_this": {
                                             "fields": ["dish_shingle", "dish_raw"],
@@ -684,7 +684,7 @@ class ElasticSearchScripts(object):
 
 
                 def find_standard_match(__dish_name, number_of_dishes):
-                        standard_search_body = {"_source": ["name", "eatery_name", "positive", "negative", "neutral", "super-positive", "super-negative", "total_sentiments"],
+                        standard_search_body = {"_source": ["name", "eatery_name", "eatery_id", "location", "positive", "negative", "neutral", "super-positive", "super-negative", "total_sentiments"],
                                 "query": {
                                     "match": {
                                             "name": {
