@@ -330,6 +330,13 @@ reloadGoogleMap =  function (__initial_lat, __initial_long, eateries_list){
 
 		};
 
+
+
+
+
+
+
+
 App.BodyView = Backbone.View.extend({
 	//tagName: "fieldset",
 	//className: "well-lg plan",
@@ -350,6 +357,22 @@ App.BodyView = Backbone.View.extend({
 				});
 		
 		$(".button-collapse").sideNav();
+		$('#modal-fblogin').openModal({
+				//This is for how it works options, Whihch hasnt been implemented yet
+				dismissible: true, // Modal can be dismissed by clicking outside of the modal
+				opacity: .5, // Opacity of modal background
+				in_duration: 300, // Transition in duration
+				out_duration: 200, // Transition out duration
+				complete: function() {
+					console.log("clicked the fuck");       
+			
+				}, });
+		$("sign-in-fb").on("click", function(){
+				
+		});
+
+
+	
 	},
 
 

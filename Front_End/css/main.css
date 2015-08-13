@@ -4,6 +4,17 @@
 @import url(http://fonts.googleapis.com/css?family=Margarine);
 @import url(http://fonts.googleapis.com/css?family=Marko+One);
 
+/*
+body {
+	background-image: url("bg-butterfly.png");
+	  background-repeat:no-repeat;
+	     background-size:cover;
+
+}
+
+
+*/
+
 
 ul.side-nav.fixed li:hover, ul.side-nav.fixed li.active {
 	   background-color: #4EB1BA;

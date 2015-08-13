@@ -31,26 +31,96 @@
                 <script type="text/javascript" src="js/libs/mustache/mustache.js"></script>
                 <script type="text/javascript" src="js/libs/underscore/underscore.js"></script>
                 <script type="text/javascript" src="js/libs/bootbox/bootbox.min.js"></script>
-                <script type="text/javascript" src="js/libs/backbone/backbone.js"></script>
+                <script type="text/javascript" src="js/libs/backbone-min.js"></script>
                 <script type="text/javascript" src="js/libs/d3/d3.js"></script>
                 <script type="text/javascript" src="js/libs/d3.layout.cloud.js"></script>
                 <script type="text/javascript" src="js/libs/jquery-ui.js"></script>
-                <script type="text/javascript" src="js/jquery.jeditable.mini.js"></script>
                 <script type="text/javascript" src="js/jquery.tablesorter.min.js"></script>
-                <script type="text/javascript" src="js/isotope.pkgd.min.js"></script>
                 <script type="text/javascript" src="js/typeahead.bundle.min.js"></script>
                 <script src="http://code.highcharts.com/modules/exporting.js"></script>
 		<link href='http://fonts.googleapis.com/css?family=Josefin+Slab:600' rel='stylesheet' type='text/css'> 
-		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.0/css/materialize.min.css">
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.0/css/materialize.min.css" media="screen,projection"/>>
 		 <link href="http://netdna.bootstrapcdn.com/font-awesome/4.1.0/css/font-awesome.min.css" rel="stylesheet" />	
 		<link href="css/blue/style.css" rel="stylesheet">		
 		<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 		   <!-- Compiled and minified JavaScript -->
-		     <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.0/js/materialize.min.js"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.0/js/materialize.min.js"></script>
+		<script>		   
+			$(document).ready(function(){ 
+			function statusChangeCallback(response) {
+				console.log('statusChangeCallback');
+				console.log(response);
+				// The response object is returned with a status field that lets the
+				// app know the current login status of the person.
+				// Full docs on the response object can be found in the documentation
+				// for FB.getLoginStatus().
+				if (response.status === 'connected'){
+						FB.api('/me?fields=id,name,email', function(response) {
+						  console.log(response);
+						  });	  
+				// Logged into your app and Facebook.
+				} else if (response.status === 'not_authorized') {
+					// The person is logged into Facebook, but not your app.
+					document.getElementById('status').innerHTML = 'Please log ' + 'into this app.';
+				} else {
+					// The person is not logged into Facebook, so we're not sure if
+					// they are logged into this app or not.
+					document.getElementById('status').innerHTML = 'Please log ' +'into Facebook.';
+    					}
+  				}
 
-		     </head>
-			<body style="font-family: 'Josefin Slab', serif;;">
-			<script type="text/x-mustache-template" id="root-template">
+			// This function is called when someone finishes with the Login
+			// Button.  See the onlogin handler attached to it in the sample
+			// code below.
+			function checkLoginState(){
+					FB.getLoginStatus(function(response) {
+							statusChangeCallback(response);
+							});
+			}
+
+			window.fbAsyncInit = function() {
+				FB.init({
+					appId      : '1605945752959547',
+					cookie     : true,  // enable cookies to allow the server to access // the session
+    					xfbml      : true,  // parse social plugins on this page
+    					version    : 'v2.2' // use version 2.2
+  					});
+
+			// Now that we've initialized the JavaScript SDK, we call
+			// FB.getLoginStatus().  This function gets the state of the
+			// person visiting this page and can return one of three states to
+			// the callback you provide.  They can be:
+			//
+			// 1. Logged into your app ('connected')
+			// 2. Logged into Facebook, but not your app ('not_authorized')
+			// 3. Not logged into Facebook and can't tell if they are logged into
+			//    your app or not.
+			//
+			// These three cases are handled in the callback function.
+		
+			FB.getLoginStatus(function(response) {
+					statusChangeCallback(response);
+					});
+			};
+
+			// Load the SDK asynchronously
+			(function(d, s, id) {
+			 	var js, fjs = d.getElementsByTagName(s)[0];
+				if (d.getElementById(id)) return;
+					js = d.createElement(s); js.id = id;
+					js.src = "//connect.facebook.net/en_US/sdk.js";
+					fjs.parentNode.insertBefore(js, fjs);
+					}(document, 'script', 'facebook-jssdk'));
+
+		// Here we run a very simple test of the Graph API after login is
+		// successful.  See statusChangeCallback() for when this call is made.
+			});
+		</script>
+
+
+		</head>
+		<body style="font-family: 'Josefin Slab', serif;">
+		<script type="text/x-mustache-template" id="root-template">
 					 <form>
 								<div class="input-field col s10">
 									<textarea id="textarea1" class="materialize-textarea" id="searchQuery"></textarea>
@@ -60,34 +130,33 @@
 									<a class="waves-effect waves-light submitButton btn-flat" ><i class="material-icons">done_all</i>Submit</a>
 								</div>
 					</form>
-        </script>
-	<script type="text/x-mustache-template" id="append-eatery-main-template">
+        	</script>
+		<script type="text/x-mustache-template" id="append-eatery-main-template">
 									<a  class='dropdown-button btn-flat eatery-list-button' data-beloworigin="true" data-activates='dropdown1'> choose restaurant</a>
                 							<ul id = "dropdown1" class="dropdown-content scrollable-menu eateries-list change-map">
                 							</ul>
-        </script>
-        <script type="text/x-mustache-template" id="success-suggestions-template">
-		
-		<textarea class="materialize-textarea suggestions" style="padding: 10">{{name}}</textarea>
-	
-	</script>
+        	</script>
+		<script type="text/x-mustache-template" id="success-suggestions-template">
+			<textarea class="materialize-textarea suggestions" style="padding: 10">{{name}}</textarea>
+		</script>
         
-	<script type="text/x-mustache-template" id="write-review-template">
+		<script type="text/x-mustache-template" id="write-review-template">
 			 <p>Write review for<p><a id={{eatery_id}} class="write-review">{{eatery_name}}</a></p>
 	
-	</script>
-	<script type="text/x-mustache-template" id="error-suggestions-template">
-	</script>
+		</script>
+		<script type="text/x-mustache-template" id="error-suggestions-template">
+		</script>
+	
 
-
-        <script type="text/x-mustache-template" id="append-eatery-template">
+		<script type="text/x-mustache-template" id="append-eatery-template">
 			{{name}}
-	</script>
-        <script type="text/x-mustache-template" id="error-template">
+		</script>
+		
+		<script type="text/x-mustache-template" id="error-template">
                         <h3>Ooppsss!, Some problem occurred while processing your request, Please try again</h3>
                         <img src="css/images/4041.jpg" alt="Page Not Found (404)." style="position: absolute; left: 50%; top: 10%; margin-left: -285px; margin-top: 10%">
-        </script>
-        <script type="text/x-mustache-template" id="display-template">
+		</script>
+		<script type="text/x-mustache-template" id="display-template">
 				<li>
       					<div class="collapsible-header"><i class="material-icons">send</i>First</div>
       					<div class="collapsible-body"><p>Lorem ipsum dolor sit amet.</p></div>
@@ -100,9 +169,9 @@
 					<div class="collapsible-header"><i class="material-icons">send</i>Third</div>
 					<div class="collapsible-body"><p>Lorem ipsum dolor sit amet.</p></div>
 				</li>
-	</script>
+		</script>
 
-        <script type="text/x-mustache-template" id="result-template">
+     		<script type="text/x-mustache-template" id="result-template">
                         <div class="container-fluid">
                                 <div class="row" style="margin-right: 5%; margin-left: 3%">
                                         <div class="head">
@@ -113,8 +182,8 @@
                                         <div class="slides">
                                 </div>
                         </div>
-        </script>
-        <script type="text/x-mustache-template" id="search-template">
+		</script>
+		<script type="text/x-mustache-template" id="search-template">
 
                                                 <div class="form-group">
                                                         <div style="color: LightSlateGray; margin-bottom: 1px"><h1 style="text-align: center; margin-top: 2%; margin-bottom: 0%">doof ..</$
@@ -123,78 +192,77 @@
 							</di>
 							<button class="btn waves-effect waves-light submitButton" style="height: 10%">submiti <i class="material-icons">send</i></button>
                             			</div>
-        </script>
+		</script>
 
-	<script type="text/x-mustache-template" id="each-dish-template">
+		<script type="text/x-mustache-template" id="each-dish-template">
                         <div class="seeChart" style="font-size: 100%; text-align: center">{{dish_name}}</div>
                         <div class="dish-chart">{{is_what}}</div>
 
-        </script>
-	<script type="text/x-mustache-template" id="pick-eatery-child-template">
+		</script>
+		<script type="text/x-mustache-template" id="pick-eatery-child-template">
 			<td class="eatery-row">{{eatery_name}}</td>
 			<td>{{trending1}}</td>
 			<td>{{trending2}}</td>
 			<td>{{cost}}</td>
 			<td>{{service}}</td>
 			<td>{{ambience}}</td>
-			
-        </script>
-		<div class="container">
-		<div class="row">
-		<nav>
-		 <div class="nav-wrapper #222930 blue-grey darken-4 ">
-			<a href="#!" class="brand-logo deepshadow">HyPOST</a>
-			<a href="#" data-activates="mobile-demo" class="button-collapse"><i class="material-icons">menu</i></a>
+		</script>
+			<div class="container">
+			<div class="row">
+			<nav>
+				<div class="nav-wrapper #222930 blue-grey darken-4 ">
+				<a href="#!" class="brand-logo deepshadow">HyPOST</a>
+				<a href="#" data-activates="mobile-demo" class="button-collapse"><i class="material-icons">menu</i></a>
 				<ul class="right hide-on-med-and-down">
-				<li>
-					<a class="waves-effect waves-light" style="margin-bottom: 0; color: white" href="#">  Home</a>
-						<!-- feedback button-->
-				</li>
-						
-				<li>
-					<a class="waves-effect waves-light feedbackForm modal-trigger" style="margin-bottom: 0; color: white" href="#modal1">  feedback</a>
-				</li>
-						
-						<!-- How it works button started-->
-				<li>
-					<a class="waves-effect waves-light modal-trigger3" style="color: white; " href="#modal2">how it works</a>
-				</li>
-					<!-- How it works button finished-->
-						<!-- Enter your query button started-->
-				<li>
-						<a class="waves-effect waves-light modal-trigger2 tool-tipped " style="color: white; " href="#modal3">  Enter your query</a>
-				</li>	
-				<li>
-					<a class="waves-effect waves-light" id="pickEatery" style="color: white; " >pick eatery</a>
-				</li>
+					<li>
+						<a class="waves-effect waves-light" style="margin-bottom: 0; color: white" href="#">  Home</a>
+							<!-- feedback button-->
+					</li>
+							
+					<li>
+						<a class="waves-effect waves-light feedbackForm modal-trigger" style="margin-bottom: 0; color: white" href="#modal1">  feedback</a>
+					</li>
+							
+							<!-- How it works button started-->
+					<li>
+						<a class="waves-effect waves-light modal-trigger3" style="color: white; " href="#modal2">how it works</a>
+					</li>
+						<!-- How it works button finished-->
+							<!-- Enter your query button started-->
+					<li>
+							<a class="waves-effect waves-light modal-trigger2 tool-tipped " style="color: white; " href="#modal3">  Enter your query</a>
+					</li>	
+					<li>
+						<a class="waves-effect waves-light" id="pickEatery" style="color: white; " >pick eatery</a>
+					</li>
 				</ul>
-										        
-				
+											        
+					
 				<ul class="side-nav #222930 blue-grey darken-4" id="mobile-demo">
-				<li>
-					<a class="waves-effect waves-light" style="margin-bottom: 0; color: white" href="#">  Home</a>
-						<!-- feedback button-->
-				</li>
-						
-				<li>
-					<a class="waves-effect waves-light feedbackForm modal-trigger" style="margin-top: 30% ; margin-bottom: 0; color: white" href="#modal1">  feedback</a>
-						<!-- feedback button finished-->
-				</li>
-						
-						<!-- How it works button started-->
-				<li>
-					<a class="waves-effect waves-light modal-trigger3" style="margin-top: 15%; color: white; " href="#modal2">how it works</a>
-				</li>
-					<!-- How it works button finished-->
-						<!-- Enter your query button started-->
-				<li>
-						<a class="waves-effect waves-light modal-trigger2 tool-tipped " style="margin-top: 15%; color: white; " href="#modal3">  Enter your query</a>
-				</li>	
-						<!-- Enter your query button finished-->
-				<li>
-					<a class="waves-effect waves-light" id="pickEatery" style="margin-top: 15%; color: white; " >pick eatery</a>
-				</li>
-										        
+					<li>
+						<a class="waves-effect waves-light" style="margin-bottom: 0; color: white" href="#">  Home</a>
+							<!-- feedback button-->
+					</li>
+							
+					<li>
+						<a class="waves-effect waves-light feedbackForm modal-trigger" style="margin-top: 30% ; margin-bottom: 0; color: white" href="#modal1">  feedback</a>
+							<!-- feedback button finished-->
+					</li>
+							
+							<!-- How it works button started-->
+					<li>
+						<a class="waves-effect waves-light modal-trigger3" style="margin-top: 15%; color: white; " href="#modal2">how it works</a>
+					</li>
+						<!-- How it works button finished-->
+							<!-- Enter your query button started-->
+					<li>
+							<a class="waves-effect waves-light modal-trigger2 tool-tipped " style="margin-top: 15%; color: white; " href="#modal3">  Enter your query</a>
+					</li>	
+							<!-- Enter your query button finished-->
+					<li>
+						<a class="waves-effect waves-light" id="pickEatery" style="margin-top: 15%; color: white; " >pick eatery</a>
+					</li>
+											        
 				</ul>
 		</div>
 		
@@ -223,6 +291,16 @@
 												<span class="black-text">Sorry, Havent implemented yet, Please check with us after sometime.</span>
 											</div>
 										</div>
+					
+								</div>
+							</div>
+							<div id="modal-fblogin" class="modal">
+								<div class="modal-content">
+											<div class="row">
+												<div class="col s3">
+													<fb:login-button scope="email, user_about_me, user_birthday" onclick="checkLoginState()">Login with Facebook</fb:login-button>
+												</div>
+											</div>	
 					
 								</div>
 							</div>
@@ -405,7 +483,6 @@
 <script src="js/Global-variables.js"></script> 
 		<script src="js/Global-variables.js"></script>
 		<script src="js/router.js"></script>
-		<script src="js/search_word_clouds.js"></script>                                                                                          
 		<script src="js/index.js"></script>
 		<script>$(function() {App.boot($('body')); });</script>   
 
