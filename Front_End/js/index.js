@@ -118,7 +118,6 @@ App.ModifyViewOnEatery = Backbone.View.extend({
 	render: function(){
 		var self = this;
 		var subView = new App.EateryDetails({"model": {"eatery_id": this.model.eatery_id, "eatery_name": this.model.eatery_name}});	
-		subView.render().el;
 		
 		range = 10;
 		
@@ -565,7 +564,8 @@ App.BodyView = Backbone.View.extend({
 			})
 		
 			$('.search-dish').bind('typeahead:select', function(ev, suggestion) {
-				  alert('Selection: ' + suggestion);
+				var dish_name = $(this).val();
+				self.dishSuggestions(dish_name)
 			});
 
 			
@@ -591,8 +591,14 @@ App.BodyView = Backbone.View.extend({
 			});
 			
 			$(".search-eatery").enterKey(function () {
-				alert('Enter pressed n search-eatery');
+				var eatery_name = $(this).val();
+				new App.EateryDetails({"model": {"eatery_name": eatery_name}})
 			})
+			
+			$('.search-eatery').bind('typeahead:select', function(ev, suggestion) {
+				var eatery_name = $(this).val();
+				new App.EateryDetails({"model": {"eatery_name": eatery_name}})
+			});
 	},
 
 
@@ -754,7 +760,6 @@ App.BodyView = Backbone.View.extend({
 				google.maps.event.addListener(marker, 'click', function() {
 					console.log(this.get("eatery_id"));     
 				     	var subView = new App.EateryDetails({"model": {"eatery_id": this.get("eatery_id"), "eatery_name": this.get("title")}});	
-					subView.render().el;
 					//subView.render().el;
 					});
                         })
@@ -876,8 +881,6 @@ App.DataView = Backbone.View.extend({
 	ClickEatery: function(event){
 		var self = this;
 		event.preventDefault();
-		console.log("Eatery has been clicked");
-		console.log(self.model.eatery_id);
 		var subView = new App.ModifyViewOnEatery({"model": {"eatery_id": self.model.eatery_id, "eatery_name": self.model.eatery_name, "eatery_lat": self.model.location.lat, "eatery_lng": self.model.location.lon}});	
 		subView.render().el
 
@@ -1023,13 +1026,57 @@ App.ErrorSuggestion = Backbone.View.extend({
 
 App.EateryDetails = Backbone.View.extend({
 	initialize: function(options){
+		var self = this;
 		this.model = options.model;
 		
 		console.log("Called from Eatery details");
 		console.log(this.model.eatery_id);
 		console.log(this.model.eatery_name);
-		},
+		
+		if (!self.model.eatery_id){
+			console.log("Called without eatery id");
+			self.renderOnEateryName();
 
+
+		}
+		else {
+			self.render()
+	
+		}
+			
+	
+	},
+
+	renderOnEateryName: function(){
+		var self = this;
+		var jqhr = $.post(window.get_eatery, {"eatery_name": this.model.eatery_name})	
+		jqhr.done(function(data){
+			if (data.error == false){
+				console.log(data.result)
+				$.each(["food", "ambience", "cost", "service"], function(iter, value){
+					__object = $("." + value);	
+					self.makeChart(__object, data.result[value], self.model.eatery_name, value);
+				})
+					
+				var subView = new App.ReviewForEatery({"model": {"eatery_name": self.model.eatery_name, "eatery_id": self.model.eatery_id, "eatery_address": data.result.eatery_address}})
+				$("#do-review").html(subView.render().el)
+			}
+			else{
+				var subView = new App.ErrorView();
+				$(".trending-bar-chart").html(subView.render().el);	
+			}
+		})
+		
+		jqhr.fail(function(data){
+				var subView = new App.ErrorView();
+				$(".dynamic-display").html(subView.render().el);	
+						
+		});
+		
+		
+		
+		return this;
+	},
 	render: function(){
 		var self = this;
 		var jqhr = $.post(window.eatery_details, {"eatery_id": this.model.eatery_id, "eatery_name": this.model.eatery_name})	

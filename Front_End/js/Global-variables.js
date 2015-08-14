@@ -21,5 +21,6 @@ $(document).ready(function(){
 	window.get_dish_suggestions = window.URL + "get_dish_suggestions";
 	window.get_eatery_suggestions = window.URL + "get_eatery_suggestions";
 	window.get_dishes = window.URL + "get_dishes";
+	window.get_eatery = window.URL + "get_eatery";
 
 });

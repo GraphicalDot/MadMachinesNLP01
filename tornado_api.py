@@ -141,6 +141,37 @@ def time_series(__result):
                 "cumulative": [{"name": "cumulative", "data": list(cumulative), "color": "LightSlateGray"}]}
 
 
+def convert_for(data):
+                        highchart_categories = []
+                        supernegative, superpositive, negative, neutral, positive = [], [], [], [], []
+                        if type(data) == list:
+                                for __data in data:
+                            
+                                        highchart_categories.append(__data.get("name"))
+                                        supernegative.append(__data.get("super-negative"))
+                                        superpositive.append(__data.get("super-positive"))
+                                        negative.append(__data.get("negative"))
+                                        positive.append(__data.get("positive"))
+                                        neutral.append(__data.get("neutral"))
+                        
+                        if type(data) == dict:
+                            for name, __data in data.iteritems():
+                                        highchart_categories.append(name)
+                                        supernegative.append(__data.get("super-negative"))
+                                        superpositive.append(__data.get("super-positive"))
+                                        negative.append(__data.get("negative"))
+                                        positive.append(__data.get("positive"))
+                                        neutral.append(__data.get("neutral"))
+
+                        highchart_series = [
+                                    {"name": "supernegative", "data": supernegative, 'color': "#B46254"},
+                                    {"name": "negative", "data": negative, 'color': "#8B7BA1"},
+                                    {"name": "neutral", "data": neutral, 'color': "#ADB8C2"},
+                                    {"name": "positive", "data": positive, 'color': "#598C73"},
+                                    {"name": "superpositive", "data": superpositive, 'color': "green"}, 
+                                    ]
+
+                        return {"categories": highchart_categories, "series": highchart_series}
 
 class UsersFeedback(tornado.web.RequestHandler):
 	@cors
@@ -597,55 +628,6 @@ class EateryDetails(tornado.web.RequestHandler):
                 cost = result["cost"]
                 service = result["service"]
 
-                """
-                
-                def convert_for_highcharts(__dict):
-                        superpositive = __dict.pop("super-positive")
-                        supernegative= __dict.pop("super-negative")
-                        totalsentiments = __dict.pop("total_sentiments")
-                        __dict.update({"totalsentiments": totalsentiments, "superpositive": superpositive, "supernegative": supernegative})
-                        timeline = __dict.pop("timeline")
-                        __dict.update(time_series(timeline))
-                        return __dict
-
-                food = [convert_for_highcharts(dish) for dish in dishes]
-                overall_food_dict = convert_for_highcharts(overall_food)
-                overall_food.update({"name": "overall-food"})
-                food.append(overall_food)
-                """
-
-
-                def convert_for(data):
-                        highchart_categories = []
-                        supernegative, superpositive, negative, neutral, positive = [], [], [], [], []
-                        if type(data) == list:
-                                for __data in data:
-                            
-                                        highchart_categories.append(__data.get("name"))
-                                        supernegative.append(__data.get("super-negative"))
-                                        superpositive.append(__data.get("super-positive"))
-                                        negative.append(__data.get("negative"))
-                                        positive.append(__data.get("positive"))
-                                        neutral.append(__data.get("neutral"))
-                        
-                        if type(data) == dict:
-                            for name, __data in data.iteritems():
-                                        highchart_categories.append(name)
-                                        supernegative.append(__data.get("super-negative"))
-                                        superpositive.append(__data.get("super-positive"))
-                                        negative.append(__data.get("negative"))
-                                        positive.append(__data.get("positive"))
-                                        neutral.append(__data.get("neutral"))
-
-                        highchart_series = [
-                                    {"name": "supernegative", "data": supernegative, 'color': "#B46254"},
-                                    {"name": "negative", "data": negative, 'color': "#8B7BA1"},
-                                    {"name": "neutral", "data": neutral, 'color': "#ADB8C2"},
-                                    {"name": "positive", "data": positive, 'color': "#598C73"},
-                                    {"name": "superpositive", "data": superpositive, 'color': "green"}, 
-                                    ]
-
-                        return {"categories": highchart_categories, "series": highchart_series}
 
                 result = {"food": convert_for(dishes),
                                     "ambience": convert_for(ambience), 
@@ -700,6 +682,47 @@ class GetDishes(tornado.web.RequestHandler):
                 self.finish()
                 return 
 
+class GetEatery(tornado.web.RequestHandler):
+        @cors
+	@print_execution
+	@tornado.gen.coroutine
+        def post(self):
+                """
+                """
+                        
+                number_of_dishes = 20
+                eatery_name =  self.get_argument("eatery_name")
+                result = eateries_results_collection.find_one({"eatery_name": eatery_name})
+                if not result:
+                        self.write({"success": False,
+			        "error": True,
+			        "messege": "The eatery name  couldnt be found",
+			        })
+                        self.finish()
+                        return 
+                
+                dishes = sorted(result["food"]["dishes"], key=lambda x: x.get("total_sentiments"), reverse=True)[0: number_of_dishes]
+                overall_food = result["food"]["overall-food"]
+                ambience = result["ambience"]
+                cost = result["cost"]
+                service = result["service"]
+
+
+                result = {"food": convert_for(dishes),
+                                    "ambience": convert_for(ambience), 
+                                    "cost": convert_for(cost), 
+                                    "service": convert_for(service), 
+                                    "eatery_address": result["eatery_address"],
+                                    }
+
+                print result
+                self.write({"success": True,
+			"error": False,
+                        "result": result})
+                self.finish()
+
+                return 
+
 class GetEaterySuggestions(tornado.web.RequestHandler):
         @cors
 	@print_execution
@@ -741,6 +764,7 @@ class Application(tornado.web.Application):
                     (r"/users_details", UsersDetails),
                     (r"/users_feedback", UsersFeedback),
                     (r"/get_dishes", GetDishes),
+                    (r"/get_eatery", GetEatery),
                     (r"/get_dish_suggestions", GetDishSuggestions),
                     (r"/get_eatery_suggestions", GetEaterySuggestions),
                     (r"/eatery_details", EateryDetails),]

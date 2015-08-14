@@ -607,6 +607,20 @@ class ElasticSearchScripts(object):
                 return result
 
         @staticmethod
+        def match_for_eatery(eatery_name):
+            """
+            When a user searched for the exact eatery or enters a eatery_name which is not present in the 
+            elastic search, For this to be executed successfully
+            First: We will searhc for the exact eatery name, if that fails
+            First can be searched in the mongodb Itself
+            
+            Second : We will search search for the fuzzy match for that eatery name
+            """
+            
+            return 
+
+            
+        @staticmethod
         def get_dishes(__dish_name, number_of_dishes=None, number_of_suggestions=None):
                 """
                         dish_suggestions= {
