@@ -17,16 +17,6 @@
                 <link href='http://fonts.googleapis.com/css?family=Playfair+Display:900' rel='stylesheet' type='text/css'>
 
                 <script type="text/javascript" src="js/highchart.js"></script>
-		<!--	
-	       	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script> 
-		
-                <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
-		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap-theme.min.css">
-		
-
-                <script type="text/javascript" src="js/jquery.nested.js"></script>
-                <script type="text/javascript" src="js/makeboxes.js"></script>
-		-->
                 <script type="text/javascript" src="js/jquery.grid-a-licious.min.js"></script>
                 <script type="text/javascript" src="js/libs/mustache/mustache.js"></script>
                 <script type="text/javascript" src="js/libs/underscore/underscore.js"></script>
@@ -39,14 +29,15 @@
                 <script type="text/javascript" src="js/typeahead.bundle.min.js"></script>
                 <script src="http://code.highcharts.com/modules/exporting.js"></script>
 		<link href='http://fonts.googleapis.com/css?family=Josefin+Slab:600' rel='stylesheet' type='text/css'> 
-		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.0/css/materialize.min.css" media="screen,projection"/>>
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.0/css/materialize.min.css" media="screen,projection">
 		 <link href="http://netdna.bootstrapcdn.com/font-awesome/4.1.0/css/font-awesome.min.css" rel="stylesheet" />	
 		<link href="css/blue/style.css" rel="stylesheet">		
 		<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 		   <!-- Compiled and minified JavaScript -->
 		<script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.0/js/materialize.min.js"></script>
-		<script>		   
+		<script>		
 			$(document).ready(function(){ 
+			/*
 			function statusChangeCallback(response) {
 				console.log('statusChangeCallback');
 				console.log(response);
@@ -102,7 +93,7 @@
 					statusChangeCallback(response);
 					});
 			};
-
+			*/
 			// Load the SDK asynchronously
 			(function(d, s, id) {
 			 	var js, fjs = d.getElementsByTagName(s)[0];
@@ -235,6 +226,9 @@
 					<li>
 						<a class="waves-effect waves-light" id="pickEatery" style="color: white; " >pick eatery</a>
 					</li>
+					<li>
+						<a class="waves-effect waves-light" id="fbLogout" style="color: white; " >Log out</a>
+					</li>
 				</ul>
 											        
 					
@@ -261,6 +255,9 @@
 							<!-- Enter your query button finished-->
 					<li>
 						<a class="waves-effect waves-light" id="pickEatery" style="margin-top: 15%; color: white; " >pick eatery</a>
+					</li>
+					<li>
+						<a class="waves-effect waves-light" id="fbLogout" style="color: white; " >Log out</a>
 					</li>
 											        
 				</ul>
@@ -295,13 +292,16 @@
 								</div>
 							</div>
 							<div id="modal-fblogin" class="modal">
-								<div class="modal-content">
-											<div class="row">
-												<div class="col s3">
-													<fb:login-button scope="email, user_about_me, user_birthday" onclick="checkLoginState()">Login with Facebook</fb:login-button>
-												</div>
-											</div>	
-					
+								<div class="modal-content #222930 blue-grey darken-4" style="height: 100%;">
+									<div class="row" style="color: white; text-align: center">
+										<p>Everything you are going to see is an intelligent platform without the human intervention, to summarize users opinion</p> 
+									       	<p> Please make sure that you share your location with us, to help you better.</p>	
+									       	<p> Enjoy the one of a kind experience.</p>	
+										
+									</div>
+									<div class="row" style="text-align: center">
+									<p><fb:login-button scope="email, user_about_me, user_birthday">Login with Facebook</fb:login-button></p>
+								</div>
 								</div>
 							</div>
 					<div id="modal1" class="modal bottom-sheet #222930 blue-grey darken-4">

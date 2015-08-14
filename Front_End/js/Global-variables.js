@@ -17,6 +17,7 @@ $(document).ready(function(){
 	window.eatery_details = window.URL + "eatery_details";
 	window.eateries_on_character = window.URL + "eateries_on_character";
 	window.users_feedback = window.URL + "users_feedback";
+	window.users_details = window.URL + "users_details";
 	window.get_dish_suggestions = window.URL + "get_dish_suggestions";
 	window.get_eatery_suggestions = window.URL + "get_eatery_suggestions";
 	window.get_dishes = window.URL + "get_dishes";

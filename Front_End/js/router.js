@@ -4,7 +4,6 @@ App.Router = Backbone.Router.extend({
 		this.el =  options.el ;
 		console.log(this.el)
 		var str = new App.BodyView()
-		str.render().el
 	},
 
 	routes: {

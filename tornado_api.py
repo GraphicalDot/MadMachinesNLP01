@@ -165,6 +165,17 @@ class UsersDetails(tornado.web.RequestHandler):
 	@tornado.gen.coroutine
 	@asynchronous
         def post(self):
+                fb_id = self.get_argument("id")
+                name = self.get_argument("name")
+                email = self.get_argument("email")
+                picture = self.get_argument("picture")
+                print fb_id, name, email, picture
+                print users_details
+                print users_details.update({"fb_id": fb_id}, {"$set": { "name": name, "email": email, "picture": picture}}, upsert=True)
+                self.write({"success": True,
+			"error": False,
+			})
+                self.finish()
                 return
 
 
