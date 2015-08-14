@@ -499,7 +499,7 @@ class ElasticSearchScripts(object):
 
                 trending_dishes = ES_CLIENT.search(index="food", doc_type="dishes", body=food_body)
                 
-                ambience_body = {"_source": ["name", "location", "eatery_name", "positive", "negative", "neutral", "super-positive", "super-negative", "total_sentiments"],
+                ambience_body = {"_source": ["name", "location", "eatery_name", "eatery_id", "positive", "negative", "neutral", "super-positive", "super-negative", "total_sentiments"],
                         "from": 0, 
                         "size": 2, 
                         "sort": [
@@ -520,7 +520,7 @@ class ElasticSearchScripts(object):
                         }
                 
                 trending_ambience = ES_CLIENT.search(index="ambience", doc_type="ambience-overall", body=ambience_body)
-                cost_body = {"_source": ["name", "eatery_name", "location", "positive", "negative", "neutral", "super-positive", "super-negative", "total_sentiments"],
+                cost_body = {"_source": ["name", "eatery_name", "location", "eatery_id", "positive", "negative", "neutral", "super-positive", "super-negative", "total_sentiments"],
                         "from": 0, 
                         "size": 2, 
                         "sort": [
@@ -542,7 +542,7 @@ class ElasticSearchScripts(object):
                 
                 trending_cost = ES_CLIENT.search(index="cost", doc_type="value for money", body=cost_body)
                 
-                service_body = {"_source": ["name", "eatery_name", "location", "positive", "negative", "neutral", "super-positive", "super-negative", "total_sentiments"],
+                service_body = {"_source": ["name", "eatery_name", "location", "eatery_id", "positive", "negative", "neutral", "super-positive", "super-negative", "total_sentiments"],
                         "from": 0, 
                         "size": 2, 
                         "sort": [
@@ -652,7 +652,7 @@ class ElasticSearchScripts(object):
                                     "from": 0,
                                     "size": number_of_dishes,
                                     "sort": [
-                                            {"trending_factor": {
+                                            {"total_sentiments": {
                                                     "order" : "desc"}}
                                            ]
                                 }

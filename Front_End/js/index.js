@@ -57,8 +57,7 @@ App.PickEatery = Backbone.View.extend({
 		self.$("#pickEatery").tablesorter();
 		})
 		return 
-	},
-	
+	}
 });
 
 
@@ -99,7 +98,7 @@ App.PickEateryChild = Backbone.View.extend({
 		eatery_lng = this.model.eatery_coordinates[1]
 		var subView = new App.ModifyViewOnEatery({"model": {"eatery_id": this.model.eatery_id, "eatery_name": this.model.eatery_name, "eatery_lat": eatery_lat, "eatery_lng": eatery_lng}});	
 		subView.render().el
-	},
+	}
 })
 
 
@@ -144,7 +143,7 @@ App.ModifyViewOnEatery = Backbone.View.extend({
 
 			//http://suprb.com/apps/gridalicious/			
 		//Updating trending view 	
-		var jqhr = $.post(window.get_trending, {"lat": this.model.eatery_lat, "lng": this.model.eatery_lng,})	
+		var jqhr = $.post(window.get_trending, {"lat": this.model.eatery_lat, "lng": this.model.eatery_lng})	
 		jqhr.done(function(data){
 			if (data.error == false){
 				$(".grid-grid").html("");
@@ -168,11 +167,11 @@ App.ModifyViewOnEatery = Backbone.View.extend({
 						gutter: 1, 
 						width: 200,
 						animate: true,
-					  animationOptions: {
-						      queue: true,
-					    speed: 200,
-					    duration: 300,
-					    effect: 'fadeInOnAppear',
+					  	animationOptions: {
+							queue: true,
+							speed: 200,
+					    		duration: 300,
+					    		effect: 'fadeInOnAppear'
 					  }
 				
 				})}
@@ -182,10 +181,8 @@ App.ModifyViewOnEatery = Backbone.View.extend({
 				}
 			})
 			return this;
-			}, 
-
-
-		});
+			}
+});
 
 
 
@@ -209,7 +206,7 @@ App.WriteReview = Backbone.View.extend({
 	},
 
 	events: {
-		"click .write-review": "writeReviewfunction", 
+		"click .write-review": "writeReviewfunction"
 	},
 
 	writeReviewfunction: function(event){
@@ -234,7 +231,7 @@ App.WriteReview = Backbone.View.extend({
 		     }
 		       );
 		$("#modal32").openModal();
-	},
+	}
 });
 
 
@@ -264,10 +261,7 @@ App.WriteReviewChild = Backbone.View.extend({
 		event.preventDefault();
 		$("#modal32").closeModal();
 			
-	},
-
-
-
+	}
 });
 
 reloadGoogleMap =  function (__initial_lat, __initial_long, eateries_list){
@@ -319,7 +313,7 @@ reloadGoogleMap =  function (__initial_lat, __initial_long, eateries_list){
                        
 		       			
 				var infowindow = new google.maps.InfoWindow({
-					      content: "",
+					      content: ""
 					  });
 		       		google.maps.event.addListener(map, 'click', function(event) {
 					    marker = new google.maps.Marker({position: event.latLng, map: map});
@@ -348,8 +342,8 @@ App.BodyView = Backbone.View.extend({
 				dismissible: true, // Modal can be dismissed by clicking outside of the modal
 				opacity: .5, // Opacity of modal background
 				in_duration: 300, // Transition in duration
-				out_duration: 200, // Transition out duration
-				complete: function() { }, });
+				out_duration: 200 // Transition out duration
+				});
 		
 		$("#pickEatery").on("click", function(){
 			console.log("pick eatery clicked");
@@ -362,11 +356,8 @@ App.BodyView = Backbone.View.extend({
 				dismissible: false, // Modal can be dismissed by clicking outside of the modal
 				opacity: 1, // Opacity of modal background
 				in_duration: 300, // Transition in duration
-				out_duration: 200, // Transition out duration
-				complete: function() {
-					console.log("clicked the fuck");       
-			
-				}, });
+				out_duration: 200 // Transition out duration
+				});
 		$("#sign-in-fb").on("click", function(){
 			checkLoginState();	
 				document.location.reload(); 	
@@ -446,6 +437,7 @@ App.BodyView = Backbone.View.extend({
 			});
 			};
 
+			$('.slider').slider({full_width: true});
 		},
 
 
@@ -478,7 +470,7 @@ App.BodyView = Backbone.View.extend({
 				}
 			
 			})
-			var jqhr = $.post(window.get_trending, {"lat": latitude, "lng": longitude,})	
+			var jqhr = $.post(window.get_trending, {"lat": latitude, "lng": longitude})	
 			jqhr.done(function(data){
 				console.log(data.result);
 				if (data.error == false){
@@ -506,7 +498,7 @@ App.BodyView = Backbone.View.extend({
 						      queue: true,
 					    speed: 200,
 					    duration: 300,
-					    effect: 'fadeInOnAppear',
+					    effect: 'fadeInOnAppear'
 					  }
 				
 				})
@@ -546,7 +538,7 @@ App.BodyView = Backbone.View.extend({
 			$('.search-dish').typeahead({
 					  hint: true,
 					  highlight: true,
-					  minLength: 4,
+					  minLength: 4
 				},
 				{
 					limit: 12,
@@ -580,7 +572,7 @@ App.BodyView = Backbone.View.extend({
 			$('.search-eatery').typeahead({
 					  hint: true,
 					  highlight: true,
-					  minLength: 2,
+					  minLength: 2
 				},
 				{
 					  limit: 12,
@@ -628,7 +620,7 @@ App.BodyView = Backbone.View.extend({
 						      queue: true,
 					    speed: 200,
 					    duration: 300,
-					    effect: 'fadeInOnAppear',
+					    effect: 'fadeInOnAppear'
 					  }
 				
 				})
@@ -657,7 +649,7 @@ App.BodyView = Backbone.View.extend({
 						$.post(window.users_feedback, {"feedback": $("#feedback textarea").val(), 
 								"telephone": $("#feedback input")[1].value,
 								"email": $("#feedback input")[2].value,
-								"name": $("#feedback input")[0].value, 
+								"name": $("#feedback input")[0].value
 								})
 			
 				}
@@ -713,16 +705,16 @@ App.BodyView = Backbone.View.extend({
 								{"saturation": 10},
 								{"lightness": 30},
 								{"gamma": 0.5},
-								{"hue": "#435158"},]
+								{"hue": "#435158"}]
 						}],
-					draggable: true,
+					draggable: true
 					
 			};
 			var map = new google.maps.Map(mapCanvas, mapOptions)
 			console.log("From the function reload google map");
 					    marker = new google.maps.Marker({position: new google.maps.LatLng(__initial_lat, __initial_long), 
 						    map: map, 
-					    		icon: 'css/location-icon.png',});
+					    		icon: 'css/location-icon.png'});
 				
 					var circleSettings = {
 						      strokeColor: '#4EB1BA',
@@ -807,7 +799,7 @@ App.BodyView = Backbone.View.extend({
 			}
 			}}
 		      );
-		},
+		}
 });
 
 
@@ -835,7 +827,7 @@ App.DataDishSuggestionsView = Backbone.View.extend({
 	},
 
 	events: {
-		"click .data-click-eatery": "ClickEatery",
+		"click .data-click-eatery": "ClickEatery"
 	
 	},
 
@@ -847,7 +839,7 @@ App.DataDishSuggestionsView = Backbone.View.extend({
 		var subView = new App.ModifyViewOnEatery({"model": {"eatery_id": self.model.eatery_id, "eatery_name": self.model.eatery_name, "eatery_lat": self.model.location.lat, "eatery_lng": self.model.location.lon}});	
 		subView.render().el
 
-	},
+	}
 
 });
 	
@@ -877,7 +869,7 @@ App.DataView = Backbone.View.extend({
 	},
 
 	events: {
-		"click .data-click-eatery": "ClickEatery",
+		"click .data-click-eatery": "ClickEatery"
 	
 	},
 
@@ -889,7 +881,7 @@ App.DataView = Backbone.View.extend({
 		var subView = new App.ModifyViewOnEatery({"model": {"eatery_id": self.model.eatery_id, "eatery_name": self.model.eatery_name, "eatery_lat": self.model.location.lat, "eatery_lng": self.model.location.lon}});	
 		subView.render().el
 
-	},
+	}
 
 });
 	
@@ -967,7 +959,7 @@ App.DisplaySuggestion = Backbone.View.extend({
 	},
 
 	events: {
-		"click .submitButton": "submitButton",
+		"click .submitButton": "submitButton"
 	},
 
 	submitButton: function(event){
@@ -979,7 +971,7 @@ App.DisplaySuggestion = Backbone.View.extend({
 					}
 				})
 			console.log(dishes_name);
-	},
+	}
 
 });
 
@@ -998,7 +990,7 @@ App.SuccessSuggestion = Backbone.View.extend({
 	},
 
 	events: {
-		"mouseleave": "suggestions", 
+		"mouseleave": "suggestions"
 	},
 		
 	suggestions: function(event){
@@ -1013,7 +1005,7 @@ App.SuccessSuggestion = Backbone.View.extend({
 		var value = this.$("#textareaSuggestions").text()
 		this.$("#textareaSuggestions").html('<textarea class="materialize-textarea">' + value + '</textarea>')  	
 		*/
-	},
+	}
 });
 
 App.ErrorSuggestion = Backbone.View.extend({
@@ -1023,7 +1015,7 @@ App.ErrorSuggestion = Backbone.View.extend({
 	render: function(){
 		this.$el.append(this.template(this));
 		return this;
-	},
+	}
 });
 
 
@@ -1079,7 +1071,7 @@ App.EateryDetails = Backbone.View.extend({
 				        plotBackgroundColor: "#263238",
 				        plotBackgroundImage: null,
 				        plotBorderWidth: 2,
-				        plotShadow: false,
+				        plotShadow: false
 					    },
 				
 				credits: {
@@ -1090,7 +1082,7 @@ App.EateryDetails = Backbone.View.extend({
             				text: ""
         				},
         			xAxis: {
-            				categories: __data.categories,
+            				categories: __data.categories
         				},
         			yAxis: {
             				min: 0,
@@ -1099,7 +1091,7 @@ App.EateryDetails = Backbone.View.extend({
             					}, 
 					lineColor: '#339',
 							        tickColor: '#339',
-									        minorTickColor: '#339',
+									        minorTickColor: '#339'
         				},
         			legend: {
             				reversed: true
@@ -1121,7 +1113,7 @@ App.EateryDetails = Backbone.View.extend({
         			series: __data.series, 
 				exporting: { enabled: false }	
     						});
-			}, 
+			}
 
 });
 
@@ -1154,8 +1146,7 @@ App.ReviewForEatery = Backbone.View.extend({
 		 */
 
 	
-	},
-
+	}
 });
 
 
@@ -1176,7 +1167,7 @@ App.AppendEateries = Backbone.View.extend({
 		this.$el.attr("value", this.model.eatery_name);
 		this.$el.append(this.template(this));
 		return this;
-	},
+	}
 
 	});
 
@@ -1194,11 +1185,8 @@ App.ErrorView = Backbone.View.extend({
 	render: function(){
 		this.$el.append(this.template(this));
 		return this;
-	},
+	}
 
 	})
 
 });
-
-
-

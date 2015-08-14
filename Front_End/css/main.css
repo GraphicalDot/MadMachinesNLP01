@@ -12,7 +12,13 @@
 }
 
 
-
+.imshadow{
+ -webkit-filter: blur(3px);
+   -moz-filter: blur(3px);
+     -o-filter: blur(3px);
+       -ms-filter: blur(3px);
+         filter: blur(3px);
+ }
 
 ul.side-nav.fixed li:hover, ul.side-nav.fixed li.active {
 	   background-color: #4EB1BA;
