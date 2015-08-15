@@ -110,7 +110,7 @@
 
 
 		</head>
-		<body style="font-family: 'Josefin Slab', serif;">
+		<body style="font-family: 'Josefin Slab', serif;" class="#e0e0e0 grey lighten-2">
 		<script type="text/x-mustache-template" id="root-template">
 					 <form>
 								<div class="input-field col s10">
@@ -201,8 +201,8 @@
 			<div class="container">
 			<div class="row">
 			<nav>
-				<div class="nav-wrapper #222930 blue-grey darken-4 ">
-				<a href="#!" class="brand-logo deepshadow">HyPOST</a>
+				<div class="nav-wrapper" style="background-color: #342800">
+				<a href="#!" class="brand-logo deepshadow" style="color: #73AFB6" >HyPOST</a>
 				<a href="#" data-activates="mobile-demo" class="button-collapse"><i class="material-icons">menu</i></a>
 				<ul class="right hide-on-med-and-down">
 					<li>
@@ -310,6 +310,12 @@
 													</div>
 											</li>
 
+											<li>
+											        <img src="css/slider4.jpg" class="imshadow"> <!-- random image -->
+												        <div class="caption left-align">
+														<h5 class= "#222930 blue-grey darken-4">Click anywhere on the map to see trending eateries around that location</h5>
+													</div>
+											</li>
 											<li>
 											        <img src="css/slider3.jpg" class="imshadow"> <!-- random image -->
 												        <div class="caption left-align">
@@ -428,40 +434,45 @@
     			</div>
 			</div>
 <script type="text/x-mustache-template" id="data-dish-suggestions-template">
-    <div class="card-content #222930 blue-grey darken-4">
-      <span class="card-title activator" style="font-size: 80%">{{name}}<i class="material-icons right">more_vert</i></span>
-      <p><a style="font-size: 80%" class="data-click-eatery">{{eatery_name}}</a></p>
-    </div>
-    <div class="card-reveal">
-      <span class="card-title grey-text text-darken-4" style="font-size: 80%">
+	<div class="card-content" style="background-color: #342800">
+		<span class="card-title activator" style="font-size: 80%">{{name}}<i class="material-icons right">more_vert</i></span>
+		<p><a style="font-size: 80%" class="data-click-eatery">{{eatery_name}}</a></p>
+	</div>
+
+	<div class="card-reveal">
+		<span class="card-title grey-text text-darken-4" style="font-size: 80%; background-color: #7A9A95">
 				<p>superpositive: {{superpositive}}</p>
 				<p>positive: {{positive}}</p>
 				<p>neutral: {{neutral}}</p>
 				<p>negative: {{negative}}</p>
 				<p>supernegative: {{supernegative}}</p>
-	<i class="material-icons right">close</i></span>
+				<i class="material-icons right">close</i>
+		</span>
     </div>
 
 
 </script>
 
 <script type="text/x-mustache-template" id="data-template">
-			<div class="card-image waves-effect waves-block waves-light" style="color: white !important;">
-      <img class="activator" src="css/{{category}}.png">
-    </div>
-    <div class="card-content #222930 blue-grey darken-4">
-      <span class="card-title activator" style="font-size: 80%">{{name}}<i class="material-icons right">more_vert</i></span>
-      <p><a style="font-size: 80%" class="data-click-eatery">{{eatery_name}}</a></p>
-    </div>
-    <div class="card-reveal">
-      <span class="card-title grey-text text-darken-4" style="font-size: 80%">
+	<div class="card-image waves-effect waves-block waves-light" style="background-color: #E2DA99">
+		<img class="activator" src="css/{{category}}.png">
+	</div>
+
+	<div class="card-content" style="background-color: #342800;">
+		<span class="card-title activator" style="font-size: 80%">{{name}}<i class="material-icons right">more_vert</i></span>
+		<p><a style="font-size: 80%" class="data-click-eatery">{{eatery_name}}</a></p>
+	</div>
+
+	<div class="card-reveal">
+		<span class="card-title grey-text text-darken-4" style="font-size: 80%">
 				<p>superpositive: {{superpositive}}</p>
 				<p>positive: {{positive}}</p>
 				<p>neutral: {{neutral}}</p>
 				<p>negative: {{negative}}</p>
 				<p>supernegative: {{supernegative}}</p>
-	<i class="material-icons right">close</i></span>
-    </div>
+				<i class="material-icons right">close</i>
+		</span>
+	</div>
 
 
 </script>

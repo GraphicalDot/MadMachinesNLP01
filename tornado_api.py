@@ -456,7 +456,15 @@ class GetTrending(tornado.web.RequestHandler):
                 longitude = float(self.get_argument("lng"))
                 print type(longitude)
                 result = ElasticSearchScripts.get_trending(latitude, longitude)
-                print result
+ 
+                for __category in ["food", "service", "cost", "ambience"]:
+                        for __list in result[__category]:
+                                    superpositive = __list.pop("super-positive")
+                                    supernegative = __list.pop("super-negative")
+                                    __list.update({"superpositive": superpositive, "supernegative": supernegative})
+
+
+ 
                 self.write({"success": True,
 			        "error": False,
 			        "result": result,

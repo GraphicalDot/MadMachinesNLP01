@@ -711,7 +711,7 @@ App.BodyView = Backbone.View.extend({
 								{"saturation": 10},
 								{"lightness": 30},
 								{"gamma": 0.5},
-								{"hue": "#435158"}]
+								{"hue": "#E2DA99"}]
 						}],
 					draggable: true
 					
