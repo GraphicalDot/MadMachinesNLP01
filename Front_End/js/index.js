@@ -451,59 +451,10 @@ App.BodyView = Backbone.View.extend({
 				console.log("Location coundnt be rendered")	
 			}
 		function showPosition(position) {
-			console.log("Latitude: " + position.coords.latitude + "Longitude: " + position.coords.longitude) 
 			var latitude = position.coords.latitude;
 			var longitude = position.coords.longitude
-
-
 			//On the basis of the current location gets the trending dishes, mbienece, service and cost clouds
-			var jqhr = $.post(window.nearest_eateries, {"lat": latitude, "long": longitude, "range": 10})	
-			jqhr.done(function(data){
-				console.log(data.result);
-				if (data.error == false){
-					self.reloadGoogleMap(latitude, longitude, data.result)
-					}
-				else{
-					var subView = new App.ErrorView();
-					$(".trending-bar-chart").html(subView.render().el);	
-				}
-			
-			})
-			var jqhr = $.post(window.get_trending, {"lat": latitude, "lng": longitude})	
-			jqhr.done(function(data){
-				console.log(data.result);
-				if (data.error == false){
-					$.each(["food", "service", "cost", "ambience"], function(iter, category){
-						$.each(data.result[category], function(iter2, model){
-							console.log(model)
-							model["category"] = category   
-							var subview = new App.DataView({"model": model})
-							$(".grid-grid").append(subview.render().el);
-						   }) 
-						 });   		 
-				
-				
-				}
-				else{
-					var subView = new App.ErrorView();
-					$(".trending-bar-chart").html(subView.render().el);	
-				}
-			
-				$(".grid-grid").gridalicious({selector: '.grid-item-new',
-						gutter: 1, 
-						width: 150,
-						animate: true,
-					  animationOptions: {
-						      queue: true,
-					    speed: 200,
-					    duration: 300,
-					    effect: 'fadeInOnAppear'
-					  }
-				
-				})
-			
-			})
-			
+			self.callGoogleMap(latitude, longitude)
 		};
 
 
@@ -604,6 +555,9 @@ App.BodyView = Backbone.View.extend({
 
 	dishSuggestions: function(dish_name){
 		//Fetches relevant matched from elastic search ont he basis of the dish_name given to it
+		$(".grid-dish-suggestions").html('<div class="progress"><div class="indeterminate" style="width: 70%"></div></div>')
+		
+		
 		var jqhr = $.post(window.get_dishes, {"dish_name": dish_name})	
 		jqhr.done(function(data){
 			if (data.error == false){
@@ -697,7 +651,51 @@ App.BodyView = Backbone.View.extend({
 			
 	},
 
-	reloadGoogleMap: function (__initial_lat, __initial_long, eateries_list){
+
+
+	callGoogleMap: function(latitude, longitude){
+			var self = this;
+			$(".grid-grid").html('<div class="progress"><div class="indeterminate" style="width: 70%"></div></div>')
+			var jqhr = $.post(window.nearest_eateries, {"lat": latitude, "long": longitude, "range": 10})	
+			jqhr.done(function(data){
+				console.log(data.result);
+				if (data.error == false){
+					self.googleMap(latitude, longitude, data.result)
+					}
+				else{
+					var subView = new App.ErrorView();
+					$(".trending-bar-chart").html(subView.render().el);	
+				}
+			
+			})
+			var jqhr = $.post(window.get_trending, {"lat": latitude, "lng": longitude})	
+			$(".grid-grid").html(" ")
+			jqhr.done(function(data){
+				if (data.error == false){
+					$.each(["food", "service", "cost", "ambience"], function(iter, category){
+						$.each(data.result[category], function(iter2, model){
+							console.log(model)
+							model["category"] = category   
+							var subview = new App.DataView({"model": model})
+							$(".grid-grid").append(subview.render().el);
+						   })}); }
+				else{
+					var subView = new App.ErrorView();
+					$(".trending-bar-chart").html(subView.render().el);	
+				}
+				$(".grid-grid").gridalicious({selector: '.grid-item-new', gutter: 1, width: 150, animate: true,
+					  animationOptions: {queue: true, speed: 200, duration: 300, effect: 'fadeInOnAppear'}
+				})
+			})
+
+
+
+
+	},
+
+
+	googleMap: function (__initial_lat, __initial_long, eateries_list){
+		       		var self = this;	
 		function initialize() {
 			var mapCanvas = document.getElementById('map-canvas');
 			var mapOptions = {
@@ -717,26 +715,25 @@ App.BodyView = Backbone.View.extend({
 					
 			};
 			var map = new google.maps.Map(mapCanvas, mapOptions)
-			console.log("From the function reload google map");
-					    marker = new google.maps.Marker({position: new google.maps.LatLng(__initial_lat, __initial_long), 
-						    map: map, 
-					    		icon: 'css/location-icon.png'});
+			marker = new google.maps.Marker({position: new google.maps.LatLng(__initial_lat, __initial_long), 
+				map: map, 
+				icon: 'css/location-icon.png'});
 				
-					var circleSettings = {
-						      strokeColor: '#4EB1BA',
-				      strokeOpacity: 0.8,
-				      strokeWeight: 2,
-				      fillColor: '#4EB1BA',
-				      fillOpacity: 0.35,
-				      map: map,
-				      center:  new google.maps.LatLng(__initial_lat, __initial_long),
-				      radius: 1000
-					    };
-					circle = new google.maps.Circle(circleSettings);
-					map.fitBounds(circle.getBounds());	
+			//Making  circle of radiu 1km around the center of the google maps
+			//Then map.fitBounds will be called so that the center will fit the google map div
+			var circleSettings = {strokeColor: '#4EB1BA', strokeOpacity: 0.8, strokeWeight: 2, fillColor: '#4EB1BA', fillOpacity: 0.35,
+				      map: map, center:  new google.maps.LatLng(__initial_lat, __initial_long), radius: 1000 };
+			circle = new google.maps.Circle(circleSettings);
+			map.fitBounds(circle.getBounds());	
+			
+
+			//Setting the traffic layer for the google map so that the used in effect will have a clear idea about the
+			//Fucking traffic scenario
 			var trafficLayer = new google.maps.TrafficLayer();
-			  trafficLayer.setMap(map);
-			console.log(eateries_list)
+			trafficLayer.setMap(map);
+			
+
+			//Adding infobox for each eatery present in the eateries_list
 			$.each(eateries_list, function(iter, data){
                                 marker = new google.maps.Marker({
                                 map: map,
@@ -747,25 +744,31 @@ App.BodyView = Backbone.View.extend({
 				html: "<div id='infobox'>" + data.eatery_name + "</br>" + data.eatery_address + "</div>" 
 
                                 })
-                                google.maps.event.addListener(marker, 'mouseover', function() {
+                                //Mouse over event for every eatery, so on mouse over the infowindow will show
+				//The address and name of the eatery.
+				google.maps.event.addListener(marker, 'mouseover', function() {
 					infowindow.setContent(this.get("html"));        
 					infowindow.open(map, this);       
-				       console.log(this.html)
-					console.log(this.get("html"))	
 					});
-                                
+                               
+				//MOuseout event for the infowindow	
 				google.maps.event.addListener(marker, 'mouseout', function() {
 					infowindow.close();        
 					});
+
+				//CLick event for the maker, so if a user want to checkout the details of the eatery
+				//then he can click on the eatery to change the woed cloud 
 				google.maps.event.addListener(marker, 'click', function() {
 					console.log(this.get("eatery_id"));     
 				     	var subView = new App.EateryDetails({"model": {"eatery_id": this.get("eatery_id"), "eatery_name": this.get("title")}});	
 					//subView.render().el;
 					});
-                        })
-                       
+                        	})//loop for eatery completed
+                      
 		       		google.maps.event.addListener(map, 'click', function(event) {
-				
+					var latitude = event.latLng.lat()
+					var longitude = event.latLng.lng()
+					self.callGoogleMap(latitude, longitude);
 				});
 
 		}

@@ -664,6 +664,7 @@ class GetDishSuggestions(tornado.web.RequestHandler):
                 result = ElasticSearchScripts.dish_suggestions(dish_name)
                 result = list(set(["{0}".format(element["name"]) for element in result]))
                 print result 
+
                 self.write({"success": True,
 			        "error": False,
 			        "options": result,
@@ -678,11 +679,14 @@ class GetDishes(tornado.web.RequestHandler):
         def post(self):
                 """
                 """
-                        
                 dish_name = self.get_argument("dish_name")
                 
                 result = ElasticSearchScripts.get_dishes(dish_name)
                 print result
+                for __list in result:
+                                    superpositive = __list.pop("super-positive")
+                                    supernegative = __list.pop("super-negative")
+                                    __list.update({"superpositive": superpositive, "supernegative": supernegative})
                 self.write({"success": True,
 			        "error": False,
 			        "result": result,
@@ -702,11 +706,16 @@ class GetEatery(tornado.web.RequestHandler):
                 eatery_name =  self.get_argument("eatery_name")
                 result = eateries_results_collection.find_one({"eatery_name": eatery_name})
                 if not result:
-                        self.write({"success": False,
-			        "error": True,
-			        "messege": "The eatery name  couldnt be found",
-			        })
-                        self.finish()
+                        """
+                        If the eatery name couldnt found in the mongodb for the popular matches
+                        Then we are going to check for demarau levenshetin algorithm for string similarity
+                        """
+
+
+
+                    
+                    
+                    
                         return 
                 
                 dishes = sorted(result["food"]["dishes"], key=lambda x: x.get("total_sentiments"), reverse=True)[0: number_of_dishes]
