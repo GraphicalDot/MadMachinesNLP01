@@ -839,7 +839,8 @@ App.DisplaySuggestion = Backbone.View.extend({
 		if (!$.isEmptyObject(this.model.food.dishes)){
 			self.$el.append('<p><a class="tooltipped col s8" data-position="right" data-delay="50" data-tooltip="If you are not looking for these dishes, please edit the dishes listed below to help us locate the desired.">Are you looking for these dishes?</a><a class="waves-effect waves-light submitButton col s4" href="#"><i class="material-icons">done_all</i>Submit</a></p>')
 			$.each(this.model.food.dishes, function(iter, dish_name){
-				var subView = new App.SuccessSuggestion({"model": dish_name })
+				console.log(dish_name)
+				var subView = new App.SuccessSuggestion({"model": {"dish_name": dish_name }})
 				self.$el.append(subView.render().el);	
 			})
 		}
@@ -920,9 +921,9 @@ App.DisplaySuggestion = Backbone.View.extend({
 
 App.SuccessSuggestion = Backbone.View.extend({
 	template: window.template("success-suggestions"),
-	name: function(){ return this.model.model},
+	name: function(){ return this.model.dish_name},
 	initialize: function(options){
-			this.model = this.options;
+			this.model = options.model;
 			console.log(this.model);
 	},
 	
