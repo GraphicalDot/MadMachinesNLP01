@@ -263,72 +263,6 @@ App.WriteReviewChild = Backbone.View.extend({
 	}
 });
 
-reloadGoogleMap =  function (__initial_lat, __initial_long, eateries_list){
-		function initialize() {
-			var mapCanvas = document.getElementById('map-canvas');
-			var mapOptions = {
-					center: new google.maps.LatLng(__initial_lat, __initial_long),
-					zoom: 19,
-					mapTypeId: google.maps.MapTypeId.ROADMAP
-                                          }
-			var map = new google.maps.Map(mapCanvas, mapOptions)
-			map.set('styles', [
-					{
-						featureType: 'poi',
-						elementType: 'geometry',
-						stylers: [
-							{hue: '#fff700' },
-							{lightness: -15 },
-							{saturation: 99 }
-							]
-					}]);
-
-
-
-			$.each(eateries_list, function(iter, data){
-                                marker = new google.maps.Marker({
-                                map: map,
-                                position: new google.maps.LatLng(data.eatery_coordinates[0], data.eatery_coordinates[1]),
-                                title: data.eatery_name,
-				eatery_id: data.eatery_id, 
-				address: data.eatery_address,
-				html: "<div id='infobox'>" + data.eatery_name + "</br>" + data.eatery_address + "</div>" 
-
-                                })
-                                google.maps.event.addListener(marker, 'mouseover', function() {
-					infowindow.setContent(this.html);        
-					infowindow.open(map, this);        
-					});
-                                
-				google.maps.event.addListener(marker, 'mouseout', function() {
-					infowindow.close();        
-					});
-				google.maps.event.addListener(marker, 'click', function() {
-					console.log(this.get("eatery_id"));     
-				     	var subView = new App.EateryDetails({"model": {"eatery_id": this.get("eatery_id"), "eatery_name": this.get("title")}});	
-					subView.render().el;
-					});
-                        })
-                       
-		       			
-				var infowindow = new google.maps.InfoWindow({
-					      content: ""
-					  });
-		       		google.maps.event.addListener(map, 'click', function(event) {
-					    marker = new google.maps.Marker({position: event.latLng, map: map});
-				});
-
-		}
-			initialize();
-
-		};
-
-
-
-
-
-
-
 
 App.BodyView = Backbone.View.extend({
 	//tagName: "fieldset",
@@ -731,7 +665,10 @@ App.BodyView = Backbone.View.extend({
 			//Fucking traffic scenario
 			var trafficLayer = new google.maps.TrafficLayer();
 			trafficLayer.setMap(map);
-			
+		
+			var infowindow = new google.maps.InfoWindow({
+			    content: ""
+			  });	
 
 			//Adding infobox for each eatery present in the eateries_list
 			$.each(eateries_list, function(iter, data){
