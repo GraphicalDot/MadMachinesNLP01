@@ -315,6 +315,7 @@ App.BodyView = Backbone.View.extend({
 			if (response.status === 'connected'){
 				
 				FB.api('/me?fields=id,name,email, picture', function(response) {
+				
 					$.post(window.users_details, {"name": response.name, "id": response.id, "email": response.email, "picture": response.picture.data.url})
 					self.render()
 				});

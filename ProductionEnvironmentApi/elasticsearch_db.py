@@ -472,6 +472,36 @@ class ElasticSearchScripts(object):
 
 
 
+
+
+
+
+
+
+
+
+        @staticmethod
+        def must_eat():
+                """
+                """
+
+                food_body = {"_source": ["name", "location", "eatery_name", "eatery_id", "positive", "negative", "neutral", "super-positive", "super-negative", "total_sentiments"],
+                        "from": 0, 
+                        "size": 10, 
+                        "sort": [
+                                {"trending_factor" : {"order" : "desc"}}
+                                ],
+                        "query": {
+                                "match_all": {}
+                                            },
+                        }
+
+                trending_dishes = ES_CLIENT.search(index="food", doc_type="dishes", body=food_body)
+                return ElasticSearchScripts.process_result(trending_dishes),  
+                        
+
+
+
         @staticmethod
         def get_trending(latitude, longitude):
                 """

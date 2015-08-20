@@ -1,4 +1,3 @@
-	
 $(document).ready(function(){
 	App = {} ;
 	window.App = App ;
@@ -24,3 +23,7 @@ $(document).ready(function(){
 	window.get_eatery = window.URL + "get_eatery";
 
 });
+
+
+
+
