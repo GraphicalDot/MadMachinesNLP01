@@ -512,6 +512,7 @@ class Query(tornado.web.RequestHandler):
                 """
 
                 text = self.get_argument("text")
+                text =  text.replace("\n", "")
                
                 try:
                         l_result = {"food": {}, "ambience": {}, "cost": {}, "service": {}}
