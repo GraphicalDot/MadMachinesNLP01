@@ -38,8 +38,8 @@ def basic_setup():
 	This method should be run before installing virtual environment as it will install python pip
 	required to install virtual environment
 	"""
-	#run("sudo apt-get update")
-	#run("sudo apt-get upgrade")
+	run("sudo apt-get update")
+	run("sudo apt-get upgrade")
 	env.run("sudo apt-get install -y python-pip")
         env.run("sudo apt-get install -y libevent-dev")
 	env.run("sudo apt-get install -y python-all-dev")
@@ -47,20 +47,20 @@ def basic_setup():
 	env.run("sudo apt-get install -y libxml2-dev")
 	env.run("sudo apt-get install -y libxslt1-dev") 
 	env.run("sudo apt-get install -y python-setuptools python-dev build-essential")
-	"""
-        run("sudo apt-get install -y libxml2-dev libxslt1-dev lib32z1-dev")
-	run("sudo apt-get install -y python-lxml")
+        env.run("sudo apt-get install -y libxml2-dev libxslt1-dev lib32z1-dev")
+	env.run("sudo apt-get install -y python-lxml")
 	#Dependencies for installating sklearn
-	run("sudo apt-get install -y build-essential python-dev python-setuptools libatlas-dev libatlas3gf-base")
+	env.run("sudo apt-get install -y build-essential python-dev python-setuptools libatlas-dev libatlas3gf-base")
 	#Dependencies for installating scipy
-	run("sudo apt-get install -y liblapack-dev libatlas-dev gfortran")
-	run("sudo apt-get install -y libatlas-base-dev gfortran build-essential g++ libblas-dev")
+	env.run("sudo apt-get install -y liblapack-dev libatlas-dev gfortran")
+	env.run("sudo apt-get install -y libatlas-base-dev gfortran build-essential g++ libblas-dev")
 	#Dependicies to install hunpostagger
-	run("sudo apt-get install -y ocaml-nox")
-	run("sudo apt-get install -y mercurial")
-	run("sudo apt-get install -y libpq-dev")
-        run("sudo apt-get install build-essential libssl-dev libffi-dev python-dev")
-        """
+	env.run("sudo apt-get install -y ocaml-nox")
+	env.run("sudo apt-get install -y mercurial")
+	env.run("sudo apt-get install -y libpq-dev")
+	env.run("sudo apt-get install -y libffi-dev")
+        env.run("sudo apt-get install -y libblas-dev liblapack-dev libatlas-base-dev")
+        env.run("sudo apt-get install build-essential libssl-dev libffi-dev python-dev")
 
 @task
 def localhost():
@@ -72,21 +72,9 @@ def remote():
         env.run = run
         env.hosts = ['192.168.1.5']
 
-def installing_riak():
-        run("sudo apt-get install curl")
-        run("sudo curl -s https://packagecloud.io/install/repositories/basho/riak/script.deb.sh | sudo bash")
-        run("sudo apt-get install riak=2.1.1-1")
         
         
 
-def increasing_ulimits():
-        """
-        /etc/security/limits.conf
-
-        *     soft    nofile          40000
-        *     hard    nofile          40000
-        """
-        return
 
 def install_phantomjs():
         """
@@ -125,6 +113,7 @@ def get_host():
         else:
                 print env["host"], env["user"]
 
+
 def virtual_env():
 	"""
 	This method installs the virual environment and after installing virtual environment installs the git.
@@ -137,7 +126,7 @@ def virtual_env():
                         with prefix("source bin/activate"):
 			        if confirm("Do you want to install requirements.txt again??"):
 		                        run("pip install numpy==1.9.2")
-                                        run("pip install -r Canworks/requirements.txt")
+                                        run("pip install -r MadMachinesNLP01/requirements.txt")
 
 
 
@@ -187,9 +176,9 @@ def mongo():
 	"""
 	with prefix("cd /home/ubuntu/VirtualEnvironment"):
 		run("sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 7F0CEB10")
-		run("echo -e 'deb http://downloads-distro.mongodb.org/repo/ubuntu-upstart dist 10gen' | sudo tee /etc/apt/sources.list.d/mongodb.list")
+                run('echo "deb http://repo.mongodb.org/apt/ubuntu trusty/mongodb-org/3.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-3.0.list')
 		run("sudo apt-get update")
-		run("sudo apt-get install -y mongodb-10gen")
+		run("sudo apt-get install -y mongodb-org=3.0.6 mongodb-org-server=3.0.6 mongodb-org-shell=3.0.6 mongodb-org-mongos=3.0.6 mongodb-org-tools=3.0.6")
 	run("sudo rm -rf  /var/lib/mongodb/mongod.lock")
 	run("sudo service mongodb restart")
 

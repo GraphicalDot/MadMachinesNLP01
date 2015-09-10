@@ -37,6 +37,12 @@ from Text_Processing import NounPhrases, get_all_algorithms_result, RpRcClassifi
 		bcolors, CopiedSentenceTokenizer, SentenceTokenizationOnRegexOnInterjections, get_all_algorithms_result, \
 		path_parent_dir, path_trainers_file, path_in_memory_classifiers, timeit, cd, SentimentClassifier, \
 		TagClassifier, NERs, NpClustering
+
+
+from GlobalAlgorithmNames import TAG_CLASSIFIER_LIB, SENTI_CLASSIFIER_LIB, FOOD_SB_TAG_CLASSIFIER_LIB, \
+        COST_SB_TAG_CLASSIFIER_LIB, SERV_SB_TAG_CLASSIFIER_LIB, AMBI_SB_TAG_CLASSIFIER_LIB
+
+
 from compiler.ast import flatten
 from topia.termextract import extract
 from Text_Processing import WordTokenize, PosTaggers, NounPhrases
@@ -64,8 +70,9 @@ from concurrent.futures import ThreadPoolExecutor
 from bson.son import SON
 from Text_Processing.Sentence_Tokenization.Sentence_Tokenization_Classes import SentenceTokenizationOnRegexOnInterjections
 from GlobalConfigs import connection, eateries, reviews, yelp_eateries, yelp_reviews, eateries_results_collection,\
-                    elasticsearch, users_details, users_feedback, users_queries
-         
+                    elasticsearch, users_details, users_feedback, users_queries, training_sentiment_collection,\
+                    training_food_collection, training_tag_collection, training_service_collection , \
+                    training_ambience_collection, training_cost_collection
 
 from ProductionEnvironmentApi.text_processing_api import PerReview, EachEatery, DoClusters
 from ProductionEnvironmentApi.text_processing_db_scripts import MongoScriptsReviews, MongoScriptsEateries, \
@@ -760,6 +767,93 @@ class GetEaterySuggestions(tornado.web.RequestHandler):
                 self.finish()
                 return 
 
+class SentenceTokenization(tornado.web.RequestHandler):
+        @cors
+	@print_execution
+	@tornado.gen.coroutine
+        def post(self):
+                """
+                """
+                        
+                text = self.get_argument("text")
+                link = self.get_argument("link")
+
+
+                if link:
+                        print "Link is present, so have to run goose to extract text"
+                        print link 
+
+
+                text =  text.replace("\n", "")
+                tokenizer = SentenceTokenizationOnRegexOnInterjections()
+                result = tokenizer.tokenize(text)
+               
+
+                tags = TAG_CLASSIFIER_LIB.predict(result)
+                sentiments = [polarity.replace("-", "") for polarity in SENTI_CLASSIFIER_LIB.predict(result)]
+
+
+
+                new_result = list()
+                
+                
+                for sentence, tag, sentiment in zip(result, tags, sentiments):
+                        try:
+                                subcategory = list(eval('{0}_SB_TAG_CLASSIFIER_LIB.predict(["{1}"])'.format(tag[0:4].upper(), sentence)))[0]
+                        except:
+                                subcategory = None
+
+                        new_result.append(
+                                {"sentence": sentence,
+                                "polarity": sentiment, 
+                                "noun_phrases": ["a", "b", "c"],
+                                "tag": tag, 
+                                "subcategory": subcategory
+                                            })
+
+                print new_result
+                self.write({"success": True,
+			        "error": False,
+			        "result": new_result,
+			        })
+                self.finish()
+                return 
+
+
+class UploadSentence(tornado.web.RequestHandler):
+        @cors
+	@print_execution
+	@tornado.gen.coroutine
+        def post(self):
+                sentence = self.get_argument("sentence")
+                sentiment = self.get_argument("sentiment")
+                tag = self.get_argument("tag")
+                subtag = self.get_argument("subtag")
+
+                print sentence, sentiment, tag, subtag
+                print training_sentiment_collection.count(), training_tag_collection.count(), training_food_collection.count(), training_service_collection.count(), training_cost_collection.count(), training_ambience_collection.count()
+                training_tag_collection.insert({"sentence": sentence, "tag": tag, "review_id": "misc"})
+                
+                
+                p = lambda sentiment:  "super-{0}".format(sentiment.replace("super", "")) if sentiment.startswith("super") else sentiment
+
+                training_sentiment_collection.insert({"sentence": sentence, "sentiment": p(sentiment), "review_id": "misc"})
+               
+                
+                try:
+                        collection = eval("training_{0}_collection".format(tag))
+                        collection.insert({"sentence": sentence, "sub_tag": subtag})
+                except Exception as e:
+                        print e
+                        
+                print training_sentiment_collection.count(), training_tag_collection.count(), training_food_collection.count(), training_service_collection.count(), training_cost_collection.count(), training_ambience_collection.count()
+                self.write({"success": True,
+			        "error": False,
+			        })
+                self.finish()
+
+
+
 
 def main():
         http_server = tornado.httpserver.HTTPServer(Application())
@@ -784,6 +878,9 @@ class Application(tornado.web.Application):
                     (r"/get_eatery", GetEatery),
                     (r"/get_dish_suggestions", GetDishSuggestions),
                     (r"/get_eatery_suggestions", GetEaterySuggestions),
+                    (r"/sentence_tokenization", SentenceTokenization),
+                    (r"/upload_sentence", UploadSentence),
+                
                     (r"/eatery_details", EateryDetails),]
                 settings = dict(cookie_secret="__TODO:_GENERATE_YOUR_OWN_RANDOM_VALUE_HERE__",)
                 tornado.web.Application.__init__(self, handlers, **settings)

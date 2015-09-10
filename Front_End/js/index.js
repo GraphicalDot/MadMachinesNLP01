@@ -801,6 +801,8 @@ App.DataView = Backbone.View.extend({
 	supernegative : function(){ return this.model.supernegative},
 	superpositive : function(){ return this.model.superpositive},
 	eatery_name : function(){ return this.model.eatery_name},
+	totalpositive : function(){return this.model.positive + this.model.superpositive},
+	totalnegative : function(){return this.model.negative + this.model.supernegative},
 	initialize: function(options){
 		var self = this;
 		this.model = options.model;

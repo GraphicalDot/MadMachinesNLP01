@@ -7,7 +7,7 @@ Purpose: This file has all the config variables stored in it,
 import pymongo
 import elasticsearch
 
-ELASTICSEARCH_IP = "192.168.1.4"
+ELASTICSEARCH_IP = "192.168.1.2"
 ELASTICSEARCH_PORT = 9200
 
 ES_CLIENT = elasticsearch.Elasticsearch(ELASTICSEARCH_IP)
@@ -72,6 +72,7 @@ DEBUG = {"ALL": True,
 #connection = pymongo.MongoClient(MONGO_REVIEWS_IP, MONGO_REVIEWS_PORT, tz_aware=True, w=1,j=False, max_pool_size=200, use_greenlets=True)
 connection = pymongo.MongoClient(MONGO_REVIEWS_IP, MONGO_REVIEWS_PORT)
 users_connection = pymongo.MongoClient(MONGO_IP, MONGO_PORT)
+training_db = connection.training_data
 
 
 users_details = eval("users_connection.{db_name}.{collection_name}".format(
@@ -116,6 +117,13 @@ eateries_results_collection = eval("connection.{db_name}.{collection_name}".form
                                     collection_name=MONGO_EATERY_RESULTS_COLLECTION))
 
 
+
+training_tag_collection = training_db.training_tag_collection
+training_sentiment_collection = training_db.training_sentiment_collection
+training_food_collection = training_db.training_food_collection
+training_service_collection = training_db.training_service_collection
+training_ambience_collection = training_db.training_ambience_collection
+training_cost_collection = training_db.training_cost_collection
 
 
 class bcolors:

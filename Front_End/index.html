@@ -454,13 +454,15 @@
 </script>
 
 <script type="text/x-mustache-template" id="data-template">
-	<div class="card-image waves-effect waves-block waves-light" style="background-color: #E2DA99">
-		<img class="activator" src="css/{{category}}.png">
+	<div class="card-image waves-effect waves-block waves-light">
+		<img class="activator" src="css/{{category}}_new.jpg">
 	</div>
 
 	<div class="card-content #424242 grey darken-3">
 		<span class="card-title activator" style="font-size: 80%">{{name}}<i class="material-icons right">more_vert</i></span>
-		<p><a style="font-size: 80%" class="data-click-eatery">{{eatery_name}}</a></p>
+		<p>At:  <a style="font-size: 80%" class="data-click-eatery">{{eatery_name}}</a></p>
+		<p>{{totalpositive}}<i class="material-icons right">thumb_up</i></p>
+		<p>{{totalnegative}}<i class="material-icons right">thumb_down</i></p>		
 	</div>
 
 	<div class="card-reveal">
