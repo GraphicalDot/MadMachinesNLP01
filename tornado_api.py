@@ -813,10 +813,16 @@ class SentenceTokenization(tornado.web.RequestHandler):
                         except:
                                 subcategory = None
 
+                        if max(probability) < .7:
+                                polarity_result = "can't decide"
+                        else:
+                                polarity_result = "decided"
+
                         new_result.append(
                                 {"sentence": sentence,
                                 "polarity": sentiment, 
                                 "sentiment_probabilities": probability, 
+                                "polarity_result": polarity_result,
                                 "noun_phrases": ["a", "b", "c"],
                                 "tag": tag, 
                                 "subcategory": subcategory

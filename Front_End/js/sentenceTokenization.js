@@ -95,6 +95,7 @@ App.SentencesView = Backbone.View.extend({
 		positive: function(){return this.model.sentiment_probabilities.positive},
 		negative: function(){return this.model.sentiment_probabilities.negative},
 		neutral: function(){return this.model.sentiment_probabilities.neutral},
+		polarity_result: function(){return this.model.polarity_result},
 
 
 		initialize: function(options){
