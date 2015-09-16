@@ -88,9 +88,14 @@ App.BodyView = Backbone.View.extend({
 
 App.SentencesView = Backbone.View.extend({
 		tagName: "li",
-		className: "collection-item card-panel blue-grey darken-1 z-depth-3", 
+		className: "collection-item card-panel #ffe0b2 orange lighten-4 z-depth-3", 
 		template: window.template("sentences"),
 		sentence: function(){ return this.model.sentence},    
+		mixed: function(){return this.model.sentiment_probabilities.mixed},
+		positive: function(){return this.model.sentiment_probabilities.positive},
+		negative: function(){return this.model.sentiment_probabilities.negative},
+		neutral: function(){return this.model.sentiment_probabilities.neutral},
+
 
 		initialize: function(options){
 			this.model = options.model;

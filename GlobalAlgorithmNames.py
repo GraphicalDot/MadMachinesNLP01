@@ -17,6 +17,10 @@ SENTIMENT_TAGS = ["super-positive", "super-negative", "neutral", "positive", "ne
 
 TAG_CLASSIFIER = "svm_linear_kernel_classifier_tag.lib"
 SENTI_CLASSIFIER = "svm_linear_kernel_classifier_sentiment_new_dataset_30April.lib"
+SENTI_CLASSIFIER_THREE_CATEGORIES = "svm_linear_kernel_sentiment_new_categories_classifier.lib"
+
+
+
 FOOD_SB_TAG_CLASSIFIER = "svm_linear_kernel_classifier_food_sub_tags_8May.lib"
 COST_SB_TAG_CLASSIFIER = "svm_linear_kernel_classifier_cost.lib"
 SERV_SB_TAG_CLASSIFIER = "svm_linear_kernel_classifier_service.lib"
@@ -32,6 +36,10 @@ COST_SB_CLSSFY_ALG_NME = COST_SB_TAG_CLASSIFIER.replace(".lib", "")
 
 TAG_CLASSIFIER_LIB = joblib.load("{0}/{1}".format(path_in_memory_classifiers, TAG_CLASSIFIER)) 
 SENTI_CLASSIFIER_LIB = joblib.load("{0}/{1}".format(path_in_memory_classifiers, SENTI_CLASSIFIER)) 
+SENTI_CLASSIFIER_LIB_THREE_CATEGORIES = joblib.load("{0}/newclassifiers/{1}".format(path_in_memory_classifiers, SENTI_CLASSIFIER_THREE_CATEGORIES)) 
+
+
+
 FOOD_SB_TAG_CLASSIFIER_LIB = joblib.load("{0}/{1}".format(path_in_memory_classifiers, FOOD_SB_TAG_CLASSIFIER))
 COST_SB_TAG_CLASSIFIER_LIB = joblib.load("{0}/{1}".format(path_in_memory_classifiers, COST_SB_TAG_CLASSIFIER))
 SERV_SB_TAG_CLASSIFIER_LIB = joblib.load("{0}/{1}".format(path_in_memory_classifiers, SERV_SB_TAG_CLASSIFIER))

@@ -40,7 +40,8 @@ from Text_Processing import NounPhrases, get_all_algorithms_result, RpRcClassifi
 
 
 from GlobalAlgorithmNames import TAG_CLASSIFIER_LIB, SENTI_CLASSIFIER_LIB, FOOD_SB_TAG_CLASSIFIER_LIB, \
-        COST_SB_TAG_CLASSIFIER_LIB, SERV_SB_TAG_CLASSIFIER_LIB, AMBI_SB_TAG_CLASSIFIER_LIB
+        COST_SB_TAG_CLASSIFIER_LIB, SERV_SB_TAG_CLASSIFIER_LIB, AMBI_SB_TAG_CLASSIFIER_LIB, \
+        SENTI_CLASSIFIER_LIB_THREE_CATEGORIES
 
 
 from compiler.ast import flatten
@@ -791,14 +792,22 @@ class SentenceTokenization(tornado.web.RequestHandler):
                
 
                 tags = TAG_CLASSIFIER_LIB.predict(result)
-                sentiments = [polarity.replace("-", "") for polarity in SENTI_CLASSIFIER_LIB.predict(result)]
+                sentiments = SENTI_CLASSIFIER_LIB_THREE_CATEGORIES.predict(result)
 
 
+                def assign_proba(__list):
+                        return {"mixed": round(__list[0], 2), 
+                                "negative": round( __list[1], 2), 
+                                "neutral": round(__list[2], 2) , 
+                                "positive": round(__list[3], 2), }
+                
+                      
+                sentiment_probabilities = map(assign_proba, SENTI_CLASSIFIER_LIB_THREE_CATEGORIES.predict_proba(result))
 
                 new_result = list()
                 
                 
-                for sentence, tag, sentiment in zip(result, tags, sentiments):
+                for sentence, tag, sentiment, probability in zip(result, tags, sentiments, sentiment_probabilities):
                         try:
                                 subcategory = list(eval('{0}_SB_TAG_CLASSIFIER_LIB.predict(["{1}"])'.format(tag[0:4].upper(), sentence)))[0]
                         except:
@@ -807,6 +816,7 @@ class SentenceTokenization(tornado.web.RequestHandler):
                         new_result.append(
                                 {"sentence": sentence,
                                 "polarity": sentiment, 
+                                "sentiment_probabilities": probability, 
                                 "noun_phrases": ["a", "b", "c"],
                                 "tag": tag, 
                                 "subcategory": subcategory
