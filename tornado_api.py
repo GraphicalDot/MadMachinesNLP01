@@ -13,6 +13,7 @@ Comment: None
 
 
 from __future__ import absolute_import
+import base64
 import copy
 import re
 import csv
@@ -87,6 +88,7 @@ from ProductionEnvironmentApi.query_resolution import QueryResolution
 
 from ProcessingCeleryTask import MappingListWorker, PerReviewWorker, EachEateryWorker, DoClustersWorker     
 
+from stanford_corenlp import save_tree
 
 def print_execution(func):
         "This decorator dumps out the arguments passed to a function before calling it"
@@ -779,7 +781,7 @@ class SentenceTokenization(tornado.web.RequestHandler):
                         
                 text = self.get_argument("text")
                 link = self.get_argument("link")
-
+                tokenizer = None
 
                 if link:
                         print "Link is present, so have to run goose to extract text"
@@ -787,9 +789,12 @@ class SentenceTokenization(tornado.web.RequestHandler):
 
 
                 text =  text.replace("\n", "")
-                tokenizer = SentenceTokenizationOnRegexOnInterjections()
-                result = tokenizer.tokenize(text)
-               
+                
+                if not tokenizer:
+                        tokenizer = SentenceTokenizationOnRegexOnInterjections()
+                        result = tokenizer.tokenize(text)
+                else:
+                        result = nltk.sent_tokenize(text)
 
                 tags = TAG_CLASSIFIER_LIB.predict(result)
                 sentiments = SENTI_CLASSIFIER_LIB_THREE_CATEGORIES.predict(result)
@@ -818,8 +823,15 @@ class SentenceTokenization(tornado.web.RequestHandler):
                         else:
                                 polarity_result = "decided"
 
+
+                        file_name = save_tree(sentence)
+
+                        with open(file_name, "rb") as image_file:
+                                encoded_string = base64.b64encode(image_file.read())
+
                         new_result.append(
                                 {"sentence": sentence,
+                                "encoded_string": encoded_string,
                                 "polarity": sentiment, 
                                 "sentiment_probabilities": probability, 
                                 "polarity_result": polarity_result,
@@ -828,7 +840,6 @@ class SentenceTokenization(tornado.web.RequestHandler):
                                 "subcategory": subcategory
                                             })
 
-                print new_result
                 self.write({"success": True,
 			        "error": False,
 			        "result": new_result,

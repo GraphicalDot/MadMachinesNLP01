@@ -1,8 +1,13 @@
 #!/usr/bin/python 
-import json
-import urllib
-
+import jsonrpclib
+from simplejson import loads
+import nltk
+from nltk import Tree
+from nltk.draw.util import CanvasFrame
+from nltk.draw import TreeWidget
 from nltk.corpus import wordnet
+
+server = jsonrpclib.Server("http://localhost:3456")
 
 def showsome(searchfor):
         query = urllib.urlencode({'q': searchfor})
@@ -18,6 +23,27 @@ def showsome(searchfor):
                 print h['titleNoFormatting'], h["url"]
                 
         print 'For more results, see %s' % data['cursor']['moreResultsUrl']
+
+
+
+
+
+
+
+def save_tree(sentence):
+        result = loads(server.parse(sentence))
+        tree = result["sentences"][0]["parsetree"]
+        cf = CanvasFrame()
+        name = hashlib.md5(sentence).hexdigest()
+
+        t = nltk.tree.Tree.fromstring(tree) 
+        tc = TreeWidget(cf.canvas(), t)
+        cf.add_widget(tc, 10,10) # (10,10) offsets
+        cf.print_to_file('{0}.ps'.format(name))
+        cf.destroy()
+        return 
+
+
 
 
 
@@ -40,4 +66,4 @@ def wordnet_meaning(word):
 
 
 if __name__ == "__main__":
-        showsome("freaked") 
+        save_tree("Then i went to this place") 

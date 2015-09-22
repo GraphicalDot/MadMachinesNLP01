@@ -96,6 +96,7 @@ App.SentencesView = Backbone.View.extend({
 		negative: function(){return this.model.sentiment_probabilities.negative},
 		neutral: function(){return this.model.sentiment_probabilities.neutral},
 		polarity_result: function(){return this.model.polarity_result},
+		tree: function(){return  "data:image/jpg;base64," + this.model.encoded_string},
 
 
 		initialize: function(options){
