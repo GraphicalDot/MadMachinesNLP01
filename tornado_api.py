@@ -778,11 +778,16 @@ class SentenceTokenization(tornado.web.RequestHandler):
         def post(self):
                 """
                 """
-                        
+                
+
                 text = self.get_argument("text")
                 link = self.get_argument("link")
                 tokenizer = None
 
+                
+                conll_extractor = ConllExtractor()
+                topia_extractor = extract.TermExtractor()
+                
                 if link:
                         print "Link is present, so have to run goose to extract text"
                         print link 
@@ -829,6 +834,16 @@ class SentenceTokenization(tornado.web.RequestHandler):
                         with open(file_name, "rb") as image_file:
                                 encoded_string = base64.b64encode(image_file.read())
 
+        
+                        blob = TextBlob(sentence)
+                        tb_nps = list(blob.noun_phrases) 
+                        
+                        blob = TextBlob(sentence, np_extractor=conll_extractor)
+                        tb_conll_nps = list(blob.noun_phrases) 
+
+                        te_nps = [e[0] for e in topia_extractor(sentence)]
+
+                        print tb_nps, tb_conll_nps, te_nps, 
                         new_result.append(
                                 {"sentence": sentence,
                                 "encoded_string": encoded_string,
@@ -837,6 +852,8 @@ class SentenceTokenization(tornado.web.RequestHandler):
                                 "polarity_result": polarity_result,
                                 "noun_phrases": ["a", "b", "c"],
                                 "tag": tag, 
+                                "tb_conll_nps": tb_conll_nps,
+                                "te_nps": te_nps, 
                                 "subcategory": subcategory
                                             })
 

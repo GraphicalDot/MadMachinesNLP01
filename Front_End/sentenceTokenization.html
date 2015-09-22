@@ -1,165 +1,188 @@
 <html>
-	<head>
-		<meta charset="utf-8">
-		<meta http-equiv="X-UA-Compatible" content="IE=edge">
-		<!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
-		<meta name="viewport" content="width=device-width, initial-scale=1">
-                
-		<title img=>MadMachines</title>
-                <meta name="description" content="HyPost">
-                <meta charset="UTF-8">
-		<script type="text/javascript" src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
-                <script type="text/javascript" src="js/jquery.bootpag.min.js"></script>
-                <link href="css/jquery-ui.css" rel="stylesheet">
-                <link href="css/main.css" rel="stylesheet">
-                <link href='http://fonts.googleapis.com/css?family=Playfair+Display:900' rel='stylesheet' type='text/css'>
 
-                <script type="text/javascript" src="js/highchart.js"></script>
-                <script type="text/javascript" src="js/jquery.grid-a-licious.min.js"></script>
-                <script type="text/javascript" src="js/libs/mustache/mustache.js"></script>
-                <script type="text/javascript" src="js/libs/underscore/underscore.js"></script>
-                <script type="text/javascript" src="js/libs/bootbox/bootbox.min.js"></script>
-                <script type="text/javascript" src="js/libs/backbone-min.js"></script>
-                <script type="text/javascript" src="js/libs/d3/d3.js"></script>
-                <script type="text/javascript" src="js/libs/d3.layout.cloud.js"></script>
-                <script type="text/javascript" src="js/libs/jquery-ui.js"></script>
-                <script type="text/javascript" src="js/jquery.tablesorter.min.js"></script>
-                <script type="text/javascript" src="js/typeahead.bundle.min.js"></script>
-                <script src="http://code.highcharts.com/modules/exporting.js"></script>
-		<link href='http://fonts.googleapis.com/css?family=Josefin+Slab:600' rel='stylesheet' type='text/css'> 
-		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.0/css/materialize.min.css" media="screen,projection">
-		 <link href="http://netdna.bootstrapcdn.com/font-awesome/4.1.0/css/font-awesome.min.css" rel="stylesheet" />	
-		<link href="css/blue/style.css" rel="stylesheet">		
-		<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-		   <!-- Compiled and minified JavaScript -->
-		<script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.0/js/materialize.min.js"></script>
-		<link href='https://fonts.googleapis.com/css?family=Lora' rel='stylesheet' type='text/css'>
-		<script type="text/x-mustache-template" id="sentences-template">  
-			<div>
-				<div class="row">
-					<b>Sentence</b>:: {{sentence}}
-				</div>
-				<div class="row">
-					
-					<select class="browser-default col s3 tags" style="height: 30px">
-      						<option value="food">food</option>
-      						<option value="service">service</option>
-      						<option value="cost">cost</option>
-      						<option value="ambience">ambience</option>
-      						<option value="null">null</option>
-      						<option value="overall">overall</option>
-    					</select>
-					<select class="browser-default col s3 polarity" style="margin-left: 20px; height: 30px">
-      						<option value="positive">positive</option>
-      						<option value="neutral">neutral</option>
-      						<option value="negative">negative</option>
-      						<option value="mixed">mixed</option>
-    					</select>
-					<select class="browser-default col s3 subTags" style="margin-left: 20px; height: 30px" >
-    					</select>
-				
-					<div class="col s1">
-					</div>	
-					 <a class="btn-small secondary-content  waves-effect waves-light sendButton" style="color: #3F2860"><i class="material-icons">send</i></a>
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+	<meta name="viewport" content="width=device-width, initial-scale=1">
 
-					
-				</div>
-				<div class="row">
-					<div class="col s3">
-						  <div class="card" style="background-color:  #DDE0CD">
-							 <div class="card-content black-text">
-								<p>Sentiment: mixed</p>
-								<p>Probability: {{mixed}}</p>
-							</div>
-						</div>
-					</div>	
-					<div class="col s3">
-						  <div class="card" style="background-color:  #DDE0CD">
-							 <div class="card-content black-text">
-								<p>Sentiment: positive</p>
-								<p>Probability: {{positive}}</p>
-							</div>
-						</div>
-					</div>	
-					<div class="col s3">
-						  <div class="card" style="background-color:  #DDE0CD">
-							 <div class="card-content black-text">
-								<p>Sentiment: negative</p>
-								<p>Probability: {{negative}}</p>
-							</div>
-						</div>
-					</div>	
-					<div class="col s3">
-						  <div class="card" style="background-color:  #DDE0CD">
-							 <div class="card-content black-text">
-								<p>Sentiment: neutral</p>
-								<p>Probability: {{neutral}}</p>
-							</div>
-						</div>
-					</div>	
-					
-				</div>
-			
-				<div class="row">
-					<p> result for polarity <b>{{polarity_result}}</b></p>
-				</div>
-				
-				<div class="row" style="overflow:auto;">
-				
-					<img id="treeImage" src="{{tree}}"/>
-				</div>
+	<title img=>MadMachines</title>
+	<meta name="description" content="HyPost">
+	<meta charset="UTF-8">
+	<script type="text/javascript" src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
+	<script type="text/javascript" src="js/jquery.bootpag.min.js"></script>
+	<link href="css/jquery-ui.css" rel="stylesheet">
+	<link href="css/main.css" rel="stylesheet">
+	<link href='http://fonts.googleapis.com/css?family=Playfair+Display:900' rel='stylesheet' type='text/css'>
 
+	<script type="text/javascript" src="js/highchart.js"></script>
+	<script type="text/javascript" src="js/jquery.grid-a-licious.min.js"></script>
+	<script type="text/javascript" src="js/libs/mustache/mustache.js"></script>
+	<script type="text/javascript" src="js/libs/underscore/underscore.js"></script>
+	<script type="text/javascript" src="js/libs/bootbox/bootbox.min.js"></script>
+	<script type="text/javascript" src="js/libs/backbone-min.js"></script>
+	<script type="text/javascript" src="js/libs/d3/d3.js"></script>
+	<script type="text/javascript" src="js/libs/d3.layout.cloud.js"></script>
+	<script type="text/javascript" src="js/libs/jquery-ui.js"></script>
+	<script type="text/javascript" src="js/jquery.tablesorter.min.js"></script>
+	<script type="text/javascript" src="js/typeahead.bundle.min.js"></script>
+	<script src="http://code.highcharts.com/modules/exporting.js"></script>
+	<link href='http://fonts.googleapis.com/css?family=Josefin+Slab:600' rel='stylesheet' type='text/css'>
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.0/css/materialize.min.css" media="screen,projection">
+	<link href="http://netdna.bootstrapcdn.com/font-awesome/4.1.0/css/font-awesome.min.css" rel="stylesheet" />
+	<link href="css/blue/style.css" rel="stylesheet">
+	<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+	<!-- Compiled and minified JavaScript -->
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.0/js/materialize.min.js"></script>
+	<link href='https://fonts.googleapis.com/css?family=Montserrat:400,700' rel='stylesheet' type='text/css'>
+	<link href='https://fonts.googleapis.com/css?family=Lora' rel='stylesheet' type='text/css'>
+	<link rel="stylesheet" href="css/sentenceTokenization.css">
+	<script type="text/x-mustache-template" id="sentences-template">
 
-			</div>
-
-		</script>
-		</head>
-
-		<body style="background-color: #DDE0CD">	
-			<div class="container" style="color: #3F2860; font-family: 'Lora', serif;">	
-			 <div class="row" style="margin-top: 5%">
-				<form class="col s12">
-					<div class="row">
-							  <h5 style="margin-left : 10px">Mad Machines Test Platform</h5>
-					</div>							
-					<div class="row">
-						<div class="input-field col s9">
-							<textarea id="textarea" class="materialize-textarea"></textarea>
-							<label for="textarea1">Enter the text you want to process</label>
-						</div>
-						<div class="col s3">
-							
-							<div class="row">
-						 		<a class="btn  waves-effect waves-light submitText" ><i class="material-icons">input</i></a>
-							</div>
-							<div class="row">
-								<a class="waves-effect waves-light btn modal-trigger" href="#modal1"><i class="material-icons">library_add</i></a>
-								<!-- Modal Structure -->
-								<div id="modal1" class="modal">
-									<div class="modal-content">
-										<textarea id="textarealink" class="materialize-textarea"></textarea>
-										<label for="textarealink">Enter the Link you want to process</label>
-									</div>
-								</div>
-							
-							
-							</div>
-						</div>
-					
-					</div>
-				</form>
-			</div>
+		<div class="col s12">
+			<b class="boldHighlighter">Sentence : </b> <span class="highlighter">{{sentence}}</span>
+		</div>
+		<div class="col s12">
 			<div class="row">
-				<div class="col s10" id ="sentences">
+				<div class="input-field col s3 offset-s0">
+					<select class="tags">
+						<option value="food">food</option>
+						<option value="service">service</option>
+						<option value="cost">cost</option>
+						<option value="ambience">ambience</option>
+						<option value="null">null</option>
+						<option value="overall">overall</option>
+					</select>
+				</div>	
+				<div class="input-field col s3">
+					<select class="polarity">
+						<option value="positive">positive</option>
+						<option value="neutral">neutral</option>
+						<option value="negative">negative</option>
+						<option value="mixed">mixed</option>
+					</select>
+				</div>
+				<div class="input-field col s3">
+					<select class="subTags">
+					</select>
+				</div>
+				<div class="input-field col s1 offset-s0">
+					<a class="btn-small secondary-content  waves-effect waves-light sendButton right"><i class="material-icons">send</i></a>
 				</div>
 			</div>
 		</div>
+		<div class="col s12">
+			<div class="row">
+				<div class="col s3">
+					<div class="card indigo darken-1">
+						<div class="card-content white-text">
+							<p class="center"><span class="boldHighlighter-2">Sentiment: </span><span class="highlighter-2">mixed</span></p>
+							<p class="center"><span class="boldHighlighter-2">Probability: </span><span class="highlighter-2">{{mixed}}</span></p>
+						</div>
+					</div>
+				</div>
+				<div class="col s3">
+					<div class="card indigo darken-1">
+						<div class="card-content white-text">
+							<p class="center"><span class="boldHighlighter-2">Sentiment: </span><span class="highlighter-2">positive</span></p>
+							<p class="center"><span class="boldHighlighter-2">Probability: </span><span class="highlighter-2">{{positive}}</span></p>
+						</div>
+					</div>
+				</div>
+				<div class="col s3">
+					<div class="card indigo darken-1">
+						<div class="card-content white-text">
+							<p class="center"><span class="boldHighlighter-2">Sentiment: </span><span class="highlighter-2">negative</span></p>
+							<p class="center"><span class="boldHighlighter-2">Probability: </span><span class="highlighter-2">{{negative}}</span></p>
+						</div>
+					</div>
+				</div>
+				<div class="col s3">
+					<div class="card indigo darken-1">
+						<div class="card-content white-text">
+							<p class="center"><span class="boldHighlighter-2">Sentiment: </span><span class="highlighter-2">neutral</span></p>
+							<p class="center"><span class="boldHighlighter-2">Probability: </span><span class="highlighter-2">{{neutral}}</span></p>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="col s12">
+			<p><b class="boldHighlighter">Result for Polarity: </b><span class="highlighter">{{polarity_result}}</span></p>
+		</div>
+		<div class="col s12 treeImageCol" style="overflow:auto;">
+			<img src="{{tree}}" alt="" id="treeImage">
+		</div>
+		<div class="col s12">
+			{{tb_conll_nps}}
+		</div>
+		<div class="col s12">
+			{{te_nps}}
+		</div>
 
-		<script src="js/sentenceTokenization.js"></script>
-		<script src="js/router.js"></script>
-		<script>$(function() {App.boot($('body')); });</script>   
+	</script>
+</head>
+
+<body>
+	<div class="container sentence_container">
+		<div class="row informationRow">
+			<form class="col s12">
+				<div class="row">
+					<div class="col s12">
+						<h4 class="boldHighlighter title">Mad Machines Test Platform</h4>
+					</div>
+				</div>
+				<div class="row white hoverable content_row">
+					<div class="col s12">
+						<div class="row">
+							<div class="input-field col s9">
+								<textarea id="textarea" class="materialize-textarea"></textarea>
+								<label for="textarea1"><span class="">Enter the text you want to process</span></label>
+							</div>
+							<div class="input-field col s3">
+								<div class="row">
+									<div class="col s6">
+										<a class="btn waves-effect waves-light submitText">Submit
+												<!--<i class="material-icons right">input</i>-->
+											</a>
+									</div>
+
+									<div class="col s6">
+										<a class="waves-effect waves-light btn modal-trigger" href="#modal1"><i class="material-icons">library_add</i></a>
+										<!-- Modal Structure -->
+										<div id="modal1" class="modal">
+											<div class="modal-content">
+												<textarea id="textarealink" class="materialize-textarea"></textarea>
+												<label for="textarealink">Enter the Link you want to process</label>
+											</div>
+										</div>
+									</div>
+									<div class="input-field col s12">
+										<select name="" id="token_select">
+											<option value="single">Single Based Tokenization</option>
+											<option value="multiple">Multiple Value Tokenization</option>
+										</select>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</form>
+		</div>
+		<div class="row sentences_row">
+			<div class="col s12" id="sentences">
+			</div>
+		</div>
+	</div>
+
+	<script src="js/sentenceTokenization.js"></script>
+	<script src="js/router.js"></script>
+	<script>
+		$(function() {App.boot($('body')); });
+	</script>
 
 
-	</body>
+</body>
+
 </html>
-

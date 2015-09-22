@@ -68,20 +68,25 @@ class cd:
 
 
 def save_tree(sentence):
-        result = loads(server.parse(sentence))
-        tree = result["sentences"][0]["parsetree"]
-        cf = CanvasFrame()
                                 
         name = hashlib.md5(sentence).hexdigest()
 
-        t = nltk.tree.Tree.fromstring(tree)
-        tc = TreeWidget(cf.canvas(), t)
-        cf.add_widget(tc, 10,10) # (10,10) offsets
-        with cd(path):
-                cf.print_to_file('{0}.ps'.format(name))
-                subprocess.call(["convert",  "-density",  "100",  "{0}.ps".format(name), "-resize", "100%", "-gamma",  "2.2", "-quality",  "92", "{0}.jpg".format(name)])
-                #subprocess.call(["convert",  "{0}.ps".format(name), "{0}.jpg".format(name)])
-        cf.destroy()
+
+        if os.path.exists(os.path.join(path, "{0}.jpg".format(name))):
+                print "File exists"
+
+        else:
+                with cd(path):
+                        result = loads(server.parse(sentence))
+                        tree = result["sentences"][0]["parsetree"]
+                        cf = CanvasFrame()
+                        t = nltk.tree.Tree.fromstring(tree)
+                        tc = TreeWidget(cf.canvas(), t)
+                        cf.add_widget(tc, 10,10) # (10,10) offsets
+                        cf.print_to_file('{0}.ps'.format(name))
+                        subprocess.call(["convert",  "-density",  "100",  "{0}.ps".format(name), "-resize", "100%", "-gamma",  "2.2", "-quality",  "92", "{0}.jpg".format(name)])
+                        #subprocess.call(["convert",  "{0}.ps".format(name), "{0}.jpg".format(name)])
+                        cf.destroy()
 
         print "{0}/{1}.jpg".format(path, name)
         return "{0}/{1}.jpg".format(path, name)
