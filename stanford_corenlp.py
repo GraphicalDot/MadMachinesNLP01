@@ -71,13 +71,13 @@ def save_tree(sentence):
                                 
         name = hashlib.md5(sentence).hexdigest()
 
+        result = loads(server.parse(sentence))
 
         if os.path.exists(os.path.join(path, "{0}.jpg".format(name))):
                 print "File exists"
 
         else:
                 with cd(path):
-                        result = loads(server.parse(sentence))
                         tree = result["sentences"][0]["parsetree"]
                         cf = CanvasFrame()
                         t = nltk.tree.Tree.fromstring(tree)
@@ -88,8 +88,7 @@ def save_tree(sentence):
                         #subprocess.call(["convert",  "{0}.ps".format(name), "{0}.jpg".format(name)])
                         cf.destroy()
 
-        print "{0}/{1}.jpg".format(path, name)
-        return "{0}/{1}.jpg".format(path, name)
+        return ["{0}/{1}.jpg".format(path, name), result["sentences"][0]["dependencies"], result["sentences"][0]["indexeddependencies"]]
 
 
 

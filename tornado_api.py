@@ -829,7 +829,7 @@ class SentenceTokenization(tornado.web.RequestHandler):
                                 polarity_result = "decided"
 
 
-                        file_name = save_tree(sentence)
+                        file_name, dependencies, indexeddependencies = save_tree(sentence)
 
                         with open(file_name, "rb") as image_file:
                                 encoded_string = base64.b64encode(image_file.read())
@@ -849,6 +849,8 @@ class SentenceTokenization(tornado.web.RequestHandler):
                                 "encoded_string": encoded_string,
                                 "polarity": sentiment, 
                                 "sentiment_probabilities": probability, 
+                                "dependencies": dependencies, 
+                                "indexeddependencies": indexeddependencies,
                                 "polarity_result": polarity_result,
                                 "noun_phrases": ["a", "b", "c"],
                                 "tag": tag, 
