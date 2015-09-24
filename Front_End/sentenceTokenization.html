@@ -23,6 +23,7 @@
 	<script type="text/javascript" src="js/libs/backbone-min.js"></script>
 	<script type="text/javascript" src="js/libs/d3/d3.js"></script>
 	<script type="text/javascript" src="js/libs/d3.layout.cloud.js"></script>
+	<script type="text/javascript" src="js/dependency-tree.js"></script>
 	<script type="text/javascript" src="js/libs/jquery-ui.js"></script>
 	<script type="text/javascript" src="js/jquery.tablesorter.min.js"></script>
 	<script type="text/javascript" src="js/typeahead.bundle.min.js"></script>
@@ -53,7 +54,7 @@
 						<option value="null">null</option>
 						<option value="overall">overall</option>
 					</select>
-				</div>	
+				</div>
 				<div class="input-field col s3">
 					<select class="polarity">
 						<option value="positive">positive</option>
@@ -107,17 +108,20 @@
 				</div>
 			</div>
 		</div>
+		<div class="col s6">
+			<b class="boldHighlighter">Noun phrases : </b> <span class="highlighter">{{noun}}</span>
+		</div>
+		<div class="col s6">
+			<b class="boldHighlighter">Noun phrase : </b> <span class="highlighter">{{noun2}}</span>
+		</div>
 		<div class="col s12">
 			<p><b class="boldHighlighter">Result for Polarity: </b><span class="highlighter">{{polarity_result}}</span></p>
 		</div>
 		<div class="col s12 treeImageCol" style="overflow:auto;">
 			<img src="{{tree}}" alt="" id="treeImage">
 		</div>
-		<div class="col s12">
-			{{tb_conll_nps}}
-		</div>
-		<div class="col s12">
-			{{te_nps}}
+		<div class="tree col s12">
+			<svg></svg>
 		</div>
 
 	</script>

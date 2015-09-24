@@ -16,18 +16,18 @@ App.BodyView = Backbone.View.extend({
 			$("body .container").append(preloaderString)
 			text = $("#textarea").val()
 
-			var jqhr = $.post("http://192.168.1.4:8000/sentence_tokenization", {"text": text, "link": null})
+			var jqhr = $.post("http://localhost:8000/sentence_tokenization", {"text": text, "link": null})
 
 			jqhr.done(function(data){
 				$(".progress").remove();
 				if (data.error == false){
-					console.log(data.result)
+
 					$("#sentences").html("")
 					$("#sentences").append('<ul class="collection" id="sentenceCollection"></ul>')
 					$.each(data.result, function(iter, setenceObject){
 						var subView = new App.SentencesView({"model": setenceObject})
 					 	$("#sentenceCollection").append(subView.render().el);
-					  
+
 					});
 					$('select.tags').material_select();
 					$('select.polarity').material_select();
@@ -99,15 +99,13 @@ App.SentencesView = Backbone.View.extend({
 		negative: function(){return this.model.sentiment_probabilities.negative},
 		neutral: function(){return this.model.sentiment_probabilities.neutral},
 		polarity_result: function(){return this.model.polarity_result},
-		tb_conll_nps: function(){return this.model.tb_conll_nps},
-		te_nps: function(){return this.model.te_nps},
 		tree: function(){return  "data:image/jpg;base64," + this.model.encoded_string},
-
+		noun: function() {return this.model.tb_conll_nps.join(",")},
+		noun2: function() {return this.model.te_nps.join(",")},
 
 		initialize: function(options){
 			this.model = options.model;
-			console.log(this.model)
-			console.log(this.model.sentence);
+
 		},
 
 		render:  function(){
@@ -117,14 +115,18 @@ App.SentencesView = Backbone.View.extend({
 			this.$(".polarity").val(this.model.polarity);
 			this.$(".subTags").val(this.model.subcategory);
 			this.changeOptions(this.model.tag);
-			this.$el.attr("style", "color: black ")
+			this.$el.attr("style", "color: black ");
+			var self= this;
+			setTimeout(function() {
+				makeData(self.$el.find('svg')[0], self.model.sentence, self.model.dependencies);
+			}, 0);
 			return this;
 
 		},
 
 
 		changeOptions: function(tag){
-		  
+
 			foodsubtags = ['dishes', 'menu-food', 'null-food', 'overall-food', 'place-food', 'sub-food'];
 			costsubtags = ['cheap', 'cost-null', 'expensive', 'not worth', 'value for money'];
 			servicesubtags = ['booking', 'management', 'presentation', 'service-null', 'service-overall', 'staff', 'waiting-hours'];
@@ -158,7 +160,7 @@ App.SentencesView = Backbone.View.extend({
 					self.$("select.subTags").append(__str);
 
 			})};
-			
+
 			self.$("select.subTags").material_select();
 
 
@@ -199,7 +201,7 @@ App.SentencesView = Backbone.View.extend({
 			})
 			this.remove();
 		}
-		
+
 
 })
 

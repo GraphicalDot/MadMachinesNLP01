@@ -843,7 +843,7 @@ class SentenceTokenization(tornado.web.RequestHandler):
 
                         te_nps = [e[0] for e in topia_extractor(sentence)]
 
-                        print tb_nps, tb_conll_nps, te_nps, 
+                        print sentence, dependencies, "\n" 
                         new_result.append(
                                 {"sentence": sentence,
                                 "encoded_string": encoded_string,
