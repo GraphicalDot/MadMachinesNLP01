@@ -1,6 +1,3 @@
-
-
-
 #!/usr/bin/env python
 
 from __future__ import with_statement
@@ -14,20 +11,16 @@ import os
 import time
 from fabric.operations import local as lrun, run
 """
-env.use_ssh_config = True
 env.hosts = ["52.24.208.205"] ##For t2 medium
 #env.hosts = ["ec2-54-186-203-98.us-west-2.compute.amazonaws.com"] ##For m3.large
-env.user = "ubuntu"
-env.key_filename = "/home/kaali/Programs/Python/MadMachinesNLP01/MadMachines.pem"
-env.warn_only = True
 
 This is the file which remotely makes an ec2 instance for the use of this repository
 """
 
-VIRTUAL_ENVIRONMENT = "/home/{0}/VirtualEnvironment".format(env["user"])
+VIRTUAL_ENVIRONMENT = "/home/{0}/MadMachinesNLP01/".format(env["user"])
 print VIRTUAL_ENVIRONMENT
 
-PATH = "/home/{0}/VirtualEnvironment/Canworks/".format(env["user"])
+PATH = "/home/{0}/MadMachinesNLP01/MadMachinesNLP01/".format(env["user"])
 print PATH
 
 TAGGERS_PATH = "{0}/Text_Processing/PosTaggers/hunpos-1.0-linux".format(PATH)
@@ -66,11 +59,15 @@ def basic_setup():
 def localhost():
         env.run = lrun
         env.hosts = ['localhost']
-
 @task
 def remote():
         env.run = run
-        env.hosts = ['192.168.1.5']
+        env.hosts = ['52.74.143.163']
+        env.use_ssh_config = True
+        env.user = "ubuntu"
+        env.key_filename = "/home/kmama02/Downloads/madmachines.pem"
+        env.warn_only = True
+        env.port = 22
 
         
         
@@ -90,6 +87,7 @@ def install_phantomjs():
         run("./build.sh")
 
 
+@task
 def install_elastic_search_stack():
         """
         For more configuration options for Elastic search, read the following document
@@ -103,7 +101,7 @@ def install_elastic_search_stack():
         env.run("sudo apt-get update")
         env.run("sudo apt-get -y install elasticsearch=1.4.4")
         with cd("/usr/share/elasticsearch"):
-                env.run("bin/plugin -install elasticsearch/elasticsearch-analysis-phonetic/2.4.3")
+                env.run("sudo bin/plugin -install elasticsearch/elasticsearch-analysis-phonetic/2.4.3")
         env.run("sudo service elasticsearch start")
 
 
@@ -125,8 +123,9 @@ def virtual_env():
                         put(PATH, VIRTUAL_ENVIRONMENT)
                         with prefix("source bin/activate"):
 			        if confirm("Do you want to install requirements.txt again??"):
-		                        run("pip install numpy==1.9.2")
-                                        run("pip install -r MadMachinesNLP01/requirements.txt")
+		                        env.run("pip install pyopenssl ndg-httpsclient pyasn1")
+                                        env.run("pip install numpy==1.9.2")
+                                        env.run("pip install -r MadMachinesNLP01/requirements.txt")
 
 
 
