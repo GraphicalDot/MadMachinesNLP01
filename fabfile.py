@@ -52,7 +52,7 @@ def basic_setup():
 	env.run("sudo apt-get install -y mercurial")
 	env.run("sudo apt-get install -y libpq-dev")
 	env.run("sudo apt-get install -y libffi-dev")
-        env.run("sudo apt-get install -y libblas-dev liblapack-dev libatlas-base-dev")
+        env.run("sudo apt-get install -y libblas-dev liblapack-dev libatlas-base-dev python-tk")
         env.run("sudo apt-get install build-essential libssl-dev libffi-dev python-dev")
 
 @task
@@ -124,7 +124,7 @@ def virtual_env():
                         with prefix("source bin/activate"):
 			        if confirm("Do you want to install requirements.txt again??"):
 		                        env.run("pip install pyopenssl ndg-httpsclient pyasn1")
-                                        env.run("pip install numpy==1.9.2")
+                                        env.run("pip install numpy")
                                         env.run("pip install -r MadMachinesNLP01/requirements.txt")
 
 
