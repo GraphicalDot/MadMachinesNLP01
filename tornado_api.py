@@ -70,6 +70,9 @@ from tornado.web import asynchronous
 from tornado.concurrent import run_on_executor
 from concurrent.futures import ThreadPoolExecutor
 from bson.son import SON
+from termcolor import cprint 
+from pyfiglet import figlet_format
+
 from Text_Processing.Sentence_Tokenization.Sentence_Tokenization_Classes import SentenceTokenizationOnRegexOnInterjections
 from GlobalConfigs import connection, eateries, reviews, yelp_eateries, yelp_reviews, eateries_results_collection,\
                     elasticsearch, users_details, users_feedback, users_queries, training_sentiment_collection,\
@@ -936,5 +939,5 @@ class Application(tornado.web.Application):
 
 
 if __name__ == '__main__':
-    print "server reloaded Dude"
+    cprint(figlet_format('Server Reloaded', font='big'), attrs=['bold'])
     main()

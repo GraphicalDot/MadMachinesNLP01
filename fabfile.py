@@ -17,6 +17,8 @@ env.hosts = ["52.24.208.205"] ##For t2 medium
 This is the file which remotely makes an ec2 instance for the use of this repository
 """
 
+env["user"] = "ubuntu"
+
 VIRTUAL_ENVIRONMENT = "/home/{0}/MadMachinesNLP01/".format(env["user"])
 print VIRTUAL_ENVIRONMENT
 
@@ -53,7 +55,8 @@ def basic_setup():
 	env.run("sudo apt-get install -y libpq-dev")
 	env.run("sudo apt-get install -y libffi-dev")
         env.run("sudo apt-get install -y libblas-dev liblapack-dev libatlas-base-dev python-tk")
-        env.run("sudo apt-get install build-essential libssl-dev libffi-dev python-dev")
+        env.run("sudo apt-get install build-essential libssl-dev libffi-dev python-dev python-pip git")
+        env.run("sudo pip install virtualenv")
 
 @task
 def localhost():
@@ -96,8 +99,8 @@ def install_elastic_search_stack():
         env.run("sudo add-apt-repository -y ppa:webupd8team/java")
         env.run("sudo apt-get update")
         env.run("sudo apt-get -y install oracle-java8-installer")
-        env.run("wget -O - http://packages.elasticsearch.org/GPG-KEY-elasticsearch | sudo apt-key add -")
-        env.run("echo 'deb http://packages.elasticsearch.org/elasticsearch/1.4/debian stable main' | sudo tee /etc/apt/sources.list.d/elasticsearch.list")
+        env.run("sudo wget -O - http://packages.elasticsearch.org/GPG-KEY-elasticsearch | sudo apt-key add -")
+        env.run("sudo echo 'deb http://packages.elasticsearch.org/elasticsearch/1.4/debian stable main' | sudo tee /etc/apt/sources.list.d/elasticsearch.list")
         env.run("sudo apt-get update")
         env.run("sudo apt-get -y install elasticsearch=1.4.4")
         with cd("/usr/share/elasticsearch"):
@@ -111,16 +114,17 @@ def get_host():
         else:
                 print env["host"], env["user"]
 
-
+@task
 def virtual_env():
 	"""
 	This method installs the virual environment and after installing virtual environment installs the git.
 	After installing the git installs the reuiqred repository
 	"""
         if not exists(VIRTUAL_ENVIRONMENT, use_sudo=True):
-	        run("virtualenv VirtualEnvironment")
+	        run("virtualenv MadMachinesNLP01")
                 with cd(VIRTUAL_ENVIRONMENT):
-                        put(PATH, VIRTUAL_ENVIRONMENT)
+                        #put(PATH, VIRTUAL_ENVIRONMENT)
+		        env.run("git clone https://github.com/kaali-python/MadMachinesNLP01.git")
                         with prefix("source bin/activate"):
 			        if confirm("Do you want to install requirements.txt again??"):
 		                        env.run("pip install pyopenssl ndg-httpsclient pyasn1")
@@ -128,7 +132,7 @@ def virtual_env():
                                         env.run("pip install -r MadMachinesNLP01/requirements.txt")
 
 
-
+@task
 def install_text_sentence():
 	"""
 	If installs by pip shows an error"
@@ -145,6 +149,23 @@ def install_text_sentence():
                             run("sudo {0}/bin/python setup.py install".format(VIRTUAL_ENVIRONMENT))
 
 
+
+@task 
+def install_corenlp():
+	with cd(VIRTUAL_ENVIRONMENT):
+		with prefix("source bin/activate"):
+                        run("git clone https://bitbucket.org/torotoki/corenlp-python.git")
+                        
+        with cd("{0}corenlp-python".format(VIRTUAL_ENVIRONMENT)):
+                                run("ls")
+                                # assuming the version 3.4.1 of Stanford CoreNLP
+                                env.run("sudo apt-get install unzip")
+                                run("wget http://nlp.stanford.edu/software/stanford-corenlp-full-2014-08-27.zip")
+                                run("unzip stanford-corenlp-full-2014-08-27.zip")
+
+
+
+@task
 def download_corpora():
 	with cd(VIRTUAL_ENVIRONMENT):
 		with prefix("source bin/activate"):
@@ -167,19 +188,18 @@ def change_permission_api():
         with cd(TAGGERS_PATH):
             run("sudo chmod 755 *")
 
-
+@task
 def mongo():
 	"""
 	This method installs the mongodb database on the remote server.It after installing the mongodb replaces the 
 	mongodb configuration with the one available in the git repository.
 	"""
-	with prefix("cd /home/ubuntu/VirtualEnvironment"):
-		run("sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 7F0CEB10")
-                run('echo "deb http://repo.mongodb.org/apt/ubuntu trusty/mongodb-org/3.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-3.0.list')
-		run("sudo apt-get update")
-		run("sudo apt-get install -y mongodb-org=3.0.6 mongodb-org-server=3.0.6 mongodb-org-shell=3.0.6 mongodb-org-mongos=3.0.6 mongodb-org-tools=3.0.6")
-	run("sudo rm -rf  /var/lib/mongodb/mongod.lock")
-	run("sudo service mongodb restart")
+	env.run("sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 7F0CEB10")
+        env.run('sudo echo "deb http://repo.mongodb.org/apt/ubuntu trusty/mongodb-org/3.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-3.0.list')
+	env.run("sudo apt-get update")
+	env.run("sudo apt-get install -y mongodb-org=3.0.6 mongodb-org-server=3.0.6 mongodb-org-shell=3.0.6 mongodb-org-mongos=3.0.6 mongodb-org-tools=3.0.6")
+	env.run("sudo rm -rf  /var/lib/mongodb/mongod.lock")
+	env.run("sudo service mongodb restart")
 
 
 
