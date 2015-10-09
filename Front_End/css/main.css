@@ -135,6 +135,8 @@ nav .user img {
   letter-spacing: -2px;
   font-size: 6em;
   font-weight: 800;
+  text-decoration: underline;
+  text-transform: capitalize;
 }
 
 .caption h5 {
@@ -173,9 +175,7 @@ nav.transparent {
       margin-left: 15px;
       padding: 0 15px; }
 
-.slider .slides li .caption {
-  padding-top: 190px;
-}
+
 
 .slides img {
 	/*opacity: 0.2;*/
@@ -251,4 +251,169 @@ nav.transparent {
     right: 5px;
     cursor: pointer;
     color: darkred;
+}
+
+nav ul li a:not(.btn) {
+  font-size: 0.9em;
+  text-decoration: none;
+  color: #424242;
+}
+
+nav ul li a:hover, nav ul li.active a {
+  color: #673ab7!important;
+  background-color: transparent!Important;
+}
+
+.brand-logo {
+  margin-left:15px;
+  font-size: 2.9em;
+  /*letter-spacing: 0.3em;*/
+	font-variant: small-caps;
+	font-weight: 800;
+}
+
+
+.d3-tip {
+  line-height: 1;
+  /*font-weight: bold;*/
+	text-align: center;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.8);
+  color: #fff;
+  border-radius: 2px;
+  pointer-events: none;
+}
+
+/* Creates a small triangle extender for the tooltip */
+.d3-tip:after {
+  box-sizing: border-box;
+  display: inline;
+  font-size: 10px;
+  width: 100%;
+  line-height: 1;
+  color: rgba(0, 0, 0, 0.8);
+  position: absolute;
+  pointer-events: none;
+}
+
+/* Northward tooltips */
+.d3-tip.n:after {
+  content: "\25BC";
+  margin: -1px 0 0 0;
+  top: 100%;
+  left: 0;
+  text-align: center;
+}
+
+/* Eastward tooltips */
+.d3-tip.e:after {
+  content: "\25C0";
+  margin: -4px 0 0 0;
+  top: 50%;
+  left: -8px;
+}
+
+/* Southward tooltips */
+.d3-tip.s:after {
+  content: "\25B2";
+  margin: 0 0 1px 0;
+  top: -8px;
+  left: 0;
+  text-align: center;
+}
+
+/* Westward tooltips */
+.d3-tip.w:after {
+  content: "\25B6";
+  margin: -4px 0 0 -1px;
+  top: 50%;
+  left: 100%;
+}
+
+
+ @-webkit-keyframes bounceIn {
+    0% {
+      opacity: 0;
+      -webkit-transform: scale(.3);
+    }
+
+    50% {
+      opacity: 1;
+      -webkit-transform: scale(1.05);
+    }
+
+    70% {
+      -webkit-transform: scale(.9);
+    }
+
+    100% {
+      -webkit-transform: scale(1);
+    }
+  }
+
+  @keyframes bounceIn {
+    0% {
+      opacity: 0;
+      transform: scale(.3);
+    }
+
+    50% {
+      opacity: 1;
+      transform: scale(1.05);
+    }
+
+    70% {
+      transform: scale(.9);
+    }
+
+    100% {
+      transform: scale(1);
+    }
+  }
+
+
+  .d3-tip.animate {
+		animation: bounceIn 0.2s ease-out;
+    -webkit-animation: bounceIn 0.2s ease-out;
+  }
+
+  .d3-tip span {
+    /*color: #ff00c7;*/
+		text-align: center;
+  }
+
+	.d3-tip span.tip-title {
+		text-align: center!important;
+		color: white;
+		font-size: 14px;
+		font-family: 'Montserrat', sans-serif;
+	}
+
+	.d3-tip span.tip-content {
+		font-size: 14px;
+		color: white;
+	}
+
+	.sexy_line {
+    margin: 4px 0;
+    height: 1px;
+    border: 0;
+    background: black;
+    background: -webkit-gradient(linear, 0 0, 100% 0, from(white), to(white), color-stop(50%, wheat));
+}
+
+path, .svg_Category, .c0 {
+	cursor: pointer;
+}
+
+.eateryDetails {
+	display: none;
+}
+
+.eateryDetails .col {
+	/*height: 133px;*/
+}
+
+.eateryDetails .card-panel {
+	height: 500px!important;
 }

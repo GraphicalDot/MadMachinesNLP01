@@ -127,7 +127,7 @@ App.ModifyViewOnEatery = Backbone.View.extend({
 			if (data.error == false){
 
 				console.log(data.result)
-				reloadGoogleMap(self.model.eatery_lat, self.model.eatery_lng, data.result)
+				// reloadGoogleMap(self.model.eatery_lat, self.model.eatery_lng, data.result)
 					}
 			else{
 				var subView = new App.ErrorView();
@@ -1103,14 +1103,15 @@ App.EateryDetails = Backbone.View.extend({
 
 	renderOnEateryName: function(){
 		var self = this;
-		var jqhr = $.post(window.get_eatery, {"eatery_name": this.model.eatery_name})
+		var jqhr = $.post(window.get_eatery, {"eatery_name": this.model.eatery_name, "type_of_data": "highchart"})
 		jqhr.done(function(data){
 			if (data.error == false){
 				console.log(data.result)
-				$.each(["food", "ambience", "cost", "service"], function(iter, value){
-					__object = $("." + value);
-					self.makeChart(__object, data.result[value], self.model.eatery_name, value);
-				})
+				// $.each(["food", "ambience", "cost", "service"], function(iter, value){
+				// 	__object = $("." + value);
+				// 	self.makeChart(__object, data.result[value], self.model.eatery_name, value);
+				// })
+				self.makeD3Chart(data);
 
 				var subView = new App.ReviewForEatery({"model": {"eatery_name": self.model.eatery_name, "eatery_id": self.model.eatery_id, "eatery_address": data.result.eatery_address}})
 				$("#do-review").html(subView.render().el)
@@ -1133,14 +1134,15 @@ App.EateryDetails = Backbone.View.extend({
 	},
 	render: function(){
 		var self = this;
-		var jqhr = $.post(window.eatery_details, {"eatery_id": this.model.eatery_id, "eatery_name": this.model.eatery_name})
+		var jqhr = $.post(window.eatery_details, {"eatery_id": this.model.eatery_id, "eatery_name": this.model.eatery_name, "type_of_data": 'highchart'})
 		jqhr.done(function(data){
 			if (data.error == false){
-				console.log(data.result)
-				$.each(["food", "ambience", "cost", "service"], function(iter, value){
-					__object = $("." + value);
-					self.makeChart(__object, data.result[value], self.model.eatery_name, value);
-				})
+				// console.log(data.result)
+				self.makeD3Chart(data);
+				// $.each(["food", "ambience", "cost", "service"], function(iter, value){
+				// 	self.makeD3Chart(data.result[value], self.model.eatery_name, value);
+				// 	// self.makeChart(__object, data.result[value], self.model.eatery_name, value);
+				// })
 
 				var subView = new App.ReviewForEatery({"model": {"eatery_name": self.model.eatery_name, "eatery_id": self.model.eatery_id, "eatery_address": data.result.eatery_address}})
 				$("#do-review").html(subView.render().el)
@@ -1160,6 +1162,58 @@ App.EateryDetails = Backbone.View.extend({
 
 
 		return this;
+	},
+
+	makeD3Chart: function(data, name, type) {
+		$(".eateryDetails .card-panel").empty();
+		$(".eateryDetails").show();
+		function doTheThing(input) {
+		if (input.success) {
+			// var main_keys= ['food'];
+			var main_keys = ['food', 'ambience', 'cost', 'service'];
+
+			for (var i = 0; i < main_keys.length; i++) {
+				(function (current_main_key) {
+					var max_total = 0;
+					var chart_categories = input.result[current_main_key].categories;
+					var chart_series = input.result[current_main_key].series;
+
+					var chart_data = [];
+
+					for (var j = 0; j < chart_categories.length; j++) {
+						var single_chart_data_object = {};
+						single_chart_data_object.term = chart_categories[j];
+						single_chart_data_object.count = 0;
+						chart_data.push(single_chart_data_object);
+					}
+
+					for (var j = 0; j < chart_series.length; j++) {
+						var single_chart_series = chart_series[j];
+						var chart_series_name = single_chart_series.name, chart_series_color = single_chart_series.color, chart_series_data = single_chart_series.data;
+
+						for (var k = 0; k < chart_series_data.length; k++) {
+							(function (main_obj, name, color, data) {
+								main_obj[name] = { count: data, color: color };
+								main_obj.count += Number(data);
+								if (main_obj.count > max_total) {
+									max_total = main_obj.count;
+								}
+							})(chart_data[k], chart_series_name, chart_series_color, chart_series_data[k]);
+						}
+					}
+
+					chart_data.sort(function (a, b) {
+						return b.count - a.count;
+					});
+					console.log(chart_data);
+					radialLineChartD3(chart_data, current_main_key, max_total);
+				})(main_keys[i]);
+			}
+		}
+		// return output;
+	}
+	doTheThing(data);
+
 	},
 
 	makeChart: function(__object,  __data, eatery_name, category){

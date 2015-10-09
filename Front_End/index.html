@@ -24,7 +24,9 @@
 	<script type="text/javascript" src="js/libs/bootbox/bootbox.min.js"></script>
 	<script type="text/javascript" src="js/libs/backbone-min.js"></script>
 	<script type="text/javascript" src="js/libs/d3/d3.js"></script>
+	<script type="text/javascript" src="js/libs/d3/d3.tips.js"></script>
 	<script type="text/javascript" src="js/libs/d3.layout.cloud.js"></script>
+	<script src="js/radialLineChart.js"></script>
 	<script type="text/javascript" src="js/libs/jquery-ui.js"></script>
 	<script type="text/javascript" src="js/jquery.tablesorter.min.js"></script>
 	<script type="text/javascript" src="js/typeahead.bundle.min.js"></script>
@@ -241,7 +243,7 @@
 								<a class="waves-effect waves-light modal-trigger2 tool-tipped  black-text" href="#modal3">  Enter your query</a>
 						</li>
 						<li>
-							<a class="waves-effect waves-light" id="pickEatery black-text" >pick eatery</a>
+							<a class="waves-effect waves-light" id="pickEatery" >pick eatery</a>
 						</li>
 						<li class="hidden user">
 												<a href="#">
@@ -513,13 +515,17 @@
 		<div class ="row authRow hidden z-depth-5 queryResult white">
 		</div>
 		<div class ="row eateryDetails">
-			<div class="col s12 m3 l3 food">
+			<div class="col s12 m9 food">
+				<div class="card-panel" id="food"></div>
 			</div>
-			<div class="col s12 m3 l3 cost">
+			<div class="col s12 m3 cost">
+				<div class="card-panel" id="cost"></div>
 			</div>
-			<div class="col s12 m3 l3 service">
+			<div class="col s12 m6 service">
+				<div class="card-panel" id="service"></div>
 			</div>
-			<div class="col s12 m3 l3 ambience">
+			<div class="col s12 m6 ambience">
+				<div class="card-panel" id="ambience"></div>
 			</div>
 
 		</div>
@@ -580,10 +586,6 @@
 	<div class="card-content #424242 grey darken-3">
 		<span class="card-title activator" style="font-size: 80%">{{name}}<i class="material-icons right">more_vert</i></span>
 		<p><a style="font-size: 80%" class="data-click-eatery">{{eatery_name}}</a></p>
-		</br>
-		<p>{{totalpositive}}<i class="material-icons right">thumb_up</i></p>
-		</br>
-		<p>{{totalnegative}}<i class="material-icons right">thumb_down</i></p>
 	</div>
 
 	<div class="card-reveal">
