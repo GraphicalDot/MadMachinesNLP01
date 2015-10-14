@@ -93,7 +93,6 @@ App.PickEateryChild = Backbone.View.extend({
 	clicked: function(event){
 		var self = this;
 		event.preventDefault();
-		console.log("clicked" + this.model.eatery_id)
 		$("#food").html(window.loaderstring)
 		eatery_lat = this.model.eatery_coordinates[0]
 		eatery_lng = this.model.eatery_coordinates[1]
@@ -630,6 +629,9 @@ App.BodyView = Backbone.View.extend({
 				}
 
 			})
+			
+			//This gets the trending eateries on the basis of the location being selected
+			
 			var jqhr = $.post(window.get_trending, {"lat": latitude, "lng": longitude})
 			$(".grid-grid").html(" ")
 			jqhr.done(function(data){

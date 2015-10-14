@@ -1,30 +1,79 @@
-$(document).ready(function(){
-App.Router = Backbone.Router.extend({
-	initialize: function(options){
-		this.el =  options.el ;
-		console.log(this.el)
-		var str = new App.BodyView()
-	},
+/* global FB */
+'use strict';
 
-	routes: {
-		"":  "welcome",
-		"searchResult": "searchResult",
-	},
-	
-	welcome: function(){
-		return 
-		//var str = new App.WordCloudWith_D3({model: {"el": this.el}})
-	},
+define(function (require) {
 
-	searchResult: function(){
-		var str = new App.QueryResultView();
+	var Marionette = require('backbone.marionette');
+	var Promise = require('es6Promises').Promise;
+	var Radio= require('backbone.radio');
 
-	},
+	var UserModel = require('./models/userModel');
+	var ApplicationLayoutView = require('./views/l-application');
 
-});
-App.boot = function(container){
-	container = $(container);
-	var router = new App.Router({el: container});
-	Backbone.history.start({ pushState: true });
-}
+	var router = "";
+	// Create a Marionette AppRouter
+	return Marionette.AppRouter.extend({
+		initialize: function (opts) {
+			router = this;
+			this.opts = opts;
+
+			this.applicationChannel= Radio.channel('application');
+		},
+
+		setupApplication: function () {
+			var self= this;
+
+			this.applicationChannel.on("showLandingPage", function() {
+				router.navigate("");
+				self.controller.landingPage();
+			});
+			this.applicationChannel.on("showApplicationPage", function() {
+				router.navigate("application");
+				self.controller.application();
+			});
+
+			var promise = new Promise(function (resolve, reject) {
+				router.userModel = new UserModel({ userStatus: router.opts.userStatus });
+				router.userModel.fetchData().then(function (success) {
+					router.appLayout = new ApplicationLayoutView({ el: router.opts.el, model: router.userModel });
+					router.appLayout.render();
+					resolve("success");
+				}, function (error) {
+					resolve(error);
+				});
+			});
+
+			return promise;
+		},
+
+		appRoutes: {
+			"": "landingPage",
+			"application": "application",
+			"application/:eatery_name/:eatery_id": "singleEatery"
+		},
+
+		controller: {
+			landingPage: function () {
+				router.appLayout.showLandingPage();
+			},
+			application: function () {
+				if (router.userModel.isAuthorized()) {
+					router.appLayout.showApplication();
+				} else {
+					console.log("User is not Authorized. Sorry");
+					router.navigate("");
+					this.landingPage();
+				}
+			},
+			singleEatery: function(eatery_name, eatery_id) {
+				if (router.userModel.isAuthorized()) {
+					router.appLayout.showSinglePickery(eatery_name, eatery_id);
+				} else {
+					console.log("User is not Authorized. Sorry");
+					router.navigate("");
+					this.landingPage();
+				}
+			}
+		},
+	});
 });

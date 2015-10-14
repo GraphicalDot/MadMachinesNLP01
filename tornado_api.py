@@ -782,6 +782,7 @@ class SentenceTokenization(tornado.web.RequestHandler):
                 """
                 """
                 
+                cprint(figlet_format("Now exceuting %s"%self.__class__.__name__, font='big'), attrs=['bold'])
 
                 text = self.get_argument("text")
                 link = self.get_argument("link")
@@ -831,12 +832,13 @@ class SentenceTokenization(tornado.web.RequestHandler):
                         else:
                                 polarity_result = "decided"
 
-
                         file_name, dependencies, indexeddependencies = save_tree(sentence)
 
-                        with open(file_name, "rb") as image_file:
-                                encoded_string = base64.b64encode(image_file.read())
-
+                        if file_name:
+                                with open(file_name, "rb") as image_file:
+                                        encoded_string = base64.b64encode(image_file.read())
+                        else:
+                                    encoded_string = None
         
                         blob = TextBlob(sentence)
                         tb_nps = list(blob.noun_phrases) 

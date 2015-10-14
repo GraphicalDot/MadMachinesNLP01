@@ -78,7 +78,14 @@ def save_tree(sentence):
 
         else:
                 with cd(path):
-                        tree = result["sentences"][0]["parsetree"]
+                        try:
+
+                                tree = result["sentences"][0]["parsetree"]
+                        except Exception as e:
+                                print "Error %s occurred while processing the sentence %s"%(e, sentence)
+                                return [None, None, None]
+                                
+                        
                         cf = CanvasFrame()
                         t = nltk.tree.Tree.fromstring(tree)
                         tc = TreeWidget(cf.canvas(), t)

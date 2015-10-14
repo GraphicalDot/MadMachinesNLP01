@@ -151,6 +151,11 @@ label.active {
 .dependency.active {
 	fill: #ff1744;
 }
+
+.word.active {
+	fill: #ff5252;
+}
+
 .word.active, .edge.active, .arrow.active {
 	stroke: #ff5252 !important;
 }

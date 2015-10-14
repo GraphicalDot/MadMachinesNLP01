@@ -842,6 +842,8 @@ class ElasticSearchScripts(object):
 
                 """
                 return 
+        
+        
         @staticmethod
         def upde_dish_for_rest(dish_name, eatery_id, eatery_name):
                 """

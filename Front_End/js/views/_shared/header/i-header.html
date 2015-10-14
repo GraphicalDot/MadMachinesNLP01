@@ -1,0 +1,25 @@
+<nav>
+	<div class="nav-wrapper">
+		<a href="#/application" class="brand-logo specialFont">Doof</a>
+		<ul class="right hide-on-med-and-down">
+			{{#if isUserPresent}}
+			<li>
+				<a id="how_it_works_nav" class="modal-trigger-hiw" href="#modal-hiw">How it Works</a>
+			</li>
+			<li>
+				<a id="feedback_nav" class="modal-trigger-feedback" href="#modal-feedback">Leave Feedback</a>
+			</li>
+			<li>
+				<ul id="auth-user-dropdown" class="dropdown-content">
+					<li>
+						<a href="#" class="logoutButton"><i class="fa fa-sign-out material-icons left"></i>Logout</a>
+					</li>
+				</ul>
+				<a class="dropdown-button" href="#app" data-activates="auth-user-dropdown" data-beloworigin="true">
+					<img src="{{facebookPictureUrl}}" alt="{{name}}" class="circle user__img">{{name}}<i class="mdi-navigation-expand-more right"></i>
+				</a>
+			</li>
+			{{/if}}
+		</ul>
+	</div>
+</nav>
