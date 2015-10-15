@@ -433,6 +433,7 @@ class ChangeTagOrSentiment(tornado.web.RequestHandler):
                 Updates a sentece with change tag or sentiment from the test.html,
                 as the sentences will have no review id, the review_id will be marked as misc and will be stored in 
                 training_sentiment_collection or training_tag_collection depending upon the tag or seniment being updated
+                eatery_name =  self.get_argument("eatery_name")
                 """
                 args = change_tag_or_sentiment_parser.parse_args()    
                 sentence = args["sentence"]
@@ -679,6 +680,7 @@ class EateryDetails(tornado.web.RequestHandler):
                         
 
 
+                cprint(figlet_format('Finished executing %s'%self.__class__.__name__, font='mini'), attrs=['bold'])
                 self.write({"success": True,
 			"error": False,
                         "result": result})
@@ -784,6 +786,7 @@ class GetEatery(tornado.web.RequestHandler):
                                     }
                         
 
+                cprint(figlet_format('Finished executing %s'%self.__class__.__name, font='cubersmall'), attrs=['bold'])
                 self.write({"success": True,
 			"error": False,
                         "result": result})
