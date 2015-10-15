@@ -634,7 +634,10 @@ class EateryDetails(tornado.web.RequestHandler):
                 """
                 number_of_dishes = 20
                 eatery_id =  self.get_argument("eatery_id")
-                print eatery_id
+
+                type_of_data =  self.get_argument("type_of_data")
+               
+                
                 result = eateries_results_collection.find_one({"eatery_id": eatery_id})
                 if not result:
                         self.write({"success": False,
@@ -651,14 +654,31 @@ class EateryDetails(tornado.web.RequestHandler):
                 service = result["service"]
 
 
-                result = {"food": convert_for(dishes),
-                                    "ambience": convert_for(ambience), 
-                                    "cost": convert_for(cost), 
-                                    "service": convert_for(service), 
-                                    "eatery_address": result["eatery_address"],
+                if type_of_data == "highchart":
+                            result = {
+                                        "food": convert_for(dishes),
+                                        "ambience": convert_for(ambience), 
+                                        "cost": convert_for(cost), 
+                                        "service": convert_for(service), 
+                                        "eatery_address": result["eatery_address"],
                                     }
 
-                print result
+                else:
+                        [dish.pop("timeline") for dish in dishes]    
+                        [dish.pop("similar") for dish in dishes]    
+                        [ambience[key].pop("timeline") for key in ambience.keys()]    
+                        [cost[key].pop("timeline") for key in cost.keys()]    
+                        [service[key].pop("timeline") for key in service.keys()]    
+                        result = {
+                                        "food": dishes,
+                                        "ambience": ambience, 
+                                        "cost": cost, 
+                                        "service": service, 
+                                        "eatery_address": result["eatery_address"],
+                                    }
+                        
+
+
                 self.write({"success": True,
 			"error": False,
                         "result": result})
@@ -718,6 +738,7 @@ class GetEatery(tornado.web.RequestHandler):
                         
                 number_of_dishes = 20
                 eatery_name =  self.get_argument("eatery_name")
+                type_of_data =  self.get_argument("type_of_data")
                 result = eateries_results_collection.find_one({"eatery_name": eatery_name})
                 if not result:
                         """
@@ -739,14 +760,30 @@ class GetEatery(tornado.web.RequestHandler):
                 service = result["service"]
 
 
-                result = {"food": convert_for(dishes),
-                                    "ambience": convert_for(ambience), 
-                                    "cost": convert_for(cost), 
-                                    "service": convert_for(service), 
-                                    "eatery_address": result["eatery_address"],
+                if type_of_data == "highchart":
+                            result = {
+                                        "food": convert_for(dishes),
+                                        "ambience": convert_for(ambience), 
+                                        "cost": convert_for(cost), 
+                                        "service": convert_for(service), 
+                                        "eatery_address": result["eatery_address"],
                                     }
 
-                print result
+                else:
+                        [dish.pop("timeline") for dish in dishes]    
+                        [dish.pop("similar") for dish in dishes]    
+                        [ambience[key].pop("timeline") for key in ambience.keys()]    
+                        [cost[key].pop("timeline") for key in cost.keys()]    
+                        [service[key].pop("timeline") for key in service.keys()]    
+                        result = {
+                                        "food": dishes,
+                                        "ambience": ambience, 
+                                        "cost": cost, 
+                                        "service": service, 
+                                        "eatery_address": result["eatery_address"],
+                                    }
+                        
+
                 self.write({"success": True,
 			"error": False,
                         "result": result})
