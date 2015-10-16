@@ -57,7 +57,7 @@ define(function (require) {
 				self.alert_msg(fb_login_success_message, 3000, "");
 				self.applicationChannel.trigger("showApplicationPage");
 			}, function (error) {
-				self.alert_msg(fb_login_error_message, 3000, "");
+				self.alert_msg(error, 3000, "");
 			});
 		},
 

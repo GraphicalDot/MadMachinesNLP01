@@ -1,15 +1,32 @@
-<div class="pickery-card card hoverable {{category}}" data-category="{{category}}">
+<div class="card hoverable pickery-card" data-category="{{category}}" data-eatery-name="{{eatery_name}}" data-superpositive="{{superpositive}}"
+data-positive="{{positive}}" data-neutral="{{neutral}}" data-negative="{{negative}}" data-supernegative="{{supernegative}}">
+
 	<div class="card-content">
-	
-		<h6 class="card-title strong specialFont specialColor center ">{{itemname}}</h6>
-		<p class="grey-text text-darken-4 card-restaurent-title"><span class="card-description-title">Restaurent: </span><span class="card-description-answer specialFont specialColor">{{eatery_name}}</span></p>
-		<p class="grey-text text-darken-4 card-description">
-			<span class="card-description-title">SuperPositive: </span><span class="card-description-answer specialFont specialColor">{{superpositive}}</span><br />
-			<span class="card-description-title">Positive: </span><span class="card-description-answer specialFont specialColor">{{positive}}</span><br />
-			<span class="card-description-title">Neutral: </span><span class="card-description-answer specialFont specialColor">{{neutral}}</span><br />
-			<span class="card-description-title">Negative: </span><span class="card-description-answer specialFont specialColor">{{negative}}</span><br />
-			<span class="card-description-title">SuperNegative: </span><span class="card-description-answer specialFont specialColor">{{supernegative}}</span>
-		</p>
+
+		<div class="card-title">
+			<hgroup>
+				<h4 class="specialFont specialColor">{{itemname}}</h4>
+				<h6>{{eatery_name}}</h6>
+			</hgroup>
+		</div>
+
+		<div class="card-description">
+			<div class="card-description-item">
+				<span class="card-description-title">SuperPositive: </span><span class="card-description-answer specialFont specialColor">{{superpositive}}</span>
+			</div>
+			<div class="card-description-item">
+				<span class="card-description-title">Positive: </span><span class="card-description-answer specialFont specialColor">{{positive}}</span>
+			</div>
+			<div class="card-description-item">
+				<span class="card-description-title">Neutral: </span><span class="card-description-answer specialFont specialColor">{{neutral}}</span>
+			</div>
+			<div class="card-description-item">
+				<span class="card-description-title">Negative: </span><span class="card-description-answer specialFont specialColor">{{negative}}</span>
+			</div>
+			<div class="card-description-item">
+				<span class="card-description-title">SuperNegative: </span><span class="card-description-answer specialFont specialColor">{{supernegative}}</span>
+			</div>
+		</div>
 	</div>
 
 	<div class="card-action">

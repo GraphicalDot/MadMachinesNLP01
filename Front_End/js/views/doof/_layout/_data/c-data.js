@@ -24,18 +24,13 @@ define(function(require) {
 		updateData: function(data) {
 			this.collection= data;
 			this.render();
+			console.log(1);
 		},
 		refresh: function() {
 			this.collection= this.oldCollection;
 			this.render();
 		},
 		onShow: function() {
-			// $('.pickeryItemsRow').masonry({
-			// 	itemSelector: '.grid-item-new',
-			// 	// use element for option
-			// 	columnWidth: '.s12',
-			// 	percentPosition: true
-			// });
 		}
 	});
 });

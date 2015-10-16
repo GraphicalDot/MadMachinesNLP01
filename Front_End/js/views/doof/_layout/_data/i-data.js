@@ -15,7 +15,7 @@ define(function(require) {
 		templateHelpers: {
 			itemname: function() {
 				var category= this.category;
-				if(category!== 'food') {
+				if(!this.name && category!== 'food') {
 					return 'Trending '+ category;
 				} else {
 					return this.name;
@@ -35,6 +35,15 @@ define(function(require) {
 		},
 		onShow: function() {
 			this.$el.attr("color", "white");
+
+			require(['masonryOnFire'], function(Masonry) {
+
+				new Masonry( '.pickeryItemsRow .row', {
+					columnWidth: '.col',
+					itemSelector: '.col',
+					percentPosition: true
+				});
+			});
 		},
 		events: {
 			"click .data-click-eatery": "clickEatery",

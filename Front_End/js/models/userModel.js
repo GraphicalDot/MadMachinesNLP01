@@ -118,7 +118,7 @@ define(function(require) {
               resolve(result);
             });
           } else {
-            resolve("User cancelled login or did not fully authorize.");
+            reject("User cancelled login or did not fully authorize.");
           }
         }, {scope: 'email, user_likes'});
       });

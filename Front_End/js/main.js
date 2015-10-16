@@ -70,10 +70,11 @@ require.config({
 		'd3': './../components/d3/d3.min',
 		'd3.tips': './../components/d3/d3.tips',
 		'radialGraph': './../components/d3/radialGraph',
+		'd3.bubbleGraph': './../components/d3/d3.bubbleGraph',
 
 		'typeahead': './../components/typeahead/typeahead.bundle',
 		'tablesorter': './../components/typeahead/jquery.tablesorter',
-		// 'masonry': './../components/masonry.min',
+		'masonryOnFire': './../components/masonry.min',
 
 		'es6Promises': './../components/es6-promises'
 	},
@@ -253,6 +254,14 @@ require.config({
 
 		'radialGraph': {
 			deps: ['d3', 'd3.tips']
+		},
+
+		'd3.bubbleGraph': {
+			deps: ['d3']
+		},
+
+		'masonryOnFire': {
+			deps: ['jquery']
 		}
 	}
 });

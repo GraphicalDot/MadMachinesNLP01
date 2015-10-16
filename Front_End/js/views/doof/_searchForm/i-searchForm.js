@@ -83,6 +83,7 @@ define(function(require) {
 				);
 
 				function onEaterySelect(eatery_name) {
+					$(".single-item-details-col").removeClass('offset-s6');
 					self.doofChannel.trigger("loadSingleEatery", eatery_name);
 				}
 

@@ -131,3 +131,15 @@
 path, .svg_Category, .c0 {
 	cursor: pointer;
 }
+
+.axis path,
+.axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+/*.tick line{fill:none;stroke:none;}*/
+.tick text{fill:#999; font-size: 10px;}
+g.journal.active{cursor:pointer;}
+text.label{font-size:12px;font-weight:bold;cursor:pointer;}
+text.value{font-size:12px;font-weight:bold;}
