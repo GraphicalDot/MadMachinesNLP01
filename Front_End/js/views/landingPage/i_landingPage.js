@@ -47,7 +47,8 @@ define(function (require) {
 			if (this.model.isAuthorized()) {
 				$('.user_dropdown-button').dropdown();
 			}
-			$('.b-doof-header').empty();
+			$('.b-doof-header').hide();
+			$('.b-doof-main').addClass('landingPage');
 		},
 
 		login: function (e) {

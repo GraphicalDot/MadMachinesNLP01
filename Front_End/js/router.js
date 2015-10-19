@@ -49,7 +49,7 @@ define(function (require) {
 		appRoutes: {
 			"": "landingPage",
 			"application": "application",
-			"application/:eatery_name/:eatery_id": "singleEatery"
+			"application/:eatery_name/": "singleEatery"
 		},
 
 		controller: {
@@ -65,9 +65,10 @@ define(function (require) {
 					this.landingPage();
 				}
 			},
-			singleEatery: function(eatery_name, eatery_id) {
+			singleEatery: function(eatery_name) {
 				if (router.userModel.isAuthorized()) {
-					router.appLayout.showSinglePickery(eatery_name, eatery_id);
+					console.log(eatery_name);
+					router.appLayout.showSinglePickery(eatery_name);
 				} else {
 					console.log("User is not Authorized. Sorry");
 					router.navigate("");

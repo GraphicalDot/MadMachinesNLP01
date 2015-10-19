@@ -5,8 +5,13 @@ var App = {};
 window.App = App;
 window.template = function (name) { return Mustache.compile($("#" + name + "-template").html()); };
 window.make_request = function make_request(data) { url = window.process_text_url; return $.post(url, { "text": data }) }
+//window.URL = "http://52.74.143.163:8080/";
+//window.URL2= "http://182.71.99.130:8000/";
+window.URL2= "http://52.74.143.163:8080/";
 window.URL = "http://52.74.143.163:8080/";
-window.URL2= "http://182.71.99.130:8000/";
+
+
+
 
 //window.URL = "http://ec2-54-68-29-37.us-west-2.compute.amazonaws.com:8080/"
 window.get_start_date_for_restaurant = window.URL + "get_start_date_for_restaurant";
@@ -24,3 +29,9 @@ window.get_dish_suggestions = window.URL + "get_dish_suggestions";
 window.get_eatery_suggestions = window.URL + "get_eatery_suggestions";
 window.get_dishes = window.URL + "get_dishes";
 window.get_eatery = window.URL2 + "get_eatery";
+
+window.sentenceTokenization= window.URL2+ "sentence_tokenization";
+window.uploadSentence= window.URL2+ "sentence_tokenization"
+
+
+

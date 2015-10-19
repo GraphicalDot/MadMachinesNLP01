@@ -272,7 +272,7 @@ require.config({
 require(['jquery.easing', 'animation', 'velocity', 'hammerjs', 'jquery.hammer', 'global', 'collapsible', 'dropdown', 'leanModal', 'materialbox', 'parallax', 'tabs', 'tooltip', 'waves', 'toasts', 'sideNav', 'scrollspy', 'forms', 'slider', 'cards', 'pushpin', 'buttons', 'scrollFire', 'transitions', 'picker', 'picker.date', 'character_counter', 'chips', 'jquery.timeago'], function () {
 
 	//Start our application
-	require(['jquery', 'backbone', './app', './global_variables'], function ($, Backbone, App) {
+	require(['jquery', 'backbone', './app', '/../global_variables.js'], function ($, Backbone, App) {
 
 		$.fn.enterKey = function (fnc) {
 			return this.each(function () {

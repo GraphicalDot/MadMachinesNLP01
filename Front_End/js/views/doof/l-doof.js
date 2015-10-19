@@ -104,8 +104,8 @@ define(function (require) {
 			this.showChildView('modal', new EnterYourQuery());
 		},
 
-		showSingleEatery: function(eatery_name, eatery_id) {
-			this.showChildView('single_details', new SingleItemView({eatery_name: eatery_name, eatery_id: eatery_id}));
+		showSingleEatery: function(eatery_name) {
+			this.showChildView('single_details', new SingleItemView({eatery_name: eatery_name}));
 		}
 	});
 });

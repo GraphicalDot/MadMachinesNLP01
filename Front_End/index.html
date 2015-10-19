@@ -12,18 +12,12 @@
 
 	<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css">
-	<!--<link href='https://fonts.googleapis.com/css?family=Playfair+Display:400,700,400italic,700italic' rel='stylesheet' type='text/css'>-->
-	<!--<link href='https://fonts.googleapis.com/css?family=Fauna+One' rel='stylesheet' type='text/css'>-->
-	<link href='https://fonts.googleapis.com/css?family=Vollkorn:400,400italic,700,700italic' rel='stylesheet' type='text/css'>
-	<!--<link href='https://fonts.googleapis.com/css?family=Montserrat:400,700' rel='stylesheet' type='text/css'>-->
-
-	<link href='https://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css'>
-	<link href='https://fonts.googleapis.com/css?family=Droid+Serif:400,700,400italic' rel='stylesheet' type='text/css'>
 
 	<link rel="stylesheet" href="components/animate.css">
-	<link rel="stylesheet" href="components/typebase.css">
-	<link rel="stylesheet" href="components/simplebars/simplebars.css">
 	<link rel="stylesheet" href="components/materialize/css/materialize.css">
+
+	<link href='https://fonts.googleapis.com/css?family=Montserrat:400,700' rel='stylesheet' type='text/css'>
+	<link href='https://fonts.googleapis.com/css?family=Lora' rel='stylesheet' type='text/css'>
 
 	<link rel="stylesheet" href="css/main.css">
 	<link rel="stylesheet" href="css/loader.css">
@@ -35,7 +29,63 @@
 </head>
 
 <body>
-	<div class="doof-container"></div>
+	<div class="doof-container">
+		<div class="loader-container valign-wrapper">
+			<div class="preloader-container center valign">
+				<div class="preloader-wrapper active">
+					<div class="spinner-layer spinner-blue">
+						<div class="circle-clipper left">
+							<div class="circle"></div>
+						</div>
+						<div class="gap-patch">
+							<div class="circle"></div>
+						</div>
+						<div class="circle-clipper right">
+							<div class="circle"></div>
+						</div>
+					</div>
+
+					<div class="spinner-layer spinner-red">
+						<div class="circle-clipper left">
+							<div class="circle"></div>
+						</div>
+						<div class="gap-patch">
+							<div class="circle"></div>
+						</div>
+						<div class="circle-clipper right">
+							<div class="circle"></div>
+						</div>
+					</div>
+
+					<div class="spinner-layer spinner-yellow">
+						<div class="circle-clipper left">
+							<div class="circle"></div>
+						</div>
+						<div class="gap-patch">
+							<div class="circle"></div>
+						</div>
+						<div class="circle-clipper right">
+							<div class="circle"></div>
+						</div>
+					</div>
+
+					<div class="spinner-layer spinner-green">
+						<div class="circle-clipper left">
+							<div class="circle"></div>
+						</div>
+						<div class="gap-patch">
+							<div class="circle"></div>
+						</div>
+						<div class="circle-clipper right">
+							<div class="circle"></div>
+						</div>
+					</div>
+				</div>
+				<h2 class="loadingDoof specialFont specialColor">Doof</h2>
+				<h5 class="black-text loadingText animated pulse infinite">Please wait while loading..</h5>
+			</div>
+		</div>
+	</div>
 	<script data-main="js/main" src="components/requirejs/require.js"></script>
 </body>
 

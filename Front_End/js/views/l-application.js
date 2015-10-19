@@ -2,6 +2,7 @@
 
 define(function (require) {
 
+	var $= require('jquery');
 	var Marionette = require('backbone.marionette');
 	var Handlebars = require('handlebars');
 	var Template = require('text!./l-application.html');
@@ -33,6 +34,8 @@ define(function (require) {
 
 			this.showChildView('header', new HeaderView({ model: this.model }));
 			this.showChildView('main', this.doofView);
+			$('.b-doof-header').show();
+			$('.b-doof-main').removeClass('landingPage');
 		},
 		showSinglePickery: function(dish_name, eatery_id) {
 			if(!this.doofView) {
