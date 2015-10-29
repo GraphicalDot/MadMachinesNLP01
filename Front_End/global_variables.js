@@ -7,8 +7,8 @@ window.template = function (name) { return Mustache.compile($("#" + name + "-tem
 window.make_request = function make_request(data) { url = window.process_text_url; return $.post(url, { "text": data }) }
 //window.URL = "http://52.74.143.163:8080/";
 //window.URL2= "http://182.71.99.130:8000/";
-window.URL2= "http://52.74.143.163:8080/";
-window.URL = "http://52.74.143.163:8080/";
+window.URL2= "http://localhost:8000/";
+window.URL = "http://localhost:8000/";
 
 
 

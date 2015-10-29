@@ -786,7 +786,7 @@ class GetEatery(tornado.web.RequestHandler):
                                     }
                         
 
-                cprint(figlet_format('Finished executing %s'%self.__class__.__name, font='cubersmall'), attrs=['bold'])
+                cprint(figlet_format('Finished executing %s'%self.__class__.__name__, font='big'), attrs=['bold'])
                 self.write({"success": True,
 			"error": False,
                         "result": result})
