@@ -786,7 +786,7 @@ class GetEatery(tornado.web.RequestHandler):
                                     }
                         
 
-                cprint(figlet_format('Finished executing %s'%self.__class__.__name__, font='big'), attrs=['bold'])
+                cprint(figlet_format('Finished executing %s'%self.__class__.__name__, font='mini'), attrs=['bold'])
                 self.write({"success": True,
 			"error": False,
                         "result": result})
@@ -822,7 +822,7 @@ class SentenceTokenization(tornado.web.RequestHandler):
                 """
                 """
                 
-                cprint(figlet_format("Now exceuting %s"%self.__class__.__name__, font='big'), attrs=['bold'])
+                cprint(figlet_format("Now exceuting %s"%self.__class__.__name__, font='mini'), attrs=['bold'])
 
                 text = self.get_argument("text")
                 link = self.get_argument("link")
