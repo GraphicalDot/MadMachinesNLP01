@@ -15,7 +15,7 @@ import timeit
 from Testing_database import eatery_collection, review_collection, user_collection
 from selenium.common.exceptions import NoSuchElementException
 from selenium import webdriver
-##from Testing_reviews_scrape import Reviews
+from review_scrape import ZomatoReviews
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -34,7 +34,7 @@ config.read("zomato_dom.cfg")
 
 
 
-
+CHROME_PATH = "/home/kmama02/Downloads/chromedriver"
 
 class EateriesList(object):
 
@@ -303,11 +303,12 @@ class EateryData(object):
                 print "\n{start_color}  Now starting another browser to scrape reviews {end_color} \n".\
                         format(start_color=bcolors.OKGREEN, end_color=bcolors.RESET)
 
-                self.get_reviews()
+                review_soup = self.get_reviews()
 	        #self.last_no_of_reviews_to_be_scrapped = int(self.no_of_reviews_to_be_scrapped) - int(no_of_blogs)
-        
+                ZomatoReviews(review_soup, self.eatery["eatery_area_or_city"])
+
         def make_soup(self):
-                driver = webdriver.Chrome('/Users/kaali/Downloads/chromedriver')
+                driver = webdriver.Chrome(CHROME_PATH)
                 driver.get(self.eatery["eatery_url"])
                 driver.find_elements_by_xpath('//*[@id="res-timings-toggle"]')[0].click()
                 time.sleep(3)
@@ -319,7 +320,7 @@ class EateryData(object):
 
 
         def get_reviews(self):
-                driver = webdriver.Chrome('/Users/kaali/Downloads/chromedriver')
+                driver = webdriver.Chrome(CHROME_PATH)
                 driver.get(self.eatery["eatery_url"])
                 try:
                         driver.find_element_by_css_selector("a.everyone.empty").click()
@@ -666,7 +667,7 @@ if __name__ == "__main__":
 
 
 	global driver
-	driver = webdriver.Chrome("/Users/kaali/Downloads/chromedriver")
+	driver = webdriver.Chrome(CHROME_PATH)
 
 	##number_of_restaurants = 60
 	##skip = 10
