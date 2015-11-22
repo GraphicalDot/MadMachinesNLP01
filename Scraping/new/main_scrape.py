@@ -15,7 +15,7 @@ import timeit
 from Testing_database import eatery_collection, review_collection, user_collection
 from selenium.common.exceptions import NoSuchElementException
 from selenium import webdriver
-from Testing_reviews_scrape import Reviews
+##from Testing_reviews_scrape import Reviews
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -307,7 +307,7 @@ class EateryData(object):
 	        #self.last_no_of_reviews_to_be_scrapped = int(self.no_of_reviews_to_be_scrapped) - int(no_of_blogs)
         
         def make_soup(self):
-                driver = webdriver.Chrome('/home/kmama02/Downloads/chromedriver')
+                driver = webdriver.Chrome('/Users/kaali/Downloads/chromedriver')
                 driver.get(self.eatery["eatery_url"])
                 driver.find_elements_by_xpath('//*[@id="res-timings-toggle"]')[0].click()
                 time.sleep(3)
@@ -319,7 +319,7 @@ class EateryData(object):
 
 
         def get_reviews(self):
-                driver = webdriver.Chrome('/home/kmama02/Downloads/chromedriver')
+                driver = webdriver.Chrome('/Users/kaali/Downloads/chromedriver')
                 driver.get(self.eatery["eatery_url"])
                 try:
                         driver.find_element_by_css_selector("a.everyone.empty").click()
@@ -339,7 +339,8 @@ class EateryData(object):
 
 
                 try:
-                        for i in range(0, reviews_to_be_scraped/5+2):
+                        #for i in range(0, reviews_to_be_scraped/5+2):
+                        for i in range(0, 5):
                                 time.sleep(random.choice([5, 6, 3, 4]))
                                 driver.find_element_by_class_name("load-more").click()
                 
@@ -665,7 +666,7 @@ if __name__ == "__main__":
 
 
 	global driver
-	driver = webdriver.PhantomJS()
+	driver = webdriver.Chrome("/Users/kaali/Downloads/chromedriver")
 
 	##number_of_restaurants = 60
 	##skip = 10
