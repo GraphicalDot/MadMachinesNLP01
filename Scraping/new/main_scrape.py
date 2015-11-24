@@ -21,13 +21,15 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 #from Testing_db_insertion import DBInsert
 from Testing_colored_print import bcolors
-
+from db_insertion import DBInsert
 
 
 import ConfigParser
 config = ConfigParser.RawConfigParser()
 config.read("global.cfg")
 config.read("zomato_dom.cfg")
+
+driver_exec_path = "/home/kmama02/Downloads/chromedriver"
 
 
 
@@ -57,9 +59,6 @@ class EateriesList(object):
                 if all pages to scraped:
                     pass None to skip and number_of_restaurants
                 """
-                global driver
-
-		self.driver = driver
                 self.eateries_list = []
 
 		if is_eatery:
@@ -67,8 +66,7 @@ class EateriesList(object):
 			#lots of restaurant urls are present
 			self.url = url
 			eatery_dict= {"eatery_url": self.url}
-			self.eatery_specific(eatery_dict, "check", 1)
-		        
+		        self.eateries_list.append(eatery_dict) 
 		else:
 			self.url = url
 			self.number_of_restaurants = number_of_restaurants
@@ -121,15 +119,12 @@ class EateriesList(object):
 					temp_list = self.prepare_and_return_eateries_list(page_link)
                                         self.eateries_list.extend(temp_list)
                 
-                for e in self.eateries_list:
-                        print e, "\n\n"
-                        
                 return 
     
         def prepare_soup(self, url):
-        	global driver
         	# if url.find("=")==-1:
-        	self.driver.get(url)
+                driver = webdriver.Chrome(driver_exec_path)
+                driver.get(url)
         	html = driver.page_source
         	# f=open("Testingfile.txt","w")
         	content = html.encode('ascii', 'ignore').decode('ascii')
@@ -139,7 +134,8 @@ class EateriesList(object):
         	# with open("Testingfile.txt","r") as content_file:
         	# 	content = content_file.read()
         	soup = BeautifulSoup.BeautifulSoup(content)
-        	return soup
+        	driver.close()
+                return soup
 
 	def prepare_and_return_eateries_list(self, page_link):
                 soup_of_each_page = self.prepare_soup(page_link)
@@ -252,11 +248,19 @@ class EateriesList(object):
 class EateryData(object):
 
 	def __init__(self, eatery_dict):
-		global driver
+                
+                global driver
+                if driver_exec_path.endswith("chromedriver"):
+                        driver = webdriver.Chrome(driver_exec_path)
+                else:
+                        driver = webdriver.PhantomJS()
 
 		self.eatery = eatery_dict
 
 		self.soup = self.make_soup()
+
+
+        def run(self):
                 self.process_result(self.eatery, "eatery_name")(self.retry_eatery_name)()
                 self.process_result(self.eatery, "eatery_id")(self.retry_eatery_id)()
                 
@@ -303,12 +307,14 @@ class EateryData(object):
                 print "\n{start_color}  Now starting another browser to scrape reviews {end_color} \n".\
                         format(start_color=bcolors.OKGREEN, end_color=bcolors.RESET)
 
+                print self.eatery
                 review_soup = self.get_reviews()
 	        #self.last_no_of_reviews_to_be_scrapped = int(self.no_of_reviews_to_be_scrapped) - int(no_of_blogs)
-                ZomatoReviews(review_soup, self.eatery["eatery_area_or_city"])
+                ins = ZomatoReviews(review_soup, self.eatery["eatery_area_or_city"])
+                return (self.eatery, ins.reviews_data)
 
         def make_soup(self):
-                driver = webdriver.Chrome(CHROME_PATH)
+                driver = webdriver.Chrome(driver_exec_path)
                 driver.get(self.eatery["eatery_url"])
                 driver.find_elements_by_xpath('//*[@id="res-timings-toggle"]')[0].click()
                 time.sleep(3)
@@ -317,14 +323,21 @@ class EateryData(object):
                 
                 return BeautifulSoup.BeautifulSoup(html)
 
-
+        
 
         def get_reviews(self):
-                driver = webdriver.Chrome(CHROME_PATH)
+                driver = webdriver.Chrome(driver_exec_path)
                 driver.get(self.eatery["eatery_url"])
+                time.sleep(random.choice([5, 6, 7, 8]))
                 try:
                         driver.find_element_by_css_selector("a.everyone.empty").click()
+                        print "{start_color} Found love in clinking all_review button :)  {end_color}".format(\
+                                start_color=bcolors.OKGREEN, end_color=bcolors.RESET)
+
                 except NoSuchElementException:
+                        print "{start_color} ERROR: Couldnt not clicked on all review button {end_color}".format(\
+                                start_color=bcolors.FAIL, end_color=bcolors.RESET)
+                        
                         pass
 
                 time.sleep(10)
@@ -332,21 +345,26 @@ class EateryData(object):
 
                 try:
                         reviews_to_be_scraped = int(self.eatery["eatery_total_reviews"]) - int(self.reviews_inDB)
+                        print "{start_color} No. of reviews to be scraped {number}{end_color}".format(\
+                                start_color=bcolors.OKGREEN, number=reviews_to_be_scraped, end_color=bcolors.RESET)
 
                 except TypeError as e:
-                        print "{start_color} eatery total reviews keys have shown error, it might be because either the \
-                                dom changed or eatery has no reviews [end_color}".format(start_color=bcolors.FAIL, end_color=bcolors.RESET)
+                        print "{start_color} ERROR: eatery total reviews keys have shown error, it might be because either the \
+                                dom changed or eatery has no reviews {end_color}".format(start_color=bcolors.FAIL, end_color=bcolors.RESET)
                         return 
 
 
                 try:
-                        #for i in range(0, reviews_to_be_scraped/5+2):
-                        for i in range(0, 5):
+                        
+                        for i in range(0, reviews_to_be_scraped/5+2):
+                        #for i in range(0, reviews_to_be_scraped/5+3):
+                                
+                                print "Click on loadmore <<{value}>> time".format(start_color=bcolors.OKBLUE, value=i, end_color=bcolors.RESET)
                                 time.sleep(random.choice([5, 6, 3, 4]))
-                                driver.find_element_by_class_name("load-more").click()
+                                self.driver.find_element_by_class_name("load-more").click()
                 
                 except NoSuchElementException as e:
-                        print "{color} Catching Exception -<{error}>- with messege -<No More Loadmore tag present>-".format(color=bcolors.OKGREEN, error=e)
+                        print "{color} ERROR: Catching Exception -<{error}>- with messege -<No More Loadmore tag present>-".format(color=bcolors.OKGREEN, error=e)
                         pass
 
                 except Exception as e:
@@ -354,14 +372,15 @@ class EateryData(object):
                         raise StandardError("Coould not make the request")
 
 
-                read_more_links = driver.find_elements_by_xpath("//div[@class='rev-text-expand']")
+                read_more_links = self.driver.find_elements_by_xpath("//div[@class='rev-text-expand']")
                 for link in read_more_links:
                         time.sleep(random.choice([2, 3]))
                         link.click()
 
-                html = driver.page_source
-
-                return BeautifulSoup.BeautifulSoup(html)
+                html = self.driver.page_source
+                content = html.encode('ascii', 'ignore').decode('ascii')
+                self.driver.close()
+                return BeautifulSoup.BeautifulSoup(content)
 
 
 
@@ -474,205 +493,21 @@ class EateryData(object):
         """
 
 
-
-def scrape_links(url, number_of_restaurants, skip, is_eatery):
-	"""
-	Args:
-		url: 
-			Url at which the resturants list is present, and is to be scraped 
-			example 'http://www.zomato.com/ncr/malviya-nagar-delhi-restaurants"
-			and is_eatery=False
-
-			or
-
-			Url of a Particular restaurant is present, and is to be scraped
-			example 'https://www.zomato.com/ncr/kylin-premier-vasant-kunj-delhi'
-			and is_eatery=True
-
-		number_of_restaurants:
-			The number of restaurants to be scraped, In detail, stop_at argument stop the code from scraping more restaurants 
-			by going on the pagination links, And one page has around 30 restaurants, so even if you set stop_at at 1, it will still 
-			have 30 restaurants or more, So to stop the code to scrape reviews of restaurants, number of restaurants is used.
-			So for example if you set number of restaurants = 2, The code will scrape all the reviews and details of only two 
-			restaurants
-
-		skip: If you know how many restaurants has already been scraped then you can enter that number to skip that
-			number of restaurants, and then their details and reviews will not be scraped
-
-	Returns:
-		a list of restaurants dictionaries with their details required and the review list:
-		The keys included in one restaurant doictionary are as follows
-		
-	"""
-	if not skip:
-		skip = 0
-	
-	if not number_of_restaurants:
-		number_of_restaurants = 0
-
-	# global driver
-
-	# driver = webdriver.PhantomJS(executable_path="/home/shubhanshu/Review/Reviews/phantomjs/bin/phantomjs")
-	# driver.set_window_size(1024,720)
-
-
-	# path_to_chromedriver = '/home/shubhanshu/selenium/chromedriver'
-	# driver = webdriver.Chrome(executable_path = path_to_chromedriver)
-
-	# print "{color} There are the number of restaurants {0} and skip is {1}".format(int(number_of_restaurants), int(skip),color=bcolors.OKBLUE)
-
-	instance = EateriesList(url, int(number_of_restaurants), int(skip), is_eatery)
-
-	eateries_list = instance.prepare_and_return_eateries_list()
-
-	eatery_count=0
-
-	final_eateries_list=list()
-
-	review_collection = collection("review")
-	eatery_collection = collection("eatery")
-
-
-	for one_eatery_dict in eateries_list:
-		eatery_count+=1
-		# eatery_count=0
-		# for one_eatery_dict in eateries_list:
-		"""Checking How many reviews are present of the above eatery_id
-		in the review collection and if the no. is less than the eatery_total_reviews
-		Then only that eatery has to be scrpped and forwarded to eatery_specific
-
-		Which means that if all the reviews of the eatery have been scrapped than 
-		no need to do it again
-		"""
-		try:
-			if eatery_collection.find({"eatery_id":one_eatery_dict["eatery_id"]}).count()==0:
-				final_eateries_list.append([one_eatery_dict,one_eatery_dict["eatery_total_reviews"],eatery_count])
-			else:
-				print "\n {color} <----------Scrapping Eatery {val}---------->".format(color=bcolors.HEADER,val=eatery_count)
-				print "{color} -< {val1} Already in eatery collection, eatery_id =  {val2}>-".format(color=bcolors.OKGREEN,val1=one_eatery_dict["eatery_name"],val2=one_eatery_dict["eatery_id"])
-				try:
-					reviews_in_collection = review_collection.find({"eatery_id":one_eatery_dict["eatery_id"]}).count()
-					if int(reviews_in_collection)<int(one_eatery_dict["eatery_total_reviews"]):
-						no_of_reviews_to_be_scrapped = int(one_eatery_dict["eatery_total_reviews"]) - int(reviews_in_collection)
-						if no_of_reviews_to_be_scrapped!=0:
-							final_eateries_list([one_eatery_dict,no_of_reviews_to_be_scrapped,eatery_count])
-						# self.eatery_specific(one_eatery_dict,no_of_reviews_to_be_scrapped)
-					else:
-						print "{color} -<reviews in collection are equal to the eatery reviews>-".format(color=bcolors.OKGREEN)
-				except Exception as e:
-					print str(e)
-		except Exception as e:
-			print str(e)
-
-	return final_eateries_list
-
-def eatery_specific(eatery_dict,no_of_reviews_to_be_scrapped,eatery_count):
-	if no_of_reviews_to_be_scrapped=="check":
-		print "\n {color} <-Scrapping Single Eatery >-".format(color=bcolors.HEADER)
-	else:
-		print "\n {color} <----------Scrapping Eatery {val}---------->".format(color=bcolors.HEADER,val=eatery_count)
-
-	try:
-		print "{color}Opening Eatery--<{eatery}> with url --<{url}>\n".format(color=bcolors.HEADER, eatery=eatery_dict.get("eatery_name"), url=eatery_dict.get("eatery_url"))
-	except Exception:
-		print "{color}Eatery url --<{url}>\n".format(color=bcolors.HEADER, url=eatery_dict.get("eatery_url"))
-
-	##If the eatery is already present then there is no need to scrape it again
-	##Here we check on the basis of url because it might be a possibility that we want to scrape eatery on the basis of url and in 
-	#that case eatery id may not be present in the database
-
-	print "{color} -<Waiting For Eatery Page To Load>-".format(color=bcolors.WARNING)
-
-	instance = EateryData(eatery_dict,no_of_reviews_to_be_scrapped,got_soup=False,soup_for_test_case=None)
-
-	if instance.soup != "No review to scrape" and instance.soup!=None:
-		#eatery_modified_list.append(dict([(key, value) for key, value in instancsoup_for_test_casee.eatery.iteritems() if key.startswith("eatery")]))
-		#reviews_list.extend(instance.eatery.get("reviews"))
-
-		count=0
-		print "{color} \n-<review insertion STARTING>-".format(color=bcolors.WARNING)
-		reviews = instance.eatery.get("reviews")
-		count=DBInsert.db_insert_reviews(reviews)
-		print "{color}-<review insertion COMPLETE>-".format(color=bcolors.OKGREEN)
-
-		eatery_modified = dict([(key, value) for key, value in instance.eatery.iteritems() if key.startswith("eatery")])
-		try:
-			eatery_modified["eatery_reviews_in_collection"] += count
-		except Exception:
-			eatery_modified["eatery_reviews_in_collection"] = count
-		# print count,instance.no_of_reviews_to_be_scrapped
-
-		if int(count)<int(instance.last_no_of_reviews_to_be_scrapped):
-
-			print "{color}\n Reviews inserted Successfully = {val}".format(color=bcolors.FAIL,val=count)
-			print "{color} Reviews had to scrape         = {val}".format(color=bcolors.FAIL,val=instance.last_no_of_reviews_to_be_scrapped)
-
-			print "{color}\n I think something went wrong. Saving the eatery_url to scrape again and deleting inserted reviews".format(color=bcolors.FAIL)
-
-			f=open("links_to_be_rescrape.txt","a")
-			f.write(str(eatery_modified["eatery_url"])+",")
-			f.close()
-
-			DBInsert.db_delete_reviews(eatery_modified["eatery_id"])
-			DBInsert.db_delete_eatery(eatery_modified["eatery_id"])
-			reviews=[]
-
-		else:
-			print "{color}\n Reviews inserted Successfully = {val}".format(color=bcolors.OKGREEN,val=count)
-			print "{color} Reviews had to scrape         = {val}".format(color=bcolors.OKGREEN,val=instance.last_no_of_reviews_to_be_scrapped)
-			print "{color} \n-<eatery insertion STARTING>-".format(color=bcolors.WARNING)
-			eatery_collection = collection("eatery")
-			DBInsert.db_insert_eateries(eatery_modified)
-			print "{color}-<eatery insertion COMPLETE>-".format(color=bcolors.OKGREEN)
-		"""
-		if eatery_collection.find_one({"eatery_id": eatery_dict.get("eatery_id")}):
-			print "\n {color} The Eatery with the url --<{url} has already been scraped>\n".format(color=bcolors.WARNING, url=eatery_dict.get("eatery_url"))
-			return
-			"""
-
-		if reviews!=[]:
-			print "{color} \n-<user inserton STARTING>-".format(color=bcolors.WARNING)
-			users_list = list()
-			for review in  reviews:
-				text = review.get("review_text")
-				name = review.get("user_name")
-				
-				try:	
-					review["review_text"] = text.decode("ascii", "ignore")
-				except Exception:
-					review["review_text"] = ''
-
-				try:	
-					review["user_name"] = name.decode("ascii", "ignore")
-				except Exception:
-					review["user_name"] = ''
-
-				review_append = ["" for i in range(0, 22)]
-				review_append.extend([value for key, value in review.iteritems()])
-				#print review_append
-				#writer.writerow(review_append)
-				
-				users = dict([(key, value) for key, value in review.iteritems()])
-				users_list.append(users)
-			DBInsert.db_insert_users(users_list)	
-			print "{color}-<user inserton COMPLETE>-".format(color=bcolors.OKGREEN)
-		return
-
-	else:
-		# print "{color} -<Worked Fine -<No review to scrape>-".format(color=bcolors.OKGREEN)
-		print "\n {color} This eatery has no review to be scrapped>\n".format(color=bcolors.OKGREEN)
-		return
-
 if __name__ == "__main__":
 
 
-	global driver
-	driver = webdriver.Chrome(CHROME_PATH)
 
 	##number_of_restaurants = 60
 	##skip = 10
 	##is_eatery = False
-        ##url = "https://www.zomato.com/ncr/restaurants"
-	##EateriesList(url, number_of_restaurants, skip, False)
-        ins = EateryData({"eatery_url": "https://www.zomato.com/ncr/yellow-brick-road-taj-vivanta-khan-market-new-delhi"})
-        print ins.eatery
+        url = "https://www.zomato.com/ncr/restaurants"
+
+	ins = EateriesList(driver_exec_path, url, 30, 5, False)
+        for e in ins.eateries_list:
+                print e
+        #ins = EateryData({"eatery_url": "https://www.zomato.com/ncr/yellow-brick-road-taj-vivanta-khan-market-new-delhi"})
+        #ins = EateryData({"eatery_url": "https://www.zomato.com/ncr/asian-haus-1-east-of-kailash-new-delhi"})
+        #print ins.eatery
+
+
+

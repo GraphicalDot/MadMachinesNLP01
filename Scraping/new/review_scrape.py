@@ -16,10 +16,10 @@ class ZomatoReviews(object):
 			# self.reviews_list = self.soup.select("div.res-review.clearfix.js-activity-root.mbot.item-to-hide-parent.stupendousact")
 		except Exception as e:
 			raise StandardError("Couldnt find the div tag that was specified.")
-			self.reviews_data=[]
+		
+                self.reviews_data=[]
 
-		# self.reviews_data = list()
-		# self.reviews()
+		self.reviews()
 
 	def reviews(self):
 		for review in self.reviews_list:
@@ -43,35 +43,11 @@ class ZomatoReviews(object):
 			reviews["readable_review_year"] = self.review_year(review)
 			reviews["readable_review_month"] = self.review_month(review)
 			reviews["readable_review_day"] = self.review_day(review)
-			reviews["__review_id"]=hashlib.md5(str(reviews["converted_epoch"])+str(reviews["review_text"])).hexdigest()
-
-			#This is the check whether the review has been classified or not
-			reviews["is_classified"] = False
-			
-			#These are the enteries added to the review which will be modified later
-			#This will be list of ditionaries with keys "sentence" and "messege" sentences which would have error on them.
-			#sentence: On which the error occureed and "messege" the user input about what he thinks about this error
-			reviews["error"] = list() 
-
-			#This will be a list of sentences which will somehow implies that the user who wrote this review, is a retuning one
-			reviews["repeated_customers"] = list()
-
-			
-			#This will be a list of tuples like this 
-			#(sentence, nounphrases list)
-			#Noun phrases list will be the list of ngrams which represent noun phrases belonging to this sentence
-			reviews["noun_phrases"] = list()
-			#This will be a list of sentences
-			#(sentence)
-			#these will be the sentences which should be break on the basis of interjections
-			reviews["break_by_interjection"] = list()
-			
-			#All the following list will have sentences related to each of the tags
-			#service, ambience, cost, food, overall, null
-			reviews.update(dict.fromkeys(["service", "food", "ambience", "cost", "overall", "null", "negative", "postive"], list()))
+			reviews["__review_id"]=hashlib.sha256(str(reviews["review_id"])+str(reviews["review_text"])).hexdigest()
 
 			self.reviews_data.append(reviews)
-		return
+		print "\n\n\n Here is the length of reviews %s\n\n\n"%len(self.reviews_data)
+                return
 
 	def exception_handling(func):
 		def deco(self, review):
