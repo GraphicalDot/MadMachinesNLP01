@@ -19,16 +19,19 @@ import logging
 import inspect
 from celery import task, subtask, group
 from colored_print import bcolors
+from colored import fg, bg, attr
+
+
 
 connection = pymongo.Connection()
 db = connection.intermediate
 collection = db.intermediate_collection
 
 
+logger = logging.getLogger(__name__)
 
 ##If set to True all the scraping results will be udpated to the database
 UPDATE_DB = False
-
 """
 To run tasks for scraping one restaurant 
 runn.apply_async(["https://www.zomato.com/ncr/pita-pit-lounge-greater-kailash-gk-1-delhi", None, None, True])
@@ -75,28 +78,29 @@ class GenerateEateriesList(celery.Task):
         print "{start_color} {function_name}:: This worker is meant to get all the eateries dict present\n\
                 on the url given to it {end_color}".format(\
                 start_color=bcolors.OKGREEN, function_name=inspect.stack()[0][3], end_color = bcolors.RESET)
-        def run(url, number_of_restaurants, skip, is_eatery):
-	        eateries_list = EateriesList(url, number_of_restaurants, skip, is_eatery)
+        def run(self, url, number_of_restaurants, skip, is_eatery):
+	        self.start = time.time()
+                eateries_list = EateriesList(url, number_of_restaurants, skip, is_eatery)
                 result = eateries_list.eateries_list
                 for eatery in result:
-	                print "{start_color} Eatery with eatery details {eatery} {function_name} {end_color}".format(start_color=bcolors.OKBLUE, \
-                        eatery=eatery, function_name=inspect.stack()[0][3], end_color=bcolors.RESET)
+	                print "{fg}{bg} Eatery with eatery details {eatery} {reset}".format(fg=fg("green"), \
+                        bg=bg("dark_blue"), eatery=eatery, reset=attr("reset"))
             
                 return result
         
         def after_return(self, status, retval, task_id, args, kwargs, einfo):
                 #exit point of the task whatever is the state
-                logger.info("{color} Ending --<{function_name}--> of task --<{task_name}>-- with time taken\
-                        --<{time}>-- seconds  {reset}".format(color=bcolors.OKBLUE,\
+                logger.info("{fg} {bg}Ending --<{function_name}--> of task --<{task_name}>-- with time taken\
+                        --<{time}>-- seconds  {reset}".format(fg=fg('white'), bg=bg('green'), \
                         function_name=inspect.stack()[0][3], task_name= self.__class__.__name__,
-                            time=time.time() -self.start, reset=bcolors.RESET))
+                            time=time.time() -self.start, reset=attr('reset')))
                 pass
 
         def on_failure(self, exc, task_id, args, kwargs, einfo):
-                logger.info("{color} Ending --<{function_name}--> of task --<{task_name}>-- failed fucking\
-                        miserably {reset}".format(color=bcolors.OKBLUE,\
-                        function_name=inspect.stack()[0][3], task_name= self.__class__.__name__, reset=bcolors.RESET))
-                logger.info("{0}{1}".format(einfo, bcolors.RESET))
+                logger.info("{fg}{bg}Ending --<{function_name}--> of task --<{task_name}>-- failed fucking\
+                        miserably {reset}".format(fg=fg("white"), bg=bg("red"),\
+                        function_name=inspect.stack()[0][3], task_name= self.__class__.__name__, reset=attr('reset')))
+                logger.info("{fg}{bg}{einfo}{reset}".format(fg=fg("white"), bg=bg("red"), einfo=einfo, reset=attr("reset")))
                 self.retry(exc=exc)
 
 
@@ -113,17 +117,22 @@ class ScrapeEachEatery(celery.Task):
                 Also it is also responsible to inserting that data into backend database{end_color}".format(\
                 start_color=bcolors.OKGREEN, function_name=inspect.stack()[0][3], end_color = bcolors.RESET)
 	def run(self, eatery_dict):
+	        self.start = time.time()
 		print "{color} Execution of the function {function_name} starts".format(color=bcolors.OKBLUE, function_name=inspect.stack()[0][3])
 		__instance = EateryData(eatery_dict)
                 eatery_dict, reviewslist = __instance.run()
+                if UPDATE_DB:
+                        DBInsert.db_insert_eateries(eatery_dict)
+                        DBInsert.db_insert_reviews(reviewslist)
+                        DBInsert.db_insert_users(reviewslist)
                 return
 
         def after_return(self, status, retval, task_id, args, kwargs, einfo):
                 #exit point of the task whatever is the state
-                logger.info("{color} Ending --<{function_name}--> of task --<{task_name}>-- with time taken\
-                        --<{time}>-- seconds  {reset}".format(color=bcolors.OKBLUE,\
+                logger.info("{fg} {bg}Ending --<{function_name}--> of task --<{task_name}>-- with time taken\
+                        --<{time}>-- seconds  {reset}".format(fg=fg('white'), bg=bg('green'), \
                         function_name=inspect.stack()[0][3], task_name= self.__class__.__name__,
-                            time=time.time() -self.start, reset=bcolors.RESET))
+                            time=time.time() -self.start, reset=attr('reset')))
                 pass
 
         def on_failure(self, exc, task_id, args, kwargs, einfo):
@@ -148,17 +157,17 @@ class MapListToTask(celery.Task):
         print "{start_color} {function_name}:: Maps EateriesList to EateryData, by creating parallel tasks \n\
                 for EateryData {end_color}".format(\
                 start_color=bcolors.OKGREEN, function_name=inspect.stack()[0][3], end_color = bcolors.RESET)
-        def run(it, callback):
+        def run(self, it, callback):
 	# Map a callback over an iterator and return as a group
+	        self.start = time.time()
 	        callback = subtask(callback)
 	        return group(callback.clone([arg,]) for arg in it)()
 
         def after_return(self, status, retval, task_id, args, kwargs, einfo):
-                #exit point of the task whatever is the state
-                logger.info("{color} Ending --<{function_name}--> of task --<{task_name}>-- with time taken\
-                        --<{time}>-- seconds  {reset}".format(color=bcolors.OKBLUE,\
+                logger.info("{fg} {bg}Ending --<{function_name}--> of task --<{task_name}>-- with time taken\
+                        --<{time}>-- seconds  {reset}".format(fg=fg('white'), bg=bg('green'), \
                         function_name=inspect.stack()[0][3], task_name= self.__class__.__name__,
-                            time=time.time() -self.start, reset=bcolors.RESET))
+                            time=time.time() -self.start, reset=attr('reset')))
                 pass
 
         def on_failure(self, exc, task_id, args, kwargs, einfo):
@@ -181,19 +190,20 @@ class StartScrapeChain(celery.Task):
                 visit: http://docs.celeryproject.org/en/latest/userguide/monitoring.html\n{end_color}".format(\
                 start_color=bcolors.OKGREEN, function_name=inspect.stack()[0][3], end_color = bcolors.RESET)
         print "http://docs.celeryproject.org/en/latest/userguide/monitoring.html"
-        def run(url, number_of_restaurants, skip, is_eatery):
+        def run(self, url, number_of_restaurants, skip, is_eatery):
+	        self.start = time.time()
                 #process_list = eateries_list.s(url, number_of_restaurants, skip, is_eatery)| dmap.s(process_eatery.s())
-                process_list = generate_eateries_list.s(url, number_of_restaurants, skip, is_eatery)
+                process_list = GenerateEateriesList.s(url, number_of_restaurants, skip, is_eatery)| MapListToTask.s(ScrapeEachEatery.s())
 	        process_list()
 	        return
         
     
         def after_return(self, status, retval, task_id, args, kwargs, einfo):
                 #exit point of the task whatever is the state
-                logger.info("{color} Ending --<{function_name}--> of task --<{task_name}>-- with time taken\
-                        --<{time}>-- seconds  {reset}".format(color=bcolors.OKBLUE,\
+                logger.info("{fg} {bg}Ending --<{function_name}--> of task --<{task_name}>-- with time taken\
+                        --<{time}>-- seconds  {reset}".format(fg=fg('white'), bg=bg('green'), \
                         function_name=inspect.stack()[0][3], task_name= self.__class__.__name__,
-                            time=time.time() -self.start, reset=bcolors.RESET))
+                            time=time.time() -self.start, reset=attr('reset')))
                 pass
 
         def on_failure(self, exc, task_id, args, kwargs, einfo):
