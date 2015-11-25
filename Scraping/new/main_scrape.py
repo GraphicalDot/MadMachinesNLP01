@@ -23,6 +23,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from Testing_colored_print import bcolors
 from db_insertion import DBInsert
 import pprint
+from colored import fg, bg, attr
 
 import ConfigParser
 config = ConfigParser.RawConfigParser()
@@ -264,12 +265,14 @@ class EateryData(object):
 
                 self.reviews_inDB = review_collection.find({"eatery_id": self.eatery["eatery_id"]}).count()
 
+               
+
 		"""Prepared Soup"""
 		print "{color} \n-<Eatery Soup Prepared Successfully for eatery_id {eatery_id} >- {end_color}".format(color=bcolors.OKGREEN, \
                                                                     eatery_id=self.eatery["eatery_id"],   end_color=bcolors.RESET)
 		
-                print "{color} \n-<Number of review present in the DB>- {number} {end_color}".format(color=bcolors.OKGREEN, \
-                        number= self.reviews_inDB, end_color=bcolors.RESET)
+                print "{fg}{bg} \n-<Number of review present in the DB>- {number} {reset}".format(fg=fg("black"), bg=bg("green"), \
+                        number= self.reviews_inDB, reset=attr("reset"))
                
 
                 self.process_result(self.eatery, "eatery_address")(self.retry_eatery_address)()

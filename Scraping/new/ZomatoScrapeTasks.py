@@ -149,10 +149,8 @@ class ScrapeEachEatery(celery.Task):
                         DBInsert.db_insert_users(reviewslist)
                 except StandardError as e:
                         messege = "Eatery with eatery_url %s failed "%(eatery_dict["eatery_url"])
-                        print run.request_id
                         print print_messege("Error", messege, "ScrapeEachEatery run method", e)
                         celery.control.purge()
-                
                 return
 
         def after_return(self, status, retval, task_id, args, kwargs, einfo):
