@@ -20,7 +20,9 @@ import inspect
 from celery import task, subtask, group
 from colored_print import bcolors
 from colored import fg, bg, attr
-
+from db_insertion import DBInsert
+import pprint
+from celery.exceptions import Ignore
 
 
 connection = pymongo.Connection()
@@ -31,7 +33,7 @@ collection = db.intermediate_collection
 logger = logging.getLogger(__name__)
 
 ##If set to True all the scraping results will be udpated to the database
-UPDATE_DB = False
+UPDATE_DB = True
 """
 To run tasks for scraping one restaurant 
 runn.apply_async(["https://www.zomato.com/ncr/pita-pit-lounge-greater-kailash-gk-1-delhi", None, None, True])
@@ -66,6 +68,24 @@ runn.apply_async(args=["https://www.zomato.com/ncr/south-delhi-restaurants", 30,
 	     Example: “100/m” (hundred tasks a minute). This will enforce a minimum delay of 600ms between 
 	     starting two tasks on the same worker instance.
 """
+def print_messege(status, messege, function_name, error=None):
+
+        if status=="success":
+                __messege = "{0}{1}SUCCESS: {2}{3}{4} from Func_name=<<{5}>>{6}".format(fg("black"), bg('dark_green'), attr("reset"), \
+                        fg("dark_green"), messege, function_name, attr("reset"))
+        else:
+                __messege = "{0}{1}ERROR: {2}{3}{4} from Func_name=<<{5}>> with error<<{6}>>{7}".format(fg("black"), bg('red'), attr("reset"), \
+                        fg(202), messege, function_name, error, attr("reset"))
+
+        print __messege
+
+
+
+
+
+
+
+
 
 
 @app.task()
@@ -100,7 +120,7 @@ class GenerateEateriesList(celery.Task):
                 logger.info("{fg}{bg}Ending --<{function_name}--> of task --<{task_name}>-- failed fucking\
                         miserably {reset}".format(fg=fg("white"), bg=bg("red"),\
                         function_name=inspect.stack()[0][3], task_name= self.__class__.__name__, reset=attr('reset')))
-                logger.info("{fg}{bg}{einfo}{reset}".format(fg=fg("white"), bg=bg("red"), einfo=einfo, reset=attr("reset")))
+                logger.info("{fg}{bg}{einfo}".format(fg=fg("white"), bg=bg("red"), einfo=einfo))
                 self.retry(exc=exc)
 
 
@@ -120,11 +140,19 @@ class ScrapeEachEatery(celery.Task):
 	        self.start = time.time()
 		print "{color} Execution of the function {function_name} starts".format(color=bcolors.OKBLUE, function_name=inspect.stack()[0][3])
 		__instance = EateryData(eatery_dict)
-                eatery_dict, reviewslist = __instance.run()
-                if UPDATE_DB:
+                print eatery_dict
+                try:
+                        eatery_dict, reviewslist = __instance.run()
+                     
                         DBInsert.db_insert_eateries(eatery_dict)
                         DBInsert.db_insert_reviews(reviewslist)
                         DBInsert.db_insert_users(reviewslist)
+                except StandardError as e:
+                        messege = "Eatery with eatery_url %s failed "%(eatery_dict["eatery_url"])
+                        print run.request_id
+                        print print_messege("Error", messege, "ScrapeEachEatery run method", e)
+                        celery.control.purge()
+                
                 return
 
         def after_return(self, status, retval, task_id, args, kwargs, einfo):
@@ -135,13 +163,17 @@ class ScrapeEachEatery(celery.Task):
                             time=time.time() -self.start, reset=attr('reset')))
                 pass
 
+        """
         def on_failure(self, exc, task_id, args, kwargs, einfo):
                 logger.info("{color} Ending --<{function_name}--> of task --<{task_name}>-- failed fucking\
                         miserably {reset}".format(color=bcolors.OKBLUE,\
                         function_name=inspect.stack()[0][3], task_name= self.__class__.__name__, reset=bcolors.RESET))
                 logger.info("{0}{1}".format(einfo, bcolors.RESET))
+                print task_id
+                app.backend.mark_as_done(task_id)
+                raise Ignore()
                 self.retry(exc=exc)
-
+        """
 
 
 
@@ -184,6 +216,7 @@ class StartScrapeChain(celery.Task):
 	max_retries=3
 	acks_late=True
 	default_retry_delay = 5
+        
         print "{start_color} {function_name}:: This worker is meant to scrape all the eateries present on the url \n\
                 with their reviews, It forms chain between ScrapeEachEatery and GenerateEateriesList\n \
                 for more information on monitoring of celery workers\n\

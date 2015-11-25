@@ -22,7 +22,7 @@ from selenium.webdriver.support import expected_conditions as EC
 #from Testing_db_insertion import DBInsert
 from Testing_colored_print import bcolors
 from db_insertion import DBInsert
-
+import pprint
 
 import ConfigParser
 config = ConfigParser.RawConfigParser()
@@ -249,12 +249,6 @@ class EateryData(object):
 
 	def __init__(self, eatery_dict):
                 
-                global driver
-                if driver_exec_path.endswith("chromedriver"):
-                        driver = webdriver.Chrome(driver_exec_path)
-                else:
-                        driver = webdriver.PhantomJS()
-
 		self.eatery = eatery_dict
 
 		self.soup = self.make_soup()
@@ -263,8 +257,9 @@ class EateryData(object):
         def run(self):
                 self.process_result(self.eatery, "eatery_name")(self.retry_eatery_name)()
                 self.process_result(self.eatery, "eatery_id")(self.retry_eatery_id)()
-                
+               
                 assert(self.eatery["eatery_id"] != None)
+                assert(self.eatery["eatery_name"] != None)
 
 
                 self.reviews_inDB = review_collection.find({"eatery_id": self.eatery["eatery_id"]}).count()
@@ -307,7 +302,8 @@ class EateryData(object):
                 print "\n{start_color}  Now starting another browser to scrape reviews {end_color} \n".\
                         format(start_color=bcolors.OKGREEN, end_color=bcolors.RESET)
 
-                print self.eatery
+                assert(self.eatery["eatery_longitude_latitude"] != None)
+
                 review_soup = self.get_reviews()
 	        #self.last_no_of_reviews_to_be_scrapped = int(self.no_of_reviews_to_be_scrapped) - int(no_of_blogs)
                 ins = ZomatoReviews(review_soup, self.eatery["eatery_area_or_city"])
@@ -316,6 +312,10 @@ class EateryData(object):
         def make_soup(self):
                 driver = webdriver.Chrome(driver_exec_path)
                 driver.get(self.eatery["eatery_url"])
+
+                if driver.title.startswith("404"):
+                        driver.close()
+                        raise StandardError("This url doesnt exists, returns 404 error")
                 driver.find_elements_by_xpath('//*[@id="res-timings-toggle"]')[0].click()
                 time.sleep(3)
                 html = driver.page_source
@@ -328,6 +328,8 @@ class EateryData(object):
         def get_reviews(self):
                 driver = webdriver.Chrome(driver_exec_path)
                 driver.get(self.eatery["eatery_url"])
+                if driver.title.startswith("404"):
+                        raise StandardError("This url doesnt exists, returns 404 error")
                 time.sleep(random.choice([5, 6, 7, 8]))
                 try:
                         driver.find_element_by_css_selector("a.everyone.empty").click()
@@ -356,12 +358,12 @@ class EateryData(object):
 
                 try:
                         
-                        for i in range(0, reviews_to_be_scraped/5+2):
+                        for i in range(0, reviews_to_be_scraped/5+1):
                         #for i in range(0, reviews_to_be_scraped/5+3):
                                 
                                 print "Click on loadmore <<{value}>> time".format(start_color=bcolors.OKBLUE, value=i, end_color=bcolors.RESET)
-                                time.sleep(random.choice([5, 6, 3, 4]))
-                                self.driver.find_element_by_class_name("load-more").click()
+                                time.sleep(random.choice([5, 6, 7]))
+                                driver.find_element_by_class_name("load-more").click()
                 
                 except NoSuchElementException as e:
                         print "{color} ERROR: Catching Exception -<{error}>- with messege -<No More Loadmore tag present>-".format(color=bcolors.OKGREEN, error=e)
@@ -372,14 +374,15 @@ class EateryData(object):
                         raise StandardError("Coould not make the request")
 
 
-                read_more_links = self.driver.find_elements_by_xpath("//div[@class='rev-text-expand']")
+                read_more_links = driver.find_elements_by_xpath("//div[@class='rev-text-expand']")
                 for link in read_more_links:
-                        time.sleep(random.choice([2, 3]))
+                        print "Click on read_more  <<{value}>> time".format(start_color=bcolors.OKBLUE, value=link, end_color=bcolors.RESET)
+                        time.sleep(random.choice([5, 6, 7, 8]))
                         link.click()
 
-                html = self.driver.page_source
+                html = driver.page_source
                 content = html.encode('ascii', 'ignore').decode('ascii')
-                self.driver.close()
+                driver.close()
                 return BeautifulSoup.BeautifulSoup(content)
 
 
@@ -403,8 +406,9 @@ class EateryData(object):
                         return wrapper
                 return wrap
             
+        def retry_eatery_id(self):
+                        return eval("self.soup.{0}".format(config.get("zomato", "eatery_id") ))
 	def retry_eatery_name(self):
-		if not self.eatery.get("eatery_name"):
 		        return eval("self.soup.{0}".format(config.get("zomato", "eatery_name")))
 	
         def eatery_update_on(self):
@@ -419,9 +423,6 @@ class EateryData(object):
                 return eval("self.soup.{0}".format(config.get("zomato", "eatery_country") ))
 
 
-        def retry_eatery_id(self):
-		if not self.eatery.get("eatery_id"):
-                        return eval("self.soup.{0}".format(config.get("zomato", "eatery_id") ))
 	
         def retry_eatery_address(self):
                 return eval("self.soup.{0}".format(config.get("zomato", "eatery_address")))

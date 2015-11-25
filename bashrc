@@ -121,25 +121,25 @@ fi
 
 function MadMachinesNLP01
         {
-        cd /home/kaali2/Programs/Python/MadmachinesNLP01/;
+        cd /home/kmama02/Programs/Python/MadMachinesNLP01/;
         source bin/activate; cd MadMachinesNLP01;
         clear;
         }
 
 function MappingListWorker() {
-        cd /home/kaali2/Programs/Python/MadmachinesNLP01/;
+        cd /home/kmama02/Programs/Python/MadMachinesNLP01/;
         source bin/activate; cd MadMachinesNLP01;
         clear;
         celery -A ProcessingCeleryTask  worker -n MappingListWorker -Q MappingListQueue --concurrency=4 -P gevent --loglevel=info --autoreload;
 }
 function EachEateryWorker() {
-        cd /home/kaali2/Programs/Python/MadmachinesNLP01/;
+        cd /home/kmama02/Programs/Python/MadMachinesNLP01/;
         source bin/activate; cd MadMachinesNLP01;
         clear;
         celery -A ProcessingCeleryTask  worker -n EachEateryWorker -Q EachEateryQueue --concurrency=4 -P gevent --loglevel=info --autoreload;
 }
 function PerReviewWorker() {
-        cd /home/kaali2/Programs/Python/MadmachinesNLP01/;
+        cd /home/kmama02/Programs/Python/MadMachinesNLP01/;
         source bin/activate; cd MadMachinesNLP01;
         clear;
         worker_name="PerReviewWorker_"
@@ -148,10 +148,57 @@ function PerReviewWorker() {
 }
 
 function DoClustersWorker() {
-        cd /home/kaali2/Programs/Python/MadmachinesNLP01/;
+        cd /home/kmama02/Programs/Python/MadMachinesNLP01/;
         source bin/activate; cd MadMachinesNLP01;
         clear;
         celery -A ProcessingCeleryTask  worker -n DoClustersWorker -Q DoClustersQueue --concurrency=4 -P gevent --loglevel=info --autoreload
         }
 
+function Sportsunity() {
+        cd /home/kmama02/Programs/Python/Sportsunity/;
+        source bin/activate; cd Sportsunity;
+        clear;
+        }
+
+function StartScrapeChain-C(){
+		
+        cd /home/kmama02/Programs/Python/MadMachinesNLP01/;
+        source bin/activate; cd MadMachinesNLP01;
+        cd Scraping; cd new;
+	clear;
+	celery -A ZomatoScrapeTasks worker -n StartScrapeChain-W -Q StartScrapeChainQueue  --concurrency=1 -P gevent --loglevel=info --autoreload
+
+}
+
+function MapListToTask-C(){
+		
+        cd /home/kmama02/Programs/Python/MadMachinesNLP01/;
+        source bin/activate; cd MadMachinesNLP01;
+        cd Scraping; cd new;
+	clear;
+	celery -A ZomatoScrapeTasks worker -n MapListToTask-W -Q MapListToTaskQueue  --concurrency=1 -P gevent --loglevel=info --autoreload
+
+}
+
+function GenerateEateriesList-C(){
+		
+        cd /home/kmama02/Programs/Python/MadMachinesNLP01/;
+        source bin/activate; cd MadMachinesNLP01;
+        cd Scraping; cd new;
+	clear;
+	celery -A ZomatoScrapeTasks worker -n GenerateEateriesList-W -Q GenerateEateriesListQueue  --concurrency=1 -P gevent --loglevel=info --autoreload
+
+}
+
+function ScrapeEachEatery-C(){
+		
+        cd /home/kmama02/Programs/Python/MadMachinesNLP01/;
+        source bin/activate; cd MadMachinesNLP01;
+        cd Scraping; cd new;
+	clear;
+        worker_name="ScrapeEachEatery_W_"
+        worker_name+=$1
+	celery -A ZomatoScrapeTasks worker -n $worker_name -Q ScrapeEachEateryQueue  --concurrency=1 -P gevent --loglevel=info --autoreload
+
+}
 

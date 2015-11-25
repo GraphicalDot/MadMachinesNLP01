@@ -28,7 +28,7 @@ CELERY_ROUTES = {
 				'routing_key': 'ScrapeEachEateryQueue.import',
 							        },
 		'ZomatoScrapeTasks.MapListToTask': {
-				'queue': 'MapListTaskQueue',
+				'queue': 'MapListToTaskQueue',
 				'routing_key': 'MapListToTaskQueue.import',
 							        },
 			}
@@ -65,5 +65,4 @@ CELERYD_CONCURRENCY = 20
 CELERY_DISABLE_RATE_LIMITS = True
 CELERY_RESULT_PERSISTENT = True #Keeps the result even after broker restart
 #CELERYD_POOL = 'gevent'
-CELERY
 
