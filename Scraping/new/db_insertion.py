@@ -92,3 +92,11 @@ class DBInsert(object):
 
 		return
 
+
+        @staticmethod
+	def db_get_reviews_eatery(eatery_id):
+                return ZomatoReviews.find({"eatery_id": eatery_id}).count()
+
+
+
+

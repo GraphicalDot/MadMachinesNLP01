@@ -24,20 +24,22 @@ from Testing_colored_print import bcolors
 from db_insertion import DBInsert
 import pprint
 from colored import fg, bg, attr
-
+from error_decorators import print_messege, process_result
 import ConfigParser
+import datetime 
+
 config = ConfigParser.RawConfigParser()
 config.read("global.cfg")
 config.read("zomato_dom.cfg")
 
 driver_exec_path = "/home/kmama02/Downloads/chromedriver"
+DRIVER_NAME = "PhantomJS"
 
 
 
 
 
 
-CHROME_PATH = "/home/kmama02/Downloads/chromedriver"
 
 class EateriesList(object):
 
@@ -124,9 +126,15 @@ class EateriesList(object):
     
         def prepare_soup(self, url):
         	# if url.find("=")==-1:
-                driver = webdriver.Chrome(driver_exec_path)
-                driver.get(url)
-        	html = driver.page_source
+                if DRIVER_NAME == "PhantomJS":
+                        driver = webdriver.PhantomJS()
+                        driver.get(url)
+                else:
+                        driver = webdriver.Chrome(driver_exec_path)
+                        driver.get(url)
+                
+                
+                html = driver.page_source
         	# f=open("Testingfile.txt","w")
         	content = html.encode('ascii', 'ignore').decode('ascii')
         	# f.write(content)
@@ -256,65 +264,62 @@ class EateryData(object):
 
 
         def run(self):
-                self.process_result(self.eatery, "eatery_name")(self.retry_eatery_name)()
-                self.process_result(self.eatery, "eatery_id")(self.retry_eatery_id)()
+                process_result(self.eatery, "eatery_name")(self.retry_eatery_name)()
+                process_result(self.eatery, "eatery_id")(self.retry_eatery_id)()
                
                 assert(self.eatery["eatery_id"] != None)
                 assert(self.eatery["eatery_name"] != None)
 
 
                 self.reviews_inDB = review_collection.find({"eatery_id": self.eatery["eatery_id"]}).count()
-
-               
-
-		"""Prepared Soup"""
-		print "{color} \n-<Eatery Soup Prepared Successfully for eatery_id {eatery_id} >- {end_color}".format(color=bcolors.OKGREEN, \
-                                                                    eatery_id=self.eatery["eatery_id"],   end_color=bcolors.RESET)
 		
-                print "{fg}{bg} \n-<Number of review present in the DB>- {number} {reset}".format(fg=fg("black"), bg=bg("green"), \
-                        number= self.reviews_inDB, reset=attr("reset"))
+                messege = "Number of reviews present in the database %s"%self.reviews_inDB
+                print_messege("info", messege, "EateryData.run", None, self.eatery["eatery_id"],\
+                        self.eatery["eatery_url"], None)
                
 
-                self.process_result(self.eatery, "eatery_address")(self.retry_eatery_address)()
+                process_result(self.eatery, "eatery_address")(self.retry_eatery_address)()
                 
-                self.process_result(self.eatery, "eatery_cost")(self.retry_eatery_cost)()
-                self.process_result(self.eatery, "eatery_trending")(self.retry_eatery_trending)()
-                self.process_result(self.eatery, "eatery_rating")(self.retry_eatery_rating)()
-                self.process_result(self.eatery, "eatery_cuisine")(self.retry_eatery_cuisine)()
-                self.process_result(self.eatery, "eatery_highlights")(self.eatery_highlights)()
-                self.process_result(self.eatery, "eatery_popular_reviews")(self.eatery_popular_reviews)()
+                process_result(self.eatery, "eatery_cost")(self.retry_eatery_cost)()
+                process_result(self.eatery, "eatery_trending")(self.retry_eatery_trending)()
+                process_result(self.eatery, "eatery_rating")(self.retry_eatery_rating)()
+                process_result(self.eatery, "eatery_cuisine")(self.retry_eatery_cuisine)()
+                process_result(self.eatery, "eatery_highlights")(self.eatery_highlights)()
+                process_result(self.eatery, "eatery_popular_reviews")(self.eatery_popular_reviews)()
 
-                self.process_result(self.eatery, "eatery_longitude_latitude")(self.eatery_longitude_latitude)()
-                self.process_result(self.eatery, "eatery_total_reviews")(self.eatery_total_reviews)()
-                self.process_result(self.eatery, "eatery_buffet_price")(self.eatery_buffet_price)()
-                self.process_result(self.eatery, "eatery_buffet_details")(self.eatery_buffet_details)()
+                process_result(self.eatery, "eatery_longitude_latitude")(self.eatery_longitude_latitude)()
+                process_result(self.eatery, "eatery_total_reviews")(self.eatery_total_reviews)()
+                process_result(self.eatery, "eatery_buffet_price")(self.eatery_buffet_price)()
+                process_result(self.eatery, "eatery_buffet_details")(self.eatery_buffet_details)()
                 
                 
                 
-                self.process_result(self.eatery, "eatery_recommended_order")(self.eatery_recommended_order)()
-                self.process_result(self.eatery, "eatery_known_for")(self.eatery_known_for)()
-                self.process_result(self.eatery, "eatery_area_or_city")(self.eatery_area_or_city)()
+                process_result(self.eatery, "eatery_recommended_order")(self.eatery_recommended_order)()
+                process_result(self.eatery, "eatery_known_for")(self.eatery_known_for)()
+                process_result(self.eatery, "eatery_area_or_city")(self.eatery_area_or_city)()
 
-                self.process_result(self.eatery, "eatery_opening_hours")(self.eatery_opening_hours)()
+                process_result(self.eatery, "eatery_opening_hours")(self.eatery_opening_hours)()
                 
-                self.process_result(self.eatery, "eatery_photo_link")(self.eatery_photo_link)()
-                self.process_result(self.eatery, "eatery_update_on")(self.eatery_update_on)()
+                process_result(self.eatery, "eatery_photo_link")(self.eatery_photo_link)()
+                process_result(self.eatery, "eatery_update_on")(self.eatery_update_on)()
 
 
 
-                print "\n{start_color}  Now starting another browser to scrape reviews {end_color} \n".\
-                        format(start_color=bcolors.OKGREEN, end_color=bcolors.RESET)
 
                 assert(self.eatery["eatery_longitude_latitude"] != None)
 
                 review_soup = self.get_reviews()
 	        #self.last_no_of_reviews_to_be_scrapped = int(self.no_of_reviews_to_be_scrapped) - int(no_of_blogs)
-                ins = ZomatoReviews(review_soup, self.eatery["eatery_area_or_city"])
+                ins = ZomatoReviews(review_soup, self.eatery["eatery_area_or_city"], self.eatery["eatery_id"], self.eatery["eatery_url"])
                 return (self.eatery, ins.reviews_data)
 
         def make_soup(self):
-                driver = webdriver.Chrome(driver_exec_path)
-                driver.get(self.eatery["eatery_url"])
+                if DRIVER_NAME == "PhantomJS":
+                        driver = webdriver.PhantomJS()
+                        driver.get(self.eatery["eatery_url"])
+                else:
+                        driver = webdriver.Chrome(driver_exec_path)
+                        driver.get(self.eatery["eatery_url"])
 
                 if driver.title.startswith("404"):
                         driver.close()
@@ -329,8 +334,13 @@ class EateryData(object):
         
 
         def get_reviews(self):
-                driver = webdriver.Chrome(driver_exec_path)
-                driver.get(self.eatery["eatery_url"])
+                if DRIVER_NAME == "PhantomJS":
+                        driver = webdriver.PhantomJS()
+                        driver.get(self.eatery["eatery_url"])
+                else:
+                        driver = webdriver.Chrome(driver_exec_path)
+                        driver.get(self.eatery["eatery_url"])
+                
                 if driver.title.startswith("404"):
                         raise StandardError("This url doesnt exists, returns 404 error")
                 time.sleep(random.choice([5, 6, 7, 8]))
@@ -354,8 +364,8 @@ class EateryData(object):
                                 start_color=bcolors.OKGREEN, number=reviews_to_be_scraped, end_color=bcolors.RESET)
 
                 except TypeError as e:
-                        print "{start_color} ERROR: eatery total reviews keys have shown error, it might be because either the \
-                                dom changed or eatery has no reviews {end_color}".format(start_color=bcolors.FAIL, end_color=bcolors.RESET)
+                        print_messege("error", "total reviews key error", "EateryData.get_reviews", e, self.eatery["eatery_id"],\
+                        self.eatery["eatery_url"], None)
                         return 
 
 
@@ -373,7 +383,8 @@ class EateryData(object):
                         pass
 
                 except Exception as e:
-                        print e
+                        print_messege("error", "Error in loadmore", "EateryData.get_reviews", e, self.eatery["eatery_id"],\
+                        self.eatery["eatery_url"], None)
                         raise StandardError("Coould not make the request")
 
 
@@ -390,25 +401,6 @@ class EateryData(object):
 
 
 
-	def process_result(self, eatery_dict, dom_string):
-                """
-                Process the result returned, in other words converts the result returned from ES
-                into a json which will be used by front end
-                """
-                def wrap(func):
-                        def wrapper(*args, **kwargs):
-                                try:
-                                        result = func(*args, **kwargs)
-                                except Exception as e:
-				        print "{start_color} Error in function {func_name} {error}  while doing {url} {end_color}"\
-                                                .format(start_color=bcolors.WARNING, func_name= func.__name__, error=e, url=eatery_dict["eatery_url"], end_color=bcolors.RESET)
-				        result = None
-                                
-                                eatery_dict[dom_string] = result                                
-                                return eatery_dict
-                        return wrapper
-                return wrap
-            
         def retry_eatery_id(self):
                         return eval("self.soup.{0}".format(config.get("zomato", "eatery_id") ))
 	def retry_eatery_name(self):

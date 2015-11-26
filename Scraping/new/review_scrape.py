@@ -5,12 +5,16 @@ import BeautifulSoup
 import time
 from Testing_colored_print import bcolors
 import hashlib
+from error_decorators import process_result, print_messege
+
 
 class ZomatoReviews(object):
 
-	def __init__(self, soup, area_or_city):
+	def __init__(self, soup, area_or_city, eatery_id, eatery_url):
 		self.soup = soup
 		self.area_or_city = area_or_city
+                self.eatery_id = eatery_id
+                self.eatery_url = eatery_url
 		try:
 			self.reviews_list = self.soup.findAll("div" ,{"class": "res-review clearfix js-activity-root mbot   item-to-hide-parent stupendousact"})
 			# self.reviews_list = self.soup.select("div.res-review.clearfix.js-activity-root.mbot.item-to-hide-parent.stupendousact")
@@ -24,7 +28,7 @@ class ZomatoReviews(object):
 	def reviews(self):
 		for review in self.reviews_list:
 			reviews = dict()
-			reviews["user_name"] = self.user_name(review)
+                        reviews["user_name"] = self.user_name(review)
 			reviews["user_id"] = self.user_id(review)
 			reviews["user_url"] = self.user_url(review)
 			reviews["user_reviews"] = self.user_reviews(review)
@@ -46,7 +50,6 @@ class ZomatoReviews(object):
 			reviews["__review_id"]=hashlib.sha256(str(reviews["review_id"])+str(reviews["review_text"])).hexdigest()
 
 			self.reviews_data.append(reviews)
-		print "\n\n\n Here is the length of reviews %s\n\n\n"%len(self.reviews_data)
                 return
 
 	def exception_handling(func):
@@ -55,11 +58,11 @@ class ZomatoReviews(object):
 				return func(self, review)
 			
 			except ValueError as e:
-				print "{color} ERROR <{error}> in function <{function}>".format(color=bcolors.FAIL, error=e, function=func.__name__)
-				return None
+				print_messege("error", "error occurred", func.__name__, e, self.eatery_id, self.eatery_url, None)
+                                return None
 
 			except Exception as e:
-				print "{color} ERROR <{error}> in function <{function}>".format(color=bcolors.FAIL, error=e, function=func.__name__)
+				print_messege("error", "error occurred", func.__name__, e, self.eatery_id, self.eatery_url, None)
 				return None
 		return deco
 

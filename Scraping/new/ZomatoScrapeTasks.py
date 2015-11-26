@@ -28,7 +28,7 @@ from celery.exceptions import Ignore
 connection = pymongo.Connection()
 db = connection.intermediate
 collection = db.intermediate_collection
-
+from error_decorators import print_messege
 
 logger = logging.getLogger(__name__)
 
@@ -68,21 +68,6 @@ runn.apply_async(args=["https://www.zomato.com/ncr/south-delhi-restaurants", 30,
 	     Example: “100/m” (hundred tasks a minute). This will enforce a minimum delay of 600ms between 
 	     starting two tasks on the same worker instance.
 """
-def print_messege(status, messege, function_name, error=None):
-
-        if status=="success":
-                __messege = "{0}{1}SUCCESS: {2}{3}{4} from Func_name=<<{5}>>{6}".format(fg("black"), bg('dark_green'), attr("reset"), \
-                        fg("dark_green"), messege, function_name, attr("reset"))
-        else:
-                __messege = "{0}{1}ERROR: {2}{3}{4} from Func_name=<<{5}>> with error<<{6}>>{7}".format(fg("black"), bg('red'), attr("reset"), \
-                        fg(202), messege, function_name, error, attr("reset"))
-
-        print __messege
-
-
-
-
-
 
 
 
@@ -140,7 +125,6 @@ class ScrapeEachEatery(celery.Task):
 	        self.start = time.time()
 		print "{color} Execution of the function {function_name} starts".format(color=bcolors.OKBLUE, function_name=inspect.stack()[0][3])
 		__instance = EateryData(eatery_dict)
-                print eatery_dict
                 try:
                         eatery_dict, reviewslist = __instance.run()
                      
@@ -148,9 +132,14 @@ class ScrapeEachEatery(celery.Task):
                         DBInsert.db_insert_reviews(reviewslist)
                         DBInsert.db_insert_users(reviewslist)
                 except StandardError as e:
-                        messege = "Eatery with eatery_url %s failed "%(eatery_dict["eatery_url"])
-                        print print_messege("Error", messege, "ScrapeEachEatery run method", e)
+                        print_messege("error", "error occurred", "ScrapeEachEatery.run", e, eatery_dict["eatery_id"], eatery_dict["eatery_url"], None)
                         celery.control.purge()
+                
+                reviews_in_db = db_get_reviews_eatery(eatery_dict["eatery_id"])
+                if db_get_reviews_eatery(eatery_dict["eatery_id"]) !=  int(eatery_dict['eatery_total_reviews']):
+                        messege = "Umatched reviews: present in DB %s and should be %s"%(reviews_in_db,  int(eatery_dict['eatery_total_reviews']))
+                        print_messege("error", messege, "ScrapeEachEatery.run", None, eatery_dict["eatery_id"], eatery_dict["eatery_url"], None)
+
                 return
 
         def after_return(self, status, retval, task_id, args, kwargs, einfo):
