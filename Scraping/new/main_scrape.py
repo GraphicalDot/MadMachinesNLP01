@@ -37,6 +37,29 @@ DRIVER_NAME = "PhantomJS"
 
 
 
+class AllEateriesUrl(object):
+        def __init__(self, url):
+                """
+                Get all the pagination link present for paricular region for example delhi ncr
+                """
+
+
+
+        def prepare_soup(self, url):
+                if DRIVER_NAME == "PhantomJS":
+                        driver = webdriver.PhantomJS()
+                        driver.get(url)
+                else:
+                        driver = webdriver.Chrome(driver_exec_path)
+                        driver.get(url)
+                
+                
+                html = driver.page_source
+        	content = html.encode('ascii', 'ignore').decode('ascii')
+        	soup = BeautifulSoup.BeautifulSoup(content)
+        	driver.close()
+                return soup
+
 
 
 

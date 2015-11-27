@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 #-*- coding: utf-8 -*-
 from __future__ import absolute_import
+import sys
 import celery
 from celery import states
 from celery.task import Task, TaskSet
@@ -28,6 +29,7 @@ from celery.exceptions import Ignore
 connection = pymongo.Connection()
 db = connection.intermediate
 collection = db.intermediate_collection
+import traceback
 from error_decorators import print_messege
 
 logger = logging.getLogger(__name__)
@@ -132,11 +134,13 @@ class ScrapeEachEatery(celery.Task):
                         DBInsert.db_insert_reviews(reviewslist)
                         DBInsert.db_insert_users(reviewslist)
                 except StandardError as e:
-                        print_messege("error", "error occurred", "ScrapeEachEatery.run", e, eatery_dict["eatery_id"], eatery_dict["eatery_url"], None)
+                        exc_type, exc_value, exc_traceback = sys.exc_info()
+                        error = repr(traceback.format_exception(exc_type, exc_value, exc_traceback))
+                        print_messege("error", "error occurred and removed from queue", "ScrapeEachEatery.run", error,  eatery_dict["eatery_id"], eatery_dict["eatery_url"], None)
                         celery.control.purge()
                 
-                reviews_in_db = db_get_reviews_eatery(eatery_dict["eatery_id"])
-                if db_get_reviews_eatery(eatery_dict["eatery_id"]) !=  int(eatery_dict['eatery_total_reviews']):
+                reviews_in_db =DBInsert. db_get_reviews_eatery(eatery_dict["eatery_id"])
+                if reviews_in_db !=  int(eatery_dict['eatery_total_reviews']):
                         messege = "Umatched reviews: present in DB %s and should be %s"%(reviews_in_db,  int(eatery_dict['eatery_total_reviews']))
                         print_messege("error", messege, "ScrapeEachEatery.run", None, eatery_dict["eatery_id"], eatery_dict["eatery_url"], None)
 

@@ -2,6 +2,8 @@ from elasticsearch import Elasticsearch, helpers
 from colored import fg, bg, attr
 import time
 import datetime
+import sys 
+import traceback
 
 ES_CLIENT = Elasticsearch("localhost", timeout=30)
 try:
@@ -24,16 +26,19 @@ def print_messege(status, messege, function_name, error=None, eatery_id=None, ea
                 __messege = "{0}{1}INFO: {2}{3}{4} from Func_name=<<{5}>> with error<<{6}>> eatery_id=<<{7}>>, \
                         review_id=<<{8}>>, eatery_url=<<{9}>>{10}".format(fg("black"), bg('white'), attr("reset"), \
                         fg(202), messege, function_name, error, eatery_id, review_id, eatery_url, attr("reset"))
+        
+        else:
+                __messege = "{0}{1}ERROR: {2}{3}{4} from Func_name=<<{5}>> with error<<{6}>> eatery_id=<<{7}>>, \
+                        review_id=<<{8}>>, eatery_url=<<{9}>>{10}".format(fg("white"), bg('red'), attr("reset"), \
+                        fg(202), messege, function_name, error, eatery_id, review_id, eatery_url, attr("reset"))
 
                 print __messege
-        try:
-                error_message = error.message
-        except:
-                error_message = None
+
+
 
         result = {"status": status,
                 "function_name": function_name,
-                "error": error_message,
+                "error": error,
                 "eatery_id": eatery_id,
                 "review_id": review_id,
                 "eatery_url": eatery_url,
@@ -57,7 +62,9 @@ def process_result(__dict, dom_string):
                         try:
                                 result = func(*args, **kwargs)
                         except Exception as e:
-                                print_messege("error", "Erorr occurred", func.__name__, e, __dict["eatery_id"], eatery_url=__dict["eatery_url"], review_id=None)
+                                exc_type, exc_value, exc_traceback = sys.exc_info()
+                                error = repr(traceback.format_exception(exc_type, exc_value, exc_traceback))
+                                print_messege("error", "Erorr occurred", func.__name__, error, __dict["eatery_id"], eatery_url=__dict["eatery_url"], review_id=None)
                                 result = None
 
                         __dict[dom_string] = result

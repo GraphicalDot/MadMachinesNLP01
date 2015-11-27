@@ -27,9 +27,18 @@ StartScrapeChain.apply_async(["https://www.zomato.com/ncr/restaurants", 30, 17, 
 StartScrapeChain.apply_async(["https://www.zomato.com/ncr/restaurants", 30, 18, False])
 StartScrapeChain.apply_async(["https://www.zomato.com/ncr/restaurants", 30, 19, False])
 StartScrapeChain.apply_async(["https://www.zomato.com/ncr/restaurants", 30, 20, False])
-"""
 StartScrapeChain.apply_async(["https://www.zomato.com/ncr/restaurants", 30, 21, False])
 StartScrapeChain.apply_async(["https://www.zomato.com/ncr/restaurants", 30, 22, False])
 StartScrapeChain.apply_async(["https://www.zomato.com/ncr/restaurants", 30, 23, False])
+StartScrapeChain.apply_async(["https://www.zomato.com/ncr/restaurants", 30, 24, False])
+StartScrapeChain.apply_async(["https://www.zomato.com/ncr/restaurants", 30, 25, False])
+StartScrapeChain.apply_async(["https://www.zomato.com/ncr/restaurants", 30, 26, False])
+StartScrapeChain.apply_async(["https://www.zomato.com/ncr/restaurants", 30, 27, False])
+StartScrapeChain.apply_async(["https://www.zomato.com/ncr/restaurants", 30, 28, False])
+StartScrapeChain.apply_async(["https://www.zomato.com/ncr/restaurants", 30, 29, False])
+StartScrapeChain.apply_async(["https://www.zomato.com/ncr/restaurants", 30, 30, False])
+"""
+for e in range(32, 100):
+        StartScrapeChain.apply_async(["https://www.zomato.com/ncr/restaurants", 30, e, False])
 
 #ScrapeEachEatery.apply_async([{"eatery_url": "https://www.zomato.com/ncr/dilli-19-kalkaji-new-delhi"}])

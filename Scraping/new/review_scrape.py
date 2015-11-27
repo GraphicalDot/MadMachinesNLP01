@@ -3,6 +3,7 @@
 
 import BeautifulSoup
 import time
+import traceback
 from Testing_colored_print import bcolors
 import hashlib
 from error_decorators import process_result, print_messege
@@ -27,29 +28,29 @@ class ZomatoReviews(object):
 
 	def reviews(self):
 		for review in self.reviews_list:
-			reviews = dict()
-                        reviews["user_name"] = self.user_name(review)
-			reviews["user_id"] = self.user_id(review)
-			reviews["user_url"] = self.user_url(review)
-			reviews["user_reviews"] = self.user_reviews(review)
-			reviews["user_followers"] = self.user_followers(review)
-			reviews["review_url"] = self.review_url(review)
-			reviews["user_rating"] = self.user_rating(review)
-			reviews["review_time"] = self.review_time(review)
-			reviews["review_text"] = self.review_text(review)
-			reviews["review_likes"] = self.review_likes(review)
-			reviews["review_id"] = self.review_id(review)
-			reviews["eatery_id"] = self.eatery_id(review)
-			reviews["scraped_epoch"] = int(time.time())			
-			reviews["converted_epoch"] = self.converted_to_epoch(review)
-			reviews["area_or_city"] = self.area_or_city
-			reviews["management_response"] = self.review_management_response(review)
-			reviews["readable_review_year"] = self.review_year(review)
-			reviews["readable_review_month"] = self.review_month(review)
-			reviews["readable_review_day"] = self.review_day(review)
-			reviews["__review_id"]=hashlib.sha256(str(reviews["review_id"])+str(reviews["review_text"])).hexdigest()
+			__reviews = dict()
+                        __reviews["user_name"] = self.user_name(review)
+			__reviews["user_id"] = self.user_id(review)
+			__reviews["user_url"] = self.user_url(review)
+			__reviews["user_reviews"] = self.user_reviews(review)
+			__reviews["user_followers"] = self.user_followers(review)
+			__reviews["review_url"] = self.review_url(review)
+			__reviews["user_rating"] = self.user_rating(review)
+			__reviews["review_time"] = self.review_time(review)
+			__reviews["review_text"] = self.review_text(review)
+			__reviews["review_likes"] = self.review_likes(review)
+			__reviews["review_id"] = self.review_id(review)
+			__reviews["eatery_id"] = self.get_eatery_id(review)
+			__reviews["scraped_epoch"] = int(time.time())			
+			__reviews["converted_epoch"] = self.converted_to_epoch(review)
+			__reviews["area_or_city"] = self.area_or_city
+			__reviews["management_response"] = self.review_management_response(review)
+			__reviews["readable_review_year"] = self.review_year(review)
+			__reviews["readable_review_month"] = self.review_month(review)
+			__reviews["readable_review_day"] = self.review_day(review)
+			__reviews["__review_id"]=hashlib.sha256(str(__reviews["review_id"])+str(__reviews["review_text"])).hexdigest()
 
-			self.reviews_data.append(reviews)
+			self.reviews_data.append(__reviews)
                 return
 
 	def exception_handling(func):
@@ -63,7 +64,7 @@ class ZomatoReviews(object):
 
 			except Exception as e:
 				print_messege("error", "error occurred", func.__name__, e, self.eatery_id, self.eatery_url, None)
-				return None
+                                return None
 		return deco
 
 	@exception_handling
@@ -92,7 +93,7 @@ class ZomatoReviews(object):
 		return time.strftime("%d", time.localtime(int(epoch)))
 	
 	@exception_handling
-	def eatery_id(self, review):
+	def get_eatery_id(self, review):
 		return review.find("div", {"class": "res-review-body clearfix"})["data-res_id"]
 
 	@exception_handling

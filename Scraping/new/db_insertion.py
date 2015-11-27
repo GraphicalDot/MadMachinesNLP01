@@ -16,7 +16,7 @@ import traceback
 import time
 from pymongo.errors import BulkWriteError
 from colored import fg, bg, attr
-
+from error_decorators import print_messege
 
 #LOG_FILENAME = 'exceptions_logger.log'
 #:wlogging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
@@ -32,18 +32,6 @@ ZomatoEateries = connection[config.get("zomato", "database")][config.get("zomato
 ZomatoUsers= connection[config.get("zomato", "database")][config.get("zomato", "users")]
 
 
-def print_messege(status, messege, function_name, error=None):
-
-        if status=="success":
-                __messege = "{0}{1}SUCCESS: {2}{3}{4} from Func_name=<<{5}>>{6}".format(fg("black"), bg('dark_green'), attr("reset"), \
-			fg("dark_green"), messege, function_name, attr("reset"))
-        else:
-                __messege = "{0}{1}ERROR: {2}{3}{4} from Func_name=<<{5}>> with error<<{6}>>{7}".format(fg("black"), bg('red'), attr("reset"), \
-			fg(202), messege, function_name, error, attr("reset"))
-        
-        print __messege
-
-
 
 class DBInsert(object):
 
@@ -53,11 +41,13 @@ class DBInsert(object):
 		try:
 			ZomatoEateries.update({"eatery_id": eatery.get("eatery_id")}, {"$set": eatery}, upsert=True)
                         messege = "Eatery with eatery_id: %s  and eatery_name: %s has been updated successfully"%(eatery["eatery_id"], eatery["eatery_name"]) 
-                        print_messege("success", messege, inspect.stack()[0][3])
-		
+                        print_messege("success", messege, inspect.stack()[0][3], None,  eatery["eatery_id"], eatery_dict["eatery_url"], None)
+
                 except Exception as e:
+                        exc_type, exc_value, exc_traceback = sys.exc_info()                                                                                                                                                                    
+                        error = repr(traceback.format_exception(exc_type, exc_value, exc_traceback))  
                         messege = "Eatery with eatery_id: %s  and eatery_name: %s failed"%(eatery["eatery_id"], eatery["eatery_name"]) 
-                        print_messege("Error", messege, inspect.stack()[0][3], e)
+                        print_messege("error", messege, inspect.stack()[0][3], error,  eatery["eatery_id"], eatery["eatery_url"], None)
 
 		return
 	
@@ -67,10 +57,12 @@ class DBInsert(object):
 			try:
 				ZomatoReviews.insert(review)
                                 messege = "Review  with review_id: %s  has been updated successfully"%(review["review_id"]) 
-                                print_messege("success", messege, inspect.stack()[0][3])
+                                print_messege("success", messege, inspect.stack()[0][3], None,  review["eatery_id"], None, review["review_id"])
                         except Exception as e:
+                                exc_type, exc_value, exc_traceback = sys.exc_info()
+                                error = repr(traceback.format_exception(exc_type, exc_value, exc_traceback))  
                                 messege = "Review  with review_id: %s  failed"%(review["review_id"]) 
-                                print_messege("Error", messege, inspect.stack()[0][3], e)
+                                print_messege("error", messege, inspect.stack()[0][3], error,  review["eatery_id"], None, review["review_id"])
                                 pass
 		return 
 
@@ -83,11 +75,13 @@ class DBInsert(object):
                                         {"user_url": review.get("user_url"), "user_followers": review.get("user_followers"), "user_reviews" : \
                                         review.get("user_reviews"), "updated_on": int(time.time())}}, upsert=True)
                                 messege = "User with user_id: %s  and user_name: %s has been updated successfully"%(review["user_id"], review["user_name"]) 
-                                print_messege("success", messege, inspect.stack()[0][3])
+                                print_messege("success", messege, inspect.stack()[0][3], None,  review["eatery_id"], None, review["review_id"])
 			
                         except Exception as e:
+                                exc_type, exc_value, exc_traceback = sys.exc_info()
+                                error = repr(traceback.format_exception(exc_type, exc_value, exc_traceback))  
                                 messege = "User  with user_id: %s  failed"%(review["user_id"]) 
-                                print_messege("Error", messege, inspect.stack()[0][3], e)
+                                print_messege("error", messege, inspect.stack()[0][3], error,  review["eatery_id"], None, review["review_id"])
                                 pass
 
 		return
