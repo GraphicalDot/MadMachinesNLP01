@@ -37,8 +37,17 @@ StartScrapeChain.apply_async(["https://www.zomato.com/ncr/restaurants", 30, 27, 
 StartScrapeChain.apply_async(["https://www.zomato.com/ncr/restaurants", 30, 28, False])
 StartScrapeChain.apply_async(["https://www.zomato.com/ncr/restaurants", 30, 29, False])
 StartScrapeChain.apply_async(["https://www.zomato.com/ncr/restaurants", 30, 30, False])
-"""
 for e in range(32, 100):
         StartScrapeChain.apply_async(["https://www.zomato.com/ncr/restaurants", 30, e, False])
+StartScrapeChain.apply_async(["https://www.zomato.com/ncr/restaurants", 30, 101, False])
+StartScrapeChain.apply_async(["https://www.zomato.com/ncr/restaurants", 30, 102, False])
+StartScrapeChain.apply_async(["https://www.zomato.com/ncr/restaurants", 30, 103, False])
+StartScrapeChain.apply_async(["https://www.zomato.com/ncr/restaurants", 30, 104, False])
+StartScrapeChain.apply_async(["https://www.zomato.com/ncr/restaurants", 30, 105, False])
+"""
+for e in range(105, 109):
+        StartScrapeChain.apply_async(["https://www.zomato.com/ncr/restaurants", 30, e, False])
+
+
 
 #ScrapeEachEatery.apply_async([{"eatery_url": "https://www.zomato.com/ncr/dilli-19-kalkaji-new-delhi"}])
