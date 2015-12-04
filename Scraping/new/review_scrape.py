@@ -7,7 +7,9 @@ import traceback
 from Testing_colored_print import bcolors
 import hashlib
 from error_decorators import process_result, print_messege
-
+import os
+import sys
+FILE= os.path.basename(__file__)
 
 class ZomatoReviews(object):
 
@@ -59,11 +61,14 @@ class ZomatoReviews(object):
 				return func(self, review)
 			
 			except ValueError as e:
-				print_messege("error", "error occurred", func.__name__, e, self.eatery_id, self.eatery_url, None)
+				exc_type, exc_value, exc_traceback = sys.exc_info()
+                                error = repr(traceback.format_exception(exc_type, exc_value, exc_traceback))   
+                                print_messege("error", "error occurred", func.__name__, error, self.eatery_id, self.eatery_url, None, module_name=FILE)
                                 return None
-
 			except Exception as e:
-				print_messege("error", "error occurred", func.__name__, e, self.eatery_id, self.eatery_url, None)
+				exc_type, exc_value, exc_traceback = sys.exc_info()
+                                error = repr(traceback.format_exception(exc_type, exc_value, exc_traceback))   
+				print_messege("error", "error occurred", func.__name__, error, self.eatery_id, self.eatery_url, None, module_name=FILE)
                                 return None
 		return deco
 

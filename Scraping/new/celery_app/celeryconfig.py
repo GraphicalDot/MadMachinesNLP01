@@ -66,3 +66,5 @@ CELERY_DISABLE_RATE_LIMITS = True
 CELERY_RESULT_PERSISTENT = True #Keeps the result even after broker restart
 #CELERYD_POOL = 'gevent'
 
+
+

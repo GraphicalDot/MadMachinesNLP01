@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import logging
-
+"""
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
@@ -17,7 +17,6 @@ d = {'clientip' : '192.168.0.1', 'user' : 'fbloggs', "review_id": 3232}
 logger.warning("Protocol problem: %s", "connection reset", extra=d)
 
 
-"""
 # create a logging format
 
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s - %(review_id)s')
@@ -28,7 +27,6 @@ handler.setFormatter(formatter)
 logger.addHandler(handler)
 logger.info('Hello baby', review_id=123)
 logger.error('Hello baby', 997)
-"""
 
 try:
         open('/path/to/does/not/exist', 'rb')
@@ -37,17 +35,17 @@ except (SystemExit, KeyboardInterrupt):
 except Exception, e:
         logger.error('Failed to open file', exc_info=True, extra=d)
 
-
-
 """
+
 
 import logging
 from random import choice
 class ContextFilter(logging.Filter):
-        This is a filter which injects contextual information into the log.
+        """
+	This is a filter which injects contextual information into the log.
         Rather than use actual contextual information, we just use random
         data in this demo.
-
+	"""
         USERS = ['jim', 'fred', 'sheila']
         IPS = ['123.231.231.123', '127.0.0.1', '192.168.0.1']
 
@@ -79,4 +77,3 @@ if __name__ == '__main__':
 
 
 
-"""

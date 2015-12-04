@@ -41,6 +41,8 @@ class GetIndexes(tornado.web.RequestHandler):
         @tornado.gen.coroutine
         @asynchronous
         def get(self):
+                print self.request.headers.get("X-Real-IP")
+
                 result = ES_CLIENT.indices.get_aliases().keys()
                 self.write({"success": True,
                         "error": False,

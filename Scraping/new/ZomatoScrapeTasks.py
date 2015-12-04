@@ -24,18 +24,28 @@ from colored import fg, bg, attr
 from db_insertion import DBInsert
 import pprint
 from celery.exceptions import Ignore
-
-
+import redis
+import os 
+FILE = os.path.basename(__file__)
 connection = pymongo.Connection()
 db = connection.intermediate
 collection = db.intermediate_collection
 import traceback
 from error_decorators import print_messege
+from selenium import webdriver
+from TorCtl import TorCtl
+import re
+
 
 logger = logging.getLogger(__name__)
 
 ##If set to True all the scraping results will be udpated to the database
 UPDATE_DB = True
+import ConfigParser
+
+config = ConfigParser.RawConfigParser()
+config.read("zomato_dom.cfg")
+
 """
 To run tasks for scraping one restaurant 
 runn.apply_async(["https://www.zomato.com/ncr/pita-pit-lounge-greater-kailash-gk-1-delhi", None, None, True])
@@ -72,7 +82,45 @@ runn.apply_async(args=["https://www.zomato.com/ncr/south-delhi-restaurants", 30,
 """
 
 
+r = redis.StrictRedis(host=config.get("redis", "ip"), port=config.getint("redis", "port"), db=config.getint("redis", "error_db"))
 
+
+
+def generate_new_proxy():
+        """
+        if proxy os True in zomato_dom.cfg then it connects to tor and privoxy and find a new proxy
+            and redirects all the selenium requests through this proxy
+        if False, return the true ip of the server
+        """
+        print "Called generate_new_proxy"
+        def renew_connection():
+                conn = TorCtl.connect(controlAddr="localhost", controlPort=9051)
+                conn.send_signal("NEWNYM")
+                conn.close()
+
+        def selenium_request(url, use_proxy):
+                if use_proxy:
+                        service_args =[config.get("proxy", "service_args")]
+                        driver = webdriver.PhantomJS(service_args=service_args)
+                else:
+                        driver = webdriver.PhantomJS()
+                
+                driver.get(url)
+                html = driver.page_source
+                driver.close()
+                ip = re.findall("\d+.\d+.\d+.\d+", html)
+                return ip[0]
+                
+        if config.getboolean("proxy", "use_proxy"):
+                        renew_connection()
+                        __ip = selenium_request("http://icanhazip.com/", use_proxy=True)
+        
+        else:
+                __ip = selenium_request("http://icanhazip.com/", use_proxy=False)
+        
+        print "Ip that will be used to scrape new data %s"%__ip
+        return __ip
+        
 
 
 @app.task()
@@ -123,10 +171,17 @@ class ScrapeEachEatery(celery.Task):
                 scraped, calls EateryData which returns eatery_dict and review_list\n\
                 Also it is also responsible to inserting that data into backend database{end_color}".format(\
                 start_color=bcolors.OKGREEN, function_name=inspect.stack()[0][3], end_color = bcolors.RESET)
-	def run(self, eatery_dict):
+	
+                
+        def run(self, eatery_dict):
 	        self.start = time.time()
-		print "{color} Execution of the function {function_name} starts".format(color=bcolors.OKBLUE, function_name=inspect.stack()[0][3])
-		__instance = EateryData(eatery_dict)
+                logger.info("{fg} {bg}Starting eatery_url --<{url}>-- of task --<{task_name}>-- with time taken\
+                        --<{time}>-- seconds  {reset}".format(fg=fg('white'), bg=bg('green'), \
+                        url=eatery_dict["eatery_url"], task_name= self.__class__.__name__,
+                            time=time.time() -self.start, reset=attr('reset')))
+		
+                __instance = EateryData(eatery_dict)
+
                 try:
                         eatery_dict, reviewslist = __instance.run()
                      
@@ -136,13 +191,24 @@ class ScrapeEachEatery(celery.Task):
                 except StandardError as e:
                         exc_type, exc_value, exc_traceback = sys.exc_info()
                         error = repr(traceback.format_exception(exc_type, exc_value, exc_traceback))
-                        print_messege("error", "error occurred and removed from queue", "ScrapeEachEatery.run", error,  eatery_dict["eatery_id"], eatery_dict["eatery_url"], None)
+                        print_messege("error", "error occurred and removed from queue", "ScrapeEachEatery.run", error,  eatery_dict["eatery_id"], eatery_dict["eatery_url"], None, module_name=FILE)
+                        r.hset(eatery_dict["eatery_url"], "error", e)
                         celery.control.purge()
                 
                 reviews_in_db =DBInsert. db_get_reviews_eatery(eatery_dict["eatery_id"])
                 if reviews_in_db !=  int(eatery_dict['eatery_total_reviews']):
                         messege = "Umatched reviews: present in DB %s and should be %s"%(reviews_in_db,  int(eatery_dict['eatery_total_reviews']))
-                        print_messege("error", messege, "ScrapeEachEatery.run", None, eatery_dict["eatery_id"], eatery_dict["eatery_url"], None)
+                        print_messege("error", messege, "ScrapeEachEatery.run", None, eatery_dict["eatery_id"], eatery_dict["eatery_url"], None, module_name=FILE)
+                        r.hset(eatery_dict["eatery_url"], "unmatched_reviews", messege)
+                        r.hset(eatery_dict["eatery_url"], "total_reviews",  int(eatery_dict['eatery_total_reviews']))
+                        r.hset(eatery_dict["eatery_url"], "reviews_in_db", reviews_in_db)
+                        if reviews_in_db >  int(eatery_dict['eatery_total_reviews']):
+                                r.hset(eatery_dict["eatery_url"], "error_cause", "zomato incompetency")
+                
+                        if reviews_in_db <   int(eatery_dict['eatery_total_reviews']):
+                                r.hset(eatery_dict["eatery_url"], "error_cause", "our incompetency")
+                        
+
 
                 return
 
@@ -207,15 +273,18 @@ class StartScrapeChain(celery.Task):
 	max_retries=3
 	acks_late=True
 	default_retry_delay = 5
-        
         print "{start_color} {function_name}:: This worker is meant to scrape all the eateries present on the url \n\
                 with their reviews, It forms chain between ScrapeEachEatery and GenerateEateriesList\n \
                 for more information on monitoring of celery workers\n\
                 visit: http://docs.celeryproject.org/en/latest/userguide/monitoring.html\n{end_color}".format(\
                 start_color=bcolors.OKGREEN, function_name=inspect.stack()[0][3], end_color = bcolors.RESET)
         print "http://docs.celeryproject.org/en/latest/userguide/monitoring.html"
+        
         def run(self, url, number_of_restaurants, skip, is_eatery):
 	        self.start = time.time()
+                global ip
+                ip = generate_new_proxy() 
+                print ip
                 #process_list = eateries_list.s(url, number_of_restaurants, skip, is_eatery)| dmap.s(process_eatery.s())
                 process_list = GenerateEateriesList.s(url, number_of_restaurants, skip, is_eatery)| MapListToTask.s(ScrapeEachEatery.s())
 	        process_list()
@@ -224,10 +293,10 @@ class StartScrapeChain(celery.Task):
     
         def after_return(self, status, retval, task_id, args, kwargs, einfo):
                 #exit point of the task whatever is the state
-                logger.info("{fg} {bg}Ending --<{function_name}--> of task --<{task_name}>-- with time taken\
+                logger.info("{fg} {bg}IP:{IP}-- Ending --<{function_name}--> of task --<{task_name}>-- with time taken\
                         --<{time}>-- seconds  {reset}".format(fg=fg('white'), bg=bg('green'), \
-                        function_name=inspect.stack()[0][3], task_name= self.__class__.__name__,
-                            time=time.time() -self.start, reset=attr('reset')))
+                        IP=ip, function_name=inspect.stack()[0][3], task_name= self.__class__.__name__,
+                        time=time.time() -self.start, reset=attr('reset')), extra={"ip": "182.98.89.90"})
                 pass
 
         def on_failure(self, exc, task_id, args, kwargs, einfo):

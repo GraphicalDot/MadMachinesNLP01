@@ -3,11 +3,15 @@
 import random
 import subprocess
 from ZomatoScrapeTasks import GenerateEateriesList, StartScrapeChain, ScrapeEachEatery
-
+from ip_renew import generate_new_proxy
 #GenerateEateriesList.apply_async(["https://www.zomato.com/ncr/restaurants", 30, 0, False])
+
+generate_new_proxy()
 """
 StartScrapeChain.apply_async(["https://www.zomato.com/ncr/restaurants", 30, 0, False])
+"""
 StartScrapeChain.apply_async(["https://www.zomato.com/ncr/restaurants", 30, 1, False])
+"""
 StartScrapeChain.apply_async(["https://www.zomato.com/ncr/restaurants", 30, 2, False])
 StartScrapeChain.apply_async(["https://www.zomato.com/ncr/restaurants", 30, 3, False])
 StartScrapeChain.apply_async(["https://www.zomato.com/ncr/restaurants", 30, 4, False])
@@ -44,10 +48,13 @@ StartScrapeChain.apply_async(["https://www.zomato.com/ncr/restaurants", 30, 102,
 StartScrapeChain.apply_async(["https://www.zomato.com/ncr/restaurants", 30, 103, False])
 StartScrapeChain.apply_async(["https://www.zomato.com/ncr/restaurants", 30, 104, False])
 StartScrapeChain.apply_async(["https://www.zomato.com/ncr/restaurants", 30, 105, False])
-"""
-for e in range(105, 109):
+for e in range(109, 180):
         StartScrapeChain.apply_async(["https://www.zomato.com/ncr/restaurants", 30, e, False])
 
+StartScrapeChain.apply_async(["https://www.zomato.com/ncr/restaurants", 30, 501, False])
+
+StartScrapeChain.apply_async(["https://www.zomato.com/ncr/restaurants", 30, 502, False])
+"""
 
 
 #ScrapeEachEatery.apply_async([{"eatery_url": "https://www.zomato.com/ncr/dilli-19-kalkaji-new-delhi"}])

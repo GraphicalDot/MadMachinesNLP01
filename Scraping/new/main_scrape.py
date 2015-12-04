@@ -27,13 +27,14 @@ from colored import fg, bg, attr
 from error_decorators import print_messege, process_result
 import ConfigParser
 import datetime 
+FILE = os.path.basename(__file__)  
 
 config = ConfigParser.RawConfigParser()
 config.read("global.cfg")
 config.read("zomato_dom.cfg")
 
 driver_exec_path = "/home/kmama02/Downloads/chromedriver"
-DRIVER_NAME = "PhantomJS"
+DRIVER_NAME = "CHROME"
 
 
 
@@ -149,12 +150,24 @@ class EateriesList(object):
     
         def prepare_soup(self, url):
         	# if url.find("=")==-1:
-                if DRIVER_NAME == "PhantomJS":
-                        driver = webdriver.PhantomJS()
-                        driver.get(url)
+                if config.getboolean("proxy", "use_proxy"):
+                        if DRIVER_NAME == "PhantomJS":
+                                service_args =[config.get("proxy", "service_args")]
+                                driver = webdriver.PhantomJS(service_args=service_args)
+                                driver.get(url)
+                        else:
+                                chrome_options = webdriver.ChromeOptions()
+                                chrome_options.add_argument('--proxy-server=%s' % "localhost:8118")
+                                driver = webdriver.Chrome(driver_exec_path, chrome_options=chrome_options)
+                                driver.get(url)
+
                 else:
-                        driver = webdriver.Chrome(driver_exec_path)
-                        driver.get(url)
+                        if DRIVER_NAME == "PhantomJS":
+                                driver = webdriver.PhantomJS()
+                                driver.get(url)
+                        else:
+                                driver = webdriver.Chrome(driver_exec_path)
+                                driver.get(url)
                 
                 
                 html = driver.page_source
@@ -287,8 +300,8 @@ class EateryData(object):
 
 
         def run(self):
-                process_result(self.eatery, "eatery_name")(self.retry_eatery_name)()
-                process_result(self.eatery, "eatery_id")(self.retry_eatery_id)()
+                process_result(self.eatery, "eatery_name", FILE)(self.retry_eatery_name)()
+                process_result(self.eatery, "eatery_id", FILE)(self.retry_eatery_id)()
                
                 assert(self.eatery["eatery_id"] != None)
                 assert(self.eatery["eatery_name"] != None)
@@ -298,33 +311,33 @@ class EateryData(object):
 		
                 messege = "Number of reviews present in the database %s"%self.reviews_inDB
                 print_messege("info", messege, "EateryData.run", None, self.eatery["eatery_id"],\
-                        self.eatery["eatery_url"], None)
+                        self.eatery["eatery_url"], None, FILE)
                
 
-                process_result(self.eatery, "eatery_address")(self.retry_eatery_address)()
+                process_result(self.eatery, "eatery_address", FILE)(self.retry_eatery_address)()
                 
-                process_result(self.eatery, "eatery_cost")(self.retry_eatery_cost)()
-                process_result(self.eatery, "eatery_trending")(self.retry_eatery_trending)()
-                process_result(self.eatery, "eatery_rating")(self.retry_eatery_rating)()
-                process_result(self.eatery, "eatery_cuisine")(self.retry_eatery_cuisine)()
-                process_result(self.eatery, "eatery_highlights")(self.eatery_highlights)()
-                process_result(self.eatery, "eatery_popular_reviews")(self.eatery_popular_reviews)()
+                process_result(self.eatery, "eatery_cost", FILE)(self.retry_eatery_cost)()
+                process_result(self.eatery, "eatery_trending", FILE)(self.retry_eatery_trending)()
+                process_result(self.eatery, "eatery_rating", FILE)(self.retry_eatery_rating)()
+                process_result(self.eatery, "eatery_cuisine", FILE)(self.retry_eatery_cuisine)()
+                process_result(self.eatery, "eatery_highlights", FILE)(self.eatery_highlights)()
+                process_result(self.eatery, "eatery_popular_reviews", FILE)(self.eatery_popular_reviews)()
 
-                process_result(self.eatery, "eatery_longitude_latitude")(self.eatery_longitude_latitude)()
-                process_result(self.eatery, "eatery_total_reviews")(self.eatery_total_reviews)()
-                process_result(self.eatery, "eatery_buffet_price")(self.eatery_buffet_price)()
-                process_result(self.eatery, "eatery_buffet_details")(self.eatery_buffet_details)()
+                process_result(self.eatery, "eatery_longitude_latitude", FILE)(self.eatery_longitude_latitude)()
+                process_result(self.eatery, "eatery_total_reviews", FILE)(self.eatery_total_reviews)()
+                process_result(self.eatery, "eatery_buffet_price", FILE)(self.eatery_buffet_price)()
+                process_result(self.eatery, "eatery_buffet_details", FILE)(self.eatery_buffet_details)()
                 
                 
                 
-                process_result(self.eatery, "eatery_recommended_order")(self.eatery_recommended_order)()
-                process_result(self.eatery, "eatery_known_for")(self.eatery_known_for)()
-                process_result(self.eatery, "eatery_area_or_city")(self.eatery_area_or_city)()
+                process_result(self.eatery, "eatery_recommended_order", FILE)(self.eatery_recommended_order)()
+                process_result(self.eatery, "eatery_known_for", FILE)(self.eatery_known_for)()
+                process_result(self.eatery, "eatery_area_or_city", FILE)(self.eatery_area_or_city)()
 
-                process_result(self.eatery, "eatery_opening_hours")(self.eatery_opening_hours)()
+                process_result(self.eatery, "eatery_opening_hours", FILE)(self.eatery_opening_hours)()
                 
-                process_result(self.eatery, "eatery_photo_link")(self.eatery_photo_link)()
-                process_result(self.eatery, "eatery_update_on")(self.eatery_update_on)()
+                process_result(self.eatery, "eatery_photo_link", FILE)(self.eatery_photo_link)()
+                process_result(self.eatery, "eatery_update_on", FILE)(self.eatery_update_on)()
 
 
 
@@ -337,12 +350,25 @@ class EateryData(object):
                 return (self.eatery, ins.reviews_data)
 
         def make_soup(self):
-                if DRIVER_NAME == "PhantomJS":
-                        driver = webdriver.PhantomJS()
-                        driver.get(self.eatery["eatery_url"])
+                if config.getboolean("proxy", "use_proxy"):
+                        if DRIVER_NAME == "PhantomJS":
+                                service_args =[config.get("proxy", "service_args")]
+                                driver = webdriver.PhantomJS(service_args=service_args)
+                                driver.get(self.eatery["eatery_url"])
+                        else:
+                                chrome_options = webdriver.ChromeOptions()
+                                chrome_options.add_argument('--proxy-server=%s' % "localhost:8118")
+                                driver = webdriver.Chrome(driver_exec_path, chrome_options=chrome_options)
+                                driver.get(self.eatery["eatery_url"])
+
                 else:
-                        driver = webdriver.Chrome(driver_exec_path)
-                        driver.get(self.eatery["eatery_url"])
+                        if DRIVER_NAME == "PhantomJS":
+                                driver = webdriver.PhantomJS()
+                                driver.get(self.eatery["eatery_url"])
+                        else:
+                                driver = webdriver.Chrome(driver_exec_path)
+                                driver.get(self.eatery["eatery_url"])
+                
 
                 if driver.title.startswith("404"):
                         driver.close()
@@ -357,12 +383,24 @@ class EateryData(object):
         
 
         def get_reviews(self):
-                if DRIVER_NAME == "PhantomJS":
-                        driver = webdriver.PhantomJS()
-                        driver.get(self.eatery["eatery_url"])
+                if config.getboolean("proxy", "use_proxy"):
+                        if DRIVER_NAME == "PhantomJS":
+                                service_args =[config.get("proxy", "service_args")]
+                                driver = webdriver.PhantomJS(service_args=service_args)
+                                driver.get(self.eatery["eatery_url"])
+                        else:
+                                chrome_options = webdriver.ChromeOptions()
+                                chrome_options.add_argument('--proxy-server=%s' % "localhost:8118")
+                                driver = webdriver.Chrome(driver_exec_path, chrome_options=chrome_options)
+                                driver.get(self.eatery["eatery_url"])
+
                 else:
-                        driver = webdriver.Chrome(driver_exec_path)
-                        driver.get(self.eatery["eatery_url"])
+                        if DRIVER_NAME == "PhantomJS":
+                                driver = webdriver.PhantomJS()
+                                driver.get(self.eatery["eatery_url"])
+                        else:
+                                driver = webdriver.Chrome(driver_exec_path)
+                                driver.get(self.eatery["eatery_url"])
                 
                 if driver.title.startswith("404"):
                         raise StandardError("This url doesnt exists, returns 404 error")
@@ -398,9 +436,10 @@ class EateryData(object):
                         #for i in range(0, reviews_to_be_scraped/5+3):
                                 
                                 print "Click on loadmore <<{value}>> time".format(start_color=bcolors.OKBLUE, value=i, end_color=bcolors.RESET)
-                                time.sleep(random.choice([5, 6, 7]))
+                                ##time.sleep(random.choice([2, 3]))
                                 driver.find_element_by_class_name("load-more").click()
-                
+                                time.sleep(2)
+
                 except NoSuchElementException as e:
                         print "{color} ERROR: Catching Exception -<{error}>- with messege -<No More Loadmore tag present>-".format(color=bcolors.OKGREEN, error=e)
                         pass
@@ -414,7 +453,7 @@ class EateryData(object):
                 read_more_links = driver.find_elements_by_xpath("//div[@class='rev-text-expand']")
                 for link in read_more_links:
                         print "Click on read_more  <<{value}>> time".format(start_color=bcolors.OKBLUE, value=link, end_color=bcolors.RESET)
-                        time.sleep(random.choice([5, 6, 7, 8]))
+                        time.sleep(random.choice([1, 2]))
                         link.click()
 
                 html = driver.page_source
