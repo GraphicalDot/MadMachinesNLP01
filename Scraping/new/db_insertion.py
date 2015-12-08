@@ -43,7 +43,7 @@ class DBInsert(object):
 		try:
 			ZomatoEateries.update({"eatery_id": eatery.get("eatery_id")}, {"$set": eatery}, upsert=True)
                         messege = "Eatery with eatery_id: %s  and eatery_name: %s has been updated successfully"%(eatery["eatery_id"], eatery["eatery_name"]) 
-                        print_messege("success", messege, inspect.stack()[0][3], None,  eatery["eatery_id"], eatery_dict["eatery_url"], None, FILE)
+                        print_messege("success", messege, inspect.stack()[0][3], None,  eatery["eatery_id"], eatery["eatery_url"], None, FILE)
 
                 except Exception as e:
                         exc_type, exc_value, exc_traceback = sys.exc_info()                                                                                                                                                                    
@@ -55,7 +55,6 @@ class DBInsert(object):
 	
 	@staticmethod
 	def db_insert_reviews(reviews):
-                review_list = []
 		for review in reviews:
 			try:
 				ZomatoReviews.insert(review)
@@ -68,10 +67,8 @@ class DBInsert(object):
                                 messege = "Review  with review_id: %s  failed"%(review["review_id"]) 
                                 print_messege("error", messege, inspect.stack()[0][3], error,  review["eatery_id"], None, review["review_id"], FILE)
                                 pass
-		        review_list.append(review["review_id"])
 
                 eatery_id = review.get("eatery_id") 
-                ZomatoEateries.update({"eatery_id": eatery_id}, {"$set": {"review_list": review_list}}, upsert=True)
                 return 
 
 

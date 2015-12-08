@@ -45,6 +45,9 @@ import ConfigParser
 
 config = ConfigParser.RawConfigParser()
 config.read("zomato_dom.cfg")
+driver_exec_path = "/home/kmama01/Downloads/chromedriver"
+DRIVER_NAME = "CHROME"
+
 
 """
 To run tasks for scraping one restaurant 
@@ -100,10 +103,12 @@ def generate_new_proxy():
 
         def selenium_request(url, use_proxy):
                 if use_proxy:
-                        service_args =[config.get("proxy", "service_args")]
-                        driver = webdriver.PhantomJS(service_args=service_args)
-                else:
-                        driver = webdriver.PhantomJS()
+			chrome_options = webdriver.ChromeOptions()
+			chrome_options.add_argument('--proxy-server=%s' % "localhost:8118")
+			driver = webdriver.Chrome(driver_exec_path, chrome_options=chrome_options)
+
+		else:
+			driver = webdriver.Chrome(driver_exec_path)
                 
                 driver.get(url)
                 html = driver.page_source
@@ -163,9 +168,9 @@ class GenerateEateriesList(celery.Task):
 @app.task()
 class ScrapeEachEatery(celery.Task):
 	ignore_result=True, 
-	max_retries=3, 
+	max_retries=5, 
 	acks_late=True
-	default_retry_delay = 5
+	default_retry_delay = 500
         print "{start_color} {function_name}:: This worker is when given a eatery_dict scrapes more information\n\
                 about that eatery and also scrapes review that has been written after the last time eatery was \n\
                 scraped, calls EateryData which returns eatery_dict and review_list\n\
@@ -175,6 +180,7 @@ class ScrapeEachEatery(celery.Task):
                 
         def run(self, eatery_dict):
 	        self.start = time.time()
+                ip = generate_new_proxy() 
                 logger.info("{fg} {bg}Starting eatery_url --<{url}>-- of task --<{task_name}>-- with time taken\
                         --<{time}>-- seconds  {reset}".format(fg=fg('white'), bg=bg('green'), \
                         url=eatery_dict["eatery_url"], task_name= self.__class__.__name__,
@@ -199,17 +205,13 @@ class ScrapeEachEatery(celery.Task):
                 if reviews_in_db !=  int(eatery_dict['eatery_total_reviews']):
                         messege = "Umatched reviews: present in DB %s and should be %s"%(reviews_in_db,  int(eatery_dict['eatery_total_reviews']))
                         print_messege("error", messege, "ScrapeEachEatery.run", None, eatery_dict["eatery_id"], eatery_dict["eatery_url"], None, module_name=FILE)
-                        r.hset(eatery_dict["eatery_url"], "unmatched_reviews", messege)
-                        r.hset(eatery_dict["eatery_url"], "total_reviews",  int(eatery_dict['eatery_total_reviews']))
-                        r.hset(eatery_dict["eatery_url"], "reviews_in_db", reviews_in_db)
-                        if reviews_in_db >  int(eatery_dict['eatery_total_reviews']):
+                        if not reviews_in_db -10 >= int(eatery_dict['eatery_total_reviews']) >= reviews_in_db + 10:
+                        	r.hset(eatery_dict["eatery_url"], "unmatched_reviews", messege)
+                        	r.hset(eatery_dict["eatery_url"], "total_reviews",  int(eatery_dict['eatery_total_reviews']))
+                        	r.hset(eatery_dict["eatery_url"], "reviews_in_db", reviews_in_db)
                                 r.hset(eatery_dict["eatery_url"], "error_cause", "zomato incompetency")
-                
-                        if reviews_in_db <   int(eatery_dict['eatery_total_reviews']):
-                                r.hset(eatery_dict["eatery_url"], "error_cause", "our incompetency")
-                        
-
-
+                                r.hset(eatery_dict["eatery_url"], "frequency", reviews_in_db -  int(eatery_dict['eatery_total_reviews']))
+               			 
                 return
 
         def after_return(self, status, retval, task_id, args, kwargs, einfo):
@@ -220,18 +222,14 @@ class ScrapeEachEatery(celery.Task):
                             time=time.time() -self.start, reset=attr('reset')))
                 pass
 
-        """
+	"""
         def on_failure(self, exc, task_id, args, kwargs, einfo):
                 logger.info("{color} Ending --<{function_name}--> of task --<{task_name}>-- failed fucking\
                         miserably {reset}".format(color=bcolors.OKBLUE,\
                         function_name=inspect.stack()[0][3], task_name= self.__class__.__name__, reset=bcolors.RESET))
                 logger.info("{0}{1}".format(einfo, bcolors.RESET))
-                print task_id
-                app.backend.mark_as_done(task_id)
-                raise Ignore()
                 self.retry(exc=exc)
-        """
-
+	"""
 
 
 

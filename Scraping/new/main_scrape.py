@@ -27,13 +27,14 @@ from colored import fg, bg, attr
 from error_decorators import print_messege, process_result
 import ConfigParser
 import datetime 
+from retrying import retry
 FILE = os.path.basename(__file__)  
 
 config = ConfigParser.RawConfigParser()
 config.read("global.cfg")
 config.read("zomato_dom.cfg")
 
-driver_exec_path = "/home/kmama02/Downloads/chromedriver"
+driver_exec_path = "/home/kmama01/Downloads/chromedriver"
 DRIVER_NAME = "CHROME"
 
 
@@ -179,7 +180,7 @@ class EateriesList(object):
         	# with open("Testingfile.txt","r") as content_file:
         	# 	content = content_file.read()
         	soup = BeautifulSoup.BeautifulSoup(content)
-        	driver.close()
+        	driver.quit()
                 return soup
 
 	def prepare_and_return_eateries_list(self, page_link):
@@ -376,7 +377,7 @@ class EateryData(object):
                 driver.find_elements_by_xpath('//*[@id="res-timings-toggle"]')[0].click()
                 time.sleep(3)
                 html = driver.page_source
-                driver.close()
+                driver.quit()
                 
                 return BeautifulSoup.BeautifulSoup(html)
 
@@ -423,42 +424,55 @@ class EateryData(object):
                         reviews_to_be_scraped = int(self.eatery["eatery_total_reviews"]) - int(self.reviews_inDB)
                         print "{start_color} No. of reviews to be scraped {number}{end_color}".format(\
                                 start_color=bcolors.OKGREEN, number=reviews_to_be_scraped, end_color=bcolors.RESET)
+                        
+			print "{start_color} No. of reviews present in the DB  {number}{end_color}".format(\
+                                start_color=bcolors.OKGREEN, number=int(self.reviews_inDB), end_color=bcolors.RESET)
 
+			
                 except TypeError as e:
                         print_messege("error", "total reviews key error", "EateryData.get_reviews", e, self.eatery["eatery_id"],\
                         self.eatery["eatery_url"], None)
                         return 
 
 
-                try:
+
+		@retry(wait_fixed=10000, stop_max_attempt_number=3)
+		def run_load_more():
+                	try:
                         
-                        for i in range(0, reviews_to_be_scraped/5+1):
-                        #for i in range(0, reviews_to_be_scraped/5+3):
-                                
-                                print "Click on loadmore <<{value}>> time".format(start_color=bcolors.OKBLUE, value=i, end_color=bcolors.RESET)
-                                ##time.sleep(random.choice([2, 3]))
-                                driver.find_element_by_class_name("load-more").click()
-                                time.sleep(2)
+                                	print "Click on loadmore <<{value}>> time".format(start_color=bcolors.OKBLUE, value=i, end_color=bcolors.RESET)
+                                	##time.sleep(random.choice([2, 3]))
+                                	driver.find_element_by_class_name("load-more").click()
+                                	time.sleep(2)
 
-                except NoSuchElementException as e:
-                        print "{color} ERROR: Catching Exception -<{error}>- with messege -<No More Loadmore tag present>-".format(color=bcolors.OKGREEN, error=e)
-                        pass
+                	except NoSuchElementException as e:
+                        	print "{color} ERROR: Catching Exception -<{error}>- with messege -<No More Loadmore tag present>-".format(color=bcolors.OKGREEN, error=e)
+                        	pass
 
-                except Exception as e:
-                        print_messege("error", "Error in loadmore", "EateryData.get_reviews", e, self.eatery["eatery_id"],\
-                        self.eatery["eatery_url"], None)
-                        raise StandardError("Coould not make the request")
+                	except Exception as e:
+                        	print_messege("error", "Error in loadmore", "EateryData.get_reviews", e, self.eatery["eatery_id"],\
+                        	self.eatery["eatery_url"], None)
+                        	driver.quit()
+				raise StandardError("Coould not make the request")
+
+		for i in range(0, reviews_to_be_scraped/5+3):
+				run_load_more()
+
 
 
                 read_more_links = driver.find_elements_by_xpath("//div[@class='rev-text-expand']")
-                for link in read_more_links:
-                        print "Click on read_more  <<{value}>> time".format(start_color=bcolors.OKBLUE, value=link, end_color=bcolors.RESET)
+                read_more_count = range(0, len(read_more_links))[::-1]
+
+
+		time.sleep(10)
+		for link, __count in zip(read_more_links, read_more_count):
+                        print "Click on read_more  <<{value}>>  <<{count}>>time".format(start_color=bcolors.OKBLUE, value=link, count=__count, end_color=bcolors.RESET)
                         time.sleep(random.choice([1, 2]))
                         link.click()
 
                 html = driver.page_source
                 content = html.encode('ascii', 'ignore').decode('ascii')
-                driver.close()
+                driver.quit()
                 return BeautifulSoup.BeautifulSoup(content)
 
 

@@ -3,17 +3,14 @@
 import random
 import subprocess
 from ZomatoScrapeTasks import GenerateEateriesList, StartScrapeChain, ScrapeEachEatery
-from ip_renew import generate_new_proxy
 #GenerateEateriesList.apply_async(["https://www.zomato.com/ncr/restaurants", 30, 0, False])
 
-generate_new_proxy()
 """
 StartScrapeChain.apply_async(["https://www.zomato.com/ncr/restaurants", 30, 0, False])
-"""
 StartScrapeChain.apply_async(["https://www.zomato.com/ncr/restaurants", 30, 1, False])
-"""
 StartScrapeChain.apply_async(["https://www.zomato.com/ncr/restaurants", 30, 2, False])
 StartScrapeChain.apply_async(["https://www.zomato.com/ncr/restaurants", 30, 3, False])
+
 StartScrapeChain.apply_async(["https://www.zomato.com/ncr/restaurants", 30, 4, False])
 StartScrapeChain.apply_async(["https://www.zomato.com/ncr/restaurants", 30, 5, False])
 StartScrapeChain.apply_async(["https://www.zomato.com/ncr/restaurants", 30, 6, False])
@@ -21,6 +18,7 @@ StartScrapeChain.apply_async(["https://www.zomato.com/ncr/restaurants", 30, 7, F
 StartScrapeChain.apply_async(["https://www.zomato.com/ncr/restaurants", 30, 8, False])
 StartScrapeChain.apply_async(["https://www.zomato.com/ncr/restaurants", 30, 9, False])
 StartScrapeChain.apply_async(["https://www.zomato.com/ncr/restaurants", 30, 10, False])
+
 StartScrapeChain.apply_async(["https://www.zomato.com/ncr/restaurants", 30, 11, False])
 StartScrapeChain.apply_async(["https://www.zomato.com/ncr/restaurants", 30, 12, False])
 StartScrapeChain.apply_async(["https://www.zomato.com/ncr/restaurants", 30, 13, False])
@@ -31,6 +29,8 @@ StartScrapeChain.apply_async(["https://www.zomato.com/ncr/restaurants", 30, 17, 
 StartScrapeChain.apply_async(["https://www.zomato.com/ncr/restaurants", 30, 18, False])
 StartScrapeChain.apply_async(["https://www.zomato.com/ncr/restaurants", 30, 19, False])
 StartScrapeChain.apply_async(["https://www.zomato.com/ncr/restaurants", 30, 20, False])
+"""
+
 StartScrapeChain.apply_async(["https://www.zomato.com/ncr/restaurants", 30, 21, False])
 StartScrapeChain.apply_async(["https://www.zomato.com/ncr/restaurants", 30, 22, False])
 StartScrapeChain.apply_async(["https://www.zomato.com/ncr/restaurants", 30, 23, False])
@@ -41,6 +41,8 @@ StartScrapeChain.apply_async(["https://www.zomato.com/ncr/restaurants", 30, 27, 
 StartScrapeChain.apply_async(["https://www.zomato.com/ncr/restaurants", 30, 28, False])
 StartScrapeChain.apply_async(["https://www.zomato.com/ncr/restaurants", 30, 29, False])
 StartScrapeChain.apply_async(["https://www.zomato.com/ncr/restaurants", 30, 30, False])
+"""
+
 for e in range(32, 100):
         StartScrapeChain.apply_async(["https://www.zomato.com/ncr/restaurants", 30, e, False])
 StartScrapeChain.apply_async(["https://www.zomato.com/ncr/restaurants", 30, 101, False])
