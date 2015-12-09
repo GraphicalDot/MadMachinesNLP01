@@ -29,7 +29,6 @@ StartScrapeChain.apply_async(["https://www.zomato.com/ncr/restaurants", 30, 17, 
 StartScrapeChain.apply_async(["https://www.zomato.com/ncr/restaurants", 30, 18, False])
 StartScrapeChain.apply_async(["https://www.zomato.com/ncr/restaurants", 30, 19, False])
 StartScrapeChain.apply_async(["https://www.zomato.com/ncr/restaurants", 30, 20, False])
-"""
 
 StartScrapeChain.apply_async(["https://www.zomato.com/ncr/restaurants", 30, 21, False])
 StartScrapeChain.apply_async(["https://www.zomato.com/ncr/restaurants", 30, 22, False])
@@ -42,21 +41,28 @@ StartScrapeChain.apply_async(["https://www.zomato.com/ncr/restaurants", 30, 28, 
 StartScrapeChain.apply_async(["https://www.zomato.com/ncr/restaurants", 30, 29, False])
 StartScrapeChain.apply_async(["https://www.zomato.com/ncr/restaurants", 30, 30, False])
 """
+StartScrapeChain.apply_async(["https://www.zomato.com/ncr/restaurants", 30, 31, False])
 
 for e in range(32, 100):
         StartScrapeChain.apply_async(["https://www.zomato.com/ncr/restaurants", 30, e, False])
+
+"""
 StartScrapeChain.apply_async(["https://www.zomato.com/ncr/restaurants", 30, 101, False])
 StartScrapeChain.apply_async(["https://www.zomato.com/ncr/restaurants", 30, 102, False])
 StartScrapeChain.apply_async(["https://www.zomato.com/ncr/restaurants", 30, 103, False])
 StartScrapeChain.apply_async(["https://www.zomato.com/ncr/restaurants", 30, 104, False])
 StartScrapeChain.apply_async(["https://www.zomato.com/ncr/restaurants", 30, 105, False])
+
 for e in range(109, 180):
         StartScrapeChain.apply_async(["https://www.zomato.com/ncr/restaurants", 30, e, False])
 
 StartScrapeChain.apply_async(["https://www.zomato.com/ncr/restaurants", 30, 501, False])
 
 StartScrapeChain.apply_async(["https://www.zomato.com/ncr/restaurants", 30, 502, False])
+StartScrapeChain.apply_async(["https://www.zomato.com/ncr/restaurants", 30, 31, False])
+#ScrapeEachEatery.apply_async([{"eatery_url": "https://www.zomato.com/ncr/dilli-19-kalkaji-new-delhi"}])
 """
 
 
-#ScrapeEachEatery.apply_async([{"eatery_url": "https://www.zomato.com/ncr/dilli-19-kalkaji-new-delhi"}])
+
+

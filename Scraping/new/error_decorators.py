@@ -49,7 +49,7 @@ def print_messege(status, messege, function_name, error=None, eatery_id=None, ea
                 "module_name": module_name, 
                 }
 
-        ES_CLIENT.index(index="zomatoscraping", doc_type="celerylogs", body=result) 
+        #ES_CLIENT.index(index="zomatoscraping", doc_type="celerylogs", body=result) 
         return 
 
 

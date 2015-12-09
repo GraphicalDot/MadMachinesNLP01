@@ -27,7 +27,9 @@ from colored import fg, bg, attr
 from error_decorators import print_messege, process_result
 import ConfigParser
 import datetime 
+from selenium.common.exceptions import WebDriverException
 from retrying import retry
+import urllib2
 FILE = os.path.basename(__file__)  
 
 config = ConfigParser.RawConfigParser()
@@ -421,7 +423,7 @@ class EateryData(object):
 
 
                 try:
-                        reviews_to_be_scraped = int(self.eatery["eatery_total_reviews"]) - int(self.reviews_inDB)
+			reviews_to_be_scraped = int(self.eatery["eatery_total_reviews"]) - int(self.reviews_inDB)
                         print "{start_color} No. of reviews to be scraped {number}{end_color}".format(\
                                 start_color=bcolors.OKGREEN, number=reviews_to_be_scraped, end_color=bcolors.RESET)
                         
@@ -435,8 +437,16 @@ class EateryData(object):
                         return 
 
 
+		
 
-		@retry(wait_fixed=10000, stop_max_attempt_number=3)
+		def retry_if_standard_error(exception):
+			"""Return True if we should retry (in this case when it's an StandardError), False otherwise"""
+			return isinstance(exception, StandardError)
+
+
+
+
+		@retry(retry_on_result=retry_if_standard_error, wait_fixed=10000, stop_max_attempt_number=5)
 		def run_load_more():
                 	try:
                         
@@ -446,18 +456,23 @@ class EateryData(object):
                                 	time.sleep(2)
 
                 	except NoSuchElementException as e:
-                        	print "{color} ERROR: Catching Exception -<{error}>- with messege -<No More Loadmore tag present>-".format(color=bcolors.OKGREEN, error=e)
-                        	pass
+                        	print "{color} ERROR: Catching Exception -<{error}>- with messege -<No More Loadmore tag present>- {reset}".format(color=bcolors.OKGREEN, error=e, reset=bcolors.RESET)
+				pass
 
-                	except Exception as e:
-                        	print_messege("error", "Error in loadmore", "EateryData.get_reviews", e, self.eatery["eatery_id"],\
-                        	self.eatery["eatery_url"], None)
+                	except urllib2.URLError:
                         	driver.quit()
-				raise StandardError("Coould not make the request")
+				raise StandardError("Could not make the request")
+                	
+			except WebDriverException:
+                        	driver.quit()
+				raise StandardError("Could not make the request")
+			
+				
+
 
 		for i in range(0, reviews_to_be_scraped/5+3):
 				run_load_more()
-
+				
 
 
                 read_more_links = driver.find_elements_by_xpath("//div[@class='rev-text-expand']")

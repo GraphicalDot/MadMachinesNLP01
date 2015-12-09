@@ -179,6 +179,7 @@ class ScrapeEachEatery(celery.Task):
 	
                 
         def run(self, eatery_dict):
+		self.eatery_dict = eatery_dict
 	        self.start = time.time()
                 ip = generate_new_proxy() 
                 logger.info("{fg} {bg}Starting eatery_url --<{url}>-- of task --<{task_name}>-- with time taken\
@@ -188,18 +189,11 @@ class ScrapeEachEatery(celery.Task):
 		
                 __instance = EateryData(eatery_dict)
 
-                try:
-                        eatery_dict, reviewslist = __instance.run()
+		eatery_dict, reviewslist = __instance.run()
                      
-                        DBInsert.db_insert_eateries(eatery_dict)
-                        DBInsert.db_insert_reviews(reviewslist)
-                        DBInsert.db_insert_users(reviewslist)
-                except StandardError as e:
-                        exc_type, exc_value, exc_traceback = sys.exc_info()
-                        error = repr(traceback.format_exception(exc_type, exc_value, exc_traceback))
-                        print_messege("error", "error occurred and removed from queue", "ScrapeEachEatery.run", error,  eatery_dict["eatery_id"], eatery_dict["eatery_url"], None, module_name=FILE)
-                        r.hset(eatery_dict["eatery_url"], "error", e)
-                        celery.control.purge()
+		DBInsert.db_insert_eateries(eatery_dict)
+		DBInsert.db_insert_reviews(reviewslist)
+		DBInsert.db_insert_users(reviewslist)
                 
                 reviews_in_db =DBInsert. db_get_reviews_eatery(eatery_dict["eatery_id"])
                 if reviews_in_db !=  int(eatery_dict['eatery_total_reviews']):
@@ -222,15 +216,14 @@ class ScrapeEachEatery(celery.Task):
                             time=time.time() -self.start, reset=attr('reset')))
                 pass
 
-	"""
         def on_failure(self, exc, task_id, args, kwargs, einfo):
                 logger.info("{color} Ending --<{function_name}--> of task --<{task_name}>-- failed fucking\
                         miserably {reset}".format(color=bcolors.OKBLUE,\
                         function_name=inspect.stack()[0][3], task_name= self.__class__.__name__, reset=bcolors.RESET))
                 logger.info("{0}{1}".format(einfo, bcolors.RESET))
-                self.retry(exc=exc)
-	"""
-
+		r.hset(self.eatery_dict["eatery_url"], "error", "Failed with on failure")
+		r.hset(self.eatery_dict["eatery_url"], "frequency", 0)
+		return 
 
 
 
