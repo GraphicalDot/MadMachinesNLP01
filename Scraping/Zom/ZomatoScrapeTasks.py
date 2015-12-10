@@ -45,7 +45,7 @@ import ConfigParser
 
 config = ConfigParser.RawConfigParser()
 config.read("zomato_dom.cfg")
-driver_exec_path = "/home/kmama01/Downloads/chromedriver"
+driver_exec_path = "/home/kmama02/Downloads/chromedriver"
 DRIVER_NAME = "CHROME"
 
 
@@ -178,10 +178,16 @@ class ScrapeEachEatery(celery.Task):
                 start_color=bcolors.OKGREEN, function_name=inspect.stack()[0][3], end_color = bcolors.RESET)
 	
                 
-        def run(self, eatery_dict):
+        def run(self, eatery_dict, flush_eatery=False):
 		self.eatery_dict = eatery_dict
 	        self.start = time.time()
                 ip = generate_new_proxy() 
+
+            
+                if flush_eatery:
+                        DBInsert.flush_eatery(self.eatery_dict["eatery_url"])
+
+
                 logger.info("{fg} {bg}Starting eatery_url --<{url}>-- of task --<{task_name}>-- with time taken\
                         --<{time}>-- seconds  {reset}".format(fg=fg('white'), bg=bg('green'), \
                         url=eatery_dict["eatery_url"], task_name= self.__class__.__name__,
@@ -223,7 +229,7 @@ class ScrapeEachEatery(celery.Task):
                 logger.info("{0}{1}".format(einfo, bcolors.RESET))
 		r.hset(self.eatery_dict["eatery_url"], "error", "Failed with on failure")
 		r.hset(self.eatery_dict["eatery_url"], "frequency", 0)
-		return 
+                return 
 
 
 

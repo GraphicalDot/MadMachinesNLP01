@@ -164,7 +164,7 @@ function StartScrapeChain-C(){
 		
         cd /home/kmama02/Programs/Python/MadMachinesNLP01/;
         source bin/activate; cd MadMachinesNLP01;
-        cd Scraping; cd new;
+        cd Scraping; cd Zom;
 	clear;
 	celery -A ZomatoScrapeTasks worker -n StartScrapeChain-W -Q StartScrapeChainQueue  --concurrency=1 -P gevent --loglevel=info --autoreload
 
@@ -174,7 +174,7 @@ function MapListToTask-C(){
 		
         cd /home/kmama02/Programs/Python/MadMachinesNLP01/;
         source bin/activate; cd MadMachinesNLP01;
-        cd Scraping; cd new;
+        cd Scraping; cd Zom;
 	clear;
 	celery -A ZomatoScrapeTasks worker -n MapListToTask-W -Q MapListToTaskQueue  --concurrency=1 -P gevent --loglevel=info --autoreload
 
@@ -184,7 +184,7 @@ function GenerateEateriesList-C(){
 		
         cd /home/kmama02/Programs/Python/MadMachinesNLP01/;
         source bin/activate; cd MadMachinesNLP01;
-        cd Scraping; cd new;
+        cd Scraping; cd Zom;
 	clear;
 	celery -A ZomatoScrapeTasks worker -n GenerateEateriesList-W -Q GenerateEateriesListQueue  --concurrency=1 -P gevent --loglevel=info --autoreload
 
@@ -194,7 +194,7 @@ function ScrapeEachEatery-C(){
 		
         cd /home/kmama02/Programs/Python/MadMachinesNLP01/;
         source bin/activate; cd MadMachinesNLP01;
-        cd Scraping; cd new;
+        cd Scraping; cd Zom;
 	clear;
         worker_name="ScrapeEachEatery_W_"
         worker_name+=$1

@@ -7,29 +7,29 @@ from celery.schedules import crontab
 BROKER_URL = 'redis://localhost:6379/0'
 
 CELERY_QUEUES = (
-		Queue('junk', Exchange('default', delivery_mode= 2),  routing_key='junk.import'),
-		Queue('scrape_url', Exchange('default', delivery_mode= 2),  routing_key='scrape_url.import'),
-		Queue('process_eatery_q', Exchange('default', delivery_mode=2),  routing_key='process_eatery_q.import'),
-		Queue('intermediate', Exchange('default', delivery_mode=2),  routing_key='intermediate.import'),
+		Queue('StartScrapeChainQueue', Exchange('default', delivery_mode= 2),  routing_key='StartScrapeChainQueue.import'),
+		Queue('GenerateEateriesListQueue', Exchange('default', delivery_mode= 2),  routing_key='GenerateEateriesListQueue.import'),
+		Queue('ScrapeEachEateryQueue', Exchange('default', delivery_mode=2),  routing_key='ScrapeEachEateryQueue.import'),
+		Queue('MapListToTaskQueue', Exchange('default', delivery_mode=2),  routing_key='MapListToTaskQueue.import'),
 		    )
 
 CELERY_ROUTES = {
-		'tasks.runn': {
-				'queue': 'junk',
-				'routing_key': 'junk.import',
+		'ZomatoScrapeTasks.StartScrapeChain': {
+				'queue': 'StartScrapeChainQueue',
+				'routing_key': 'StartScrapeChainQueue.import',
 					},
-		'tasks.eateries_list': {
-				'queue': 'scrape_url',
-				'routing_key': 'scrape_url.import',
+		'ZomatoScrapeTasks.GenerateEateriesList': {
+				'queue': 'GenerateEateriesListQueue',
+				'routing_key': 'GenerateEateriesListQueue.import',
 				},
 
-		'tasks.process_eatery': {
-				'queue': 'process_eatery_q',
-				'routing_key': 'process_eatery_q.import',
+		'ZomatoScrapeTasks.ScrapeEachEatery': {
+				'queue': 'ScrapeEachEateryQueue',
+				'routing_key': 'ScrapeEachEateryQueue.import',
 							        },
-		'tasks.dmap': {
-				'queue': 'intermediate',
-				'routing_key': 'intermediate.import',
+		'ZomatoScrapeTasks.MapListToTask': {
+				'queue': 'MapListToTaskQueue',
+				'routing_key': 'MapListToTaskQueue.import',
 							        },
 			}
 #BROKER_HOST = ''
@@ -54,12 +54,17 @@ CELERY_MONGODB_BACKEND_SETTINGS = {
 			}
 
 
-#CELERY_TASK_SERIALIZER = 'json'
-#CELERY_RESULT_SERIALIZER = 'json'
-#CELERY_ACCEPT_CONTENT=['application/json']
+
+CELERYD_PREFETCH_MULTIPLIER= 1
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_ACCEPT_CONTENT=['application/json']
 CELERY_ENABLE_UTC = True
 CELERYD_CONCURRENCY = 20
 #CELERYD_LOG_FILE="%s/celery.log"%os.path.dirname(os.path.abspath(__file__))
 CELERY_DISABLE_RATE_LIMITS = True
 CELERY_RESULT_PERSISTENT = True #Keeps the result even after broker restart
 #CELERYD_POOL = 'gevent'
+
+
+

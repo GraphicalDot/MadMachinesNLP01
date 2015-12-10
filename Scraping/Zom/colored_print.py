@@ -6,3 +6,4 @@ class bcolors:
 	WARNING = '\033[93m'	
 	FAIL = '\033[91m'
 	ENDC = '\033[0m'
+	RESET = '\033[0m'
