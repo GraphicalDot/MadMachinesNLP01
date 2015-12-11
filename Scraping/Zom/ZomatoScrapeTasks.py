@@ -35,7 +35,7 @@ from error_decorators import print_messege
 from selenium import webdriver
 from TorCtl import TorCtl
 import re
-
+import getpass
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +45,7 @@ import ConfigParser
 
 config = ConfigParser.RawConfigParser()
 config.read("zomato_dom.cfg")
-driver_exec_path = "/home/kmama02/Downloads/chromedriver"
+driver_exec_path = "/home/%s/Downloads/chromedriver"%(getpass.getuser())
 DRIVER_NAME = "CHROME"
 
 
@@ -229,7 +229,9 @@ class ScrapeEachEatery(celery.Task):
                 logger.info("{0}{1}".format(einfo, bcolors.RESET))
 		r.hset(self.eatery_dict["eatery_url"], "error", "Failed with on failure")
 		r.hset(self.eatery_dict["eatery_url"], "frequency", 0)
-                return 
+                
+                ip = generate_new_proxy() 
+		return 
 
 
 
