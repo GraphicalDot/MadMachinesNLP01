@@ -1,0 +1,124 @@
+/* Lander Page */
+
+
+.top-menu {
+	width: 100%;
+	top: 0;
+	left: 0;
+	height: 72px;
+	z-index: 999;
+	-webkit-transition: all 0.2s ease-out;
+	transition: all 0.2s ease-out;
+	background-color: transparent;
+	border-bottom: 1px solid rgba(0, 0, 0, 0);
+	background-clip: padding-box;
+	-webkit-transform: translateZ(0);
+	-ms-transform: translateZ(0);
+	transform: translateZ(0);
+	/*overflow: hidden;*/
+}
+
+.top-menu .menu-wrapper {
+	position: absolute;
+	top: 0;
+	left: 64px;
+	right: 64px;
+	height: 72px;
+	border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+	-webkit-transform-origin: 50% 500%;
+	-ms-transform-origin: 50% 500%;
+	transform-origin: 50% 500%;
+}
+
+.top-menu .doof-logo {
+
+	display: block;
+	position: absolute;
+	left: 0;
+	top: 10px;
+	width: 123px;
+	height: 29px;
+	min-width: 200px;
+
+	font-size: 3em;
+	font-weight: 600;
+	color: white;
+
+	cursor: pointer;
+}
+
+.top-menu .user-presence {
+	position: absolute;
+	right: 0;
+	top: 0;
+	line-height: 50px;
+	text-align: right;
+	padding-top: 13px;
+	font-weight: 500;
+	font-style: normal;
+	font-size: 19px;
+}
+
+.top-menu .user-presence i{
+	color: #448aff;
+
+}
+
+.slider .indicators .indicator-item.active {
+	background-color: #448aff!important;
+}
+
+.top-menu .fb-button {
+	display: inline-block;
+	line-height: 40px;
+	padding: 5px 21px 0;
+
+	height: 50px;
+	background: none!important;
+	color: white;
+}
+
+.top-menu .fb-button:hover, .top-menu .fb-button.active-dropdown {
+	box-shadow: inset 0 0 0 1px #448aff;
+	color: #448aff;
+	background: white!important;
+}
+
+.top-menu span {
+	text-transform: capitalize;
+	/*font-family: 'Yanone Kaffeesatz', sans-serif;*/
+	font-size: 0.9em;
+	letter-spacing: 2px;
+	font-weight: 500;
+	padding: 5px;
+}
+
+.dropdown-content {
+	/*margin-top: 5px;*/
+	/*box-shadow: inset 0 0 0 1px #448aff;*/
+}
+
+.lander-page {
+	width: 100%;
+	height: 100%;
+}
+
+.lander-page .slides img {
+	-webkit-filter: blur(1px);
+	-moz-filter: blur(1px);
+	-o-filter: blur(1px);
+	-ms-filter: blur(1px);
+	filter: blur(1px);
+	background-repeat: no-repeat no-repeat;
+	box-shadow: inset 0 2000px rgba(0, 0, 0, 0.6);
+}
+
+.lander-page h2 {
+	font-size: 95px;
+	line-height: 85px;
+}
+
+.lander-page p {
+	font-size: 25px;
+	line-height: 42px;
+}

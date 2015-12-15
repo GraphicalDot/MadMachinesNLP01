@@ -1,0 +1,19 @@
+.user__img {
+	width: 35px;
+  vertical-align: middle;
+  margin-right: 10px;
+}
+
+.boldHighlighter {
+  font-size: 1.2em;
+  font-weight: 800;
+}
+
+.highlighter {
+  color: #448aff!important;
+  font-weight: 700;
+  font-style: italic;
+  font-size: 1.2em;
+  letter-spacing: 1px;
+  margin-left: 5px;
+}
