@@ -131,65 +131,7 @@ class PerReview:
 
         @print_execution
         def run(self):
-                """
-                It returns the result
-                """
-
-                result = self.__get_review_result()
-                print "this is the result %s"%result
-                if not bool(result):
-                        print "{0}Result for the review_id --<<{1}>>-- has alredy been found{2}".format(bcolors.OKBLUE, \
-                                self.review_id, bcolors.RESET)
-                        return 
-
-
-                if result.get("rerun_food_sub_tag_classification"):
-
-                        print "{0}Doing FOOD sub classification again for review_id --<<{1}>>-- {2}".format(bcolors.OKBLUE, \
-                                self.review_id, bcolors.RESET)
-                        self.food = MongoScripts.get_tag_sentences(self.review_id, "food")
-                        self.__food_sub_tag_classification()
-                        self.__extract_noun_phrases() #makes self.noun_phrases
-                        MongoScripts.update_food_sub_tag_sentences(self.review_id, self.all_food_with_nps)
-               
-
-                if result.get("rerun_cost_sub_tag_classification"):
-                        print "{0}Doing COST sub classification again for review_id --<<{1}>>-- {2}".format(bcolors.OKBLUE, \
-                                self.review_id, bcolors.RESET)
-                        self.cost = MongoScripts.get_tag_sentences(self.review_id, "cost")
-                        
-                        self.__cost_sub_tag_classification()
-                        MongoScripts.update_cost_sub_tag_sentences(self.review_id, self.all_cost)
-
-
-                if result.get("rerun_service_sub_tag_classification"):
-                        print "{0}Doing SERVICE sub classification again for review_id --<<{1}>>-- {2}".format(bcolors.OKBLUE, \
-                                self.review_id, bcolors.RESET)
-                        self.service = MongoScripts.get_tag_sentences(self.review_id, "service")
-                        self.__service_sub_tag_classification()
-                        MongoScripts.update_service_sub_tag_sentences(self.review_id, self.all_service)
-
-                if result.get("rerun_ambience_sub_tag_classification"):
-                        print "{0}Doing AMBIENCE sub classification again for review_id --<<{1}>>-- {2}".format(bcolors.OKBLUE, \
-                                self.review_id, bcolors.RESET)
-                        self.ambience = MongoScripts.get_tag_sentences(self.review_id, "ambience")
-                        self.__ambience_sub_tag_classification()
-                        MongoScripts.update_ambience_sub_tag_sentences(self.review_id, self.all_ambience)
-                        
-
-                if result.get("rerun_noun_phrases"):
-                        print "{0}Doing noun phrases again for review_id --<<{1}>>-- {2}".format(bcolors.OKBLUE, \
-                                self.review_id, bcolors.RESET)
-                        
-                        self.food = MongoScripts.get_tag_sentences(self.review_id, "food")
-                        self.__food_sub_tag_classification()
-                        self.__extract_noun_phrases() #makes self.noun_phrases
-                        MongoScripts.update_noun_phrases(review_id, self.all_food_with_nps)
-        
-
-
-                if result.get("rerun_all_algorithms"):
-                        print "{0} No results found for review id --<<{1}>>--{2}".format(bcolors.FAIL, \
+                print "{0} No results found for review id --<<{1}>>--{2}".format(bcolors.FAIL, \
                                 self.review_id, bcolors.RESET)
                         self.__sent_tokenize_review() #Tokenize reviews, makes self.reviews_ids, self.sentences
                         self.__predict_tags()          #Predict tags, makes self.predict_tags
