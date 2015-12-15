@@ -30,15 +30,17 @@ import datetime
 from selenium.common.exceptions import WebDriverException
 from retrying import retry
 import urllib2
+import getpass
 FILE = os.path.basename(__file__)  
 
 config = ConfigParser.RawConfigParser()
 config.read("global.cfg")
 config.read("zomato_dom.cfg")
 
-driver_exec_path = "/home/kmama02/Downloads/chromedriver"
+driver_exec_path = "/home/%s/Downloads/chromedriver"%(getpass.getuser())
 DRIVER_NAME = "CHROME"
-
+#PROXY_ADDRESS ="localhost:8118"
+PROXY_ADDRESS ="52.76.147.123:8118"
 
 
 class AllEateriesUrl(object):
@@ -160,7 +162,7 @@ class EateriesList(object):
                                 driver.get(url)
                         else:
                                 chrome_options = webdriver.ChromeOptions()
-                                chrome_options.add_argument('--proxy-server=%s' % "localhost:8118")
+                                chrome_options.add_argument('--proxy-server=%s' % PROXY_ADDRESS)
                                 driver = webdriver.Chrome(driver_exec_path, chrome_options=chrome_options)
                                 driver.get(url)
 
@@ -316,7 +318,7 @@ class EateryData(object):
                 except Exception as e:
                         print "Eatery easnt present earlier so setting previous total reviews to 0"
                         print e
-                        self.previous_total_reviews
+                        self.previous_total_reviews = 0
                 
                 messege = "Number of reviews present in the database %s"%self.reviews_inDB
                 print_messege("info", messege, "EateryData.run", None, self.eatery["eatery_id"],\
@@ -366,7 +368,7 @@ class EateryData(object):
                                 driver.get(self.eatery["eatery_url"])
                         else:
                                 chrome_options = webdriver.ChromeOptions()
-                                chrome_options.add_argument('--proxy-server=%s' % "localhost:8118")
+                                chrome_options.add_argument('--proxy-server=%s' %PROXY_ADDRESS)
                                 driver = webdriver.Chrome(driver_exec_path, chrome_options=chrome_options)
                                 driver.get(self.eatery["eatery_url"])
 
@@ -399,7 +401,7 @@ class EateryData(object):
                                 driver.get(self.eatery["eatery_url"])
                         else:
                                 chrome_options = webdriver.ChromeOptions()
-                                chrome_options.add_argument('--proxy-server=%s' % "localhost:8118")
+                                chrome_options.add_argument('--proxy-server=%s' % PROXY_ADDRESS)
                                 driver = webdriver.Chrome(driver_exec_path, chrome_options=chrome_options)
                                 driver.get(self.eatery["eatery_url"])
 
@@ -416,7 +418,8 @@ class EateryData(object):
                 time.sleep(random.choice([5, 6, 7, 8]))
                 try:
                         driver.find_element_by_css_selector("a.everyone.empty").click()
-                        print "{start_color} Found love in clinking all_review button :)  {end_color}".format(\
+                        time.sleep(10)
+			print "{start_color} Found love in clinking all_review button :)  {end_color}".format(\
                                 start_color=bcolors.OKGREEN, end_color=bcolors.RESET)
 
                 except NoSuchElementException:
@@ -429,8 +432,8 @@ class EateryData(object):
 
 
                 try:
-			#reviews_to_be_scraped = int(self.eatery["eatery_total_reviews"]) - int(self.reviews_inDB)
-			reviews_to_be_scraped = int(self.eatery["eatery_total_reviews"]) - int(self.previous_total_reviews)
+			reviews_to_be_scraped = int(self.eatery["eatery_total_reviews"]) - int(self.reviews_inDB)
+			#reviews_to_be_scraped = int(self.eatery["eatery_total_reviews"]) - int(self.previous_total_reviews)
                         print "{start_color} No. of reviews to be scraped {number}{end_color}".format(\
                                 start_color=bcolors.OKGREEN, number=reviews_to_be_scraped, end_color=bcolors.RESET)
                         
@@ -480,7 +483,7 @@ class EateryData(object):
 				
 
 
-		for i in range(0, reviews_to_be_scraped/5+3):
+		for i in range(0, reviews_to_be_scraped/5+2):
 				run_load_more()
 				
 
