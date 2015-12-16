@@ -1,4 +1,4 @@
-i!/usr/bin/env python
+#!/usr/bin/env python
 #-*- coding: utf-8 -*-
 """
 Author: kaali
@@ -8,6 +8,7 @@ Purpose:
     get_word_cloud api
 
 """
+import sys
 import time
 import os
 from sys import path
@@ -24,14 +25,7 @@ from join_two_clusters import ProductionJoinClusters
 
 this_file_path = os.path.dirname(os.path.abspath(__file__))
 parent_dir_path = os.path.dirname(this_file_path)
-path_for_classifiers = "%s/Text_Processing/PrepareClassifiers/InMemoryClassifiers/newclassifiers/newclassifiers"%(this_file_path)
-
 sys.path.append(parent_dir_path)
-os.chdir(parent_dir_path)
-config = ConfigParser.RawConfigParser()
-config.read("variables.cfg")
-os.chdir(this_file_path)
-
 
 
 from sklearn.externals import joblib
@@ -41,20 +35,14 @@ from Text_Processing.Word_Tokenization.word_tokenizer import WordTokenize
 from Text_Processing.PosTaggers.pos_tagging import PosTaggers
 from Text_Processing.MainAlgorithms.paths import path_parent_dir, path_in_memory_classifiers
 from Text_Processing.NER.ner import NERs
-from Text_Processing.colored_print import bcolors
 from Text_Processing.MainAlgorithms.Algorithms_Helpers import get_all_algorithms_result
 from Text_Processing.MainAlgorithms.In_Memory_Main_Classification import timeit, cd
-from encoding_helpers import SolveEncoding
 from elasticsearch_db import ElasticSearchScripts
 from Normalized import NormalizingFactor
-
-
-sentiment_classifier = joblib.load("/"%(this_file_path, config.get("algortihms", "sentiment_classification_library")))
-tag_classifier = joblib.load("/"%(this_file_path, config.get("algortihms", "tag_classification_library")))
-food_sb_classifier = joblib.load("/"%(this_file_path, config.get("algortihms", "food_algorithm_lib")))
-ambience_sb_classifier = joblib.load("/"%(this_file_path, config.get("algortihms", "ambience_algorithm_lib")))
-service_sb_classifier = joblib.load("/"%(this_file_path, config.get("algortihms", "service_algorithm_lib")))
-cost_sb_classifier = joblib.load("/"%(this_file_path, config.get("algortihms", "cost_algorithm_lib")))
+from topia.termextract import extract  
+from simplejson import loads
+from connections import sentiment_classifier, tag_classifier, food_sb_classifier, ambience_sb_classifier, service_sb_classifier, \
+            cost_sb_classifier, SolveEncoding, bcolors, corenlpserver
 
 
 
@@ -62,53 +50,40 @@ cost_sb_classifier = joblib.load("/"%(this_file_path, config.get("algortihms", "
 
 
 class EachEatery:
-        def __init__(self, eatery_id):
-		un_phrases_algorithm_name)
+        def __init__(self, eatery_id, flush_eatery=False):
                 self.eatery_id = eatery_id
-                self.mongo_eatery_instance = MongoScriptsEateries(self.eatery_id)
+                if flush_eatery:
+                        ##when you want to process whole data again, No options other than that
+                        warnings.warn("Fushing whole atery") 
+                        MongoScriptsReviews.flush_eatery(eatery_id)
+                return 
         
         def return_non_processed_reviews(self, start_epoch=None, end_epoch=None):
                 """
-                If there is a change in algortihms or a new eatery to be processed
-                we run processing all the reviews independent of the start_epoch and
-                end_epoch, which means whenever there is change all the revviews will
-                be present in processed_reviews list of eatery unless celery fails to
-                process all, in case of some internal error
-                This method treats an existing eatery with old algorithms set and an all together 
-                New eatery as equal, In both the cases eatery will be update by set_new_algorithms
-                method
+                case1: 
+                    Eatery is going to be processed for the first time
+
+                case 2:
+                    Eatery was processed earlier but now there are new reviews are to be processed
+
+                case 3: 
+                    All the reviews has already been processed, No reviews are left to be processed 
                 """
-                if not self.mongo_eatery_instance.check_algorithms():
-                        self.mongo_eatery_instance.empty_processed_reviews_list()
-                        self.mongo_eatery_instance.set_new_algorithms() ##This will insert the eatery if not present
-                        self.mongo_eatery_instance.empty_noun_phrases()
-                        self.mongo_eatery_instance.empty_old_considered_ids()
-            
-                        return MongoScriptsReviews.return_all_reviews_with_text(self.eatery_id)
+                all_reviews = MongoScriptsReviews.return_all_reviews(self.eatery_id) 
+                try:
+                        ##case1: all_processed_reviews riases StandardError as there is no key in eatery result for processed_reviews
+                        all_processed_reviews = MongoScriptsReviews.get_proccessed_reviews(self.eatery_id)
 
-                else:
-                        all_reviews = MongoScriptsReviews.return_all_reviews(self.eatery_id) 
-                        all_processed_reviews = self.mongo_eatery_instance.get_proccessed_reviews()
-
-                        ##This if True means that the database has some new reviews added to it, 
-                        ##which needs processing, so MongoScriptsReviews.reviews_with_text 
-                        #returns (review_id, review_text) for every review_id
-                        if bool(set.symmetric_difference(set(all_processed_reviews), set(all_reviews))):
-                                warnings.warn("{0} we encountered new reviews in the database {1}".format(\
-                                        bcolors.FAIL, bcolors.RESET))
-                                
-                                try:
-                                        reviews_ids = list(set.symmetric_difference(set(all_reviews), set(all_processed_reviews)))
-                                        return MongoScriptsReviews.reviews_with_text(reviews_ids)
-                                #This means that all_processed_reviews is empty, which means all the reviews
-                                ##needs processing 
-                                except TypeError as e:
-                                        warnings.warn("{0} It seems none of the review has been processed yet {1}".format(\
-                                        bcolors.FAIL, bcolors.RESET))
+                except StandardError as e:
+                        warnings.warn("{0} {1}, Starting processing whole eatery, YAY!!!! {2}".format(\
+                            bcolors.FAIL, e, bcolors.RESET))
+                        return MongoScriptsReviews.reviews_with_text(all_reviews)
+                reviews_ids = list(set.symmetric_difference(set(all_reviews), set(all_processed_reviews)))
+                if reviews_ids:
+                        ##case2: returning reviews which are yet to be processed 
+                        return MongoScriptsReviews.reviews_with_text(reviews_ids)
                 
-                                        return MongoScriptsReviews.reviews_with_text(all_reviews)
-                        
-                        
+                else:
                         warnings.warn("{0} No New reviews to be considered {1}".format(\
                                         bcolors.OKBLUE, bcolors.RESET))
                         return False 
@@ -116,9 +91,16 @@ class EachEatery:
 class PerReview:
         sent_tokenizer = SentenceTokenizationOnRegexOnInterjections()
         def __init__(self, review_id, review_text, review_time, eatery_id):
-                
+                """
+                Lowering the review text
+                """
                 self.review_id, self.review_text, self.review_time, self.eatery_id = review_id, \
-                        review_text, review_time, eatery_id
+                        SolveEncoding.to_unicode_or_bust(review_text.lower().replace("&nbsp;&nbsp;\n", "")), review_time, eatery_id
+
+                self.cuisine_name = list()
+                self.places_names = list()
+                self.np_extractor = extract.TermExtractor() 
+
 
         def print_execution(func):
                 "This decorator dumps out the arguments passed to a function before calling it"
@@ -142,22 +124,23 @@ class PerReview:
         def run(self):
                 print "{0} No results found for review id --<<{1}>>--{2}".format(bcolors.FAIL, \
                                 self.review_id, bcolors.RESET)
-                        self.__sent_tokenize_review() #Tokenize reviews, makes self.reviews_ids, self.sentences
-                        self.__predict_tags()          #Predict tags, makes self.predict_tags
-                        self.__predict_sentiment() #makes self.predicted_sentiment
+                self.__sent_tokenize_review() #Tokenize reviews, makes self.reviews_ids, self.sentences
+                self.__predict_tags()          #Predict tags, makes self.predict_tags
+                self.__predict_sentiment() #makes self.predicted_sentiment
 
-                        self.all_sent_tag_sentiment = zip(self.sentences, self.tags, self.sentiments)
+                self.all_sent_tag_sentiment = zip(self.sentences, self.tags, self.sentiments)
                 
-                        self.__filter_on_category() #generates self.food, self.cost, self.ambience, self.service
+                self.__filter_on_category() #generates self.food, self.cost, self.ambience, self.service
                 
 
-                        self.__food_sub_tag_classification()
-                        self.__service_sub_tag_classification()
-                        self.__cost_sub_tag_classification()
-                        self.__ambience_sub_tag_classification()
-
-                        self.__extract_noun_phrases() #makes self.noun_phrases
-                        self.__update_review_result()
+                self.__food_sub_tag_classification()
+                self.__service_sub_tag_classification()
+                self.__cost_sub_tag_classification()
+                self.__ambience_sub_tag_classification()
+                self.__extract_places()
+                self.__extract_cuisines()
+                self.__extract_noun_phrases() #makes self.noun_phrases
+                self.__update_review_result()
                 
                 MongoScripts.update_processed_reviews_list(self.eatery_id, self.review_id)
                 return 
@@ -203,14 +186,11 @@ class PerReview:
 		"""
 		__filter = lambda tag: [(sent, __tag, sentiment) for (sent, __tag, sentiment) in \
                                                                                 self.all_sent_tag_sentiment if __tag== tag ]
-		categories = list(set(self.tag())
-		self.food, self.cost, self.ambience, self.service, self.null, self.overall, self.place, self.cuisine = \
+		self.food, self.cost, self.ambience, self.service, self.null, self.overall, self.places, self.cuisine = \
                          __filter("food"),  __filter("cost"), __filter("ambience"), __filter("service"),\
 			 __filter("null"),  __filter("overall"), __filter("place"), __filter("cuisine")
 
-
-
-        @print_execution
+                return 
 
         @print_execution
         def __food_sub_tag_classification(self):
@@ -272,9 +252,46 @@ class PerReview:
 		it generates a list of places mentioned in the self.places wth the help
 		of stanford core nlp
 		"""
-		
-		return 
+	        def filter_places(__list):
+                        location_list = list()
+                        i = 0
+                        for __tuple in __list:
+                                if __tuple[1] == "LOCATION":
+                                        location_list.append([__tuple[0], i])
+                                i += 1
 
+
+                        i = 0
+                        try:
+                                new_location_list = list()
+                                [first_element, i] = location_list.pop(0)
+                                new_location_list.append([first_element])
+                                for element in location_list:
+                                        if i == element[1] -1:
+                                                new_location_list[-1].append(element[0])
+                                            
+                                        else:
+                                                new_location_list.append([element[0]])
+                                        i = element[1]
+
+                                return list(set([" ".join(element) for element in new_location_list]))
+                        except Exception as e:
+                                return None
+
+
+                for (sent, sentiment, tag) in self.places:
+                            try:
+                                    result = loads(corenlpserver.parse(sent))
+                                    print result
+                                    __result = [(e[0], e[1].get("NamedEntityTag")) for e in result["sentences"][0]["words"]]
+                                    self.places_names.extend(filter_places(__result))
+                            
+                            except Exception as e:
+                                    print e, "__extract_place", self.review_id
+                                    pass
+                print "result from extract places%s "%self.places_names
+                return 
+                            
 
 
 	@print_execution
@@ -282,11 +299,15 @@ class PerReview:
 		"""
 		This extracts the name of the cuisines fromt he cuisines sentences
 		"""
-                __nouns = NounPhrases([e[0] for e in self.cuisines], default_np_extractor=\
-				config.get("algorithms", noun_phrases_algorithm_name))
-		for (sent, tag, sentiment) in self.cuisines:
-				
 
+		
+                for (sent, tag, sentiment) in self.cuisine:
+                        self.cuisine_name.extend(self.np_extractor(sent))
+		        		
+
+                self.cuisine_name = [np[0] for np in self.cuisine_name if np[0]]
+                print self.cuisine_name
+                return 
 
                        
 
@@ -299,13 +320,15 @@ class PerReview:
                 [('the only good part was the coke , thankfully it was outsourced ', 
                                             u'positive', [u'good part']), ...]
                 """
-                __nouns = NounPhrases([e[0] for e in self.all_food], default_np_extractor=\
-				config.get("algortims", noun_phrases_algorithm_name))
+                __nouns = list()
+                for (sent, tag, sentiment, sub_tag) in self.all_food:
+                            __nouns.append([e[0] for e in self.np_extractor(sent)])
 
                 self.all_food_with_nps = [[sent, tag, sentiment, sub_tag, nps] for ((sent, tag, sentiment, sub_tag,), nps) in 
-                        zip(self.all_food, __nouns.noun_phrases[config.get("algorithms", noun_phrases_algorithm_name)])]
+                        zip(self.all_food, __nouns)]
 
                 map(lambda __list: __list.append(self.review_time), self.all_food_with_nps)
+                print __nouns
                 return 
 
 
@@ -317,7 +340,7 @@ class PerReview:
         
         @print_execution
         def __update_review_result(self):
-                MongoScripts.update_review_result_collection(
+                MongoScriptsReviews.update_review_result_collection(
                         review_id = self.review_id, 
                         eatery_id = self.eatery_id, 
                         food = self.food,
@@ -326,15 +349,21 @@ class PerReview:
                         null = self.null,
                         overall = self.overall,
                         service = self.service, 
+                        place_sentences = self.places, 
+                        cuisine_sentences= self.cuisine,
                         food_result= self.all_food_with_nps, 
                         service_result = self.all_service, 
                         cost_result = self.all_cost, 
-                        ambience_result = self.all_ambience, ) 
+                        ambience_result = self.all_ambience,
+                        places_result= self.places_names, 
+                        cuisine_result = self.cuisine_name) 
                 return 
 
 
 class DoClusters(object):
         """
+        'eatery_url''eatery_coordinates''eatery_area_or_city''eatery_address'
+
         Does heuristic clustering for the all reviews
         """
         def __init__(self, eatery_id, category=None, with_sentences=False):
@@ -772,6 +801,25 @@ class DoClusters(object):
                             __category: {"sentiment": sentiment, "timeline": timeline, "total_sentiments": total_sentiments}})
     
                 return sentences_dict
+
+
+if __name__ == "__main__":
+            ##To check if __extract_places is working or not            
+            ##ins = PerReview('2036121', 'Average quality food, you can give a try to garlic veg chowmien if you are looking for a quick lunch in Sector 44, Gurgaon where not much options are available.','2014-08-08 15:09:17', '302115')
+            ##ins.run()
+            """
+            iinstance = EachEatery("302115", True)
+            result = instance.return_non_processed_reviews()
+            result = [(e[0], e[1], e[2], "302115")for e in result]
+            """
+            instance = EachEatery("844", True)
+            result = instance.return_non_processed_reviews()
+            result = [(e[0], e[1], e[2], "844")for e in result]
+            for element in result:
+                    instance = PerReview(element[0], element[1], element[2], element[3])
+                    instance.run()
+
+
 
 
 

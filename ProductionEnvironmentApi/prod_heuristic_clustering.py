@@ -33,8 +33,6 @@ from Text_Processing.PosTaggers import PosTaggerDirPath, HunPosModelPath, HunPos
 from Text_Processing.colored_print import bcolors
 from GlobalConfigs import DEBUG
 from Text_Processing import SentenceTokenizationOnRegexOnInterjections
-from GlobalConfigs import eateries, eateries_results_collection, reviews, reviews_results_collection, connection
-from GlobalAlgorithmNames import TAG_CLASSIFIER_LIB, SENTI_CLASSIFIER_LIB, FOOD_SB_TAG_CLASSIFIER_LIB 
 
 
 def encoding_helper(__object):

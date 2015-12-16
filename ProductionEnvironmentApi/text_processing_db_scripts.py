@@ -10,26 +10,13 @@ import sys
 import warnings
 import itertools
 
-file_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(file_path)
-from GlobalConfigs import reviews, eateries, reviews_results_collection, \
-        eateries_results_collection, bcolors
+file_path = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(file_path)
+sys.path.append(parent_dir)
 
-#Algortihms of the form .lib
-from GlobalAlgorithmNames import TAG_CLASSIFIER, SENTI_CLASSIFIER, FOOD_SB_TAG_CLASSIFIER, \
-        COST_SB_TAG_CLASSIFIER, SERV_SB_TAG_CLASSIFIER, AMBI_SB_TAG_CLASSIFIER
-
-#Name of the algortihms      
-from GlobalAlgorithmNames import NOUN_PHSE_ALGORITHM_NAME, TAG_CLASSIFY_ALG_NME, SENTI_CLSSFY_ALG_NME,\
-        FOOD_SB_CLSSFY_ALG_NME, SERV_SB_CLSSFY_ALG_NME, AMBI_SB_CLSSFY_ALG_NME, COST_SB_CLSSFY_ALG_NME
-
-##Actual libraries loaded by joblib.load
-from GlobalAlgorithmNames import TAG_CLASSIFIER_LIB, SENTI_CLASSIFIER_LIB, FOOD_SB_TAG_CLASSIFIER_LIB,\
-        COST_SB_TAG_CLASSIFIER_LIB , SERV_SB_TAG_CLASSIFIER_LIB, AMBI_SB_TAG_CLASSIFIER_LIB
-
-
-from GlobalAlgorithmNames import FOOD_SUB_TAGS, COST_SUB_TAGS, SERV_SUB_TAGS, AMBI_SUB_TAGS
-
+os.chdir(parent_dir)
+from connections import reviews, eateries, reviews_results_collection, eateries_results_collection, bcolors
+os.chdir(file_path)
 
 
 class MongoScriptsReviews(object):
@@ -66,6 +53,40 @@ class MongoScriptsReviews(object):
                         if bool(review_text) and review_text != " ":
                                 review_list.append((review_id, review_text, review_time))
                 return review_list
+
+        @staticmethod
+        def update_review_result_collection(**kwargs):
+                review_id = kwargs["review_id"]
+                eatery_id = kwargs["eatery_id"]
+                review = reviews.find_one({"review_id": review_id}, {"_id": False, "review_text": True, \
+                        "converted_epoch": True, "review_time": True})    
+                kwargs.update({"review_text": review.get("review_text"), "review_time": review.get("review_time")})
+
+                print reviews_results_collection.update({"review_id": review_id}, {"$set": kwargs}, upsert=True, multi=False)
+                eateries_results_collection.update({"eatery_id": eatery_id}, {"$push": \
+                                {"processed_reviews": review_id }}, upsert=True)
+
+                return 
+
+        @staticmethod
+        def get_proccessed_reviews(eatery_id):
+                result = eateries_results_collection.find_one({"eatery_id": eatery_id}, {"_id": False, 
+                                    "processed_reviews": True})
+  
+                try:
+                        if result.get("processed_reviews"):
+                                return result.get("processed_reviews")
+                except Exception as e:
+                        print "No processed reviews present"
+                        raise StandardError("No processed reviews are present")
+
+
+        @staticmethod
+        def flush_eatery(eatery_id):
+                print eateries_results_collection.remove({"eatery_id": eatery_id})
+                print reviews_results_collection.remove({"eatery_id": eatery_id})
+                return 
+
 
 
 
@@ -137,13 +158,7 @@ class MongoScriptsEateries(object):
                 return
 
 
-        def get_proccessed_reviews(self):
-                result = eateries_results_collection.find_one({"eatery_id": self.eatery_id}, {"_id": False, 
-                                    "processed_reviews": True})
-    
-                if result.get("processed_reviews"):
-                        return result.get("processed_reviews")
-                return list()
+                
 
         def get_noun_phrases(self, category, number_of_nps):
                 print self.eatery_id
@@ -266,46 +281,6 @@ class MongoScripts:
 
                 return
 
-        @staticmethod
-        def update_review_result_collection(**kwargs):
-                review_id = kwargs["review_id"]
-                eatery_id = kwargs["eatery_id"]
-                food_sentences = kwargs["food"]
-                cost_sentences = kwargs["cost"]
-                service_sentences = kwargs["service"]
-                ambience_sentences = kwargs["ambience"]
-                null_sentences = kwargs["null"]
-                overall_sentences = kwargs["overall"]
-                food_result = kwargs["food_result"]
-                service_result = kwargs["service_result"]
-                cost_result = kwargs["cost_result"]
-                ambience_result = kwargs["ambience_result"]
-
-                review = reviews.find_one({"review_id": review_id}, {"_id": False, "review_text": True, \
-                        "converted_epoch": True, "review_time": True})    
-               
-
-                print reviews_results_collection.update({"review_id": review_id}, {"$set": 
-                    {"food": food_sentences, "cost": cost_sentences, "ambience": ambience_sentences, \
-                            "service": service_sentences, "null": null_sentences, "overall": overall_sentences, 
-                            "review_text": review.get("review_text"), "review_time": review.get("review_time"), 
-                            "eatery_id": eatery_id, 
-                    "classification.{0}.{1}.food.{2}.{3}".format(TAG_CLASSIFY_ALG_NME, 
-                        SENTI_CLSSFY_ALG_NME, FOOD_SB_CLSSFY_ALG_NME, NOUN_PHSE_ALGORITHM_NAME):
-                            food_result,
-
-                    "classification.{0}.{1}.cost.{2}".format(TAG_CLASSIFY_ALG_NME, 
-                        SENTI_CLSSFY_ALG_NME, COST_SB_CLSSFY_ALG_NME): cost_result,
-
-                    "classification.{0}.{1}.ambience.{2}".format(TAG_CLASSIFY_ALG_NME, 
-                        SENTI_CLSSFY_ALG_NME, AMBI_SB_CLSSFY_ALG_NME): ambience_result,
-                    
-                    "classification.{0}.{1}.service.{2}".format(TAG_CLASSIFY_ALG_NME, 
-                        SENTI_CLSSFY_ALG_NME, SERV_SB_CLSSFY_ALG_NME): service_result,
-                    
-                    }}, upsert=True, multi=False)
-
-                return 
                 
 
 class MongoScriptsDoClusters(object):
