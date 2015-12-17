@@ -7,6 +7,12 @@ Purpose:
     This file has been written to list all the sub routines that might be helpful in generating result for 
     get_word_cloud api
 
+
+main_categories = u'cuisine', u'service', u'food', u'menu', u'overall', u'cost', u'place', u'ambience', u'null'])
+
+food_sub_category = {u'dishes', u'null-food', u'overall-food'}
+
+
 """
 import sys
 import time
@@ -17,7 +23,7 @@ import warnings
 import ConfigParser
 from sklearn.externals import joblib
 from collections import Counter
-from text_processing_db_scripts import MongoScripts, MongoScriptsEateries, MongoScriptsReviews, MongoScriptsDoClusters
+from text_processing_db_scripts import MongoScriptsReviews, MongoScriptsDoClusters
 from prod_heuristic_clustering import ProductionHeuristicClustering
 
 from join_two_clusters import ProductionJoinClusters
@@ -141,8 +147,8 @@ class PerReview:
                 self.__extract_cuisines()
                 self.__extract_noun_phrases() #makes self.noun_phrases
                 self.__update_review_result()
-                
-                MongoScripts.update_processed_reviews_list(self.eatery_id, self.review_id)
+                self.__update_cuisine_places() 
+                MongoScriptsReviews.update_processed_reviews_list(self.eatery_id, self.review_id)
                 return 
 
         
@@ -186,9 +192,9 @@ class PerReview:
 		"""
 		__filter = lambda tag: [(sent, __tag, sentiment) for (sent, __tag, sentiment) in \
                                                                                 self.all_sent_tag_sentiment if __tag== tag ]
-		self.food, self.cost, self.ambience, self.service, self.null, self.overall, self.places, self.cuisine = \
+		self.food, self.cost, self.ambience, self.service, self.null, self.overall, self.places, self.cuisine, self.menu = \
                          __filter("food"),  __filter("cost"), __filter("ambience"), __filter("service"),\
-			 __filter("null"),  __filter("overall"), __filter("place"), __filter("cuisine")
+			 __filter("null"),  __filter("overall"), __filter("place"), __filter("cuisine"), __filter("menu")
 
                 return 
 
@@ -282,14 +288,12 @@ class PerReview:
                 for (sent, sentiment, tag) in self.places:
                             try:
                                     result = loads(corenlpserver.parse(sent))
-                                    print result
                                     __result = [(e[0], e[1].get("NamedEntityTag")) for e in result["sentences"][0]["words"]]
                                     self.places_names.extend(filter_places(__result))
                             
                             except Exception as e:
                                     print e, "__extract_place", self.review_id
                                     pass
-                print "result from extract places%s "%self.places_names
                 return 
                             
 
@@ -353,11 +357,21 @@ class PerReview:
                         cuisine_sentences= self.cuisine,
                         food_result= self.all_food_with_nps, 
                         service_result = self.all_service, 
+                        menu_result = self.menu,
                         cost_result = self.all_cost, 
                         ambience_result = self.all_ambience,
                         places_result= self.places_names, 
                         cuisine_result = self.cuisine_name) 
                 return 
+
+        @print_execution
+        def __update_cuisine_places(self):
+                """
+                update cuisine and places to the eatery
+                """
+                MongoScriptsReviews.update_eatery_places_cusines(self.eatery_id, self.places_names, self.cuisine_name)        
+                return 
+                
 
 
 class DoClusters(object):
@@ -417,7 +431,7 @@ class DoClusters(object):
                         warnings.warn("{0} No clustering of noun phrases has been done yet  for eatery_id\
                                 = <<{1}>>{2}".format(bcolors.FAIL, self.eatery_id, bcolors.RESET))
                         
-                        __nps_food = self.mongo_instance.fetch_reviews("food")
+                        __nps_food = self.mongo_instance.fetch_reviews("food", review_list=None)
                         
                         ##sub_tag_dict = {u'dishes': [[u'super-positive', 'sent', [u'paneer chilli pepper starter']],
                         ##[u'positive', sent, []],

@@ -88,200 +88,26 @@ class MongoScriptsReviews(object):
                 return 
 
 
-
-
-class MongoScriptsEateries(object):
-        def __init__(self, eatery_id):
-                    self.eatery_id = eatery_id
-                    self.eatery_result = eateries.find_one({"eatery_id": self.eatery_id})
-                    self.eatery_name = self.eatery_result.get("eatery_name")
-                    self.eatery_highlights = self.eatery_result.get("eatery_highlights")
-                    self.eatery_coordinates = self.eatery_result.get('eatery_coordinates')
-                    self.eatery_address = self.eatery_result.get('eatery_address')
-
-
-        def check_algorithms(self):
-                
-                if eateries_results_collection.find_one({"eatery_id": self.eatery_id, 
-                    "tag_anlysis_algorithm_name": TAG_CLASSIFY_ALG_NME,
-                    "sentiment_analysis_algorithm_name": SENTI_CLSSFY_ALG_NME,
-                    "food_classification_algorithm_name": FOOD_SB_CLSSFY_ALG_NME,
-                    "cost_classification_algorithm_name": COST_SB_CLSSFY_ALG_NME,
-                    "service_classification_algorithm_name": SERV_SB_CLSSFY_ALG_NME,
-                    "ambience_classification_algorithm_name": AMBI_SB_CLSSFY_ALG_NME,
-                    "noun_phrases_algorithm_name": NOUN_PHSE_ALGORITHM_NAME}):
-                        return True
-        
-                warnings.warn("{0}The set of algorithms for eatery --<<{1}>>-- has not been found\
-                        {2}".format(bcolors.FAIL, self.eatery_id, bcolors.RESET))
-                return False
-
-
-        def empty_processed_reviews_list(self):
-                if eateries_results_collection.find_one({"eatery_id": self.eatery_id}):
-                        eateries_results_collection.update({"eatery_id": self.eatery_id}, \
-                                {"$unset": {"processed_reviews": None}})
-                return
-
-        
-        def empty_old_considered_ids(self):
-                if eateries_results_collection.find_one({"eatery_id": self.eatery_id}):
-                        eateries_results_collection.update({"eatery_id": self.eatery_id}, \
-                                {"$unset": {"old_considered_ids": None}})
-                return
-        
-        def empty_noun_phrases(self):
-                if eateries_results_collection.find_one({"eatery_id": self.eatery_id}):
-                        eateries_results_collection.update({"eatery_id": self.eatery_id}, \
-                                {"$unset": {"noun_phrases": None}})
-                return
-
-
-
-        def set_new_algorithms(self):
-                
-                eateries_results_collection.update({"eatery_id": self.eatery_id}, {"$set": {
-                    "eatery_name": self.eatery_name,
-                    "eatery_highlights": self.eatery_highlights,
-                    "eatery_coordinates": self.eatery_coordinates,
-                    "eatery_address": self.eatery_address, 
-                    "tag_anlysis_algorithm_name": TAG_CLASSIFY_ALG_NME,
-                    "sentiment_analysis_algorithm_name": SENTI_CLSSFY_ALG_NME,
-                    "food_classification_algorithm_name": FOOD_SB_CLSSFY_ALG_NME,
-                    "cost_classification_algorithm_name": COST_SB_CLSSFY_ALG_NME,
-                    "service_classification_algorithm_name": SERV_SB_CLSSFY_ALG_NME,
-                    "ambience_classification_algorithm_name": AMBI_SB_CLSSFY_ALG_NME,
-                    "noun_phrases_algorithm_name": NOUN_PHSE_ALGORITHM_NAME}}, upsert=True)
-
-                warnings.warn("{0}Setting new algorithms for eatery --<<{1}>>-- has not been found\
-                        {2}".format(bcolors.OKBLUE, self.eatery_id, bcolors.RESET))
-                return
-
-
-                
-
-        def get_noun_phrases(self, category, number_of_nps):
-                print self.eatery_id
-                result = eateries_results_collection.find_one({"eatery_id": self.eatery_id})
-                if category == "food":
-                        return sorted(result["food"]["dishes"], key= lambda x: x.get("total_sentiments"), reverse=True)[0: number_of_nps]
-                else:
-                        print category
-                        print result[category]
-                        return result[category]
-
-
-class MongoScripts:
-        def __init__(self):
-                pass
-
-
         @staticmethod
-        def get_review_result(review_id):
-                result = dict()
-                print "this is review id %s"%review_id
-                #Everything has to be changed because now sentiments has to be changed
-                if not bool(list(reviews_results_collection.find({'review_id': review_id, 
-                    "classification.{0}.{1}".format(TAG_CLASSIFY_ALG_NME, SENTI_CLSSFY_ALG_NME)\
-                            : {"$exists": True}}))):
-                        result.update({"rerun_all_algorithms": True})
-                        return result
-
-                #Ony the food category has to be changed
-                #only the fields corresponding to 
-                #tag_analysis_algorithm_name.sentiment_analysis_algorithm_name.food_classifier_algorithm_name
-                #needs to be changed, rest remains the same
-                if not bool(list(reviews_results_collection.find({'review_id': review_id, 
-                    "classification.{0}.{1}.food.{2}".format(TAG_CLASSIFY_ALG_NME, SENTI_CLSSFY_ALG_NME\
-                            , FOOD_SB_CLSSFY_ALG_NME) : {"$exists": True}}))):
-                        result.update({"rerun_food_sub_tag_classification": True})
-                
+        def update_eatery_places_cusines(eatery_id, places, cuisines):
+            if places or cuisines:    
+                    eateries_results_collection.update({"eatery_id": eatery_id}, {"$push": \
+                        {"places": places, "cuisines": cuisines }}, upsert=True)
 
 
-                if not bool(list(reviews_results_collection.find({'review_id': review_id, 
-                    "classification.{0}.{1}.food.{2}.{3}".format(TAG_CLASSIFY_ALG_NME, SENTI_CLSSFY_ALG_NME\
-                            ,FOOD_SB_CLSSFY_ALG_NME, NOUN_PHSE_ALGORITHM_NAME) : {"$exists": True}}))):
-                        result.update({"rerun_noun_phrases": True})
-
-
-                
-                if not bool(list(reviews_results_collection.find({'review_id': review_id, 
-                    "classification.{0}.{1}.cost.{2}".format(TAG_CLASSIFY_ALG_NME, SENTI_CLSSFY_ALG_NME\
-                            , COST_SB_CLSSFY_ALG_NME) : {"$exists": True}}))):
-                        result.update({"rerun_cost_sub_tag_classification": True})
-
-
-                if not bool(list(reviews_results_collection.find({'review_id': review_id, 
-                    "classification.{0}.{1}.service.{2}".format(TAG_CLASSIFY_ALG_NME, SENTI_CLSSFY_ALG_NME\
-                            , SERV_SB_CLSSFY_ALG_NME) : {"$exists": True}}))):
-                        result.update({"rerun_service_sub_tag_classification": True})
-
-
-                if not bool(list(reviews_results_collection.find({'review_id': review_id, 
-                    "classification.{0}.{1}.ambience.{2}".format(TAG_CLASSIFY_ALG_NME, SENTI_CLSSFY_ALG_NME\
-                            , AMBI_SB_CLSSFY_ALG_NME) : {"$exists": True}}))):
-                        result.update({"rerun_ambience_sub_tag_classification": True})
-
-                return result
-
-    
+       
         @staticmethod
         def update_processed_reviews_list(eatery_id, review_id):
                 eateries_results_collection.update({"eatery_id": eatery_id}, {"$push": {
-                                "processed_reviews": review_id}}, upsert=False)
+                    "processed_reviews": review_id}}, upsert=False)
 
                 warnings.warn("{0} Updating processed_review list of eatery --<<{1}>>-- with review_id\
                         {2}{3}".format(bcolors.OKBLUE, eatery_id, review_id, bcolors.RESET))
                 return
+ 
 
-        @staticmethod
-        def get_tag_sentences(review_id, tag):
-                return reviews_results_collection.find_one({"review_id": review_id}).get(tag)
 
-        
-        @staticmethod
-        def update_food_sub_tag_sentences(review_id, food_result):
-                print reviews_results_collection.update({"review_id": review_id}, {"$set": 
-                    {"classification.{0}.{1}.food.{2}.{3}".format(TAG_CLASSIFY_ALG_NME, 
-                        SENTI_CLSSFY_ALG_NME, FOOD_SB_CLSSFY_ALG_NME, NOUN_PHSE_ALGORITHM_NAME):
-                            food_result,}}, upsert=False, multi=False)
-        
-                return
 
-        @staticmethod
-        def update_cost_sub_tag_sentences(review_id, cost_result):
-                print reviews_results_collection.update({"review_id": review_id}, {"$set": 
-                    {"classification.{0}.{1}.cost.{2}".format(TAG_CLASSIFY_ALG_NME, 
-                        SENTI_CLSSFY_ALG_NME, COST_SB_CLSSFY_ALG_NME): cost_result,
-                    }}, upsert=False, multi=False)
-                return
-                    
-        @staticmethod
-        def update_service_sub_tag_sentences(review_id, service_result):
-                print reviews_results_collection.update({"review_id": review_id}, {"$set": 
-                    {"classification.{0}.{1}.service.{2}".format(TAG_CLASSIFY_ALG_NME, 
-                        SENTI_CLSSFY_ALG_NME, SERV_SB_CLSSFY_ALG_NME): service_result,
-                    }}, upsert=False, multi=False)
-                return
-
-        @staticmethod
-        def update_ambience_sub_tag_sentences(review_id, ambience_result):
-                print reviews_results_collection.update({"review_id": review_id}, {"$set": 
-                    {"classification.{0}.{1}.ambience.{2}".format(TAG_CLASSIFY_ALG_NME, 
-                        SENTI_CLSSFY_ALG_NME, AMBI_SB_CLSSFY_ALG_NME): ambience_result,
-                    }}, upsert=False, multi=False)
-                return
-
-        @staticmethod
-        def update_noun_phrases(review_id, noun_phrases_result):
-                print reviews_results_collection.update({"review_id": review_id}, {"$set": 
-                    {"classification.{0}.{1}.food.{2}.{3}".format(TAG_CLASSIFY_ALG_NME, 
-                        SENTI_CLSSFY_ALG_NME, FOOD_SB_CLSSFY_ALG_NME, NOUN_PHSE_ALGORITHM_NAME):
-                            noun_phrases_result,}}, upsert=False, multi=False)
-
-                return
-
-                
 
 class MongoScriptsDoClusters(object):
         def __init__(self, eatery_id):

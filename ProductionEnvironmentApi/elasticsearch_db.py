@@ -17,7 +17,6 @@ from compiler.ast import flatten
 file_name = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(file_name)
 from GlobalConfigs import ES_CLIENT, eateries_results_collection, bcolors, ELASTICSEARCH_IP
-from GlobalAlgorithmNames import FOOD_SUB_TAGS, COST_SUB_TAGS, AMBI_SUB_TAGS, SERV_SUB_TAGS
 
 from elasticsearch import Elasticsearch, helpers
 from elasticsearch import RequestError
