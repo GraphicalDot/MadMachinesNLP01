@@ -32,8 +32,7 @@ sys.path.append(this_file_path)
 from Text_Processing.PosTaggers import PosTaggerDirPath, HunPosModelPath, HunPosTagPath
 from Text_Processing.colored_print import bcolors
 from GlobalConfigs import DEBUG
-
-
+from Text_Processing import SentenceTokenizationOnRegexOnInterjections
 
 
 def encoding_helper(__object):
@@ -177,10 +176,22 @@ class ProductionHeuristicClustering:
                         self.common_ners = list(set.intersection(set([e[0] for e in self.ner()]), \
                                                         set([e[0] for e in self.custom_ner()])))
                         self.result = self.filter_on_basis_pos_tag()
-                        self.result = sorted(self.result, reverse=True, key= lambda x: x.get("positive") \
-                                                        + x.get("negative")+ x.get("neutral") + x.get("super-positive")+ x.get("super-negative"))
-                        return self.result
-                return self.result
+                        self.result = sorted(self.result, reverse=True, key= lambda x: x.get("total_sentiments"))
+                        return self.add_sentiments(self.result)
+                
+                
+                return self.add_sentiments(self.result)
+
+
+        def add_sentiments(self, __list):
+                """
+                This takes in a list of dictionaries with sentiments present for each dictionary, 
+                and then adds a new key to every dictionary which is the sum of all the sentiments
+                """
+                __add =  lambda x: x.get("positive") + x.get("negative")+ x.get("neutral") + x.get("super-positive")\
+                                    + x.get("super-negative")
+                [__dict.update({"total_sentiments": __add(__dict)}) for __dict in __list]
+                return __list
 
 
 
@@ -282,8 +293,6 @@ class ProductionHeuristicClustering:
                 new_list = zip(indices[0], indices[1])
 
                 found = False
-                test_new_list = list()
-
                 for e in new_list:
                         for j in self.clusters:
                                 if bool(set.intersection(set(e), set(j))):
@@ -295,8 +304,25 @@ class ProductionHeuristicClustering:
                                 found = False
                                 
                         found = False
-                #Removing duplicate elements from clusters list
+                
                 self.clusters = [list(set(element)) for element in self.clusters if len(element)> 2]
+                found = False
+                new_clusters = list()
+
+                for e in self.clusters:
+                        for j in new_clusters:
+                                if bool(set.intersection(set(e), set(j))):
+                                        j.extend(e)
+                                        found = True
+                                        break
+                        if not found:    
+                                new_clusters.append(list(e))
+                                found = False
+                                
+                        found = False
+
+                self.clusters = new_clusters
+                #Removing duplicate elements from clusters list
                 return 
 
         #@print_execution
@@ -331,6 +357,7 @@ class ProductionHeuristicClustering:
                 timeline = list()
                
                 cluster_names = [self.keys[element] for element in cluster_list]
+                whole_cluster_names_n_keys = [self.merged_sentiment_nps.get(self.keys[element]) for element in cluster_list]
 
                 for element in cluster_list:
                         name = self.keys[element]    
@@ -344,10 +371,17 @@ class ProductionHeuristicClustering:
                         super_positive = super_positive +  self.merged_sentiment_nps[name].get("super-positive") 
                         timeline.extend(self.merged_sentiment_nps[name].get("timeline"))
 
-                result = sorted(result, reverse= True, key=lambda x: x.get("positive")+x.get("negative") + x.get("neutral")+
-                                                                    x.get("super-positive")+ x.get("super-negative"))
-                return {"name": result[0].get("name"), "positive": positive, "negative": negative, "neutral": neutral, 
-                        "super-negative": super_negative, "super-positive": super_positive, "similar": cluster_names,
+                whole = dict()
+                for a in cluster_names:
+                        __list = list()
+                        for b in cluster_names :
+                                __list.append(SimilarityMatrices.modified_dice_cofficient(a, b))
+                        whole.update({a: sum(__list)})
+                
+                name = filter(lambda x: whole[x] == max(whole.values()), whole.keys())[0]
+
+                return {"name": name, "positive": positive, "negative": negative, "neutral": neutral, 
+                        "super-negative": super_negative, "super-positive": super_positive, "similar": whole_cluster_names_n_keys,
                         "timeline": timeline}
 
         #@print_execution
@@ -386,7 +420,8 @@ class ProductionHeuristicClustering:
 
         def filter_on_basis_pos_tag(self):
                 """
-                pos tagging of noun phrases will be done, and if the noun phrases contains some adjectives or RB or FW, 
+                pos tagging of noun phrases will be d
+                one, and if the noun phrases contains some adjectives or RB or FW, 
                 it will be removed from the total noun_phrases list
 
                 Any Noun phrases when split, if present in self.list_to_exclude will not be included in the final result
@@ -395,32 +430,15 @@ class ProductionHeuristicClustering:
                 noun_phrase = "great place"
                 
                 """
-                print "{0} These noun phrases will be removed from the noun phrases {1}".format(bcolors.OKBLUE, bcolors.RESET)
-                print "{0} List To Exclude {1}".format(bcolors.OKBLUE, bcolors.RESET)
-                print self.list_to_exclude
-                print "\n"
-                print "{0} Common name entities  {1}".format(bcolors.OKBLUE, bcolors.RESET)
-                print self.common_ners
-                print "\n"
                 hunpos_tagger = HunposTagger(HunPosModelPath, HunPosTagPath)
                 filtered_list = list()
                 for __e in self.result:
-                        try:
-                                __list = [pos_tag for (np, pos_tag) in hunpos_tagger.tag(nltk.wordpunct_tokenize(__e.get("name")))]
-                                if bool(set.intersection(set(__e.get("name").split(" ")),  set(self.list_to_exclude))):
-                                        print __e.get("name")
-                                        pass    
-                        
-                        #elif __e.get("name") in self.common_ners:
-                        #        pass
-                        
-                                elif "RB" == __list[0] or  "CD" in __list or "FW" in __list:
-                                        pass
-                                else:
-                                        filtered_list.append(__e)
+                        __list = [pos_tag for (np, pos_tag) in hunpos_tagger.tag(nltk.wordpunct_tokenize(__e.get("name").encode("ascii", "ignore")))]
+                        if set.intersection(set(__list), set(["FW", "CD", "LS"])):
+                                    print "This will be droppped out of total noun phrases %s"%__e.get("name")
+                        else:
+                            filtered_list.append(__e)
 
-                        except Exception:
-                                pass
 
                 return filtered_list
 
@@ -625,6 +643,47 @@ if __name__ == "__main__":
                     ["negative", ['japanese restaurant',  u'chicken teriyaki', u'chicken teppanyaki']],
                     ["neutral", ['spicy salmon roll', 'salmon rolls', u'spicy salmon rolls']]]
 
+
+
+        def return_food_sentences(eatery_id):
+                from sklearn.externals import joblib
+                sent_tokenizer = SentenceTokenizationOnRegexOnInterjections()
+                reviews_list = list()
+                for post in reviews.find({"eatery_id": eatery_id}):
+                        reviews_list.extend([[sent, post.get("review_time")] for sent in sent_tokenizer.tokenize(post.get("review_text"))])
+                
+
+                tags = TAG_CLASSIFIER_LIB.predict([e[0] for e in reviews_list])
+                food_sentences = list()
+                for (sent, review_time),  tag in zip(reviews_list, tags):
+                        if tag == "food":
+                                food_sentences.append([sent, review_time])
+   
+                sub_tags = FOOD_SB_TAG_CLASSIFIER_LIB.predict([e[0] for e in food_sentences])
+
+                dishes_n_drinks = list()
+
+                for (sent, review_time), sub_tag in zip(food_sentences, sub_tags):
+                        if sub_tag == "dishes" or sub_tag == "drinks":
+                                dishes_n_drinks.append([sent, review_time])
+                        
+    
+  
+
+                sentiments = SENTI_CLASSIFIER_LIB.predict([e[0] for e in dishes_n_drinks])
+    
+                from topia.termextract import extract
+                topia_extractor = extract.TermExtractor()
+                noun_phrases = list()
+                for (sent, review_time), tag in zip(dishes_n_drinks, sentiments):
+                        nouns = topia_extractor(sent)
+                        noun_phrases.append([tag, [e[0].lower() for e in nouns], review_time])
+                        
+                return (filter(lambda x: x[1], noun_phrases), [e[0] for e in dishes_n_drinks])
+
+                
+
+
         sentences = [u'do try their Paneer Chilli Pepper starter .',
                  u'even through they have numerous drinks in the menu , on a Friday night ( when i visited the place ) they were serving only specific brands of liquor .',
                   u"so the place is gorgeousambience might have felt better if there wasn't a party goingin case you are looking a pleasant dinner with friends and family you need to check if there is party or event going onit can be quite annoyingapart from that the best appetizer to try is Mustard Fish paparikaits absolutely amazing and deliciously juicyand the prawns are pretty good tooi was pretty disappointed with the pastamy lil sister could cook better pastaso pasta here is a complete no notry going for the pizzas insteadand their appetizers have a decent variety toothe service was pretty good and friendlybut it really got quite irritating cause of the party going on",
@@ -635,7 +694,12 @@ if __name__ == "__main__":
                 (u'positive', [u'paneer chilli pepper starter'], u'2014-09-19 06:56:42'),
                 (u'positive', [u'paneer chilli pepper starter'], u'2014-09-19 06:56:42'),
                 (u'positive', [u'paneer chilli pepper starter'], u'2014-09-19 06:56:42'),
-                 (u'positive', [u'friday night'], u'2014-09-19 06:56:42'),
+                (u'positive', [u'paneer chilli peppe starter'], u'2014-09-19 06:56:42'),
+                (u'positive', [u'paneer chilli peppe ster'], u'2014-09-19 06:56:42'),
+                (u'positive', [u'panee chilli peppe starter'], u'2014-09-19 06:56:42'),
+                (u'positive', [u'paneer chilli peppe starr'], u'2014-09-19 06:56:42'),
+                 
+                (u'positive', [u'friday night'], u'2014-09-19 06:56:42'),
                   (u'positive',
                         [u'pizzas insteadand',
                                u'pastamy lil sister',
@@ -651,5 +715,12 @@ if __name__ == "__main__":
                     (u'super-positive', [u'i couldn'], u'2014-05-06 13:06:56'),
                      (u'neutral', [u'chicken pieces', u'veg pasta n'], u'2014-06-20 15:11:42')]
 
+        
+        sentiment_np_time, sentences = return_food_sentences("308322")
+        print sentiment_np_time
         ins = ProductionHeuristicClustering(sentiment_np_time, "dishes", sentences,)
-        print ins.run()
+        i = ins.run()
+        for e in ins.run():
+            print e
+    
+        print i[0].keys()

@@ -9,7 +9,6 @@ Purpose:
 
 
 main_categories = u'cuisine', u'service', u'food', u'menu', u'overall', u'cost', u'place', u'ambience', u'null'])
-
 food_sub_category = {u'dishes', u'null-food', u'overall-food'}
 
 
@@ -81,8 +80,7 @@ class EachEatery:
                         all_processed_reviews = MongoScriptsReviews.get_proccessed_reviews(self.eatery_id)
 
                 except StandardError as e:
-                        warnings.warn("{0} {1}, Starting processing whole eatery, YAY!!!! {2}".format(\
-                            bcolors.FAIL, e, bcolors.RESET))
+                        warnings.warn("Starting processing whole eatery, YAY!!!!")
                         return MongoScriptsReviews.reviews_with_text(all_reviews)
                 reviews_ids = list(set.symmetric_difference(set(all_reviews), set(all_processed_reviews)))
                 if reviews_ids:
@@ -146,9 +144,9 @@ class PerReview:
                 self.__extract_places()
                 self.__extract_cuisines()
                 self.__extract_noun_phrases() #makes self.noun_phrases
-                self.__update_review_result()
+                self.__append_time_to_overall()
                 self.__update_cuisine_places() 
-                MongoScriptsReviews.update_processed_reviews_list(self.eatery_id, self.review_id)
+                self.__update_review_result()
                 return 
 
         
@@ -247,8 +245,16 @@ class PerReview:
                 self.all_ambience = [[sent, tag, sentiment, sub_tag] for ((sent, tag, sentiment), sub_tag) \
                         in zip(self.ambience, self.ambience_sub_tags)]
                 
+
                 map(lambda __list: __list.append(self.review_time), self.all_ambience)
                 return 
+
+
+        @print_execution
+        def __append_time_to_overall(self):
+                self.overall = [list(e) for e in self.overall]
+                map(lambda __list: __list.append(self.review_time), self.overall)
+                return  
 
 
 	@print_execution
@@ -386,9 +392,17 @@ class DoClusters(object):
                 self.category = category
                 mongo_eatery_instance= MongoScriptsEateries(self.eatery_id)
                 self.eatery_name = mongo_eatery_instance.eatery_name
+                self.sentiment_tags = ["good", "poor", "average", "excellent", "terrible", "mixed"]
+                self.food_tags = ["dishes", "null-food", "overall-food"]
+                self.ambience_tags = [u'smoking-zone', u'decor', u'ambience-null', u'ambience-overall', u'in-seating', u'crowd', u'open-area', u'dancefloor', u'music', u'location', u'romantic', u'sports', u'live-matches', u'view']
+                self.cost_tags = ["vfm", "expensive", "cheap"]
+                self.service_tags = [u'management', u'service-charges', u'service-overall', u'serivce-null', u'servic-overall', u'service-null', u'waiting-hours', u'presentation', u'booking', u'staff']
+
 
         def run(self):
                 """
+                main_categories = u'cuisine', u'service', u'food', u'menu', u'overall', u'cost', u'place', u'ambience', u'null'])
+                food_sub_category = {u'dishes', u'null-food', u'overall-food'}
                 Two cases:
                     Case 1:Wither first time the clustering is being run, The old_considered_ids list
                     is empty
@@ -439,23 +453,24 @@ class DoClusters(object):
                         ##[u'negative', sent, []],
                         sub_tag_dict = DoClusters.unmingle_food_sub(__nps_food)
 
-                        for sub_category in ["dishes", "place-food", "sub-food"]:
-                                __result = self.clustering(sub_tag_dict.get(sub_category), sub_category)
-                                self.mongo_instance.update_food_sub_nps(__result, sub_category)
+
+                        __result = self.clustering(sub_tag_dict.get("dishes"), "dishes")
+                        self.mongo_instance.update_food_sub_nps(__result, "dishes")
                         
-                        for sub_category in ["menu-food", "overall-food"]:
-                                #REsult corresponding to the menu-food tag
-                                __result = DoClusters.aggregation(sub_tag_dict.get(sub_category))
-                                self.mongo_instance.update_food_sub_nps(__result, sub_category)
+                        #REsult corresponding to the menu-food tag
+                        __result = DoClusters.aggregation(sub_tag_dict.get("overall-food"))
+                        self.mongo_instance.update_food_sub_nps(__result, "overall-food")
                         
 
 
-                        for __category in ["ambience", "service", "cost"]:
+                        for __category in ["ambience_result", "service_result", "cost_result"]:
                                 __nps = self.mongo_instance.fetch_reviews(__category)
                                 __whle_nps = DoClusters.make_cluster(__nps, __category)
                                 
                                 self.mongo_instance.update_nps(__category, __whle_nps)
                         
+                        
+                        __nps = self.mongo_instance.fetch_reviews("overall")
                         self.mongo_instance.update_considered_ids()
                 else:
                         
@@ -612,16 +627,17 @@ class DoClusters(object):
                 Result:
                     {u'negative': 4, u'neutral': 2}
                 """
+
                 if not bool(old):
                         sentiment_dict = dict()
-                        [sentiment_dict.update({key: 0}) for key in SENTIMENT_TAGS]
+                        [sentiment_dict.update({key: 0}) for key in self.sentiment_tags]
                         sentiment_dict.update({"timeline": list()})
                         sentiment_dict.update({"total_sentiments": 0})
                         return sentiment_dict
 
                 sentiment_dict = dict()
                 if new :
-                        [sentiment_dict.update({key: (old.get(key) + new.get(key))}) for key in SENTIMENT_TAGS] 
+                        [sentiment_dict.update({key: (old.get(key) + new.get(key))}) for key in self.sentiment_tags] 
                         #this statement ensures that we are dealing with case 1
                         sentiment_dict.update({"timeline": sorted((old.get("timeline") + new.get("timeline")), key= lambda x: x[1] )})
                         sentiment_dict.update({"total_sentiments": old.get("total_sentiments")+ new.get("total_sentiments")})
@@ -638,10 +654,10 @@ class DoClusters(object):
                                 return {key: 0}
 
 
-                [sentiment_dict.update(__dict) for __dict in map(convert,  SENTIMENT_TAGS)]
+                [sentiment_dict.update(__dict) for __dict in map(convert,  self.sentiment_tags)]
                 sentiment_dict.update({"timeline": timeline})
-                total = sentiment_dict.get("positive") + sentiment_dict.get("negative") + sentiment_dict.get("neutral") + sentiment_dict.get("super-negative")\
-                                    +sentiment_dict.get("super-positive")
+                total = sentiment_dict.get("good") + sentiment_dict.get("poor") + sentiment_dict.get("average") + sentiment_dict.get("terrible")\
+                                    +sentiment_dict.get("excellent") + sentiment_dict.get("mixed") 
 
                 sentiment_dict.update({"total_sentiments": total})
                 return sentiment_dict
@@ -766,7 +782,7 @@ class DoClusters(object):
                                 return {key: 0}
 
 
-                [__dict.update(__sentiment_dict) for __sentiment_dict in map(convert, SENTIMENT_TAGS)]
+                [__dict.update(__sentiment_dict) for __sentiment_dict in map(convert, self.sentiment_tags)]
 
                 __dict.update({"timeline": sorted(value.get("timeline"), key=lambda x: x[1] )})
                 __dict.update({"total_sentiments": value.get("total_sentiments")})
@@ -800,8 +816,8 @@ class DoClusters(object):
                 """
                 sentences_dict = dict()
 
-                for sub_tag in eval("{0}_SUB_TAGS".format(category.upper()[0:4])):
-                        for sentiment in SENTIMENT_TAGS:
+                for sub_tag in eval("self.{0}_tags".format(category)):
+                        for sentiment in self.sentiment_tags:
                             sentences_dict.update({sub_tag: {"sentiment": list(), "timeline": list(), "total_sentiments": 0}})
 
                 for __sentiment, __category, review_time in noun_phrases:
@@ -821,18 +837,17 @@ if __name__ == "__main__":
             ##To check if __extract_places is working or not            
             ##ins = PerReview('2036121', 'Average quality food, you can give a try to garlic veg chowmien if you are looking for a quick lunch in Sector 44, Gurgaon where not much options are available.','2014-08-08 15:09:17', '302115')
             ##ins.run()
-            """
-            iinstance = EachEatery("302115", True)
+            instance = EachEatery("2985", True)
             result = instance.return_non_processed_reviews()
-            result = [(e[0], e[1], e[2], "302115")for e in result]
+            result = [(e[0], e[1], e[2], "2985") for e in result]
+            for element in result:
+                    instance = PerReview(element[0], element[1], element[2], element[3])
+                    instance.run()
             """
             instance = EachEatery("844", True)
             result = instance.return_non_processed_reviews()
             result = [(e[0], e[1], e[2], "844")for e in result]
-            for element in result:
-                    instance = PerReview(element[0], element[1], element[2], element[3])
-                    instance.run()
-
+            """
 
 
 

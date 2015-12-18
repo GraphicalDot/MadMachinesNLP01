@@ -52,6 +52,7 @@ class MongoScriptsReviews(object):
                         
                         if bool(review_text) and review_text != " ":
                                 review_list.append((review_id, review_text, review_time))
+                print len(review_list)
                 return review_list
 
         @staticmethod
@@ -63,9 +64,11 @@ class MongoScriptsReviews(object):
                 kwargs.update({"review_text": review.get("review_text"), "review_time": review.get("review_time")})
 
                 print reviews_results_collection.update({"review_id": review_id}, {"$set": kwargs}, upsert=True, multi=False)
-                eateries_results_collection.update({"eatery_id": eatery_id}, {"$push": \
-                                {"processed_reviews": review_id }}, upsert=True)
-
+                
+                
+                ##pushing review id to processed_reviews list of the eatery
+                eateries_results_collection.update({"eatery_id": eatery_id}, {"$push": {
+                    "processed_reviews": review_id}}, upsert=True, multi=False)
                 return 
 
         @staticmethod
@@ -98,8 +101,6 @@ class MongoScriptsReviews(object):
        
         @staticmethod
         def update_processed_reviews_list(eatery_id, review_id):
-                eateries_results_collection.update({"eatery_id": eatery_id}, {"$push": {
-                    "processed_reviews": review_id}}, upsert=False)
 
                 warnings.warn("{0} Updating processed_review list of eatery --<<{1}>>-- with review_id\
                         {2}{3}".format(bcolors.OKBLUE, eatery_id, review_id, bcolors.RESET))
@@ -155,42 +156,25 @@ class MongoScriptsDoClusters(object):
 
         def fetch_reviews(self, category, review_list=None):
                 if not review_list:
-                        review_list = eateries_results_collection.find_one({"eatery_id": \
-                                self.eatery_id}).get("processed_reviews")
+                        review_list = eateries_results_collection.find_one({"eatery_id": self.eatery_id}).get("processed_reviews")
 
 
                 if category == "food":
-                        food = [reviews_results_collection.find_one({"review_id": review_id})\
-                            ["classification"][TAG_CLASSIFY_ALG_NME][SENTI_CLSSFY_ALG_NME]\
-                            ["food"][FOOD_SB_CLSSFY_ALG_NME][NOUN_PHSE_ALGORITHM_NAME] for review_id in  review_list]
+                        food = [reviews_results_collection.find_one({"review_id": review_id})["food_result"] for review_id in  review_list]
                         flatten_food = list(itertools.chain(*food))
                         
-                        ##Checks if the food sub classification tab has beenchanged or not
-                        if set.difference(set([e[3] for e in flatten_food]), set(FOOD_SUB_TAGS)):
-                                print set.symmetric_difference(set([e[3] for e in flatten_food]), set(FOOD_SUB_TAGS))
-                                raise StandardError("Food sub classification has been changed,\
-                                            Do something about it fuckerrrr, One way to solve this problem\
-                                            is to flush whole database with food category, also food noun\
-                                            phrases stored in the eatery")
-
-
                         return flatten_food          
                         
-                        
+                
+                if category == "overall":
+                        result = [reviews_results_collection.find_one({"review_id": review_id})[category] for review_id in review_list]
+                        result = list(itertools.chain(*result))
+                        return result
        
                     
-                result = [reviews_results_collection.find_one({"review_id": review_id})["classification"][
-                    TAG_CLASSIFY_ALG_NME][SENTI_CLSSFY_ALG_NME][category]\
-                        [eval("{0}_SB_CLSSFY_ALG_NME".format(category.upper()[0:4]))] for review_id in \
-                        review_list]
+                result = [reviews_results_collection.find_one({"review_id": review_id})[category] for review_id in review_list]
                 
                 result = list(itertools.chain(*result))
-                if set.difference(set([e[3] for e in result]), set(eval("{0}_SUB_TAGS".format(category.upper()[0:4])))):
-                        raise StandardError("{0} sub classification has been changed,\
-                                            Do something about it fuckerrrr, One way to solve this problem\
-                                            is to flush whole database with {0} category".format(category))
-
-               
                 #[[u'super-positive', u'ambience-overall'], [u'super-positive', u'ambience-overall'], 
                 #[u'neutral', u'ambience-overall']]
                 return [[sentiment, sub_tag, review_time] for (sent, tag, sentiment, sub_tag, review_time) in result]
