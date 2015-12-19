@@ -38,6 +38,7 @@ result_db_connection = pymongo.MongoClient(config.get("resultsDB", "ip"), config
 result_db  = result_db_connection[config.get("resultsDB", "database")]
 reviews_results_collection = result_db[config.get("resultsDB", "review_result")]
 eateries_results_collection = result_db[config.get("resultsDB", "eatery_result")]
+discarded_nps_collection=  result_db[config.get("resultsDB", "discarded_nps")]
 
 
 corenlpserver = jsonrpclib.Server("http://{0}:{1}".format(config.get("corenlpserver", "ip"), config.getint("corenlpserver", "port")))

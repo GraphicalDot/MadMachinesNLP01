@@ -15,7 +15,7 @@ parent_dir = os.path.dirname(file_path)
 sys.path.append(parent_dir)
 
 os.chdir(parent_dir)
-from connections import reviews, eateries, reviews_results_collection, eateries_results_collection, bcolors
+from connections import reviews, eateries, reviews_results_collection, eateries_results_collection, discarded_nps_collection, bcolors
 os.chdir(file_path)
 
 
@@ -114,6 +114,18 @@ class MongoScriptsDoClusters(object):
         def __init__(self, eatery_id):
                 self.eatery_id = eatery_id
                 self.eatery_name = eateries.find_one({"eatery_id": self.eatery_id}).get("eatery_name")
+                self.eatery_address = eateries.find_one({"eatery_id": self.eatery_id}).get("eatery_address")
+
+
+        @staticmethod
+        def update_eatery_result_collection(eatery_id):
+                eatery_dict = eateries.find_one({"eatery_id": eatery_id}, {"_id": False, "eatery_name": True, "eatery_longitude_latitude": True, \
+                        "eatery_type": True, "eatery_cuisine": True, "eatery_address": True, "eatery_known_for": True, \
+                        "eatery_highlights": True, "eatery_trending": True, "eatery_area_or_city": True})
+
+                eateries_results_collection.update({"eatery_id": eatery_id}, {"$set": eatery_dict}, upsert=True, multi=False)
+                return 
+
 
         @staticmethod
         def reviews_with_time(review_list):
@@ -146,8 +158,23 @@ class MongoScriptsDoClusters(object):
                 of these review ids and is stored under noun_phrases key of eatery
                 nd these review ids has been stored under old_considered_ids
                 """
-                return eateries_results_collection.find_one({"eatery_id": self.eatery_id}, {"_id": False, 
+                try:
+                        old_considered_ids = eateries_results_collection.find_one({"eatery_id": self.eatery_id}, {"_id": False, 
                             "old_considered_ids": True}).get("old_considered_ids")
+                except Exception as e:
+                        print e
+                        old_considered_ids = None
+                return old_considered_ids
+                        
+
+        def places_mentioned_for_eatery(self):
+                result = eateries_results_collection.find_one({"eatery_id": self.eatery_id}, {"_id": False, 
+                            "processed_reviews": True}).get("places")
+
+                if result:
+                    return [place_name for place_name in result if place_name] 
+
+                return []
 
 
         def processed_reviews(self):
@@ -170,6 +197,11 @@ class MongoScriptsDoClusters(object):
                         result = [reviews_results_collection.find_one({"review_id": review_id})[category] for review_id in review_list]
                         result = list(itertools.chain(*result))
                         return result
+                    
+                if category == "menu_result":
+                        result = [reviews_results_collection.find_one({"review_id": review_id})[category] for review_id in review_list]
+                        result = list(itertools.chain(*result))
+                        return result
        
                     
                 result = [reviews_results_collection.find_one({"review_id": review_id})[category] for review_id in review_list]
@@ -180,10 +212,27 @@ class MongoScriptsDoClusters(object):
                 return [[sentiment, sub_tag, review_time] for (sent, tag, sentiment, sub_tag, review_time) in result]
 
 
-        def update_food_sub_nps(self, np_result, food_sub_category):
+        def update_food_sub_nps(self, np_result, category):
+                if category == "dishes":    
+                        nps = np_result["nps"]
+                        excluded_nps = np_result["excluded_nps"]
+                        dropped_nps = np_result["dropped_nps"]
+                        try:
+                                eateries_results_collection.update({"eatery_id": self.eatery_id}, {"$set": \
+                                        {"food.{0}".format(category): nps}}, upsert=False)
+                                eateries_results_collection.update({"eatery_id": self.eatery_id}, {"$set": \
+                                        {"dropped_nps": dropped_nps}}, upsert=False) 
+                                discarded_nps_collection.update({"eatery_id": self.eatery_id}, \
+                                        {"$set": {"excluded_nps": excluded_nps}}, upsert=True) 
+                        except Exception as e:
+                                print e
+
+                        return
+            
+            
                 try:    
-                    eateries_results_collection.update({"eatery_id": self.eatery_id}, {"$set": {
-                        "food.{0}".format(food_sub_category): np_result}}, upsert=False)
+                        eateries_results_collection.update({"eatery_id": self.eatery_id}, {"$set": {
+                        "food.{0}".format(category): np_result}}, upsert=False)
                 except Exception as e:
                         raise StandardError(e)
                 return 

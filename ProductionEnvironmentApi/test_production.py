@@ -23,7 +23,7 @@ from prod_heuristic_clustering import ProductionHeuristicClustering
 
 
 if __name__ == "__main__":
-        review_list = eateries_results_collection.find_one({"eatery_id": "2985"}).get("processed_reviews")
+        review_list = eateries_results_collection.find_one({"eatery_id": "6542"}).get("processed_reviews")
         food = [reviews_results_collection.find_one({"review_id": review_id})["food_result"] for review_id in  review_list]
         flatten_food = list(itertools.chain(*food))
 
@@ -42,10 +42,8 @@ if __name__ == "__main__":
         __sentiment_np_time = [(sentiment, nps, review_time) for (sentiment, sent, nps, review_time) in dishes_sentences if nps]
         __sentences = [sent for (sentiment, sent, nps, review_time) in dishes_sentences if nps]
 
-        print __sentiment_np_time
         ins = ProductionHeuristicClustering(__sentiment_np_time, "dishes", __sentences)
         i = ins.run()
-        for e in ins.run():
-            print e
+        print ins.run()[0:2]
 
 

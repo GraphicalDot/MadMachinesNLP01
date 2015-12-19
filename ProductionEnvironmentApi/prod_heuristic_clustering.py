@@ -134,26 +134,34 @@ class SimilarityMatrices:
                 return False
 
 class ProductionHeuristicClustering:
-        def __init__(self, sentiment_np_time, sub_category=None, sentences=None, eatery_name=None):
+        def __init__(self, sentiment_np_time, sub_category=None, sentences=None, eatery_name=None, places=None, eatery_address=None):
                 """ 
                 Args:
                     sentiment_nps:
-                        [[u'positive',[u'paneer chilli pepper starter']], [u'positive', []],
-                         [u'positive', [u'friday night']], [u'positive', []],                                   
-                         [u'super-positive', [u'garlic flavours', u'penne alfredo pasta']]],
+                        [[u'good',[u'paneer chilli pepper starter']], [u'good', []],
+                         [u'good', [u'friday night']], [u'good', []],                                   
+                         [u'excellent', [u'garlic flavours', u'penne alfredo pasta']]],
                 """
 
                 if eatery_name:
                         self.list_to_exclude = flatten(["food", "service", "cost", "ambience", "place", \
                                 "Place", "i", "great", "good", eatery_name.lower().split(), "rs", "delhi",\
                                 "india", "indian"])
+
+                        try:
+                                self.list_to_exclude.extend(eatery_address.split(","))
+                                self.list_to_exclude.extend(places)
+                        except Exception as e:
+                                pass
+                        
                         #self.list_to_exclude = ["food", "service", "cost", "ambience", "delhi", "Delhi", 
                         #       "place", "Place", __eatery_name.lower().split()]
                 else:
-                        self.list_to_exclude = ["food", "i", "service", "cost", "ambience", "delhi", \
+                        self.list_to_exclude = ["food", "service", "cost", "ambience", "delhi", \
                                 "Delhi", "place", "Place", "india", "indian"]
                 
 
+                self.dropped_nps = list()
                 self.sentiment_np_time = sentiment_np_time
                 self.sentences = sentences
                 self.sub_category = sub_category
@@ -172,6 +180,7 @@ class ProductionHeuristicClustering:
                                                                     set(flatten(self.clusters)))
                 self.populate_result()
 
+                """
                 if self.sub_category == "dishes":
                         self.common_ners = list(set.intersection(set([e[0] for e in self.ner()]), \
                                                         set([e[0] for e in self.custom_ner()])))
@@ -179,8 +188,18 @@ class ProductionHeuristicClustering:
                         self.result = sorted(self.result, reverse=True, key= lambda x: x.get("total_sentiments"))
                         return self.add_sentiments(self.result)
                 
+                """
+                ##only returns noun phrases that have toatal sentiments greater than 1
+                __result = self.add_sentiments(self.result)
+                result = [e for e in __result if e.get("total_sentiments") >1]
+                excluded_nps = [e for e in __result if e.get("total_sentiments") <=1]
+
                 
-                return self.add_sentiments(self.result)
+                print "The np which have been discarded because of low frequency is %s"%(len(__result) - len(result))
+                
+                return {"nps": result, 
+                        "excluded_nps": excluded_nps, #which had total_sentiemnts less than 1 
+                        "dropped_nps":  self.dropped_nps }#which were excluded because they matched with places and address"
 
 
         def add_sentiments(self, __list):
@@ -188,10 +207,13 @@ class ProductionHeuristicClustering:
                 This takes in a list of dictionaries with sentiments present for each dictionary, 
                 and then adds a new key to every dictionary which is the sum of all the sentiments
                 """
-                __add =  lambda x: x.get("positive") + x.get("negative")+ x.get("neutral") + x.get("super-positive")\
-                                    + x.get("super-negative")
+                __add =  lambda x: x.get("good") + x.get("poor")+ x.get("average") + x.get("excellent")\
+                                    + x.get("terrible")
                 [__dict.update({"total_sentiments": __add(__dict)}) for __dict in __list]
-                return __list
+                
+                __result = sorted(__list, reverse=True, key=lambda x: x.get("total_sentiments"))
+
+                return __result
 
 
 
@@ -201,10 +223,10 @@ class ProductionHeuristicClustering:
                 Result:
                     Merging noun phrases who have exact similar spellings with each other and return a 
                     dictionary in the form
-                    u'ice tea': {'positive', 6, 'negative': 5, "neutral": 5, "super-positive": 0, 
-                    "super-negative": 10},
-                    u'iced tea': {'positive', 2, 'negative', 10, "neutral": 230, "super-positive": 5, 
-                    "super-negative": 5},
+                    u'ice tea': {'good', 6, 'poor': 5, "average": 5, "excellent": 0, 
+                    "terrible": 10},
+                    u'iced tea': {'good', 2, 'poor', 10, "average": 230, "excellent": 5, 
+                    "terrible": 5},
                 }
                 """
                 
@@ -216,34 +238,35 @@ class ProductionHeuristicClustering:
                                 print "This noun_phrase belongs to ner {0}".format(i.get("name"))
                                 pass
                                 """
-                                #if bool(set.intersection(set(__np.split(" ")),  set(self.list_to_exclude))):
-                                #       pass    
+                                if bool(set.intersection(set(__np.split(" ")),  set(self.list_to_exclude))):
+                                        self.dropped_nps.append(__np)
+
 
                                 if without_similar_elements.get(__np):
                                         result = without_similar_elements.get(__np)
                                         timeline = result.get("timeline")
                                         timeline.append((sentiment, review_time))
                                         
-                                        positive, negative, neutral, super_positive, super_negative = \
-                                                result.get("positive"), result.get("negative"),result.get("neutral"), \
-                                                result.get("super-positive"), result.get("super-negative")
+                                        good, poor, average, excellent, terrible = \
+                                                result.get("good"), result.get("poor"),result.get("average"), \
+                                                result.get("excellent"), result.get("terrible")
                                         
 
-                                        new_frequency_negative = (negative, negative+1)[sentiment == "negative"]
-                                        new_frequency_positive = (positive, positive+1)[sentiment == "positive"]
-                                        new_frequency_neutral = (neutral, neutral+1)[sentiment == "neutral"]
-                                        new_frequency_super_positive = (super_positive, super_positive+1)[sentiment == \
-                                                "super-positive"]
-                                        new_frequency_super_negative = (super_negative, super_negative+1)[sentiment == \
-                                                "super-negative"]
+                                        new_frequency_poor = (poor, poor+1)[sentiment == "poor"]
+                                        new_frequency_good = (good, good+1)[sentiment == "good"]
+                                        new_frequency_average = (average, average+1)[sentiment == "average"]
+                                        new_frequency_excellent = (excellent, excellent+1)[sentiment == \
+                                                "excellent"]
+                                        new_frequency_terrible = (terrible, terrible+1)[sentiment == \
+                                                "terrible"]
                                 
 
                                         without_similar_elements.update(
                                             {__np: 
-                                                {"negative": new_frequency_negative, "positive": new_frequency_positive,
-                                                    "neutral": new_frequency_neutral, "super-positive": \
-                                                            new_frequency_super_positive, 
-                                                    "super-negative": new_frequency_super_negative,
+                                                {"poor": new_frequency_poor, "good": new_frequency_good,
+                                                    "average": new_frequency_average, "excellent": \
+                                                            new_frequency_excellent, 
+                                                    "terrible": new_frequency_terrible,
                                                     "timeline": timeline,
                                             }})
 
@@ -251,10 +274,10 @@ class ProductionHeuristicClustering:
                                 else:
                                     without_similar_elements.update(
                                     {__np: 
-                                        {"negative": (0, 1)[sentiment=="negative"], "positive": (0, 1)[sentiment=="positive"],
-                                            "neutral": (0, 1)[sentiment=="neutral"], 
-                                            "super-positive": (0, 1)[sentiment == "super-positive"], 
-                                            "super-negative": (0, 1)[sentiment == "super-negative"], 
+                                        {"poor": (0, 1)[sentiment=="poor"], "good": (0, 1)[sentiment=="good"],
+                                            "average": (0, 1)[sentiment=="average"], 
+                                            "excellent": (0, 1)[sentiment == "excellent"], 
+                                            "terrible": (0, 1)[sentiment == "terrible"], 
                                             "timeline": [(sentiment, review_time)],
                                             }})
                 
@@ -353,7 +376,7 @@ class ProductionHeuristicClustering:
                 
                 """
                 result = list()
-                positive, negative, neutral, super_positive, super_negative = int(), int(), int(), int(), int()
+                good, poor, average, excellent, terrible = int(), int(), int(), int(), int()
                 timeline = list()
                
                 cluster_names = [self.keys[element] for element in cluster_list]
@@ -364,11 +387,11 @@ class ProductionHeuristicClustering:
                         new_dict = self.merged_sentiment_nps[name]
                         new_dict.update({"name": name})
                         result.append(new_dict)        
-                        positive = positive +  self.merged_sentiment_nps[name].get("positive") 
-                        negative = negative +  self.merged_sentiment_nps[name].get("negative") 
-                        neutral = neutral +  self.merged_sentiment_nps[name].get("neutral") 
-                        super_negative = super_negative +  self.merged_sentiment_nps[name].get("super-negative") 
-                        super_positive = super_positive +  self.merged_sentiment_nps[name].get("super-positive") 
+                        good = good +  self.merged_sentiment_nps[name].get("good") 
+                        poor = poor +  self.merged_sentiment_nps[name].get("poor") 
+                        average = average +  self.merged_sentiment_nps[name].get("average") 
+                        terrible = terrible +  self.merged_sentiment_nps[name].get("terrible") 
+                        excellent = excellent +  self.merged_sentiment_nps[name].get("excellent") 
                         timeline.extend(self.merged_sentiment_nps[name].get("timeline"))
 
                 whole = dict()
@@ -380,8 +403,8 @@ class ProductionHeuristicClustering:
                 
                 name = filter(lambda x: whole[x] == max(whole.values()), whole.keys())[0]
 
-                return {"name": name, "positive": positive, "negative": negative, "neutral": neutral, 
-                        "super-negative": super_negative, "super-positive": super_positive, "similar": whole_cluster_names_n_keys,
+                return {"name": name, "good": good, "poor": poor, "average": average, 
+                        "terrible": terrible, "excellent": excellent, "similar": whole_cluster_names_n_keys,
                         "timeline": timeline}
 
         #@print_execution
