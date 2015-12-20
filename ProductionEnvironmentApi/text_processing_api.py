@@ -47,7 +47,7 @@ from Normalized import NormalizingFactor
 from topia.termextract import extract  
 from simplejson import loads
 from connections import sentiment_classifier, tag_classifier, food_sb_classifier, ambience_sb_classifier, service_sb_classifier, \
-            cost_sb_classifier, SolveEncoding, bcolors, corenlpserver
+            cost_sb_classifier, SolveEncoding, bcolors, corenlpserver,  reviews, eateries
 
 
 
@@ -88,9 +88,8 @@ class EachEatery:
                         return MongoScriptsReviews.reviews_with_text(reviews_ids)
                 
                 else:
-                        warnings.warn("{0} No New reviews to be considered {1}".format(\
-                                        bcolors.OKBLUE, bcolors.RESET))
-                        return False 
+                        warnings.warn("{0} No New reviews to be considered for eatery id {1} {2}".format(bcolors.OKBLUE, self.eatery_id, bcolors.RESET))
+                        return list() 
 
 class PerReview:
         sent_tokenizer = SentenceTokenizationOnRegexOnInterjections()
@@ -401,7 +400,7 @@ class DoClusters(object):
                 self.sentiment_tags = ["good", "poor", "average", "excellent", "terrible", "mixed"]
                 self.food_tags = ["dishes", "null-food", "overall-food"]
                 self.ambience_tags = [u'smoking-zone', u'decor', u'ambience-null', u'ambience-overall', u'in-seating', u'crowd', u'open-area', u'dancefloor', u'music', u'location', u'romantic', u'sports', u'live-matches', u'view']
-                self.cost_tags = ["vfm", "expensive", "cheap", "not worth"]
+                self.cost_tags = ["vfm", "expensive", "cheap", "not worth", "cost-null"]
                 self.service_tags = [u'management', u'service-charges', u'service-overall', u'serivce-null', u'servic-overall', u'service-null', u'waiting-hours', u'presentation', u'booking', u'staff']
 
 
@@ -879,22 +878,31 @@ class DoClusters(object):
 
 
 if __name__ == "__main__":
+            
             ##To check if __extract_places is working or not            
             ##ins = PerReview('2036121', 'Average quality food, you can give a try to garlic veg chowmien if you are looking for a quick lunch in Sector 44, Gurgaon where not much options are available.','2014-08-08 15:09:17', '302115')
             ##ins.run()
-            instance = EachEatery("6542", True)
+            """
+            instance = EachEatery("8913", True)
             result = instance.return_non_processed_reviews()
-            result = [(e[0], e[1], e[2], "6542") for e in result]
+            result = [(e[0], e[1], e[2], "8913") for e in result]
             for element in result:
-                    instance = PerReview(element[0], element[1], element[2], element[3])
-                    instance.run()
-            """
-            instance = EachEatery("844", True)
-            result = instance.return_non_processed_reviews()
-            result = [(e[0], e[1], e[2], "844")for e in result]
-            """
-
-            ins = DoClusters("6542")
+                            instance = PerReview(element[0], element[1], element[2], element[3])
+                            instance.run()
+            ins = DoClusters("8913")
             ins.run()
+
+
+            """
+            for post in eateries.find():
+                    eatery_id = post.get("eatery_id")
+                    instance = EachEatery(eatery_id, False)
+                    result = instance.return_non_processed_reviews()
+                    result = [(e[0], e[1], e[2], eatery_id) for e in result]
+                    for element in result:
+                            instance = PerReview(element[0], element[1], element[2], element[3])
+                            instance.run()
+                    ins = DoClusters(eatery_id)
+                    ins.run()
 
 
