@@ -125,7 +125,7 @@ class PerReview:
 
         @print_execution
         def run(self):
-                print "{0} No results found for review id --<<{1}>>--{2}".format(bcolors.FAIL, \
+                print "{0} Now processing review id --<<{1}>>--{2}".format(bcolors.FAIL, \
                                 self.review_id, bcolors.RESET)
                 self.__sent_tokenize_review() #Tokenize reviews, makes self.reviews_ids, self.sentences
                 self.__predict_tags()          #Predict tags, makes self.predict_tags
