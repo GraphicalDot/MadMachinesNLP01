@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 #-*- coding: utf-8 -*-
 """
 #CELERY_DEFAULT_QUEUE = 'default'
@@ -30,9 +31,18 @@ import os
 from kombu import Exchange, Queue
 from celery.schedules import crontab
 import sys
-from GlobalConfigs import MONGO_REVIEWS_IP, MONGO_REVIEWS_PORT, CELERY_REDIS_BROKER_IP,\
-                    CELERY_REDIS_BROKER_PORT, CELERY_REDIS_BROKER_DB_NUMBER
+import ConfigParser
+config = ConfigParser.RawConfigParser()
 
+
+file_path = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(file_path)
+sys.path.append(parent_dir)
+os.chdir(parent_dir)
+config.read("variables.cfg")
+print config.sections()
+
+os.chdir(file_path)
 
 
 CELERY_IMPORTS = ("ProcessingCeleryTask", )
@@ -40,9 +50,10 @@ CELERY_IMPORTS = ("ProcessingCeleryTask", )
 #serialization.registry._decoders.pop("application/x-python-serialize")
 #BROKER_URL = 'redis://'
 #BROKER_URL = 'redis://192.168.1.15:6379/0'
-BROKER_URL = 'redis://{host}:{port}/{db_number}'.format(host=CELERY_REDIS_BROKER_IP, port=CELERY_REDIS_BROKER_PORT, 
-                                                        db_number=CELERY_REDIS_BROKER_DB_NUMBER)
+BROKER_URL = 'redis://{host}:{port}/{db_number}'.format(host=config.get("redis", "ip"), port=config.getint("redis", "port"), 
+                                                        db_number=config.getint("redis", "db"))
 
+print BROKER_URL
 
 
 CELERY_QUEUES = (
@@ -95,8 +106,8 @@ CELERY_RESULT_BACKEND = 'mongodb'
 #the same server
 
 CELERY_MONGODB_BACKEND_SETTINGS = {
-		'host': MONGO_REVIEWS_IP,
-		'port': MONGO_REVIEWS_PORT,
+		'host':  config.get("celeryresults", "ip"),
+		'port':  config.getint("celeryresults", "port"),
 		'database': 'celery',
 #		'user': '',
 #		'password': '',
