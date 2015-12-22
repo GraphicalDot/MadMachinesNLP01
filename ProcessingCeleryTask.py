@@ -148,6 +148,7 @@ class DoClustersWorker(celery.Task):
 @app.task()
 class PerReviewWorker(celery.Task):
 	max_retries=3, 
+        ignore_result=False
 	acks_late=True
 	default_retry_delay = 5
 	def run(self, __list, eatery_id):
@@ -185,6 +186,7 @@ class PerReviewWorker(celery.Task):
 class EachEateryWorker(celery.Task):
 	max_retries=3, 
 	acks_late=True
+        ignore_result=False
 	default_retry_delay = 5
 	def run(self, eatery_id):
                 start = time.time()
@@ -199,11 +201,12 @@ class EachEateryWorker(celery.Task):
 
 @app.task()
 class MappingListWorker(celery.Task):
+        ignore_result=False
 	max_retries=0, 
 	acks_late=True
 	default_retry_delay = 5
         
-        def run(self, args, __eatery_id, __callback):
+        def run(self, __review_list, __eatery_id, __callback):
                 """
                 celery -A ProcessingCeleryTask  worker -n MappingListWorker -Q MappingListQueue --concurrency=4 -P \
                         gevent  --loglevel=info --autoreload
@@ -211,12 +214,8 @@ class MappingListWorker(celery.Task):
                 self.start = time.time()
                 callback = subtask(__callback)
 	       
-                if not bool(args):
-                        return None
-                print args
                 print __eatery_id
-                return group(callback.clone([arg, __eatery_id]) for arg in args)()
-
+                return group(callback.clone([arg, __eatery_id]) for arg in __review_list)()
         
         def after_return(self, status, retval, task_id, args, kwargs, einfo):
 		#exit point of the task whatever is the state
@@ -227,11 +226,40 @@ class MappingListWorker(celery.Task):
 		pass
 
 	def on_failure(self, exc, task_id, args, kwargs, einfo):
-		logger.info("{color} Ending --<{function_name}--> of task --<{task_name}>-- failed fucking\
+		print args
+                logger.info("{color} Ending --<{function_name}--> of task --<{task_name}>-- failed fucking\
                         miserably {reset}".format(color=bcolors.OKBLUE,\
                         function_name=inspect.stack()[0][3], task_name= self.__class__.__name__, reset=bcolors.RESET))
                 logger.info("{0}{1}".format(einfo, bcolors.RESET))
 		self.retry(exc=exc)
 
+
+
+@app.task()
+class StartProcessingChainWorker(celery.Task):
+        max_retries=3
+        acks_late=True
+        default_retry_delay = 5
+        print "http://docs.celeryproject.org/en/latest/userguide/monitoring.html"
+
+        def run(self, eatery_id_list=None):
+                if not eatery_id_list:
+                        eatery_id_list = [post.get("eatery_id") for post in eateries.find()]
+                        
+                self.start = time.time()
+                #process_list = eateries_list.s(url, number_of_restaurants, skip, is_eatery)| dmap.s(process_eatery.s())
+                for eatery_id in eatery_id_list:
+                        process_list = EachEateryWorker.s(eatery_id)| MappingListWorker.s(eatery_id, PerReviewWorker.s())
+                        process_list()
+                return
+
+
+        def after_return(self, status, retval, task_id, args, kwargs, einfo):
+                #exit point of the task whatever is the state
+                pass
+
+        def on_failure(self, exc, task_id, args, kwargs, einfo):
+                logger.info("{0}{1}".format(einfo, bcolors.RESET))
+                self.retry(exc=exc)
 
 

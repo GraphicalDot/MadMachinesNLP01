@@ -46,6 +46,7 @@ BROKER_URL = 'redis://{host}:{port}/{db_number}'.format(host=CELERY_REDIS_BROKER
 
 
 CELERY_QUEUES = (
+		Queue('StartProcessingChainQueue', Exchange('mapping_list', delivery_mode= 2),  routing_key='StartProcessingChainQueue.import'),
 		Queue('MappingListQueue', Exchange('mapping_list', delivery_mode= 2),  routing_key='MappingListQueue.import'),
 		Queue('EachEateryQueue', Exchange('default', delivery_mode= 2),  routing_key='EachEateryQueue.import'),
 		Queue('PerReviewQueue', Exchange('per_review', delivery_mode= 2),  routing_key='PerReviewQueue.import'),
@@ -80,6 +81,10 @@ CELERY_ROUTES = {
                 'ProcessingCeleryTask.ReturnResultWorker': {
 				'queue': 'ReturnResultQueue',
 				'routing_key': 'ReturnResultQueue.import',
+                                   },
+                'ProcessingCeleryTask.StartProcessingChainWorker': {
+				'queue': 'StartProcessingChainQueue',
+				'routing_key': 'StartProcessingChainQueue.import',
                                    },
                         }
 
