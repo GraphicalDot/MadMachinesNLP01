@@ -7,6 +7,7 @@ from sklearn.externals import joblib
 import os
 import jsonrpclib
 from simplejson import loads
+from elasticsearch import Elasticsearch, helpers
 
 
 this_file_path = os.path.dirname(os.path.abspath(__file__))
@@ -42,7 +43,7 @@ discarded_nps_collection=  result_db[config.get("resultsDB", "discarded_nps")]
 
 
 corenlpserver = jsonrpclib.Server("http://{0}:{1}".format(config.get("corenlpserver", "ip"), config.getint("corenlpserver", "port")))
-
+ES_CLIENT = Elasticsearch(config.get("elasticsearch", "ip"), timeout=30)
 
 
 
