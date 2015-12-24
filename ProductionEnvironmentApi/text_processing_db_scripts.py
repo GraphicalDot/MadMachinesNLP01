@@ -15,7 +15,7 @@ parent_dir = os.path.dirname(file_path)
 sys.path.append(parent_dir)
 
 os.chdir(parent_dir)
-from connections import reviews, eateries, reviews_results_collection, eateries_results_collection, discarded_nps_collection, bcolors
+from connections import reviews, eateries, reviews_results_collection, eateries_results_collection, discarded_nps_collection, bcolors, short_eatery_result_collection
 os.chdir(file_path)
 
 
@@ -123,7 +123,17 @@ class MongoScriptsDoClusters(object):
                         "eatery_type": True, "eatery_cuisine": True, "eatery_address": True, "eatery_known_for": True, "location": True\
                         "eatery_highlights": True, "eatery_trending": True, "eatery_area_or_city": True, "eatery_url": True, "__eatery_id": True})
 
+                try:
+                        latitude, longitude = eatery_dict["location"]
+                        latitude, longitude = float(latitude), float(longitude)
+                        
+                except Exception as e:
+                        print e
+                        raise StandardError("Eatery location not available for eatery id %s"%self.eatery_id)
+
+                eatery_dict.update({"location": [latitude, longitude]})
                 eateries_results_collection.update({"eatery_id": eatery_id}, {"$set": eatery_dict}, upsert=True, multi=False)
+                short_eatery_result_collection.update({"eatery_id": eatery_id}, {"$set": eatery_dict}, upsert=True, multi=False)
                 return 
 
 
@@ -217,9 +227,15 @@ class MongoScriptsDoClusters(object):
                         nps = np_result["nps"]
                         excluded_nps = np_result["excluded_nps"]
                         dropped_nps = np_result["dropped_nps"]
+
+                        ##to be inserted in short_eatery_result_collection
+                        
                         try:
                                 eateries_results_collection.update({"eatery_id": self.eatery_id}, {"$set": \
                                         {"food.{0}".format(category): nps}}, upsert=False)
+                                
+                                
+                                
                                 eateries_results_collection.update({"eatery_id": self.eatery_id}, {"$set": \
                                         {"dropped_nps": dropped_nps}}, upsert=False) 
                                 discarded_nps_collection.update({"eatery_id": self.eatery_id}, \
@@ -227,12 +243,25 @@ class MongoScriptsDoClusters(object):
                         except Exception as e:
                                 print e
 
+                        
+                        
+                        short_nps = list()
+                        for dish in nps[0:3]:
+                                dish.pop("similar")
+                                dish.pop("timeline")
+                                short_nps.append(dish)
+                                
+                        short_eatery_result_collection.update({"eatery_id": self.eatery_id}, {"$set": \
+                                        {"food.{0}".format(category): short_nps}}, upsert=False)
+
+
                         return
             
             
                 try:    
                         eateries_results_collection.update({"eatery_id": self.eatery_id}, {"$set": {
                         "food.{0}".format(category): np_result}}, upsert=False)
+                        
                 except Exception as e:
                         raise StandardError(e)
                 return 
@@ -275,6 +304,21 @@ class MongoScriptsDoClusters(object):
                     category_nps}}, upsert=False)
                 except Exception as e:
                     raise StandardError(e)
+
+                try:
+                        ##this is the dubcategory dict which has the highest total sentiment int he category
+                        __dict = [(key, value) for (key, value) in sorted(category_nps.iteritems(), reverse=True, key= lambda (k,v): v.get("total_sentiments") )][0]
+                        sub_category = __dict[0]
+                        sub_category_data = __dict[1]
+
+                        sub_category_data.pop("timeline")
+                        short_eatery_result_collection.update({"eatery_id": self.eatery_id}, {"$set": {"%s.%s"%(category, sub_category): sub_category_data}}, upsert= False)
+                        
+
+                except Exception as e:
+                    raise StandardError(e)
+
+
                 return 
 
 

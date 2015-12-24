@@ -139,63 +139,6 @@ class UsersDetails(tornado.web.RequestHandler):
                 return
 
 
-class UpdateClassifier(tornado.web.RequestHandler):
-        @cors
-        @timeit
-        def post(self):
-                """
-                Update the classifier with new data into the InMemoryClassifiers folder
-                args = update_classifiers.parse_args()    
-                whether_allowed = False
-                """
-                
-                if not whether_allowed:
-                        return {"success": False,
-                                "error": True,
-                                "messege": "Right now, Updating Tags or sentiments are not allowed",
-                                }
-
-
-                
-                return {"success": True,
-                        "error": False,
-                        "messege": "Updated!!!",
-                        }
-
-
-
-class ChangeTagOrSentiment(tornado.web.RequestHandler):
-        @cors
-        @timeit
-        def post(self):
-                """
-                Updates a sentece with change tag or sentiment from the test.html,
-                as the sentences will have no review id, the review_id will be marked as misc and will be stored in 
-                training_sentiment_collection or training_tag_collection depending upon the tag or seniment being updated
-                eatery_name =  self.get_argument("eatery_name")
-                """
-                args = change_tag_or_sentiment_parser.parse_args()    
-                sentence = args["sentence"]
-                value = args["value"]
-                whether_allowed = True
-
-
-                print sentence, value
-                if not whether_allowed:
-                        return {"success": False,
-                                "error": True,
-                                "messege": "Right now, Updating Tags or sentiments are not allowed",
-                                }
-
-
-                __collection = connection.training_data.training_sentiment_collection
-                __collection.insert({"review_id": "misc", "sentence": sentence, "sentiment": value, "epoch_time": time.time(), 
-                                "h_r_time": time.asctime()})
-                return {"success": True,
-                        "error": False,
-                        "messege": "Updated!!!",
-                        }
-
 
 class GetTrending(tornado.web.RequestHandler):
         @cors
@@ -205,18 +148,10 @@ class GetTrending(tornado.web.RequestHandler):
                 """
                 """
                         
-                latitude = float(self.get_argument("lat"))
-                longitude = float(self.get_argument("lng"))
+                latitude = float(self.get_argument("latitude"))
+                longitude = float(self.get_argument("longitude"))
                 print type(longitude)
                 result = ElasticSearchScripts.get_trending(latitude, longitude)
- 
-                for __category in ["food", "service", "cost", "ambience"]:
-                        for __list in result[__category]:
-                                    superpositive = __list.pop("super-positive")
-                                    supernegative = __list.pop("super-negative")
-                                    __list.update({"superpositive": superpositive, "supernegative": supernegative})
-
-
  
                 self.write({"success": True,
 			        "error": False,
@@ -226,23 +161,6 @@ class GetTrending(tornado.web.RequestHandler):
                 return 
 
 
-
-def process_object(__object):
-            """
-
-            """
-            superpositive = __object.pop("super-positive")
-            supernegative= __object.pop("super-negative")
-            totalsentiments = __object.pop("total_sentiments")
-            __object.update({"totalsentiments": totalsentiments, "superpositive": superpositive, "supernegative": supernegative})
-
-
-            __object.update(time_series(__object["timeline"]))
-            __object.update({"subcategory": __object["eatery_name"]})
-            return __object
-
-
-
 class NearestEateries(tornado.web.RequestHandler):
 	@cors
 	@print_execution
@@ -250,17 +168,12 @@ class NearestEateries(tornado.web.RequestHandler):
         @asynchronous
         def post(self):
                 """
-                This returns 10 top dishes name on the basis of the lat long
-                two top eateries trending in ambience
-                two top eateries trending in cost
-                two top eateries trending in service
+                Accoriding to the latitude, longitude given to it gives out the 10 restaurants nearby
                 """
                 
-                lat =  float(self.get_argument("lat"))
-                long =  float(self.get_argument("long")) 
+                latitude =  float(self.get_argument("lat"))
+                longitude =  float(self.get_argument("long")) 
                 
-                print self.get_argument("range")
-                range = self.get_argument("range")
                 if not range:
                         range = 5
                 else:
@@ -273,6 +186,8 @@ class NearestEateries(tornado.web.RequestHandler):
                 result = eateries.find({"eatery_coordinates" : SON([("$near", { "$geometry" : SON([("type", "Point"), ("coordinates", [lat, long]), \
                         ("$maxDistance", range)])})])}, projection).limit(10)
 
+                eateries_results_collection.find({"location": {"$near": [latitude, longitude]}}).limit(10):
+                
                 __result  = list(result)
                 print __result
                 self.write({"success": True,
@@ -281,7 +196,7 @@ class NearestEateries(tornado.web.RequestHandler):
 			})
                 self.finish()
                 
-class EateryDetails(tornado.web.RequestHandler):
+class GetEatery(tornado.web.RequestHandler):
 	@cors
 	@print_execution
         #@tornado.gen.coroutine
@@ -350,6 +265,37 @@ class EateryDetails(tornado.web.RequestHandler):
                 self.finish()
 
 
+
+class TextSearch(tornado.web.RequestHandler):
+        @cors
+	@print_execution
+	@tornado.gen.coroutine
+        def post(self):
+                """
+
+                """
+                text = self.get_argument("text")
+                __type = self.get_argument("type")
+
+
+                if __type == "dish":
+                        ##search in ES for dish name 
+
+
+                elif __type == "cuisine":
+                        ##gives out the restarant for cuisine name
+
+
+                else:
+                        self.write({"success": False,
+			        "error": True,
+			        "messege": "Maaf kijiyega, Yeh na ho paayega",
+			        })
+                        self.finish()
+                return 
+
+
+
 class Suggestions(tornado.web.RequestHandler):
         @cors
 	@print_execution
@@ -375,27 +321,6 @@ class Suggestions(tornado.web.RequestHandler):
                 self.finish()
                 return 
 
-class GetDishes(tornado.web.RequestHandler):
-        @cors
-	@print_execution
-	@tornado.gen.coroutine
-        def post(self):
-                """
-                """
-                dish_name = self.get_argument("dish_name")
-                
-                result = ElasticSearchScripts.get_dishes(dish_name)
-                print result
-                for __list in result:
-                                    superpositive = __list.pop("super-positive")
-                                    supernegative = __list.pop("super-negative")
-                                    __list.update({"superpositive": superpositive, "supernegative": supernegative})
-                self.write({"success": True,
-			        "error": False,
-			        "result": result,
-			        })
-                self.finish()
-                return 
 
 class GetEatery(tornado.web.RequestHandler):
         @cors
