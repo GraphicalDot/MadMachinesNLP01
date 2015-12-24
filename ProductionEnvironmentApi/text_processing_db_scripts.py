@@ -120,7 +120,7 @@ class MongoScriptsDoClusters(object):
         @staticmethod
         def update_eatery_result_collection(eatery_id):
                 eatery_dict = eateries.find_one({"eatery_id": eatery_id}, {"_id": False, "eatery_name": True, "eatery_longitude_latitude": True, \
-                        "eatery_type": True, "eatery_cuisine": True, "eatery_address": True, "eatery_known_for": True, "location": True\
+                        "eatery_type": True, "eatery_cuisine": True, "eatery_address": True, "eatery_known_for": True, "location": True, \
                         "eatery_highlights": True, "eatery_trending": True, "eatery_area_or_city": True, "eatery_url": True, "__eatery_id": True})
 
                 try:
