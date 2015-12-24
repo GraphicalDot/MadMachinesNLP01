@@ -305,9 +305,29 @@ class MongoScriptsDoClusters(object):
                 except Exception as e:
                     raise StandardError(e)
 
+                
+                
+                if category == "overall":
+                        category_nps.pop("timeline")
+                        short_eatery_result_collection.update({"eatery_id": self.eatery_id}, {"$set": {category: category_nps}}, upsert= False)
+                        return 
+
+                if category == "menu":
+                        category_nps.pop("timeline")
+                        short_eatery_result_collection.update({"eatery_id": self.eatery_id}, {"$set": {category: category_nps}}, upsert= False)
+                        return 
+                
+                
                 try:
                         ##this is the dubcategory dict which has the highest total sentiment int he category
-                        __dict = [(key, value) for (key, value) in sorted(category_nps.iteritems(), reverse=True, key= lambda (k,v): v.get("total_sentiments") )][0]
+                        modifed_category_nps = dict()
+                        for (key, value) in category_nps.iteritems():
+                                    if key.endswith("null"):
+                                            pass
+                                    else:
+                                            modifed_category_nps.update({key, value})
+
+                        __dict = [(key, value) for (key, value) in sorted(modifed_category_nps.iteritems(), reverse=True, key= lambda (k,v): v.get("total_sentiments") )][0]
                         sub_category = __dict[0]
                         sub_category_data = __dict[1]
 
@@ -316,8 +336,9 @@ class MongoScriptsDoClusters(object):
                         
 
                 except Exception as e:
+                    print category
+                    print category_nps
                     raise StandardError(e)
-
 
                 return 
 
