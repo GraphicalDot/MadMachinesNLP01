@@ -401,7 +401,7 @@ class DoClusters(object):
                 self.food_tags = ["dishes", "null-food", "overall-food"]
                 self.ambience_tags = [u'smoking-zone', u'decor', u'ambience-null', u'ambience-overall', u'in-seating', u'crowd', u'open-area', u'dancefloor', u'music', u'location', u'romantic', u'sports', u'live-matches', u'view']
                 self.cost_tags = ["vfm", "expensive", "cheap", "not worth", "cost-null"]
-                self.service_tags = [u'management', u'service-charges', u'service-overall', u'serivce-null', u'servic-overall', u'service-null', u'waiting-hours', u'presentation', u'booking', u'staff']
+                self.service_tags = [u'management', u'service-charges', u'service-overall', u'service-null', u'waiting-hours', u'presentation', u'booking', u'staff']
 
 
         def run(self):

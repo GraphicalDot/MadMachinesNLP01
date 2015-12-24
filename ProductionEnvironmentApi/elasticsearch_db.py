@@ -42,7 +42,7 @@ sentiment_tags =   ["good", "poor", "average", "excellent", "terrible", "mixed"]
 food_tags =  ["dishes",  "overall-food"]
 ambience_tags = ['smoking-zone', 'decor', 'ambience-overall', 'in-seating', 'crowd', 'open-area', 'dancefloor', 'music', 'location', 'romantic', 'sports', 'live-matches', 'view']
 cost_tags =  ["vfm", "expensive", "cheap", "not worth"]
-service_tags = ['management', 'service-charges', 'service-overall', 'serivce-null', 'servic-overall', 'waiting-hours', 'presentation', 'booking', 'staff']  
+service_tags = [u'management', u'service-charges', u'service-overall', u'service-null', u'waiting-hours', u'presentation', u'booking', u'staff'] 
 
 
 

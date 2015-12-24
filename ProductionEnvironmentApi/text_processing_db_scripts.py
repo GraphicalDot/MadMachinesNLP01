@@ -325,7 +325,7 @@ class MongoScriptsDoClusters(object):
                                     if key.endswith("null"):
                                             pass
                                     else:
-                                            modifed_category_nps.update({key, value})
+                                            modifed_category_nps.update({key: value})
 
                         __dict = [(key, value) for (key, value) in sorted(modifed_category_nps.iteritems(), reverse=True, key= lambda (k,v): v.get("total_sentiments") )][0]
                         sub_category = __dict[0]
