@@ -31,6 +31,8 @@ from selenium.common.exceptions import WebDriverException
 from retrying import retry
 import urllib2
 import getpass
+import hashlib
+import pymongo
 FILE = os.path.basename(__file__)  
 
 config = ConfigParser.RawConfigParser()
@@ -41,6 +43,12 @@ driver_exec_path = "/home/%s/Downloads/chromedriver"%(getpass.getuser())
 DRIVER_NAME = "CHROME"
 #PROXY_ADDRESS ="localhost:8118"
 PROXY_ADDRESS ="52.76.147.123:8118"
+
+
+connection = pymongo.MongoClient(config.get("zomato", "host"), config.getint("zomato", "port"))
+ZomatoReviewsCollection = connection[config.get("zomato", "database")][config.get("zomato", "reviews")]
+
+
 
 
 class AllEateriesUrl(object):
@@ -310,6 +318,9 @@ class EateryData(object):
                
                 assert(self.eatery["eatery_id"] != None)
                 assert(self.eatery["eatery_name"] != None)
+		__hash = hashlib.sha256(self.eatery["eatery_id"] + self.eatery["eatery_url"]).hexdigest()
+
+		self.eatery.update({"__eatery_id": __hash})
 
 
                 self.reviews_inDB = review_collection.find({"eatery_id": self.eatery["eatery_id"]}).count()
@@ -334,7 +345,7 @@ class EateryData(object):
                 process_result(self.eatery, "eatery_highlights", FILE)(self.eatery_highlights)()
                 process_result(self.eatery, "eatery_popular_reviews", FILE)(self.eatery_popular_reviews)()
 
-                process_result(self.eatery, "eatery_longitude_latitude", FILE)(self.eatery_longitude_latitude)()
+                process_result(self.eatery, "location", FILE)(self.eatery_longitude_latitude)()
                 process_result(self.eatery, "eatery_total_reviews", FILE)(self.eatery_total_reviews)()
                 process_result(self.eatery, "eatery_buffet_price", FILE)(self.eatery_buffet_price)()
                 process_result(self.eatery, "eatery_buffet_details", FILE)(self.eatery_buffet_details)()
@@ -353,7 +364,7 @@ class EateryData(object):
 
 
 
-                assert(self.eatery["eatery_longitude_latitude"] != None)
+                assert(self.eatery["location"] != None)
 
                 review_soup = self.get_reviews()
 	        #self.last_no_of_reviews_to_be_scrapped = int(self.no_of_reviews_to_be_scrapped) - int(no_of_blogs)
@@ -384,8 +395,12 @@ class EateryData(object):
                 if driver.title.startswith("404"):
                         driver.close()
                         raise StandardError("This url doesnt exists, returns 404 error")
-                driver.find_elements_by_xpath('//*[@id="res-timings-toggle"]')[0].click()
-                time.sleep(3)
+                try:
+			driver.find_elements_by_xpath('//*[@id="res-timings-toggle"]')[0].click()
+                except Exception as e:
+			print e
+			pass
+		time.sleep(3)
                 html = driver.page_source
                 driver.quit()
                 
@@ -415,10 +430,15 @@ class EateryData(object):
                 
                 if driver.title.startswith("404"):
                         raise StandardError("This url doesnt exists, returns 404 error")
-                time.sleep(random.choice([5, 6, 7, 8]))
+                time.sleep(50)
                 try:
                         driver.find_element_by_css_selector("a.everyone.empty").click()
-                        time.sleep(10)
+                        time.sleep(20)
+                        driver.find_element_by_css_selector("a.everyone.empty").click()
+                        driver.find_element_by_css_selector("a.everyone.empty").click()
+                        driver.find_element_by_css_selector("a.everyone.empty").click()
+                        driver.find_element_by_css_selector("a.everyone.empty").click()
+                        driver.find_element_by_css_selector("a.everyone.empty").click()
 			print "{start_color} Found love in clinking all_review button :)  {end_color}".format(\
                                 start_color=bcolors.OKGREEN, end_color=bcolors.RESET)
 
@@ -466,7 +486,7 @@ class EateryData(object):
                                 	print "Click on loadmore <<{value}>> time".format(start_color=bcolors.OKBLUE, value=i, end_color=bcolors.RESET)
                                 	##time.sleep(random.choice([2, 3]))
                                 	driver.find_element_by_class_name("load-more").click()
-                                	time.sleep(2)
+                                	time.sleep(1)
 
                 	except NoSuchElementException as e:
                         	print "{color} ERROR: Catching Exception -<{error}>- with messege -<No More Loadmore tag present>- {reset}".format(color=bcolors.OKGREEN, error=e, reset=bcolors.RESET)
@@ -474,16 +494,25 @@ class EateryData(object):
 
                 	except urllib2.URLError:
                         	driver.quit()
-				raise StandardError("Could not make the request")
-                	
+				#raise StandardError("Could not make the request")
+				pass                	
+
 			except WebDriverException:
                         	driver.quit()
-				raise StandardError("Could not make the request")
+				#raise StandardError("Could not make the request")
+				pass			
+
+			except Exception as e:
+				print e		
+				pass
+
+		if ZomatoReviewsCollection.find({"eatery_id": self.eatery["eatery_id"]}).count() == 0:
+
+			for i in range(0, reviews_to_be_scraped/5+500):
+				run_load_more()
 			
-				
-
-
-		for i in range(0, reviews_to_be_scraped/5+2):
+		else:
+			for i in range(0, reviews_to_be_scraped/5+3):
 				run_load_more()
 				
 

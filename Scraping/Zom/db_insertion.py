@@ -105,8 +105,12 @@ class DBInsert(object):
         
         @staticmethod
 	def flush_eatery(eatery_url):
-                eatery_id = ZomatoEateries.find_one({"eatery_url": eatery_url}).get("eatery_id")
-                print ZomatoReviews.remove({"eatery_id": eatery_id})
-                return
+                try:
+			eatery_id = ZomatoEateries.find_one({"eatery_url": eatery_url}).get("eatery_id")
+                	print ZomatoReviews.remove({"eatery_id": eatery_id})
+                except Exception as e:
+			print e
+			pass
+		return
 
 

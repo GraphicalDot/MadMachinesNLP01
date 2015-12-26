@@ -47,7 +47,9 @@ config = ConfigParser.RawConfigParser()
 config.read("zomato_dom.cfg")
 driver_exec_path = "/home/%s/Downloads/chromedriver"%(getpass.getuser())
 DRIVER_NAME = "CHROME"
+PROXY_ADDRESS ="52.76.147.123:8118"
 
+#StartScrapeChain.apply_async(["https://www.zomato.com/ncr/restaurants", 30, 0, False])
 
 """
 To run tasks for scraping one restaurant 
@@ -114,8 +116,11 @@ def generate_new_proxy():
                 html = driver.page_source
                 driver.close()
                 ip = re.findall("\d+.\d+.\d+.\d+", html)
-                return ip[0]
-                
+                try:
+			return ip[0]
+                except:
+			return None
+			
         if config.getboolean("proxy", "use_proxy"):
                         renew_connection()
                         __ip = selenium_request("http://icanhazip.com/", use_proxy=True)
@@ -181,7 +186,6 @@ class ScrapeEachEatery(celery.Task):
         def run(self, eatery_dict, flush_eatery=False):
 		self.eatery_dict = eatery_dict
 	        self.start = time.time()
-                ip = generate_new_proxy() 
 
             
                 if flush_eatery:
@@ -282,8 +286,7 @@ class StartScrapeChain(celery.Task):
         def run(self, url, number_of_restaurants, skip, is_eatery):
 	        self.start = time.time()
                 global ip
-                ip = generate_new_proxy() 
-                print ip
+                ip = None 
                 #process_list = eateries_list.s(url, number_of_restaurants, skip, is_eatery)| dmap.s(process_eatery.s())
                 process_list = GenerateEateriesList.s(url, number_of_restaurants, skip, is_eatery)| MapListToTask.s(ScrapeEachEatery.s())
 	        process_list()
