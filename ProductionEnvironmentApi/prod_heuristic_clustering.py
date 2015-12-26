@@ -143,6 +143,8 @@ class ProductionHeuristicClustering:
                          [u'excellent', [u'garlic flavours', u'penne alfredo pasta']]],
                 """
 
+
+                print sentiment_np_time
                 if eatery_name:
                         self.list_to_exclude = flatten(["food", "service", "cost", "ambience", "place", \
                                 "Place", "i", "great", "good", eatery_name.lower().split(), "rs", "delhi",\
@@ -151,6 +153,7 @@ class ProductionHeuristicClustering:
                         try:
                                 self.list_to_exclude.extend(eatery_address.split(","))
                                 self.list_to_exclude.extend(places)
+                                self.list_to_exclude.extend(["i", "good", "great", "food", "service", "cost", "ambience", "place", "rs"])
                         except Exception as e:
                                 pass
                         
@@ -191,6 +194,9 @@ class ProductionHeuristicClustering:
                 """
                 ##only returns noun phrases that have toatal sentiments greater than 1
                 __result = self.add_sentiments(self.result)
+                __result = self.filter_on_basis_pos_tag(__result)
+                print __result
+                
                 result = [e for e in __result if e.get("total_sentiments") >1]
                 excluded_nps = [e for e in __result if e.get("total_sentiments") <=1]
 
@@ -441,7 +447,7 @@ class ProductionHeuristicClustering:
                 result = sorted(ners.items(), reverse=True, key=lambda x: x[1])
                 return result
 
-        def filter_on_basis_pos_tag(self):
+        def filter_on_basis_pos_tag(self, result):
                 """
                 pos tagging of noun phrases will be d
                 one, and if the noun phrases contains some adjectives or RB or FW, 
@@ -453,12 +459,12 @@ class ProductionHeuristicClustering:
                 noun_phrase = "great place"
                 
                 """
-                hunpos_tagger = HunposTagger(HunPosModelPath, HunPosTagPath)
                 filtered_list = list()
                 for __e in self.result:
-                        __list = [pos_tag for (np, pos_tag) in hunpos_tagger.tag(nltk.wordpunct_tokenize(__e.get("name").encode("ascii", "ignore")))]
+                        __list = [pos_tag for (np, pos_tag) in nltk.pos_tag(nltk.wordpunct_tokenize(__e.get("name").encode("ascii", "ignore")))]
                         if set.intersection(set(__list), set(["FW", "CD", "LS"])):
                                     print "This will be droppped out of total noun phrases %s"%__e.get("name")
+                                    self.dropped_nps.append(__e)
                         else:
                             filtered_list.append(__e)
 

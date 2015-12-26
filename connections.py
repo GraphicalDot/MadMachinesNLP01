@@ -15,7 +15,7 @@ this_file_path = os.path.dirname(os.path.abspath(__file__))
 config = ConfigParser.RawConfigParser()
 config.read("variables.cfg")
 
-
+ELASTICSEARCH_IP = config.get("corenlpserver", "ip")
 
 path_for_classifiers = "%s/Text_Processing/PrepareClassifiers/InMemoryClassifiers/newclassifiers"%(this_file_path) 
 
@@ -43,7 +43,7 @@ discarded_nps_collection=  result_db[config.get("resultsDB", "discarded_nps")]
 short_eatery_result_collection = result_db[config.get("resultsDB", "short_eatery_result")]
 
 corenlpserver = jsonrpclib.Server("http://{0}:{1}".format(config.get("corenlpserver", "ip"), config.getint("corenlpserver", "port")))
-ES_CLIENT = Elasticsearch(config.get("elasticsearch", "ip"), timeout=30)
+ES_CLIENT = Elasticsearch(ELASTICSEARCH_IP, timeout=30)
 
 
 

@@ -95,14 +95,13 @@ from termcolor import cprint
 from pyfiglet import figlet_format
 
 from Text_Processing.Sentence_Tokenization.Sentence_Tokenization_Classes import SentenceTokenizationOnRegexOnInterjections
-from connection import connection, eateries, reviews, eateries_results_collection, reviews_results_collectioni, short_eatery_result_collection
+from connections import eateries, reviews, eateries_results_collection, reviews_results_collection, short_eatery_result_collection, bcolors
 
 from ProductionEnvironmentApi.text_processing_api import PerReview, EachEatery, DoClusters
 from ProductionEnvironmentApi.text_processing_db_scripts import MongoScriptsReviews, MongoScriptsDoClusters
 from ProductionEnvironmentApi.prod_heuristic_clustering import ProductionHeuristicClustering
 from ProductionEnvironmentApi.join_two_clusters import ProductionJoinClusters
 from ProductionEnvironmentApi.elasticsearch_db import ElasticSearchScripts
-from ProductionEnvironmentApi.query_resolution import QueryResolution
 
 def print_execution(func):
         "This decorator dumps out the arguments passed to a function before calling it"
@@ -204,19 +203,13 @@ class NearestEateries(tornado.web.RequestHandler):
                 Accoriding to the latitude, longitude given to it gives out the 10 restaurants nearby
                 """
                 
-                latitude =  float(self.get_argument("lat"))
-                longitude =  float(self.get_argument("long")) 
+                latitude =  float(self.get_argument("latitude"))
+                longitude =  float(self.get_argument("longitude")) 
                 
-                if not range:
-                        range = 5
-                else:
-                        range = int(range)
-                
-
 
                 #result = eateries.find({"eatery_coordinates": {"$near": [lat, long]}}, projection).sort("eatery_total_reviews", -1).limit(10)
-                result = eateries.find({"eatery_coordinates" : SON([("$near", { "$geometry" : SON([("type", "Point"), ("coordinates", [lat, long]), \
-                        ("$maxDistance", range)])})])}, projection).limit(10)
+                #result = eateries.find({"eatery_coordinates" : SON([("$near", { "$geometry" : SON([("type", "Point"), ("coordinates", [lat, long]), \
+                #        ("$maxDistance", range)])})])}, projection).limit(10)
 
 
                 try:
@@ -236,7 +229,6 @@ class NearestEateries(tornado.web.RequestHandler):
                 result = short_eatery_result_collection.find({"location": {"$near": [latitude, longitude]}}, projection ).limit(10)
                 
                 __result  = list(result)
-                print __result
                 self.write({"success": True,
 			"error": False,
                         "result": __result,
@@ -251,26 +243,49 @@ class TextSearch(tornado.web.RequestHandler):
 	@tornado.gen.coroutine
         def post(self):
                 """
-
+                This api will be called when a user selects or enter a query in search box
                 """
                 text = self.get_argument("text")
                 __type = self.get_argument("type")
 
 
                 if __type == "dish":
+                        """
+                        It might be a possibility that the user enetered the dish which wasnt in autocomplete
+                        then we have to search exact dish name of seach on Laveneshtein algo
+                        """
                         ##search in ES for dish name 
-
-
+                        result = ElasticSearchScripts.get_dish_match(text)
+                        
                 elif __type == "cuisine":
                         ##gives out the restarant for cuisine name
+                        print "searching for cuisine"
+                        result = list()
+                        __result = ElasticSearchScripts.eatery_on_cuisines(text)
+                        for eatery in __result:
+                                    result.append(short_eatery_result_collection.find_one({"__eatery_id": eatery.get("__eatery_id")}, {"_id": False, "food": True, "ambience": True, \
+                                            "cost":True, "service": True, "menu": True, "overall": True, "location": True, "eatery_address": True, "eatery_name": True}))
 
-
+                elif __type == "eatery":
+                        
+                        result = list()
+                        __result = ElasticSearchScripts.get_eatery_match(text)
+                        for eatery in __result:
+                                    result.append(short_eatery_result_collection.find_one({"__eatery_id": eatery.get("__eatery_id")}, {"_id": False, "food": True, "ambience": True, \
+                                            "cost":True, "service": True, "menu": True, "overall": True, "location": True, "eatery_address": True, "eatery_name": True}))
                 else:
                         self.write({"success": False,
 			        "error": True,
 			        "messege": "Maaf kijiyega, Yeh na ho paayega",
 			        })
                         self.finish()
+                        return 
+
+                self.write({"success": False,
+			        "error": True,
+			        "result": result,
+			})
+                self.finish()
                 return 
 
 
@@ -279,23 +294,35 @@ class Suggestions(tornado.web.RequestHandler):
         @cors
 	@print_execution
 	@tornado.gen.coroutine
-        def get(self):
+        def post(self):
                 """
+
+
+                Return:
+
+                        [
+                        {u'suggestions': [u'italian food', 'italia salad', 'italian twist', 'italian folks', 'italian attraction'], 'type': u'dish'},
+                        {u'suggestions': [{u'eatery_name': u'Slice of Italy'}], u'type': u'eatery'},
+                        {u'suggestions': [{u'name': u'Italian'}, {u'name': u'Cuisines:Italian'}], 'type': u'cuisine'}
+                        ]
+
                 """
                         
                 query = self.get_argument("query")
                 
-                dish_suggestions = list(set(ElasticSearchScripts.dish_suggestions(query)))
-                cuisine_suggestions =  ElasticSearchScripts.cuisines_suggestions(query)
+                dish_suggestions = ElasticSearchScripts.dish_suggestions(query)
+                cuisines_suggestions =  ElasticSearchScripts.cuisines_suggestions(query)
                 eatery_suggestions = ElasticSearchScripts.eatery_suggestions(query)
                 #address_suggestion = ElasticSearchScripts.address_suggestions(query)
                 
-                result = list(set(["{0}".format(element["name"]) for element in result]))
-                print result 
+
 
                 self.write({"success": True,
 			        "error": False,
-			        "options": result,
+                                "result": [{"type": "dish", "suggestions": [e.get("name") for e in dish_suggestions] },
+                                            {"type": "eatery", "suggestions": eatery_suggestions },
+                                            {"type": "cuisine", "suggestions": cuisines_suggestions }
+                                            ]
 			        })
                 self.finish()
                 return 
@@ -310,20 +337,18 @@ class GetEatery(tornado.web.RequestHandler):
                 """
                         
                 number_of_dishes = 20
-                eatery_name =  self.get_argument("eatery_name")
-                type_of_data =  self.get_argument("type_of_data")
-                result = eateries_results_collection.find_one({"eatery_name": eatery_name})
+                eatery_name =  self.get_argument("__eatery_id")
+                result = eateries_results_collection.find_one({"__eatery_id": __eatery_id})
                 if not result:
                         """
                         If the eatery name couldnt found in the mongodb for the popular matches
                         Then we are going to check for demarau levenshetin algorithm for string similarity
                         """
 
-
-
-                    
-                    
-                    
+                        self.write({"success": False,
+			        "error": True,
+                                "result": "SOmehoe eatery with this eatery is not present in the DB"})
+                        self.finish()
                         return 
                 
                 dishes = sorted(result["food"]["dishes"], key=lambda x: x.get("total_sentiments"), reverse=True)[0: number_of_dishes]
@@ -362,25 +387,6 @@ class GetEatery(tornado.web.RequestHandler):
 
                 return 
 
-class GetEaterySuggestions(tornado.web.RequestHandler):
-        @cors
-	@print_execution
-	@tornado.gen.coroutine
-        def get(self):
-                """
-                """
-                        
-                dish_name = self.get_argument("query")
-                
-                result = ElasticSearchScripts.eatery_suggestions(dish_name)
-                result = list(set(["{0}".format(element["eatery_name"]) for element in result]))
-                print result
-                self.write({"success": True,
-			        "error": False,
-			        "options": result,
-			        })
-                self.finish()
-                return 
 
 def main():
         http_server = tornado.httpserver.HTTPServer(Application())
@@ -394,31 +400,13 @@ class Application(tornado.web.Application):
         def __init__(self):
                 handlers = [
                     (r"/suggestions", Suggestions),
-                    (r"/get_trending", GetTrending),
+                    (r"/text_search", TextSearch),
                     
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    (r"/limited_eateries_list", LimitedEateriesList),
-                    (r"/get_word_cloud", GetWordCloud),
-                    (r"/resolve_query", Query),
                     (r"/get_trending", GetTrending),
                     (r"/nearest_eateries", NearestEateries),
-                    (r"/eateries_on_character", EateriesOnCharacter),
                     (r"/users_details", UsersDetails),
                     (r"/users_feedback", UsersFeedback),
-                    (r"/get_dishes", GetDishes),
-                    (r"/get_eatery", GetEatery),
-                    (r"/get_dish_suggestions", GetDishSuggestions),
-                    (r"/get_eatery_suggestions", GetEaterySuggestions),
-                    (r"/sentence_tokenization", SentenceTokenization),
-                    (r"/upload_sentence", UploadSentence),
-                
-                    (r"/eatery_details", EateryDetails),]
+                    (r"/get_eatery", GetEatery),]
                 settings = dict(cookie_secret="__TODO:_GENERATE_YOUR_OWN_RANDOM_VALUE_HERE__",)
                 tornado.web.Application.__init__(self, handlers, **settings)
                 self.executor = ThreadPoolExecutor(max_workers=60)

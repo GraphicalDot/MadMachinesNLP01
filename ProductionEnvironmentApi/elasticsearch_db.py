@@ -29,7 +29,7 @@ NUMBER_OF_DOCS = 10
 
 
 os.chdir(parent_dir_path)
-from connections import ES_CLIENT, eateries_results_collection, bcolors
+from connections import ES_CLIENT, eateries_results_collection, bcolors, eateries, ELASTICSEARCH_IP
 os.chdir(file_path)
 
 
@@ -114,11 +114,10 @@ class ElasticSearchScripts(object):
                                                             'tokenizer': 'keyword',
                                                             'type': 'custom'},
                                                     
-                                                        'phonetic_analyzer': {
-                                                                'filter': ['lowercase', 'asciifolding', 'standard', 'custom_metaphone'],
-                                                                'tokenizer': 'whitespace',
-                                                                'type': 'custom'},
-                                                        
+                                                        #'phonetic_analyzer': {
+                                                         #       'filter': ['lowercase', 'asciifolding', 'standard', 'custom_metaphone'],
+                                                          #      'tokenizer': 'whitespace',
+                                                           #     'type': 'custom'},
                                                         'shingle_analyzer': {
                                                                 'filter': ['lowercase', 'asciifolding', 'shingle_tokenizer'],
                                                                 'tokenizer': 'ngram_tokenizer',
@@ -131,10 +130,9 @@ class ElasticSearchScripts(object):
                                                         },
                                                                  
                                                     'filter': {
-                                                            'custom_metaphone': {'encoder': 'metaphone',
-                                                                        'replace': False,
-                                                                        'type': 'phonetic'},
-                                                                                 
+                                                            #'custom_metaphone': {'encoder': 'metaphone',
+                                                             #           'replace': False,
+                                                              #          'type': 'phonetic'},
                                                             'shingle_tokenizer': {'max_shingle_size': 5,
                                                                                     'min_shingle_size': 2,
                                                                                     'type': 'shingle'}
@@ -183,15 +181,18 @@ class ElasticSearchScripts(object):
                             'eatery_id': {'index': 'not_analyzed', 'type': 'string'},
                             "eatery_autocomplete": { 'analyzer': 'custom_analyzer', 'type': 'string'}, 
                             "address_autocomplete": { 'analyzer': 'custom_analyzer', 'type': 'string'}, 
+                            "eatery_cuisine_autocomplete": { 'analyzer': 'custom_analyzer', 'type': 'string'},
                             'eatery_raw': {'analyzer': 'keyword_analyzer', 'type': 'string'},
                             'eatery_shingle': {'analyzer': 'shingle_analyzer', 'type': 'string'},
                             "cuisines":{"type":"string"},
-                            "eatery_address":{"type":"string"},
+                            "eatery_address":{"copy_to": ["address_autocomplete"], "type":"string"},
                             "eatery_area_or_city":{"type":"string"},
                             "eatery_cuisine":{"type":"string"},
                             "eatery_highlights":{"type":"string"},
                             "eatery_name":{"type":"string"},
-                            "eatery_type":{"type":"string"},
+                            
+                            "eatery_type":{"type":"string", 'copy_to': 'eatery_cuisine_autocomplete'},
+                            
                             "eatery_url":{"type":"string"},
                             "location":{"type":"geo_point"},
                             "mention_factor":{"type":"double"},
@@ -200,7 +201,7 @@ class ElasticSearchScripts(object):
                             "eatery_address_split": {"type": "string"},
                             'eatery_name': {'copy_to': ['eatery_shingle', 'eatery_raw', 'eatery_autocomplete'],
                                                         'type': 'string'},
-                            'eatery_cuisine_split': {'copy_to': ['eatery_shingle', 'eatery_raw', 'eatery_autocomplete'],
+                            'eatery_cuisine_split': {'copy_to': ['eatery_cuisine_autocomplete'],
                                                         'type': 'string'},
                             'eatery_address_split': {'copy_to': ['address_autocomplete'],
                                                         'type': 'string'},
@@ -272,6 +273,15 @@ class ElasticSearchScripts(object):
                 return 
 
         def prep_eatery_index(self):
+                """
+                In eatery index there exists four doc_type
+                    cuisines
+                    eatery
+                    menu
+                    overall
+                """
+            
+            
                 ES_CLIENT.indices.create(index="eatery", body=self.settings)
                 ES_CLIENT.indices.put_mapping(index="eatery", doc_type="eatery", body = self.eatery_mappings)
                 print "{0}Mappings updated for  {1}  {2}".format(bcolors.OKGREEN, "eatery",  bcolors.RESET)
@@ -282,7 +292,7 @@ class ElasticSearchScripts(object):
                 ##Inserting cusines names into cuisines index
                 cuisines_list = list()
                 ES_CLIENT.indices.put_mapping(index="eatery", doc_type="cuisines", body =self.cuisines_mappings)
-                for post in eateries_results_collection.find():
+                for post in eateries.find():
                         try:
                                 cuisines = post.get("eatery_cuisine")
                                 eatery_cuisine_split = cuisines.replace(" ", "").split(",")
@@ -295,6 +305,10 @@ class ElasticSearchScripts(object):
                                 print "Updating cuisine %s"%cuisine
                                 ES_CLIENT.index(index="eatery", doc_type="cuisines", body={"name": cuisine})
 
+                
+                ES_CLIENT.indices.put_mapping(index="eatery", doc_type="menu", body = {"menu": self.other_mappings })
+                ES_CLIENT.indices.put_mapping(index="eatery", doc_type="overall", body = {"overall": self.other_mappings })
+                
                 return 
 
 
@@ -346,7 +360,7 @@ class ElasticSearchScripts(object):
                 ES_CLIENT.indices.create(index="food", body=self.settings)
                 __mappings = {'dishes': {'_all': {'enabled': True},
                           'properties': {
-                                    'dish_phonetic': {'analyzer': 'phonetic_analyzer', 'type': 'string'},
+                                   # 'dish_phonetic': {'analyzer': 'phonetic_analyzer', 'type': 'string'},
                                     'dish_raw': {'analyzer': 'keyword_analyzer', 'type': 'string'},
                                     'dish_shingle': {'analyzer': 'shingle_analyzer', 'type': 'string'},
                                     "dish_autocomplete": { 'analyzer': 'custom_analyzer', 'type': 'string'}, 
@@ -365,7 +379,7 @@ class ElasticSearchScripts(object):
                                     'poor': {'type': 'long'},
                                     'average': {'type': 'long'},
                                     'good': {'type': 'long'},
-                                    'similar': {'properties': {'name': {'copy_to': ['dish_raw', 'dish_shingle', 'dish_phonetic', 'dish_autocomplete'],
+                                    'similar': {'properties': {'name': {'copy_to': ['dish_raw', 'dish_shingle',  'dish_autocomplete'],
                                     'type': 'string'}, 'poor': {'type': 'long'},
                                     'average': {'type': 'long'},
                                     'good': {'type': 'long'},
@@ -389,6 +403,9 @@ class ElasticSearchScripts(object):
 
                 try:
                         ES_CLIENT.indices.put_mapping(index="food", doc_type="dishes", body = __mappings)
+                        
+                        ##also overall-food mapings should also be there
+                        ES_CLIENT.indices.put_mapping(index="food", doc_type="overall-food", body = {"overall-food": self.other_mappings})
                         print "{0}Mappings updated {1}".format(bcolors.OKGREEN, bcolors.RESET)
                 
                 
@@ -433,8 +450,30 @@ class ElasticSearchScripts(object):
                 """
                 This method deasl with updating or inserting th eatery data into 
                 Deals only with four categories food, ambience, service, cost
+                
+                keys that are present in eatery are:
+                    [u'eatery_type', u'cuisines', u'processed_reviews', u'__eatery_id', u'cost', u'dropped_nps', u'eatery_longitude_latitude', \
+                            u'service', u'menu', u'eatery_id', u'eatery_highlights', u'eatery_address', u'location', u'eatery_cuisine', u'ambience', \
+                            u'old_considered_ids', u'eatery_trending', u'eatery_name', u'food', u'overall', u'eatery_known_for', u'eatery_url', u'places', u'eatery_area_or_city', u'_id']
+                    
+
+                Need not to store dropped_nps
+
+                SO here it starts:
+                    five indexes
+                        eatery
+                            this has four doctypes , menu, overall, eatery, cuisines
+                        food
+                            two doctypes, dishes and overallfood
+                        cost
+                        ambience
+                        service
+
+
+
                 """
 
+                print "starting inserting eateryid %s"%eatery_id
                 delete_body = {
                             "query" : {
                                         "term" : { "eatery_id" : eatery_id }
@@ -457,6 +496,7 @@ class ElasticSearchScripts(object):
                 eatery = eateries_results_collection.find_one({"eatery_id": eatery_id})
 
                 __eatery_id = eatery["__eatery_id"]
+                eatery_id = eatery["eatery_id"]
                 eatery_name = eatery.get("eatery_name")
                 food_data = eatery["food"]
                 ambience_data = eatery["ambience"]
@@ -465,16 +505,23 @@ class ElasticSearchScripts(object):
 
                 eatery_dict = dict()
                 __list = ['eatery_type', "__eatery_id", 'cuisines',  'eatery_longitude_latitude', 'eatery_id', 'eatery_highlights', 'eatery_address', \
-                        'eatery_cuisine', 'eatery_trending', 'eatery_name', "eatery_url", 'eatery_known_for', 'eatery_area_or_city']        
+                        'eatery_cuisine', 'eatery_trending', 'eatery_name', "eatery_url", 'eatery_known_for', 'eatery_area_or_city',  "location"]        
                 
                 ##inserting eatery in eatery index and type eatery
                 for e in __list:
                         eatery_dict.update({e: eatery.get(e)})
 
                 ##changing long lart for eatery
-                latitude, longitude = eatery_dict.pop("eatery_longitude_latitude")
-                latitude, longitude = float(latitude), float(longitude)
-                eatery_address_split = eatery_dict["eatery_address"].replace(" ", "").split(",")
+                try:
+                        latitude, longitude = eatery_dict.pop("eatery_longitude_latitude")
+                        latitude, longitude = float(latitude), float(longitude)
+                except Exception as e:
+                        print "eatery_longitude_latitude key not present, tying location"
+                        latitude, longitude = eatery_dict.pop("location")
+                        latitude, longitude = float(latitude), float(longitude)
+                        
+                eatery_address = eatery_dict["eatery_address"]
+                eatery_address_split = eatery_address.replace(" ", "").split(",")
                 
                 eatery_dict.update({"location": [longitude, latitude]})
                 eatery_dict.update({"eatery_address_split": eatery_address_split})
@@ -485,32 +532,51 @@ class ElasticSearchScripts(object):
                 except:
                         pass
 
+                menu_data = eatery["menu"]
+                overall_data = eatery["overall"]
+
+                menu_data.update({"eatery_id": eatery_id, "__eatery_id": __eatery_id, "eatery_name": eatery_dict["eatery_name"], "location": [longitude, latitude], \
+                                "eatery_address": eatery_dict["eatery_address"]})
+                
+                overall_data.update({"eatery_id": eatery_id, "__eatery_id": __eatery_id, "eatery_name": eatery_dict["eatery_name"], "location": [longitude, latitude], \
+                                "eatery_address": eatery_dict["eatery_address"]})
+
+
+
                 l = ES_CLIENT.index(index="eatery", doc_type="eatery", body=eatery_dict)
-                l = ES_CLIENT.index(index="eatery", doc_type="menu", body=eatery["menu"])
-                l = ES_CLIENT.index(index="eatery", doc_type="overall", body=eatery["overall"])
+                l = ES_CLIENT.index(index="eatery", doc_type="menu", body=menu_data)
+                l = ES_CLIENT.index(index="eatery", doc_type="overall", body=overall_data)
 
 
                 for category in ["food_tags", "cost_tags", "ambience_tags", "service_tags"]:
-                        data = eatery[category.replace("_tags", "")]
-                        for sub_category in json.loads(config.get("categories", category)):
+                        __category = category.replace("_tags", "")
+                        data = eatery[__category]
+                        for sub_category in eval(category):
                                 
-                                if sub_category in ["dishes", "overall-food"]:
+                                if sub_category  == "dishes":
                                         sub_data = data[sub_category]
                                         for __dish in sub_data:
                                                 __dish.update({"eatery_id": eatery_id})
                                                 __dish.update({"__eatery_id": __eatery_id})
                                                 __dish.update({"eatery_name": eatery_name})
                                                 __dish.update({"location": [longitude, latitude]})
-                                                l = ES_CLIENT.index(index="food", doc_type=sub_category, body=__dish)
+                                                __dish.update({"eatery_address": eatery_address})
+                                                
+                                                l = ES_CLIENT.index(index=__category, doc_type=sub_category, body=__dish)
+                                	        print "%s for %s for eatery_id %s for dish_name <<%s>>"%(l, sub_category, eatery_id, __dish.get("name"))
                                 else:
 					try:
+                                                
                                         	sub_data = data[sub_category]
                                         	sub_data.update({"eatery_id": eatery_id})
                                         	sub_data.update({"eatery_name": eatery_name})
                                                 sub_data.update({"location": [longitude, latitude]})
+                                                sub_data.update({"eatery_address": eatery_address})
 
-                                        	l = ES_CLIENT.index(index=category, doc_type=sub_category, body=sub_data)
-                                	except Exception as e:
+                                        	l = ES_CLIENT.index(index=__category, doc_type=sub_category, body=sub_data)
+                                	        print "%s for %s for eatery_id %s"%(l, sub_category, eatery_id)
+                                        except Exception as e:
+                                                print e
                                                 print "Error in Eatery id %s"%eatery_id
                                         	print sub_category
                                         	pass
@@ -531,53 +597,10 @@ class ElasticSearchScripts(object):
                 return result
        
 
-
-        @staticmethod
-        def convert_time_series(__result):
-                n_result = list()
-
-                def __a(__dict, dates):
-                        __result = []
-                        for date in dates:
-                                if __dict[date]:
-                                    __result.append(__dict[date])
-                                else:
-                                    __result.append(0)
-                                    
-                        return __result
-
-                for element in __result:
-                        n_result.append([str(element[0].replace("-", "")), str(element[1].split(" ")[0])])
-                sentiments, dates = zip(*n_result)
-                dates = sorted(list(set(dates)))
-
-                average = __a(Counter([x[1].split(" ")[0] for x in ifilter(lambda x: x[0] == "average"\
-                                                                                    , n_result)]), dates)
-        
-                supergood = __a(Counter([x[1].split(" ")[0] for x in ifilter(lambda x: x[0] == \
-                                                                "supergood" , n_result)]), dates)
-        
-                superpoor = [-abs(num) for num in __a(Counter([x[1].split(" ")[0] for x in \
-                        ifilter(lambda x: x[0] == "superpoor" , n_result)]), dates)]
-        
-                poor = [-abs(num) for num in __a(Counter([x[1].split(" ")[0] for x in \
-                                        ifilter(lambda x: x[0] == "poor" , n_result)]), dates)]
-        
-                good = __a(Counter([x[1].split(" ")[0] for x in ifilter(lambda x: x[0] \
-                                                            == "good" , n_result)]), dates)
-
-        
-                series = [{"name": e, "data": eval(e)} for e in ["average", "supergood", "superpoor", \
-                        "good", "poor"]]
-        
-                return {"categories": dates,
-                            "series": series}
-
-
         @staticmethod
         def dish_suggestions(dish_name):
                 
-                body = {"_source": ["name", __eatery_id],
+                body = {"_source": ["name"],
                         "from": 0, 
                         "size": 10, 
                                 "query": {
@@ -591,11 +614,13 @@ class ElasticSearchScripts(object):
                             }
 
                 dish_suggestions = ES_CLIENT.search(index="food", doc_type="dishes", body=body)
-                return ElasticSearchScripts.process_result(dish_suggestions) 
+                result = ElasticSearchScripts.process_result(dish_suggestions) 
+                print result
+                return result
         
         @staticmethod
         def eatery_suggestions(query):
-                body = {"_source": ["eatery_name", __eatery_id],
+                body = {"_source": ["eatery_name"],
                         "from": 0, 
                         "size": 5, 
                                 "query": {
@@ -609,11 +634,13 @@ class ElasticSearchScripts(object):
                             }
 
                 dish_suggestions = ES_CLIENT.search(index="eatery", doc_type="eatery", body=body)
-                return ElasticSearchScripts.process_result(dish_suggestions) 
+                result = ElasticSearchScripts.process_result(dish_suggestions) 
+                print result
+                return result
 
         @staticmethod
         def address_suggestions(query):
-                body = {"_source": ["eatery_address", __eatery_id],
+                body = {"_source": ["eatery_address", "__eatery_id"],
                         "from": 0, 
                         "size": 5, 
                                 "query": {
@@ -645,7 +672,7 @@ class ElasticSearchScripts(object):
                                 "query": {
                                         "match": {
                                                 "cuisines_autocomplete": {
-                                                        "query":    "query",
+                                                        "query":    query,
                                                         "analyzer": "standard"
                                                                     }
                                                 }
@@ -655,15 +682,30 @@ class ElasticSearchScripts(object):
 
                 address_suggestions = ES_CLIENT.search(index="eatery", doc_type="cuisines", body=body)
                 return ElasticSearchScripts.process_result(address_suggestions) 
+        
+        
+        
+        @staticmethod
+        def eatery_on_cuisines(cuisine_name):
+                """
+                returns __eatery_id's on the basis of the cuisines selected by the user
+                """
+                body = {"_source": ["__eatery_id", "eatery_cuisine"],
+                        "from": 0,
+                        "size": 5,
+                        "query": {
+                                        "match": {
+                                                "eatery_cuisine_autocomplete": {
+                                                        "query":    cuisine_name,
+                                                        "analyzer": "standard"
+                                                                    }
+                                                }
+                                        },
+                            }
 
 
-
-
-
-
-
-
-
+                eateries_on_cuisines = ES_CLIENT.search(index="eatery", doc_type="eatery", body=body)
+                return ElasticSearchScripts.process_result(eateries_on_cuisines) 
 
 
         @staticmethod
@@ -715,7 +757,7 @@ class ElasticSearchScripts(object):
 
                 trending_dishes = ES_CLIENT.search(index="food", doc_type="dishes", body=food_body)
                 
-                ambience_body = {"_source": ["name", "location", "eatery_name", "__eatery_id", "good", "poor", "average", "excellent", "terrible", "total_sentiments"],
+                ambience_body = {"_source": ["name", "location", "eatery_name", "__eatery_id", "good", "poor", "average", "excellent", "terrible", "total_sentiments", "eatery_address"],
                         "from": 0, 
                         "size": 2, 
                         "sort": [
@@ -736,7 +778,7 @@ class ElasticSearchScripts(object):
                         }
                 
                 trending_ambience = ES_CLIENT.search(index="ambience", doc_type="ambience-overall", body=ambience_body)
-                cost_body = {"_source": ["name", "eatery_name", "location", "__eatery_id", "good", "poor", "average", "excellent", "terrible", "total_sentiments"],
+                cost_body = {"_source": ["name", "eatery_name", "location", "__eatery_id", "good", "poor", "average", "excellent", "terrible", "total_sentiments", "eatery_address"],
                         "from": 0, 
                         "size": 2, 
                         "sort": [
@@ -756,9 +798,9 @@ class ElasticSearchScripts(object):
                                 }
                         }
                 
-                trending_cost = ES_CLIENT.search(index="cost", doc_type="value for money", body=cost_body)
+                trending_cost = ES_CLIENT.search(index="cost", doc_type="vfm", body=cost_body)
                 
-                service_body = {"_source": ["name", "eatery_name", "location", "eatery_id", "good", "poor", "average", "excellent", "terrible", "total_sentiments"],
+                service_body = {"_source": ["name", "eatery_name", "location", "eatery_id", "good", "poor", "average", "excellent", "terrible", "total_sentiments", "eatery_address"],
                         "from": 0, 
                         "size": 2, 
                         "sort": [
@@ -823,21 +865,91 @@ class ElasticSearchScripts(object):
                 return result
 
         @staticmethod
-        def match_for_eatery(eatery_name):
-            """
-            When a user searched for the exact eatery or enters a eatery_name which is not present in the 
-            elastic search, For this to be executed successfully
-            First: We will searhc for the exact eatery name, if that fails
-            First can be searched in the mongodb Itself
+        def get_eatery_match(eatery_name):
+                """
+                When a user searched for the exact eatery or enters a eatery_name which is not present in the 
+                elastic search, For this to be executed successfully
+                First: We will searhc for the exact eatery name, if that fails
+                First can be searched in the mongodb Itself
             
-            Second : We will search search for the fuzzy match for that eatery name
-            """
+                Second : We will search search for the fuzzy match for that eatery name
+                """
+                def find_exact_match(eatery_name):
+                        exact_eatery_search_body={"_source": ["eatery_name", "__eatery_id"],
+                                    "query":{
+                                            "term":{
+                                                        "etery_raw":  eatery_name}},
+
+                                    "from": 0,
+                                    "size": 5,
+                                }
+
+                        __result = ES_CLIENT.search(index="eatery", doc_type="eatery", body=exact_eatery_search_body)
+                        __result = ElasticSearchScripts.process_result(__result)
+                        return __result
+
+                def find_fuzzy_match(eatery_name):
+                        print "Fussy match for %s"%eatery_name
+                        fuzzy_search_body = {"_source": ["eatery_name", "__eatery_id"],
+                                "query": {
+                                    "fuzzy_like_this": {
+                                            "fields": ["eatery_raw"],
+							"like_text": eatery_name,  
+                                                        "fuzziness": 6,
+                                                        "max_query_terms": 25,
+						        "boost": 1, 
+						        "prefix_length": 0, 
+						        "ignore_tf": False,  
+                                                    }},
+                                            
+                                "from": 0,
+                                "size": 5,
+                                }
+                        __result = ES_CLIENT.search(index="eatery", doc_type="eatery", body=fuzzy_search_body)
+                        __result = ElasticSearchScripts.process_result(__result)
+                        return __result
+
+
+                def find_standard_match(eatery_name):
+                        standard_search_body = {"_source": ["eatery_name", "__eatery_id"],
+                                "query": {
+                                    "match": {
+                                            "eatery_name": {
+                                                    "query": eatery_name,
+                                                    }}},
+                                            
+                                "from": 0,
+                                "size": 5,
+                                }
+                        __result = ES_CLIENT.search(index="eatery", doc_type="eatery", body=standard_search_body)
+                        __result = ElasticSearchScripts.process_result(__result)
+                        return __result
+
+                
+                result = find_exact_match(eatery_name)
+                if result:
+                        return result
+                else:
+                        print "There is no exact result matching the Query %s"%eatery_name
+                
+                result = find_standard_match(eatery_name)
+                if result:
+                        return result
+
+
+                result = find_fuzzy_match(eatery_name)
+                
+                if result:
+                        return result
+                
+                
+                return None
+
             
-            return 
 
             
         @staticmethod
-        def get_dishes(__dish_name, number_of_dishes=None, number_of_suggestions=None):
+        def get_dish_match(__dish_name, number_of_dishes=None, number_of_suggestions=None):
                 """
                         dish_suggestions= {
                                    "query":{
@@ -869,12 +981,12 @@ class ElasticSearchScripts(object):
                 """
                 print "Dish passed in suggest_dish instance of ElasticSearchScripts is %s"%__dish_name
                 if not number_of_dishes:
-                        number_of_dishes = 30
+                        number_of_dishes = 10
                 
 
 
                 def find_exact_match(__dish_name, number_of_dishes):
-                        exact_dish_search_body={"_source": ["name", "eatery_name", "eatery_id", "location", "good", "poor", "average", "excellent", "terrible", "total_sentiments"],
+                        exact_dish_search_body={"_source": ["name", "eatery_name", "__eatery_id", "location", "good", "poor", "average", "excellent", "terrible", "total_sentiments", "eatery_address"],
                                     "query":{
                                             "term":{
                                                         "dish_raw":  __dish_name}},
@@ -893,7 +1005,7 @@ class ElasticSearchScripts(object):
 
                 def find_fuzzy_match(__dish_name, number_of_dishes):
                         print "Fussy match for %s"%__dish_name
-                        fuzzy_search_body = {"_source": ["name", "eatery_name", "eatery_id", "location", "good", "poor", "average", "excellent", "terrible", "total_sentiments"],
+                        fuzzy_search_body = {"_source": ["name", "eatery_name", "__eatery_id", "location", "good", "poor", "average", "excellent", "terrible", "total_sentiments", "eatery_address"],
                                 "query": {
                                     "fuzzy_like_this": {
                                             "fields": ["dish_shingle", "dish_raw"],
@@ -914,7 +1026,7 @@ class ElasticSearchScripts(object):
 
 
                 def find_standard_match(__dish_name, number_of_dishes):
-                        standard_search_body = {"_source": ["name", "eatery_name", "eatery_id", "location", "good", "poor", "average", "excellent", "terrible", "total_sentiments"],
+                        standard_search_body = {"_source": ["name", "eatery_name", "__eatery_id", "location", "good", "poor", "average", "excellent", "terrible", "total_sentiments", "eatery_address"],
                                 "query": {
                                     "match": {
                                             "name": {
@@ -949,138 +1061,11 @@ class ElasticSearchScripts(object):
                 return None
 
 
-        def return_dishes(eatery_id, number_of_dishes):
-                """
-                This will return all the dishes related to the particular eatery_id
-                """
-                if type(eatery_id) != str:
-                        raise StandardError("eatery_id should be a string")
-
-
-                search_body = {                                                   
-                            "query":{ 
-                                    "match_phrase":{ 
-                                                "eatery_id":  eatery_id}}, 
-                            "sort": { "total_sentiments": { "order": "desc" } }, 
-                            "from": 0,
-                            "size": number_of_dishes, 
-                          }
-
-                result = ES_CLIENT.search(index="dishes", doc_type="dish", body=search_body)["hits"]["hits"]
-                return [e.get("_source") for e in result]
-                
-
-        def _change_default_analyzer(__index_name):
-                client.indices.close(index=__index_name)
-                body = {"index": {
-                                "analysis": {
-                                        "analyzer": {
-                                                "default": {
-                                                        "type": "custom_analyzer"}}}}}
-
-                client.indices.put_settings(index=__index_name, body=body)
-
-                client.indices.open(index=__index_name)
-                return 
-
-
-        def initial(self, eatery_id):
-                """
-                For every eatery stored in mongodb, We have four keys asscoaited with that post
-                food, service, cost, ambience
-
-                For these corresponding keys we will have sub keys associated with it, For ex
-                food tag has these keys associated with it.
-                [u'menu-food', u'overall-food', u'sub-food', u'place-food', u'dishes']
-                service:
-                return 
-                        "mappings": {
-                                "name": {
-                                        "properties": {
-                                                    "name": {
-                                                            "type": "string",
-                                                            "analyzer": "custom_analyzer",
-                                                            },
-                                                    "similar": {
-                                                            "type": "nested",
-                                                             "properties": {
-                                                                    "name": {
-                                                                            "type": "string", 
-                                                                                    "index_analyzer": "custom_analyzer", 
-                                                                                    "search_analyzer": "custom_search_analyzer",
-                                                                                },
-                                                                    'poor': { "type": "int"
-                                                                                },
-                                                                    'average': {"type": "int"
-                                                                                },
-                                                                    'good': {"type": "int"
-                                                                                },
-                                                                    'terrible': {"type": "int"
-                                                                        },
-                                                                    'excellent': {"type": "int"
-                                                                                },
-                                                                    'timeline': {"type": "string"
-                                                                            }
-                                                             }
-                                                            }
-                                                        }
-                                            }},
-
-                """
-                return 
-        
-        
-        @staticmethod
-        def upde_dish_for_rest(dish_name, eatery_id, eatery_name):
-                """
-                This method takes in three arguments dish_name, eatery_name, eatery_id
-                """
-
-
-
-
-        def flush(self, index_name):
-                return
-
-
-        @staticmethod
-        def auto_complete(__str):
-                """
-                Returns lists of dishes name else returm empy list
-                """
-                search_body={"fields": ["name"], 
-                        "query": {
-                                "prefix": {
-                                    "name": __str
-                                        }}}
-
-
-                search_body = {
-                            "query" : {
-                                "multi_match" : {
-                                        "fields" : ["name", "similar"],
-                                        "query" : __str,
-                                        "type" : "phrase_prefix"
-                                                                                        }
-                                            }
-                            }
-
-                result = ES.search(index='food', doc_type='dishes', body=body)
-                return flatten([e["fields"]["name"] for e in result["hits"]["hits"]])
-
-        @staticmethod
-        def exact_dish_match(__str):
-                search_body = {"query":
-                        {"match_phrase": 
-                                {"name": __str}
-                        }}
-                return 
-
-                
-
 if __name__ == "__main__":
             """
     
             """
             ElasticSearchScripts(renew_indexes=True)
 
+            for post in eateries_results_collection.find():
+                    ElasticSearchScripts.insert_eatery(post.get("eatery_id"))
