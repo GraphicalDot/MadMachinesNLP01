@@ -244,6 +244,28 @@ class TextSearch(tornado.web.RequestHandler):
         def post(self):
                 """
                 This api will be called when a user selects or enter a query in search box
+		Args:
+			text:
+				type: string
+				text entered by user or selected by user from the result fetched by suggestions api
+
+			type:
+				type: string
+				options:
+					"dish" if a user selects a dish from the suggestions provided by suggestionsm api
+					"eatery" if a user selects a eatery from the suggestions api
+					"cuisine" if a user selects a cuisine from the results 
+
+		Returns:
+			Case 1: type: "dish"
+				which implies the user has selected a dish, This api then will return 
+
+
+			Case 2: type: "eatery"
+
+			Case 3: type "cuisine"
+
+
                 """
                 text = self.get_argument("text")
                 __type = self.get_argument("type")
@@ -296,7 +318,12 @@ class Suggestions(tornado.web.RequestHandler):
 	@tornado.gen.coroutine
         def post(self):
                 """
+		When a user enters a query, he/she shall be notified with the results corresponding to 
+		the dishes name, eatery name and cuisuines we have in our database
 
+		Args:
+			query: 
+				type: text
 
                 Return:
 
@@ -334,10 +361,39 @@ class GetEatery(tornado.web.RequestHandler):
 	@tornado.gen.coroutine
         def post(self):
                 """
+		On the basis of the __eatery_id given to this api returns results
+		that belongs to the eatery represented by this __eatery_id
+
+		The result returned will have data corresponding to following categories
+		if a category doesnt have a subcategory it will have following keys 
+		['poor', 'good', 'name', 'total_sentiments', 'average', 'terrible', 'excellent']
+		
+			food;
+				it will have following sub keys 
+				dishes:  right now 20 dishes will be sent
+				overall-food
+			ambience:
+				categories as mentioned at the top
+			cost:
+				categories as mentioned above for cost
+			service: 
+				categories as mentioned above for service
+			menu:
+				it will not have any sub category and will only have keys
+
+			overall:
+				same as menu
+
+		Args:
+			__eatery_id: 
+				type: string
+		Returns:
+			
+
                 """
                         
                 number_of_dishes = 20
-                eatery_name =  self.get_argument("__eatery_id")
+                __eatery_id =  self.get_argument("__eatery_id")
                 result = eateries_results_collection.find_one({"__eatery_id": __eatery_id})
                 if not result:
                         """
@@ -347,7 +403,7 @@ class GetEatery(tornado.web.RequestHandler):
 
                         self.write({"success": False,
 			        "error": True,
-                                "result": "SOmehoe eatery with this eatery is not present in the DB"})
+                                "result": "Somehow eatery with this eatery is not present in the DB"})
                         self.finish()
                         return 
                 
@@ -400,13 +456,13 @@ class Application(tornado.web.Application):
         def __init__(self):
                 handlers = [
                     (r"/suggestions", Suggestions),
-                    (r"/text_search", TextSearch),
+                    (r"/textsearch", TextSearch),
                     
-                    (r"/get_trending", GetTrending),
-                    (r"/nearest_eateries", NearestEateries),
-                    (r"/users_details", UsersDetails),
-                    (r"/users_feedback", UsersFeedback),
-                    (r"/get_eatery", GetEatery),]
+                    (r"/gettrending", GetTrending),
+                    (r"/nearesteateries", NearestEateries),
+                    (r"/usersdetails", UsersDetails),
+                    (r"/usersfeedback", UsersFeedback),
+                    (r"/geteatery", GetEatery),]
                 settings = dict(cookie_secret="__TODO:_GENERATE_YOUR_OWN_RANDOM_VALUE_HERE__",)
                 tornado.web.Application.__init__(self, handlers, **settings)
                 self.executor = ThreadPoolExecutor(max_workers=60)
