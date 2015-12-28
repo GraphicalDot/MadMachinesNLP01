@@ -427,14 +427,30 @@ def process_result(result):
                         
                 return result
 
+
+app = tornado.web.Application([
+                    (r"/suggestions", Suggestions),
+                    (r"/textsearch", TextSearch),
+                    
+                    (r"/gettrending", GetTrending),
+                    (r"/nearesteateries", NearestEateries),
+                    (r"/usersdetails", UsersDetails),
+                    (r"/usersfeedback", UsersFeedback),
+                    (r"/geteatery", GetEatery),])
+
 def main():
-        http_server = tornado.httpserver.HTTPServer(Application())
-        tornado.autoreload.start()
+        http_server = tornado.httpserver.HTTPServer(app)
+        """
         http_server.listen("8000")
         enable_pretty_logging()
         tornado.ioloop.IOLoop.current().start()
-
-
+        """
+        http_server.bind("8000")
+        enable_pretty_logging()
+        http_server.start(0) 
+        loop = tornado.ioloop.IOLoop.instance()
+        loop.start()
+"""
 class Application(tornado.web.Application):
         def __init__(self):
                 handlers = [
@@ -446,11 +462,10 @@ class Application(tornado.web.Application):
                     (r"/usersdetails", UsersDetails),
                     (r"/usersfeedback", UsersFeedback),
                     (r"/geteatery", GetEatery),]
-                settings = dict(cookie_secret="__TODO:_GENERATE_YOUR_OWN_RANDOM_VALUE_HERE__",)
                 tornado.web.Application.__init__(self, handlers, **settings)
                 self.executor = ThreadPoolExecutor(max_workers=60)
 
-
+"""
 
 if __name__ == '__main__':
     cprint(figlet_format('Server Reloaded', font='big'), attrs=['bold'])

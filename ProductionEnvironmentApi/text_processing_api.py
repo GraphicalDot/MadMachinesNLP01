@@ -47,7 +47,7 @@ from Normalized import NormalizingFactor
 from topia.termextract import extract  
 from simplejson import loads
 from connections import sentiment_classifier, tag_classifier, food_sb_classifier, ambience_sb_classifier, service_sb_classifier, \
-            cost_sb_classifier, SolveEncoding, bcolors, corenlpserver,  reviews, eateries
+            cost_sb_classifier, SolveEncoding, bcolors, corenlpserver,  reviews, eateries, eateries_results_collection, reviews_results_collection
 
 
 
@@ -488,6 +488,13 @@ class DoClusters(object):
                         overall_result = self.__overall(__nps)
                         self.mongo_instance.update_nps("menu", overall_result)
                         self.mongo_instance.update_considered_ids()
+                else:
+                        processed_reviews = self.mongo_instance.processed_reviews()
+                        reviews_ids = list(set.symmetric_difference(set(old_considered_ids), \
+                                set(processed_reviews)))
+                       
+                        print "New review to be consider are %s"%reviews_ids
+                
                 """
                 else:
                         

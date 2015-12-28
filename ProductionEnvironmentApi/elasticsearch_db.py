@@ -1062,10 +1062,9 @@ class ElasticSearchScripts(object):
 
 
 if __name__ == "__main__":
-            """
-    
-            """
             ElasticSearchScripts(renew_indexes=True)
-
+            """
             for post in eateries_results_collection.find():
                     ElasticSearchScripts.insert_eatery(post.get("eatery_id"))
+
+            """
