@@ -188,11 +188,6 @@ class ProductionHeuristicClustering:
                 
                 print "The np which have been discarded because of low frequency is %s"%(len(__result) - len(result))
                
-                print "\n\n\n"
-                for e in sorted(result, key = lambda x: x.get("total_sentiments"), reverse=True)[0: 30]:
-                        e.pop("similar")
-                        e.pop("timeline")
-                        print e
                 return {"nps": result, 
                         "excluded_nps": excluded_nps, #which had total_sentiemnts less than 1 
                         "dropped_nps":  self.dropped_nps }#which were excluded because they matched with places and address"
@@ -234,14 +229,15 @@ class ProductionHeuristicClustering:
                                 pass
                                 """
                                 #if bool(set.intersection(set(__np.split(" ")),  set(self.list_to_exclude))):
+                                
                                 __list = [pos_tag for (np, pos_tag) in nltk.pos_tag(nltk.wordpunct_tokenize(__np.encode("ascii", "ignore")))]
                                 if __np in self.list_to_exclude:
-                                        print "This will be fucking dropped %s"%__np
+                                        print "This will be fucking dropped <<%s>>"%__np
                                         print nltk.pos_tag(nltk.wordpunct_tokenize(__np))
                                         self.dropped_nps.append(__np)
                                
                                 elif not set.intersection(set(["NN", "NNS"]), set(__list)):
-                                        print "This will be fucking dropped %s"%__np
+                                        print "This will be fucking dropped <<%s>>"%__np
                                         print nltk.pos_tag(nltk.wordpunct_tokenize(__np))
                                         self.dropped_nps.append(__np)
 
