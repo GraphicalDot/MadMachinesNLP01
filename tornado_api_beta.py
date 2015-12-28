@@ -182,8 +182,23 @@ class GetTrending(tornado.web.RequestHandler):
                 latitude = float(self.get_argument("latitude"))
                 longitude = float(self.get_argument("longitude"))
                 print type(longitude)
-                result = ElasticSearchScripts.get_trending(latitude, longitude)
- 
+                __result = ElasticSearchScripts.get_trending(latitude, longitude)
+                
+                result = dict()
+                for __category in [u'food', u'ambience', u'cost', u'service']:
+                        __list = list()
+                        for element in __result[__category]:
+                                __eatery_id = element.get("__eatery_id")
+                                __eatery_details = short_eatery_result_collection.find_one({"__eatery_id": __eatery_id})
+                                for e in ["eatery_highlights", "eatery_cuisine", "eatery_trending", "eatery_id", "eatery_known_for", "eatery_type", "_id"]:
+                                        try:
+                                                __eatery_details.pop(e)
+                                        except Exception as e:
+                                                pass
+                                element.update({"eatery_details": __eatery_details})
+                                __list.append(element)
+                        result[__category] = __list
+
                 self.write({"success": True,
 			        "error": False,
 			        "result": result,
@@ -244,28 +259,6 @@ class TextSearch(tornado.web.RequestHandler):
         def post(self):
                 """
                 This api will be called when a user selects or enter a query in search box
-		Args:
-			text:
-				type: string
-				text entered by user or selected by user from the result fetched by suggestions api
-
-			type:
-				type: string
-				options:
-					"dish" if a user selects a dish from the suggestions provided by suggestionsm api
-					"eatery" if a user selects a eatery from the suggestions api
-					"cuisine" if a user selects a cuisine from the results 
-
-		Returns:
-			Case 1: type: "dish"
-				which implies the user has selected a dish, This api then will return 
-
-
-			Case 2: type: "eatery"
-
-			Case 3: type "cuisine"
-
-
                 """
                 text = self.get_argument("text")
                 __type = self.get_argument("type")
@@ -277,8 +270,20 @@ class TextSearch(tornado.web.RequestHandler):
                         then we have to search exact dish name of seach on Laveneshtein algo
                         """
                         ##search in ES for dish name 
-                        result = ElasticSearchScripts.get_dish_match(text)
-                        
+
+                        result = list()
+                        __result = ElasticSearchScripts.get_dish_match(text)
+                        for dish in __result:
+                                __eatery_id = dish.get("__eatery_id")
+                                __eatery_details = short_eatery_result_collection.find_one({"__eatery_id": __eatery_id})
+                                for e in ["eatery_highlights", "eatery_cuisine", "eatery_trending", "eatery_id", "eatery_known_for", "eatery_type", "_id"]:
+                                        try:
+                                                __eatery_details.pop(e)
+                                        except Exception as e:
+                                                pass
+                                dish.update({"eatery_details": __eatery_details})
+                                result.append(dish)
+
                 elif __type == "cuisine":
                         ##gives out the restarant for cuisine name
                         print "searching for cuisine"
@@ -286,23 +291,26 @@ class TextSearch(tornado.web.RequestHandler):
                         __result = ElasticSearchScripts.eatery_on_cuisines(text)
                         for eatery in __result:
                                     result.append(short_eatery_result_collection.find_one({"__eatery_id": eatery.get("__eatery_id")}, {"_id": False, "food": True, "ambience": True, \
-                                            "cost":True, "service": True, "menu": True, "overall": True, "location": True, "eatery_address": True, "eatery_name": True}))
+                                            "cost":True, "service": True, "menu": True, "overall": True, "location": True, "eatery_address": True, "eatery_name": True, "__eatery_id": True}))
 
                 elif __type == "eatery":
                         
-                        result = list()
-                        __result = ElasticSearchScripts.get_eatery_match(text)
-                        for eatery in __result:
-                                    result.append(short_eatery_result_collection.find_one({"__eatery_id": eatery.get("__eatery_id")}, {"_id": False, "food": True, "ambience": True, \
-                                            "cost":True, "service": True, "menu": True, "overall": True, "location": True, "eatery_address": True, "eatery_name": True}))
+                            result = eateries_results_collection.find_one({"eatery_name": text})
+                            result = process_result(result)
+
+
+                elif not  __type:
+                        print "No type defined"
+
                 else:
+                        print __type
                         self.write({"success": False,
 			        "error": True,
 			        "messege": "Maaf kijiyega, Yeh na ho paayega",
 			        })
                         self.finish()
                         return 
-
+                print result
                 self.write({"success": False,
 			        "error": True,
 			        "result": result,
@@ -318,12 +326,7 @@ class Suggestions(tornado.web.RequestHandler):
 	@tornado.gen.coroutine
         def post(self):
                 """
-		When a user enters a query, he/she shall be notified with the results corresponding to 
-		the dishes name, eatery name and cuisuines we have in our database
 
-		Args:
-			query: 
-				type: text
 
                 Return:
 
@@ -343,6 +346,12 @@ class Suggestions(tornado.web.RequestHandler):
                 #address_suggestion = ElasticSearchScripts.address_suggestions(query)
                 
 
+                if cuisines_suggestions:
+                        cuisines_suggestions= [e.get("name") for e in cuisines_suggestions]
+                
+                if eatery_suggestions:
+                        eatery_suggestions= [e.get("eatery_name") for e in eatery_suggestions]
+
 
                 self.write({"success": True,
 			        "error": False,
@@ -361,38 +370,8 @@ class GetEatery(tornado.web.RequestHandler):
 	@tornado.gen.coroutine
         def post(self):
                 """
-		On the basis of the __eatery_id given to this api returns results
-		that belongs to the eatery represented by this __eatery_id
-
-		The result returned will have data corresponding to following categories
-		if a category doesnt have a subcategory it will have following keys 
-		['poor', 'good', 'name', 'total_sentiments', 'average', 'terrible', 'excellent']
-		
-			food;
-				it will have following sub keys 
-				dishes:  right now 20 dishes will be sent
-				overall-food
-			ambience:
-				categories as mentioned at the top
-			cost:
-				categories as mentioned above for cost
-			service: 
-				categories as mentioned above for service
-			menu:
-				it will not have any sub category and will only have keys
-
-			overall:
-				same as menu
-
-		Args:
-			__eatery_id: 
-				type: string
-		Returns:
-			
-
                 """
                         
-                number_of_dishes = 20
                 __eatery_id =  self.get_argument("__eatery_id")
                 result = eateries_results_collection.find_one({"__eatery_id": __eatery_id})
                 if not result:
@@ -403,10 +382,22 @@ class GetEatery(tornado.web.RequestHandler):
 
                         self.write({"success": False,
 			        "error": True,
-                                "result": "Somehow eatery with this eatery is not present in the DB"})
+                                "result": "SOmehoe eatery with this eatery is not present in the DB"})
                         self.finish()
                         return 
                 
+                result = process_result(result)
+                cprint(figlet_format('Finished executing %s'%self.__class__.__name__, font='mini'), attrs=['bold'])
+                self.write({"success": True,
+			"error": False,
+                        "result": result})
+                self.finish()
+
+                return 
+
+
+def process_result(result):
+                number_of_dishes = 20
                 dishes = sorted(result["food"]["dishes"], key=lambda x: x.get("total_sentiments"), reverse=True)[0: number_of_dishes]
                 overall_food = result["food"]["overall-food"]
                 ambience = result["ambience"]
@@ -434,15 +425,7 @@ class GetEatery(tornado.web.RequestHandler):
                             "overall": overall,
                             }
                         
-
-                cprint(figlet_format('Finished executing %s'%self.__class__.__name__, font='mini'), attrs=['bold'])
-                self.write({"success": True,
-			"error": False,
-                        "result": result})
-                self.finish()
-
-                return 
-
+                return result
 
 def main():
         http_server = tornado.httpserver.HTTPServer(Application())

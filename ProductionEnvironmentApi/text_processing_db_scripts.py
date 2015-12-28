@@ -225,6 +225,7 @@ class MongoScriptsDoClusters(object):
         def update_food_sub_nps(self, np_result, category):
                 if category == "dishes":    
                         nps = np_result["nps"]
+                        nps = sorted(nps, reverse=True, key= lambda x: x.get("total_sentiments")
                         excluded_nps = np_result["excluded_nps"]
                         dropped_nps = np_result["dropped_nps"]
 
@@ -232,7 +233,10 @@ class MongoScriptsDoClusters(object):
                         
                         try:
                                 eateries_results_collection.update({"eatery_id": self.eatery_id}, {"$set": \
-                                        {"food.{0}".format(category): nps}}, upsert=False)
+                                        {"food.{0}".format(category): nps[0: 20]}}, upsert=False)
+                                
+                                eateries_results_collection.update({"eatery_id": self.eatery_id}, {"$set": \
+                                        {"food.more_{0}".format(category): nps[20:]}}, upsert=False)
                                 
                                 
                                 
@@ -257,7 +261,8 @@ class MongoScriptsDoClusters(object):
 
                         return
             
-            
+           
+                ##this is meant if category overall-food
                 try:    
                         eateries_results_collection.update({"eatery_id": self.eatery_id}, {"$set": {
                         "food.{0}".format(category): np_result}}, upsert=False)

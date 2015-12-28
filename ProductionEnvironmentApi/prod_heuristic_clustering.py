@@ -26,6 +26,7 @@ import math
 import jaro
 import os
 import sys
+import openpyxl
 from nltk.tag.hunpos import HunposTagger
 this_file_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(this_file_path)
@@ -143,70 +144,58 @@ class ProductionHeuristicClustering:
                          [u'excellent', [u'garlic flavours', u'penne alfredo pasta']]],
                 """
 
+                self.list_to_exclude = list()
 
-                print sentiment_np_time
-                if eatery_name:
-                        self.list_to_exclude = flatten(["food", "service", "cost", "ambience", "place", \
-                                "Place", "i", "great", "good", eatery_name.lower().split(), "rs", "delhi",\
-                                "india", "indian"])
-
-                        try:
-                                self.list_to_exclude.extend(eatery_address.split(","))
-                                self.list_to_exclude.extend(places)
-                                self.list_to_exclude.extend(["i", "good", "great", "food", "service", "cost", "ambience", "place", "rs"])
-                        except Exception as e:
-                                pass
-                        
-                        #self.list_to_exclude = ["food", "service", "cost", "ambience", "delhi", "Delhi", 
-                        #       "place", "Place", __eatery_name.lower().split()]
-                else:
-                        self.list_to_exclude = ["food", "service", "cost", "ambience", "delhi", \
-                                "Delhi", "place", "Place", "india", "indian"]
+                if places:
+                        places = list(set(flatten(places)))
+                        print "List of places %s"%places
+                        self.list_to_exclude.extend(places)
                 
+
+                if eatery_name:
+                        self.list_to_exclude.extend(eatery_name.lower().split())
+
+                if eatery_address:
+                        self.list_to_exclude.extend(eatery_address.lower().split(","))
+
+
+                self.list_to_exclude.extend(["i", "drink", "good", "great", "food", "service", "cost", "ambience", "place", "rs"])
+                        
 
                 self.dropped_nps = list()
                 self.sentiment_np_time = sentiment_np_time
                 self.sentences = sentences
                 self.sub_category = sub_category
                 new_list, self.clusters, self.result = list(), list(), list()
-                
 
         def run(self):
                 self.merged_sentiment_nps = self.merge_similar_elements()
                 __sorted = sorted(self.merged_sentiment_nps.keys())
-                self.list_to_exclude = flatten(self.list_to_exclude)
-                #self.NERs = self.ner()
+               
                 self.keys = self.merged_sentiment_nps.keys()
                 self.filter_clusters()
-                #The noun phrases who were not at all in the self.clusters
                 self.without_clusters =  set.symmetric_difference(set(range(0, len(self.keys))), \
                                                                     set(flatten(self.clusters)))
                 self.populate_result()
 
-                """
-                if self.sub_category == "dishes":
-                        self.common_ners = list(set.intersection(set([e[0] for e in self.ner()]), \
-                                                        set([e[0] for e in self.custom_ner()])))
-                        self.result = self.filter_on_basis_pos_tag()
-                        self.result = sorted(self.result, reverse=True, key= lambda x: x.get("total_sentiments"))
-                        return self.add_sentiments(self.result)
-                
-                """
                 ##only returns noun phrases that have toatal sentiments greater than 1
                 __result = self.add_sentiments(self.result)
                 __result = self.filter_on_basis_pos_tag(__result)
-                print __result
                 
                 result = [e for e in __result if e.get("total_sentiments") >1]
                 excluded_nps = [e for e in __result if e.get("total_sentiments") <=1]
 
                 
                 print "The np which have been discarded because of low frequency is %s"%(len(__result) - len(result))
-                
+               
+                print "\n\n\n"
+                for e in sorted(result, key = lambda x: x.get("total_sentiments"), reverse=True)[0: 30]:
+                        e.pop("similar")
+                        e.pop("timeline")
+                        print e
                 return {"nps": result, 
                         "excluded_nps": excluded_nps, #which had total_sentiemnts less than 1 
                         "dropped_nps":  self.dropped_nps }#which were excluded because they matched with places and address"
-
 
         def add_sentiments(self, __list):
                 """
@@ -244,11 +233,21 @@ class ProductionHeuristicClustering:
                                 print "This noun_phrase belongs to ner {0}".format(i.get("name"))
                                 pass
                                 """
-                                if bool(set.intersection(set(__np.split(" ")),  set(self.list_to_exclude))):
+                                #if bool(set.intersection(set(__np.split(" ")),  set(self.list_to_exclude))):
+                                __list = [pos_tag for (np, pos_tag) in nltk.pos_tag(nltk.wordpunct_tokenize(__np.encode("ascii", "ignore")))]
+                                if __np in self.list_to_exclude:
+                                        print "This will be fucking dropped %s"%__np
+                                        print nltk.pos_tag(nltk.wordpunct_tokenize(__np))
+                                        self.dropped_nps.append(__np)
+                               
+                                elif not set.intersection(set(["NN", "NNS"]), set(__list)):
+                                        print "This will be fucking dropped %s"%__np
+                                        print nltk.pos_tag(nltk.wordpunct_tokenize(__np))
                                         self.dropped_nps.append(__np)
 
 
-                                if without_similar_elements.get(__np):
+                        
+                                elif without_similar_elements.get(__np):
                                         result = without_similar_elements.get(__np)
                                         timeline = result.get("timeline")
                                         timeline.append((sentiment, review_time))
@@ -476,55 +475,22 @@ class ProductionHeuristicClustering:
 
 
 if __name__ == "__main__":
-        review_list = eateries_results_collection.find_one({"eatery_id": "2985"}).get("processed_reviews")
-        food = [reviews_results_collection.find_one({"review_id": review_id})["food_result"] for review_id in  review_list]
-        flatten_food = list(itertools.chain(*food)) 
-        __sentiment_np_time = [(sentiment, nps, review_time) for (sentiment, sent, nps, review_time) in __sent_sentiment_nps_list if nps]
-        __sentences = [sent for (sentiment, sent, nps, review_time) in __sent_sentiment_nps_list if nps]
+        wb = openpyxl.load_workbook("noun_phrases.xlsx")
+        ws = wb.active
+        __list = list()
+        for row in ws.rows:
+                __list.append([cell.value for cell in row if cell.value])
+
+        __sentiment_np_time = [[element[0], element[1: -1], element[-1]]for element in __list]
+        places = [[], [u'american'], [u'india'], [u'moscow'], [u'bombay'], [u'moscow'], [], [], [], [u'mumbai'], [u'mexico'], [u'mumbai'], [u'russian', u'moscow'], [u'bombay'], [u'nagaland'], [], [u'american'], [u'mumbai'], [], [], [], [u'mumbai'], [], [u'india'], [], [], [], [], [u'moscow'], [], [], [u'colaba'], [u'india'], [u'south delhi'], [u'india'], [], [u'mumbai'], [], [u'moscow'], [u'china'], [u'britain'], [u'mumbai'], [u'delhi'], [u'mumbai'], [u'india'], [u'noida'], [u'pakistan afghanistan'], [], [], [u'delhi'], [u'brooklyn'], [], [u'moscow'], [u'delhi'], [u'mumbai'], [u'moscow'], [u'moscow']]
         
-        def return_food_sentences(eatery_id):
-                from sklearn.externals import joblib
-                sent_tokenizer = SentenceTokenizationOnRegexOnInterjections()
-                reviews_list = list()
-                for post in reviews.find({"eatery_id": eatery_id}):
-                        reviews_list.extend([[sent, post.get("review_time")] for sent in sent_tokenizer.tokenize(post.get("review_text"))])
-                
-
-                tags = TAG_CLASSIFIER_LIB.predict([e[0] for e in reviews_list])
-                food_sentences = list()
-                for (sent, review_time),  tag in zip(reviews_list, tags):
-                        if tag == "food":
-                                food_sentences.append([sent, review_time])
-   
-                sub_tags = FOOD_SB_TAG_CLASSIFIER_LIB.predict([e[0] for e in food_sentences])
-
-                dishes_n_drinks = list()
-
-                for (sent, review_time), sub_tag in zip(food_sentences, sub_tags):
-                        if sub_tag == "dishes" or sub_tag == "drinks":
-                                dishes_n_drinks.append([sent, review_time])
-                        
-    
-  
-
-                sentiments = SENTI_CLASSIFIER_LIB.predict([e[0] for e in dishes_n_drinks])
-    
-                from topia.termextract import extract
-                topia_extractor = extract.TermExtractor()
-                noun_phrases = list()
-                for (sent, review_time), tag in zip(dishes_n_drinks, sentiments):
-                        nouns = topia_extractor(sent)
-                        noun_phrases.append([tag, [e[0].lower() for e in nouns], review_time])
-                        
-                return (filter(lambda x: x[1], noun_phrases), [e[0] for e in dishes_n_drinks])
-
-
+        clustering_result = ProductionHeuristicClustering(sentiment_np_time = __sentiment_np_time,
+                                                                sub_category = "dishes",
+                                                                sentences = None,
+                                                                eatery_name= "Hauz Khas Socials",
+                                                                places = places,
+                                                                eatery_address = u'9-A &amp; 12,Hauz Khas Village, New Delhi')
         
-        sentiment_np_time, sentences = return_food_sentences("308322")
-        print sentiment_np_time
-        ins = ProductionHeuristicClustering(sentiment_np_time, "dishes", sentences,)
-        i = ins.run()
-        for e in ins.run():
-            print e
-    
-        print i[0].keys()
+
+        clustering_result.run()
+
