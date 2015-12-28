@@ -225,7 +225,7 @@ class MongoScriptsDoClusters(object):
         def update_food_sub_nps(self, np_result, category):
                 if category == "dishes":    
                         nps = np_result["nps"]
-                        nps = sorted(nps, reverse=True, key= lambda x: x.get("total_sentiments")
+                        nps = sorted(nps, reverse=True, key= lambda x: x.get("total_sentiments"))
                         excluded_nps = np_result["excluded_nps"]
                         dropped_nps = np_result["dropped_nps"]
 
