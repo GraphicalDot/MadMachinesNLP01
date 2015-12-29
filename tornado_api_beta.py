@@ -93,7 +93,9 @@ from concurrent.futures import ThreadPoolExecutor
 from bson.son import SON
 from termcolor import cprint 
 from pyfiglet import figlet_format
-
+from Crypto.PublicKey import RSA
+import jwt
+from jwt import _JWTError
 from Text_Processing.Sentence_Tokenization.Sentence_Tokenization_Classes import SentenceTokenizationOnRegexOnInterjections
 from connections import eateries, reviews, eateries_results_collection, reviews_results_collection, short_eatery_result_collection, bcolors
 
@@ -102,6 +104,21 @@ from ProductionEnvironmentApi.text_processing_db_scripts import MongoScriptsRevi
 from ProductionEnvironmentApi.prod_heuristic_clustering import ProductionHeuristicClustering
 from ProductionEnvironmentApi.join_two_clusters import ProductionJoinClusters
 from ProductionEnvironmentApi.elasticsearch_db import ElasticSearchScripts
+
+file_path = os.path.dirname(os.path.abspath(__file__))
+parent_dirname = os.path.dirname(os.path.dirname(file_path))
+print parent_dirname
+
+if not os.path.exists("%s/private.pem"%parent_dirname):
+        os.chdir(parent_dirname)
+        subprocess.call(["openssl", "genrsa", "-out", "private.pem", "1024"])
+        subprocess.call(["openssl", "rsa", "-in", "private.pem", "-out", "public.pem", "-outform", "PEM", "-pubout"])
+        os.chdir(file_path)
+
+private = open("%s/private.pem"%parent_dirname).read()
+public = open("%s/public.pem"%parent_dirname).read()
+private_key = RSA.importKey(private)
+public_key = RSA.importKey(public)
 
 def print_execution(func):
         "This decorator dumps out the arguments passed to a function before calling it"
@@ -132,6 +149,44 @@ def cors(f):
 
 
 
+
+def httpauth(arguments):
+        def real_decorator(func):
+                def wrapped(self, *args, **kwargs):
+                        token =  self.get_argument("token")
+                        print arguments
+                        try:
+                                header, claims = jwt.verify_jwt(token, public_key, ['RS256'])
+                                
+                        except _JWTError:
+                                self.write({"success": False,
+			        "error": True,
+                                "messege": "TOken expired"
+                                })
+                                self.finish()
+                        except Exception as e:
+                                self.write({"success": False,
+			        "error": True,
+                                "messege": "Some error occurred"
+                                })
+                                self.finish()
+                                return False                       
+
+
+                        return func(self, *args, **kwargs) 
+                return wrapped                   
+        return real_decorator
+
+
+
+class Test(tornado.web.RequestHandler):
+	@cors
+	@tornado.gen.coroutine
+	@asynchronous
+        @httpauth(["latitude", "longitude"])
+        def post(self):
+                self.write("ok")
+                return 
 
 class UsersFeedback(tornado.web.RequestHandler):
 	@cors
@@ -178,9 +233,30 @@ class GetTrending(tornado.web.RequestHandler):
         def post(self):
                 """
                 """
-                        
-                latitude = float(self.get_argument("latitude"))
-                longitude = float(self.get_argument("longitude"))
+                token = self.get_argument("token")
+                try:
+                        token_result = check_validity_token(token)
+                except Exception as e:
+                        print e
+                        self.write({"success": False,
+			        "error": True,
+                                "messege": "Humse na ho paayega"
+                                })
+                        self.finish()
+                        return 
+
+                if not token_result:
+                        self.set_status(403)
+                        self.write({"success": False,
+			        "error": True,
+                                "messege": "Token expired"
+                                })
+                        return 
+
+                latitude = float(token_result["latitude"])
+                longitude = float(token_result["longitude"])
+                #latitude = float(self.get_argument("latitude"))
+                #longitude = float(self.get_argument("longitude"))
                 print type(longitude)
                 __result = ElasticSearchScripts.get_trending(latitude, longitude)
                 
@@ -431,6 +507,7 @@ def process_result(result):
 app = tornado.web.Application([
                     (r"/suggestions", Suggestions),
                     (r"/textsearch", TextSearch),
+                    (r"/test", Test),
                     
                     (r"/gettrending", GetTrending),
                     (r"/nearesteateries", NearestEateries),
