@@ -32,7 +32,6 @@ this_file_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(this_file_path)
 from Text_Processing.PosTaggers import PosTaggerDirPath, HunPosModelPath, HunPosTagPath
 from Text_Processing.colored_print import bcolors
-from GlobalConfigs import DEBUG
 from Text_Processing import SentenceTokenizationOnRegexOnInterjections
 
 

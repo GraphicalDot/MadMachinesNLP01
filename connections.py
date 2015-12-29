@@ -15,7 +15,7 @@ this_file_path = os.path.dirname(os.path.abspath(__file__))
 config = ConfigParser.RawConfigParser()
 config.read("variables.cfg")
 
-ELASTICSEARCH_IP = config.get("corenlpserver", "ip")
+ELASTICSEARCH_IP = config.get("elasticsearch", "ip")
 
 path_for_classifiers = "%s/Text_Processing/PrepareClassifiers/InMemoryClassifiers/newclassifiers"%(this_file_path) 
 
