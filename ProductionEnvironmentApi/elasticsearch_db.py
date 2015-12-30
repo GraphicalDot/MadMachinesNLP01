@@ -585,7 +585,8 @@ class ElasticSearchScripts(object):
                                                 
                                         	sub_data = data[sub_category]
                                         	sub_data.update({"eatery_id": eatery_id})
-                                        	sub_data.update({"eatery_name": eatery_name})
+                                                sub_data.update({"__eatery_id": __eatery_id})
+                                                sub_data.update({"eatery_name": eatery_name})
                                                 sub_data.update({"eatery_address": eatery_address})
                                                 sub_data.update({"location": [longitude, latitude]})
 
