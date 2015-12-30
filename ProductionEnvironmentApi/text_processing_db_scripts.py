@@ -109,7 +109,6 @@ class MongoScriptsReviews(object):
 
 
 
-
 class MongoScriptsDoClusters(object):
         def __init__(self, eatery_id):
                 self.eatery_id = eatery_id

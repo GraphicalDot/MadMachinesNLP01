@@ -157,26 +157,47 @@ def httpauth(arguments):
                         print arguments
                         try:
                                 header, claims = jwt.verify_jwt(token, public_key, ['RS256'])
-                                
+                                self.claims = claims
+                                self.messege = None
+                                for __arg in arguments:
+                                        try:
+                                                claims[__arg]
+                                        except Exception as e:
+                                                self.messege = "Missing argument %s"%__arg
+                                                self.set_status(400)
                         except _JWTError:
-                                self.write({"success": False,
-			        "error": True,
-                                "messege": "TOken expired"
-                                })
-                                self.finish()
+                                self.messege = "Token expired"
+                                self.set_status(403)
                         except Exception as e:
-                                self.write({"success": False,
-			        "error": True,
-                                "messege": "Some error occurred"
+                                self.messege = "Some error occurred"
+                                print e
+                                self.set_status(500)
+                            
+                        
+                        if self.messege:
+                                self.write({
+                                        "error": True,
+                                        "success": False, 
+                                        "messege": self.messege, 
                                 })
-                                self.finish()
-                                return False                       
-
-
+                                
                         return func(self, *args, **kwargs) 
                 return wrapped                   
         return real_decorator
 
+
+class GetKey(tornado.web.RequestHandler):
+	@cors
+	@tornado.gen.coroutine
+	@asynchronous
+        def get(self):
+                    self.write({
+                                "error": True,
+                                "success": False, 
+                                "result": private, 
+                        })
+                    self.finish()
+                    return 
 
 
 class Test(tornado.web.RequestHandler):
@@ -185,7 +206,18 @@ class Test(tornado.web.RequestHandler):
 	@asynchronous
         @httpauth(["latitude", "longitude"])
         def post(self):
-                self.write("ok")
+                if not self.messege:
+                        self.__on_response()
+                self.finish()
+                return 
+
+        def __on_response(self):
+                print self.claims
+                time.sleep(10)
+                self.write({"success": True,
+                            "error": False, 
+                            "result": "success",
+                            })
                 return 
 
 class UsersFeedback(tornado.web.RequestHandler):
@@ -210,6 +242,7 @@ class UsersDetails(tornado.web.RequestHandler):
 	@cors
 	@tornado.gen.coroutine
 	@asynchronous
+        @httpauth(["id", "name", "email", "picture"])
         def post(self):
                 fb_id = self.get_argument("id")
                 name = self.get_argument("name")
@@ -508,6 +541,7 @@ app = tornado.web.Application([
                     (r"/suggestions", Suggestions),
                     (r"/textsearch", TextSearch),
                     (r"/test", Test),
+                    (r"/getkey", GetKey),
                     
                     (r"/gettrending", GetTrending),
                     (r"/nearesteateries", NearestEateries),

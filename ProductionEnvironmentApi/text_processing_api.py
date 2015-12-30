@@ -889,20 +889,21 @@ if __name__ == "__main__":
             ##To check if __extract_places is working or not            
             ##ins = PerReview('2036121', 'Average quality food, you can give a try to garlic veg chowmien if you are looking for a quick lunch in Sector 44, Gurgaon where not much options are available.','2014-08-08 15:09:17', '302115')
             ##ins.run()
+            
             """
-            instance = EachEatery("8913", True)
+            eatery_id = "306478"
+            instance = EachEatery(eatery_id, True)
             result = instance.return_non_processed_reviews()
-            result = [(e[0], e[1], e[2], "8913") for e in result]
+            result = [(e[0], e[1], e[2], eatery_id) for e in result]
             for element in result:
                             instance = PerReview(element[0], element[1], element[2], element[3])
                             instance.run()
-            ins = DoClusters("8913")
+            ins = DoClusters(eatery_id)
             ins.run()
 
-
             """
-            for post in eateries.find():
-                    eatery_id = post.get("eatery_id")
+
+            for eatery_id in [u'309156', u'310912', u'1185', u'1207', u'6281', u'301422', u'8409', u'310078', u'66', u'307958', u'308609', u'309589', u'9315', u'1199', u'301559', u'853', u'5565', u'4905', u'3695', u'300463', u'308544', u'305856', u'8843', u'313299', u'305661', u'301653', u'166', u'3721', u'3226', u'312601', u'309136', u'1533', u'5918', u'7461']:
                     instance = EachEatery(eatery_id, False)
                     result = instance.return_non_processed_reviews()
                     result = [(e[0], e[1], e[2], eatery_id) for e in result]
