@@ -97,7 +97,8 @@ from Crypto.PublicKey import RSA
 import jwt
 from jwt import _JWTError
 from Text_Processing.Sentence_Tokenization.Sentence_Tokenization_Classes import SentenceTokenizationOnRegexOnInterjections
-from connections import eateries, reviews, eateries_results_collection, reviews_results_collection, short_eatery_result_collection, bcolors
+from connections import eateries, reviews, eateries_results_collection, reviews_results_collection, short_eatery_result_collection, \
+        bcolors, users_reviews_collection, users_feedback_collection, users_details_collection
 
 from ProductionEnvironmentApi.text_processing_api import PerReview, EachEatery, DoClusters
 from ProductionEnvironmentApi.text_processing_db_scripts import MongoScriptsReviews, MongoScriptsDoClusters
@@ -236,30 +237,129 @@ class UsersFeedback(tornado.web.RequestHandler):
         def post(self):
                 
                 feedback = self.get_argument("feedback")
-                name = self.get_argument("name")
-                telephone = self.get_argument("telephone")
-                email = self.get_argument("email")
-                print feedback
-                users_feedback.insert({"feedback": feedback, "name": name, "telephone": telephone, "email": email, "timestamp": time.time()})
-                self.write({"success": True,
-			"error": False,
-			})
+                fb_id = self.get_argument("fb_id")
+                if not users_details_collection.find_one({"fb_id": fb_id}):
+                        self.set_status(401)
+                        self.write({
+                            "error": True, 
+                            "success": False, 
+                            "messege": "User needs to login"
+                            })
+                        self.finish()
+                        return 
+                
+                users_feedback_collection.insert({"feedback": feedback, "fb_id": fb_id,  "epoch": time.time()})
+                self.write({
+                            "error": False, 
+                            "success": True, 
+                            "messege": "The feedback has been posted, Thank you for your efforts", 
+                            })
                 self.finish()
                 return
+
+
+class WriteReview(tornado.web.RequestHandler):
+	@cors
+	@tornado.gen.coroutine
+	@asynchronous
+        def post(self):
+                fb_id = self.get_argument("fb_id")
+                review_text = self.get_argument("review_text")
+                __eatery_id = self.get_argument("__eatery_id")
+                __eatery_name = self.get_argument("eatery_name")
+
+                if not users_details_collection.find_one({"fb_id": fb_id}):
+                        self.set_status(401)
+                        self.write({
+                                "error": True, 
+                                "success": False, 
+                                "messege": "User needs to login"
+                            })
+                        self.finish()
+                        return 
+
+
+
+                __dict = {"review_text": review_text, "fb_id": fb_id, "__eatery_id": __eatery_id, "__eatery_name": __eatery_name}
+                if users_reviews_collection.find_one(__dict):
+                        self.write({
+                            "error": True, 
+                            "success": False, 
+                            "messege": "This review has already been posted"
+                            })
+                        self.finish()
+                        return 
+                
+
+                __dict.update({"epoch": time.time()})
+                users_reviews_collection.insert(__dict)
+                self.write({
+                            "error": False, 
+                            "success": True, 
+                            "messege": "This review has been posted",
+                            })
+                self.finish()
+                return 
+
+            
+class FetchReview(tornado.web.RequestHandler):
+	@cors
+	@tornado.gen.coroutine
+	@asynchronous
+        def post(self):
+                __eatery_id = self.get_argument("__eatery_id")
+                try:
+                        limit = int(self.get_argument("limit"))
+                except Exception as e:
+                        print e
+                        limit = 10
+                
+                try:
+                        skip = int(self.get_argument("skip"))
+                except Exception as e:
+                        print e
+                        skip = 0
+                
+
+                result = list()
+                
+                if not users_reviews_collection.find_one({"__eatery_id": __eatery_id}):
+                        self.write({
+                                    "error": True,
+                                    "success": False, 
+                                    "messege": "No reviews are present",
+                                })
+                        self.finish()
+                        return 
+                        
+
+                for review in users_reviews_collection.find({"__eatery_id": __eatery_id}).skip(skip).limit(limit):
+                        review.pop("_id")
+                        result.append(review)
+
+                self.write({
+                            "error": False, 
+                            "success": True, 
+                            "result": result,
+                            })
+                self.finish()
+                return 
+
+
 
 class UsersDetails(tornado.web.RequestHandler):
 	@cors
 	@tornado.gen.coroutine
 	@asynchronous
-        @httpauth(["id", "name", "email", "picture"])
         def post(self):
-                fb_id = self.get_argument("id")
+                """
+                User when does a fb login
+                """
+                fb_id = self.get_argument("fb_id")
                 name = self.get_argument("name")
                 email = self.get_argument("email")
                 picture = self.get_argument("picture")
-                print fb_id, name, email, picture
-                print users_details
-                print users_details.update({"fb_id": fb_id}, {"$set": { "name": name, "email": email, "picture": picture}}, upsert=True)
+                print users_details_collection.update({"fb_id": fb_id}, {"$set": { "name": name, "email": email, "picture": picture}}, upsert=True, multi=False)
                 self.write({"success": True,
 			"error": False,
 			})
@@ -397,6 +497,11 @@ class TextSearch(tornado.web.RequestHandler):
                         
                             result = eateries_results_collection.find_one({"eatery_name": text})
                             result = process_result(result)
+                            for e in ["eatery_highlights", "eatery_cuisine", "eatery_trending", "eatery_id", "eatery_known_for", "eatery_type", "_id"]:
+                                    try:
+                                            result.pop(e)
+                                    except Exception as e:
+                                            pass
 
 
                 elif not  __type:
@@ -538,6 +643,9 @@ app = tornado.web.Application([
                     (r"/nearesteateries", NearestEateries),
                     (r"/usersdetails", UsersDetails),
                     (r"/usersfeedback", UsersFeedback),
+                    (r"/usersdetails", UsersDetails),
+                    (r"/writereview", WriteReview),
+                    (r"/fetchreview", FetchReview),
                     (r"/geteatery", GetEatery),])
 
 def main():
