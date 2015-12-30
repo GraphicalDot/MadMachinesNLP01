@@ -197,7 +197,7 @@ class GetKey(tornado.web.RequestHandler):
                                 "success": True, 
                                 "messege": "Key, Nahi milegi", 
                                 })
-                            self.finsih()
+                            self.finish()
                             return 
 
                     self.write({
@@ -274,31 +274,13 @@ class GetTrending(tornado.web.RequestHandler):
 	@tornado.gen.coroutine
         def post(self):
                 """
+                Returns 10 nearest entries based on the four categories  to the latitude and longitude given to it
+                Args:
+                    latitude
+                    longitude
                 """
-                token = self.get_argument("token")
-                try:
-                        token_result = check_validity_token(token)
-                except Exception as e:
-                        print e
-                        self.write({"success": False,
-			        "error": True,
-                                "messege": "Humse na ho paayega"
-                                })
-                        self.finish()
-                        return 
-
-                if not token_result:
-                        self.set_status(403)
-                        self.write({"success": False,
-			        "error": True,
-                                "messege": "Token expired"
-                                })
-                        return 
-
-                latitude = float(token_result["latitude"])
-                longitude = float(token_result["longitude"])
-                #latitude = float(self.get_argument("latitude"))
-                #longitude = float(self.get_argument("longitude"))
+                latitude = float(self.get_argument("latitude"))
+                longitude = float(self.get_argument("longitude"))
                 print type(longitude)
                 __result = ElasticSearchScripts.get_trending(latitude, longitude)
                 

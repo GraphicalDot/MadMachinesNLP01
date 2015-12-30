@@ -162,7 +162,12 @@ class ElasticSearchScripts(object):
                 self.other_mappings = {'properties': {'eatery_id': {'type': 'string'},
                                                     '__eatery_id': {'type': 'string'},
                                                     'eatery_name': {'type': 'string'},
-                                                    'location': {'type': 'geo_point'},
+                                    'location': {'type': 'geo_point',
+                                                     "geohash": True,
+                                                    "geohash_prefix": True,
+                                                    "geohash_precision": 2,
+                                        
+                                        },
                                                     'mention_factor': {'type': 'double'},
                                                     'poor': {'type': 'long'},
                                                     'average': {'type': 'long'},
@@ -194,7 +199,12 @@ class ElasticSearchScripts(object):
                             "eatery_type":{"type":"string", 'copy_to': 'eatery_cuisine_autocomplete'},
                             
                             "eatery_url":{"type":"string"},
-                            "location":{"type":"geo_point"},
+                                    'location': {'type': 'geo_point',
+                                                     "geohash": True,
+                                                    "geohash_prefix": True,
+                                                    "geohash_precision": 2,
+                                        
+                                        },
                             "mention_factor":{"type":"double"},
                             "timeline":{"type":"string"},
                             "trending_factor":{"type":"double"},
@@ -372,7 +382,12 @@ class ElasticSearchScripts(object):
                                     "eatery_autocomplete": { 'analyzer': 'custom_analyzer', 'type': 'string'}, 
                                     'eatery_raw': {'analyzer': 'keyword_analyzer', 'type': 'string'},
                                     'eatery_shingle': {'analyzer': 'shingle_analyzer', 'type': 'string'},
-                                    'location': {'type': 'geo_point'},
+                                    'location': {'type': 'geo_point',
+                                                     "geohash": True,
+                                                    "geohash_prefix": True,
+                                                    "geohash_precision": 2,
+                                        
+                                        },
                                     'mention_factor': {'type': 'double'},
                                     'name': {'copy_to': ['dish_raw', 'dish_shingle', 'dish_phonetic', 'dish_autocomplete'],
                                     'type': 'string'},
@@ -559,6 +574,7 @@ class ElasticSearchScripts(object):
                                                 __dish.update({"eatery_id": eatery_id})
                                                 __dish.update({"__eatery_id": __eatery_id})
                                                 __dish.update({"eatery_name": eatery_name})
+                                                #__dish.update({"location": {"lat": latitude, "lon": longitude}})
                                                 __dish.update({"location": [longitude, latitude]})
                                                 __dish.update({"eatery_address": eatery_address})
                                                 
@@ -570,8 +586,8 @@ class ElasticSearchScripts(object):
                                         	sub_data = data[sub_category]
                                         	sub_data.update({"eatery_id": eatery_id})
                                         	sub_data.update({"eatery_name": eatery_name})
-                                                sub_data.update({"location": [longitude, latitude]})
                                                 sub_data.update({"eatery_address": eatery_address})
+                                                sub_data.update({"location": [longitude, latitude]})
 
                                         	l = ES_CLIENT.index(index=__category, doc_type=sub_category, body=sub_data)
                                 	        print "%s for %s for eatery_id %s"%(l, sub_category, eatery_id)
@@ -737,94 +753,94 @@ class ElasticSearchScripts(object):
 
                 food_body = {"_source": ["name", "location", "eatery_name", "__eatery_id", "good", "poor", "average", "excellent", "terrible", "total_sentiments"],
                         "from": 0, 
-                        "size": 10, 
-                        "sort": [
-                                {"total_sentiments" : {"order" : "desc"}}
-                                ],
+                        "size": 200, 
                         "query": {
                                 "match_all": {}
                                             },
                         "filter": {
                                 "geo_distance": {
                                         "distance": "2km",
-                                        "location": {
-                                                "lat": latitude,
-                                                "lon": longitude
-                                                    }
+                                        "location": [longitude, latitude],
                                                 }     
-                                }
-                        }
+                                },
+                        "sort": [
+                                {
+                                    "_geo_distance" : {
+                                    "location" : [longitude, latitude],
+                                    "order" : "asc",
+                                    "unit" : "km",
+                                    "mode" : "min",
+                                    "distance_type" : "plane"
+                                    }
+                                                        },
 
+                                ],
+                        }
                 trending_dishes = ES_CLIENT.search(index="food", doc_type="dishes", body=food_body)
                 
+
                 ambience_body = {"_source": ["name", "location", "eatery_name", "__eatery_id", "good", "poor", "average", "excellent", "terrible", "total_sentiments", "eatery_address"],
                         "from": 0, 
-                        "size": 2, 
-                        "sort": [
-                                {"total_sentiments" : {"order" : "desc"}}
-                                ],
+                        "size": 20, 
                         "query": {
                                 "match_all": {}
                                             },
-                        "filter": {
-                                "geo_distance": {
-                                        "distance": "2km",
-                                        "location": {
-                                                "lat": latitude,
-                                                "lon": longitude
-                                                    }
-                                                }     
-                                }
+                        "sort": [
+                                {
+                                    "_geo_distance" : {
+                                    "location" : [longitude, latitude],
+                                    "order" : "asc",
+                                    "unit" : "km",
+                                    "mode" : "min",
+                                    "distance_type" : "plane"
+                                    }},
+                                ],
                         }
                 
                 trending_ambience = ES_CLIENT.search(index="ambience", doc_type="ambience-overall", body=ambience_body)
                 cost_body = {"_source": ["name", "eatery_name", "location", "__eatery_id", "good", "poor", "average", "excellent", "terrible", "total_sentiments", "eatery_address"],
                         "from": 0, 
-                        "size": 2, 
+                        "size": 10, 
                         "sort": [
                                 {"total_sentiments" : {"order" : "desc"}}
                                 ],
-                        "query": {
-                                "match_all": {}
-                                            },
-                        "filter": {
-                                "geo_distance": {
-                                        "distance": "2km",
-                                        "location": {
-                                                "lat": latitude,
-                                                "lon": longitude
-                                                    }
-                                                }     
-                                }
+                        "sort": [
+                                {
+                                    "_geo_distance" : {
+                                    "location" : [longitude, latitude],
+                                    "order" : "asc",
+                                    "unit" : "km",
+                                    "mode" : "min",
+                                    "distance_type" : "plane"
+                                    }},
+                                ],
                         }
                 
                 trending_cost = ES_CLIENT.search(index="cost", doc_type="vfm", body=cost_body)
                 
                 service_body = {"_source": ["name", "eatery_name", "location", "eatery_id", "good", "poor", "average", "excellent", "terrible", "total_sentiments", "eatery_address"],
                         "from": 0, 
-                        "size": 2, 
-                        "sort": [
-                                {"total_sentiments" : {"order" : "desc"}}
-                                ],
+                        "size": 10, 
                         "query": {
                                 "match_all": {}
                                             },
-                        "filter": {
-                                "geo_distance": {
-                                        "distance": "2km",
-                                        "location": {
-                                                "lat": latitude,
-                                                "lon": longitude
-                                                    }
-                                                }     
-                                }
+                        "sort": [
+                                {
+                                    "_geo_distance" : {
+                                    "location" : [longitude, latitude],
+                                    "order" : "asc",
+                                    "unit" : "km",
+                                    "mode" : "min",
+                                    "distance_type" : "plane"
+                                    }},
+                                ],
                         }
                 trending_service = ES_CLIENT.search(index="service", doc_type="service-overall", body=service_body)
                 return {
-                        "food": ElasticSearchScripts.process_result(trending_dishes),  
-                        "ambience": ElasticSearchScripts.process_result(trending_ambience),  
-                        "cost": ElasticSearchScripts.process_result(trending_cost),  
-                        "service": ElasticSearchScripts.process_result(trending_service),  
+                        "food": sorted(ElasticSearchScripts.process_result(trending_dishes), key=lambda x: x.get("total_sentiments"), reverse=True)[0:10],  
+                        "ambience": sorted(ElasticSearchScripts.process_result(trending_ambience), key=lambda x: x.get("total_sentiments"), reverse=True)[0:2], 
+                        "cost": sorted(ElasticSearchScripts.process_result(trending_cost), key=lambda x: x.get("total_sentiments"), reverse=True)[0:2], 
+                        "service": sorted(ElasticSearchScripts.process_result(trending_service), key=lambda x: x.get("total_sentiments"), reverse=True)[0:2], 
                         }
 
 
@@ -1065,6 +1081,6 @@ if __name__ == "__main__":
             ElasticSearchScripts(renew_indexes=True)
             for post in eateries_results_collection.find():
                     __id = post.get("eatery_id")
-                    #for __id in [u'310159', u'307852', u'312114', u'18198477', u'18146368', u'17979576', u'306787', u'8234', u'309243', u'311835', u'313058', u'307853', u'17989123', u'17953918', u'18017241', u'307931', u'8893', u'303095', u'9354', u'4412', u'310094', u'9321', u'303092', u'5591', u'301001', u'301442', u'5732', u'5030', u'301131', u'4899', u'308322', u'8369', u'7070', u'305137', u'307360', u'8910', u'309792', u'308463', u'307330', u'306334', u'307454', u'91', u'304027', u'3392', u'2664', u'307146', u'308642', u'311182', u'310846', u'310396', u'8873', u'305681', u'18082196', u'312437', u'313384', u'304676']
+            #for __id in [u'310159', u'307852', u'312114', u'18198477', u'18146368', u'17979576', u'306787', u'8234', u'309243', u'311835', u'313058', u'307853', u'17989123', u'17953918', u'18017241', u'307931', u'8893', u'303095', u'9354', u'4412', u'310094', u'9321', u'303092', u'5591', u'301001', u'301442', u'5732', u'5030', u'301131', u'4899', u'308322', u'8369', u'7070', u'305137', u'307360', u'8910', u'309792', u'308463', u'307330', u'306334', u'307454', u'91', u'304027', u'3392', u'2664', u'307146', u'308642', u'311182', u'310846', u'310396', u'8873', u'305681', u'18082196', u'312437', u'313384', u'304676']:
                     ElasticSearchScripts.insert_eatery(__id)
 
