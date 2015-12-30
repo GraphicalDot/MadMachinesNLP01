@@ -190,7 +190,16 @@ class GetKey(tornado.web.RequestHandler):
 	@cors
 	@tornado.gen.coroutine
 	@asynchronous
-        def get(self):
+        def post(self):
+                    if self.get_argument("secret") != '967d2b1f6111a198431532149879983a1ad3501224fb0dbf947499b1':
+                            self.write({
+                                "error": False,
+                                "success": True, 
+                                "messege": "Key, Nahi milegi", 
+                                })
+                            self.finsih()
+                            return 
+
                     self.write({
                                 "error": True,
                                 "success": False, 
