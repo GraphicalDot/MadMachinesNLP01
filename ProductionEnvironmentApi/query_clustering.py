@@ -33,7 +33,6 @@ sys.path.append(parent_dir_path)
 
 from Text_Processing.PosTaggers import PosTaggerDirPath, HunPosModelPath, HunPosTagPath
 from Text_Processing.colored_print import bcolors
-from GlobalConfigs import DEBUG
 
 
 

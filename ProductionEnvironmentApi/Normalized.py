@@ -11,7 +11,7 @@ sys.path.append(parent_dir_path)
 
 MOVING_AVEARGE_DAYS = 120
 
-from GlobalConfigs import eateries, eateries_results_collection, reviews, reviews_results_collection, connection
+#from GlobalConfigs import eateries, eateries_results_collection, reviews, reviews_results_collection, connection
 
 
 class NormalizingFactor(object):
