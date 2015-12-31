@@ -384,6 +384,8 @@ class GetTrending(tornado.web.RequestHandler):
                 print type(longitude)
                 __result = ElasticSearchScripts.get_trending(latitude, longitude)
                 
+
+                print __result["service"]
                 result = dict()
                 for __category in [u'food', u'ambience', u'cost', u'service']:
                         __list = list()
@@ -397,6 +399,7 @@ class GetTrending(tornado.web.RequestHandler):
                                                 pass
                                 element.update({"eatery_details": __eatery_details})
                                 __list.append(element)
+                        
                         result[__category] = __list
 
                 self.write({"success": True,

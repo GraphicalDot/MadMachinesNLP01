@@ -819,7 +819,7 @@ class ElasticSearchScripts(object):
                 
                 trending_cost = ES_CLIENT.search(index="cost", doc_type="vfm", body=cost_body)
                 
-                service_body = {"_source": ["name", "eatery_name", "location", "eatery_id", "good", "poor", "average", "excellent", "terrible", "total_sentiments", "eatery_address"],
+                service_body = {"_source": ["name", "eatery_name", "location", "__eatery_id", "good", "poor", "average", "excellent", "terrible", "total_sentiments", "eatery_address"],
                         "from": 0, 
                         "size": 10, 
                         "query": {
