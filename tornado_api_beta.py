@@ -193,20 +193,29 @@ class UsersFeedback(tornado.web.RequestHandler):
 	@tornado.gen.coroutine
 	@asynchronous
         def post(self):
-                
+                x_real_ip = self.request.headers.get("X-Real-IP")
+                remote_ip = x_real_ip or self.request.remote_ip
                 feedback = self.get_argument("feedback")
-                fb_id = self.get_argument("fb_id")
-                if not users_details_collection.find_one({"fb_id": fb_id}):
+                name = self.get_argument("name")
+                email = self.get_argument("email")
+
+                try:
+                        fb_id = self.get_argument("fb_id")
+                except Exception as e:
+                        fb_id = None
+                        pass
+                
+                if users_details_collection.find_one{"feedback": feedback, "name": name, "email": email, "ip": remote_ip}:
                         self.set_status(401)
                         self.write({
                             "error": True, 
                             "success": False, 
-                            "messege": "User needs to login"
+                            "messege": "This feedback has already been submitted"
                             })
                         self.finish()
                         return 
                 
-                users_feedback_collection.insert({"feedback": feedback, "fb_id": fb_id,  "epoch": time.time()})
+                users_feedback_collection.insert({"feedback": feedback, "fb_id": fb_id,  "epoch": time.time(), "name": name, "email": email, "ip": remote_ip})
                 self.write({
                             "error": False, 
                             "success": True, 
