@@ -205,7 +205,7 @@ class UsersFeedback(tornado.web.RequestHandler):
                         fb_id = None
                         pass
                 
-                if users_details_collection.find_one{"feedback": feedback, "name": name, "email": email, "ip": remote_ip}:
+                if users_feedback_collection.find_one({"feedback": feedback, "name": name, "email": email, "ip": remote_ip}):
                         self.set_status(401)
                         self.write({
                             "error": True, 
