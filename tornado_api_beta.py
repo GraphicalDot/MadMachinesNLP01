@@ -1,48 +1,6 @@
 #!/usr/bin/env python
 #-*- coding: utf-8 -*-
 
-"""
-Author:Kaali
-Dated: 17 January, 2015
-                service = result["service"]
-Day: Saturday
-Description: This file has been written for the android developer, This will be used by minimum viable product implementation
-            on android 
-
-Comment: None
-
-
-to test use this id_list 
-id_list = [u'307931', u'7070', u'8369', u'303095', u'8893', u'89', u'9354', u'4412', u'305137', u'303092', u'9321', u'5591', u'310094', \
-        u'5732', u'301001', u'5030', u'301442', u'307490', u'307360', u'308463', u'8910', u'3392', u'309792', u'307330', u'301574']
-
-[28.554721, 77.195182] 307931 H 2, Second Floor &amp; Third Floor, Above Ogaan,Hauz Khas Village, New Delhi
-[28.5552055556, 77.1949833333] 7070 1,Hauz Khas Village, New Delhi
-[28.5539944444, 77.1942972222] 8369 30, 2nd Floor, Powerhouse Buliding,Hauz Khas Village, New Delhi
-[28.5535, 77.1939555556] 303095 50-A, 3rd &amp; 4th Floor,Hauz Khas Village, New Delhi
-[28.5539972222, 77.1942138889] 8893 30-A, 1st Floor,Hauz Khas Village, New Delhi
-[28.5550416667, 77.195075] 89 Shop 1, Hauz Khas Village, New Delhi
-[28.5542972222, 77.1944583333] 9354 29 A,Hauz Khas Village, New Delhi
-[28.5537055556, 77.1941222222] 4412 2nd Floor, 50A,Hauz Khas Village, New Delhi
-[28.5544777778, 77.1948166667] 305137 1A, 3rd Floor,Hauz Khas Village, New Delhi
-[28.55404, 77.194329] 303092 12,Hauz Khas Village, New Delhi
-[28.553795, 77.194213] 9321 9 A, 1st Floor,Hauz Khas Village, New Delhi
-[28.5539972222, 77.1942138889] 5591 30, 4th Floor,Hauz Khas Village, New Delhi
-[28.55423, 77.194439] 310094 Hauz Khas Village, New Delhi
-[28.554907, 77.194575] 5732 31, 2nd Floor,Hauz Khas Village, New Delhi
-[28.5543861111, 77.1946333333] 301001 26 A, 2nd Floor,Hauz Khas Village, New Delhi
-[28.55415, 77.1942527778] 5030 9 A, Second &amp; Third Floor,Hauz Khas Village, New Delhi
-[28.5547, 77.1953972222] 301442 1A/1,Hauz Khas Village, New Delhi
-[28.5524444444, 77.2037361111] 307490 1st Floor, DDA Shopping Complex, Aurobindo Place,Hauz Khas, New Delhi
-[28.5540611111, 77.194275] 307360 30, 1st Floor,Hauz Khas Village, New Delhi
-[28.553925, 77.1942527778] 308463 30 A,Hauz Khas Village, New Delhi
-[28.553764, 77.19429] 8910 50 A, 1st Floor,Hauz Khas Village, New Delhi
-[28.5538388889, 77.1945111111] 3392 T 49, Ground Floor,Hauz Khas Village, New Delhi
-[28.5543333333, 77.1945111111] 309792 26, Main Road,Hauz Khas Village, New Delhi
-[28.5539666667, 77.1942888889] 307330 30, Second Floor,Hauz Khas Village, New Delhi
-[28.5534777778, 77.1941611111] 301574 T 49 BS, Hauz Khas Village, New Delhi
-"""
-
 
 from __future__ import absolute_import
 import base64
@@ -129,7 +87,7 @@ def print_execution(func):
                 start_time = time.time()
                 print "{0} Now {1} have started executing {2}".format(bcolors.OKBLUE, func.func_name, bcolors.RESET)
                 result = func(*args, **kwargs)
-                print "{0} Total time taken by {1} for execution is --<<{2}>>--{3}\n".format(bcolors.OKGREEN, func.func_name,
+                print "{0} Total time taken by {1} for execution is --<<{2}>>-- from ip--{3}\n".format(bcolors.OKGREEN, func.func_name,
                                 (time.time() - start_time), bcolors.RESET)
                 return result
         return wrapper
@@ -214,6 +172,7 @@ class Test(tornado.web.RequestHandler):
 	@cors
 	@tornado.gen.coroutine
 	@asynchronous
+        @print_execution
         @httpauth(["latitude", "longitude"])
         def post(self):
                 if not self.messege:
@@ -222,7 +181,6 @@ class Test(tornado.web.RequestHandler):
                 return 
 
         def __on_response(self):
-                print self.claims
                 time.sleep(10)
                 self.write({"success": True,
                             "error": False, 
@@ -525,7 +483,6 @@ class TextSearch(tornado.web.RequestHandler):
 			        })
                         self.finish()
                         return 
-                print result
                 self.write({"success": False,
 			        "error": True,
 			        "result": result,

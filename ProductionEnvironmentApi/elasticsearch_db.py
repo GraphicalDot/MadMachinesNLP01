@@ -632,7 +632,6 @@ class ElasticSearchScripts(object):
 
                 dish_suggestions = ES_CLIENT.search(index="food", doc_type="dishes", body=body)
                 result = ElasticSearchScripts.process_result(dish_suggestions) 
-                print result
                 return result
         
         @staticmethod
@@ -652,7 +651,6 @@ class ElasticSearchScripts(object):
 
                 dish_suggestions = ES_CLIENT.search(index="eatery", doc_type="eatery", body=body)
                 result = ElasticSearchScripts.process_result(dish_suggestions) 
-                print result
                 return result
 
         @staticmethod
