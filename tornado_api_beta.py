@@ -489,19 +489,26 @@ class TextSearch(tornado.web.RequestHandler):
                         print "searching for cuisine"
                         result = list()
                         __result = ElasticSearchScripts.eatery_on_cuisines(text)
+                        print __result
                         for eatery in __result:
-                                    result.append(short_eatery_result_collection.find_one({"__eatery_id": eatery.get("__eatery_id")}, {"_id": False, "food": True, "ambience": True, \
-                                            "cost":True, "service": True, "menu": True, "overall": True, "location": True, "eatery_address": True, "eatery_name": True, "__eatery_id": True}))
+                                    __result= short_eatery_result_collection.find_one({"__eatery_id": eatery.get("__eatery_id")}, {"_id": False, "food": True, "ambience": True, \
+                                            "cost":True, "service": True, "menu": True, "overall": True, "location": True, "eatery_address": True, "eatery_name": True, "__eatery_id": True})
+
+                                    eatery.update({"eatery_details": __result})
+                                    result.append(eatery)
 
                 elif __type == "eatery":
-                        
+                       
+                            
                             result = eateries_results_collection.find_one({"eatery_name": text})
-                            result = process_result(result)
-                            for e in ["eatery_highlights", "eatery_cuisine", "eatery_trending", "eatery_id", "eatery_known_for", "eatery_type", "_id"]:
+                            __result = process_result(result)
+                            for e in ["eatery_highlights", "eatery_cuisine", "eatery_trending", "eatery_id", "eatery_known_for", "eatery_type", "_id", "processed_reviews", "old_considered_ids"]:
                                     try:
                                             result.pop(e)
                                     except Exception as e:
                                             pass
+                            
+                            result.update(__result)
 
 
                 elif not  __type:
