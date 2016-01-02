@@ -430,7 +430,8 @@ class NearestEateries(tornado.web.RequestHandler):
                                     "good": sentiments.get("good"), 
                                     "average": sentiments.get("average"), 
                                     "terrible": sentiments.get("terrible"), 
-                                        })
+                                    "total_sentiments": sentiments.get("total_sentiments"),    
+                                    })
 
                             final_result.append(element)
                 self.write({"success": True,
