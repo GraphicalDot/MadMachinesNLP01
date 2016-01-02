@@ -423,6 +423,7 @@ class NearestEateries(tornado.web.RequestHandler):
                                     "__eatery_id": element.pop("__eatery_id"), 
                                     "eatery_address": element.pop("eatery_address"), 
                                     "eatery_name": element.pop("eatery_name"),
+                                    "overall": {"total_sentiments": sentiments.get("total_sentiments")}
                                     }})
                                     
                             element.update({"excellent": sentiments.get("excellent"), 
