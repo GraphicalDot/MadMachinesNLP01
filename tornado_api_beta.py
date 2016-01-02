@@ -206,7 +206,7 @@ class UsersFeedback(tornado.web.RequestHandler):
                         pass
                 
                 if users_feedback_collection.find_one({"feedback": feedback, "name": name, "email": email, "ip": remote_ip}):
-                        self.set_status(401)
+                        self.set_status(409)
                         self.write({
                             "error": True, 
                             "success": False, 
@@ -258,7 +258,7 @@ class WriteReview(tornado.web.RequestHandler):
                         return 
                 
 
-                __dict.update({"epoch": time.time()})
+                __dict.update({"epoch": time.strftime('%m/%d/%Y %H:%M:%S',  time.gmtime(1346114717972/1000.))})
                 users_reviews_collection.insert(__dict)
                 self.write({
                             "error": False, 

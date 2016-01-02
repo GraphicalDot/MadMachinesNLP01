@@ -302,7 +302,7 @@ class ElasticSearchScripts(object):
                 ##Inserting cusines names into cuisines index
                 cuisines_list = list()
                 ES_CLIENT.indices.put_mapping(index="eatery", doc_type="cuisines", body =self.cuisines_mappings)
-                for post in eateries.find():
+                for post in eateries_results_collection.find():
                         try:
                                 cuisines = post.get("eatery_cuisine")
                                 eatery_cuisine_split = cuisines.replace(" ", "").split(",")
@@ -707,7 +707,7 @@ class ElasticSearchScripts(object):
                 """
                 body = {"_source": ["__eatery_id", "eatery_cuisine"],
                         "from": 0,
-                        "size": 5,
+                        "size": 10,
                         "query": {
                                         "match": {
                                                 "eatery_cuisine_autocomplete": {
