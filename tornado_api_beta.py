@@ -408,15 +408,29 @@ class NearestEateries(tornado.web.RequestHandler):
                         self.finish()
                         return 
                         
-                projection={"__eatery_id": True, "eatery_name": True, "eatery_address": True, "eatery_coordinates": True, "food": True, "_id": False, "cost": True, \
+                projection={"__eatery_id": True, "eatery_name": True, "eatery_address": True, "location": True, "food": True, "_id": False, "cost": True, \
                         "service": True, "ambience": True, "overall": True, "menu": True}
                 
                 result = short_eatery_result_collection.find({"location": {"$near": [latitude, longitude]}}, projection ).limit(10)
                 
-                __result  = list(result)
+                ##__result  = list(result)
+
+                final_result = list()
+                for element in result:
+                            element.update({"eatery_details": 
+                                {"location": element.pop("location"),
+                                    "__eatery_id": element.pop("__eatery_id"), 
+                                    "eatery_address": element.pop("eatery_address"), 
+                                    "eatery_name": element.pop("eatery_name"),
+                                        }
+                                }) 
+
+                            print element
+                            final_result.append(element)
+                print final_result
                 self.write({"success": True,
 			"error": False,
-                        "result": __result,
+                        "result": final_result,
 			})
                 self.finish()
                 return 

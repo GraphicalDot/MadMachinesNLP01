@@ -455,13 +455,22 @@ class ProductionHeuristicClustering:
                 """
                 filtered_list = list()
                 for __e in self.result:
+                       
+                       __list = [np for (np, pos_tag) in nltk.pos_tag(nltk.wordpunct_tokenize(__e.get("name").encode("ascii", "ignore"))) if pos_tag not in ["FW", "CD", "LS"] and np != "i"]
+                       np = " ".join(__list)
+                       if np != "":
+                                __e.update({"name": np})
+                                filtered_list.append(__e)
+                       """
                         __list = [pos_tag for (np, pos_tag) in nltk.pos_tag(nltk.wordpunct_tokenize(__e.get("name").encode("ascii", "ignore")))]
+                        
+                        
                         if set.intersection(set(__list), set(["FW", "CD", "LS"])):
                                     print "This will be droppped out of total noun phrases %s"%__e.get("name")
                                     self.dropped_nps.append(__e)
                         else:
                             filtered_list.append(__e)
-
+                        """
 
                 return filtered_list
 
