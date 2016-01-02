@@ -408,8 +408,8 @@ class NearestEateries(tornado.web.RequestHandler):
                         self.finish()
                         return 
                         
-                projection={"__eatery_id": True, "eatery_name": True, "eatery_address": True, "location": True, "food": True, "_id": False, "cost": True, \
-                        "service": True, "ambience": True, "overall": True, "menu": True}
+                projection={"__eatery_id": True, "eatery_name": True, "eatery_address": True, "location": True, "_id": False, \
+                        "overall": True}
                 
                 result = short_eatery_result_collection.find({"location": {"$near": [latitude, longitude]}}, projection ).limit(10)
                 
@@ -417,17 +417,22 @@ class NearestEateries(tornado.web.RequestHandler):
 
                 final_result = list()
                 for element in result:
+                            sentiments = element.pop("overall")
                             element.update({"eatery_details": 
                                 {"location": element.pop("location"),
                                     "__eatery_id": element.pop("__eatery_id"), 
                                     "eatery_address": element.pop("eatery_address"), 
                                     "eatery_name": element.pop("eatery_name"),
-                                        }
-                                }) 
+                                    }})
+                                    
+                            element.update({"excellent": sentiments.get("excellent"), 
+                                    "poor": sentiments.get("poor"), 
+                                    "good": sentiments.get("good"), 
+                                    "average": sentiments.get("average"), 
+                                    "terrible": sentiments.get("terrible"), 
+                                        })
 
-                            print element
                             final_result.append(element)
-                print final_result
                 self.write({"success": True,
 			"error": False,
                         "result": final_result,
