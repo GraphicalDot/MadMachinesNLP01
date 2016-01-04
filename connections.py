@@ -56,6 +56,7 @@ print users_reviews_collection, users_details_collection, users_feedback_collect
 corenlpserver = jsonrpclib.Server("http://{0}:{1}".format(config.get("corenlpserver", "ip"), config.getint("corenlpserver", "port")))
 ES_CLIENT = Elasticsearch(ELASTICSEARCH_IP, timeout=30)
 
+server_address = "{0}://{1}:{2}".format(config.get("server", "protocol"), config.get("server", "ip"), config.getint("server", "port"))
 
 
 

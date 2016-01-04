@@ -54,9 +54,10 @@ from pyfiglet import figlet_format
 from Crypto.PublicKey import RSA
 import jwt
 from jwt import _JWTError
+import ConfigParser
 from Text_Processing.Sentence_Tokenization.Sentence_Tokenization_Classes import SentenceTokenizationOnRegexOnInterjections
 from connections import eateries, reviews, eateries_results_collection, reviews_results_collection, short_eatery_result_collection, \
-        bcolors, users_reviews_collection, users_feedback_collection, users_details_collection
+        bcolors, users_reviews_collection, users_feedback_collection, users_details_collection, server_address
 
 from ProductionEnvironmentApi.text_processing_api import PerReview, EachEatery, DoClusters
 from ProductionEnvironmentApi.text_processing_db_scripts import MongoScriptsReviews, MongoScriptsDoClusters
@@ -64,9 +65,12 @@ from ProductionEnvironmentApi.prod_heuristic_clustering import ProductionHeurist
 from ProductionEnvironmentApi.join_two_clusters import ProductionJoinClusters
 from ProductionEnvironmentApi.elasticsearch_db import ElasticSearchScripts
 
+
+
+
+print server_address
 file_path = os.path.dirname(os.path.abspath(__file__))
 parent_dirname = os.path.dirname(os.path.dirname(file_path))
-print parent_dirname
 
 if not os.path.exists("%s/private.pem"%parent_dirname):
         os.chdir(parent_dirname)
@@ -188,6 +192,52 @@ class Test(tornado.web.RequestHandler):
                             })
                 return 
 
+class GetApis(tornado.web.RequestHandler):
+        @cors
+	@print_execution
+	@tornado.gen.coroutine
+        def post(self):
+                """
+                Args:
+                        skip:
+                        limit:
+                        fb_id:
+
+                result:
+                    array of dicts
+                            each object:
+                                
+                """
+                if self.get_argument("key") != '967d2b1f6111a198431532149879983a1ad3501224fb0dbf947499b1':
+                            self.write({
+                                "error": False,
+                                "success": True, 
+                                "messege": "api, Nahi milegi", 
+                                })
+                            self.finish()
+                            return 
+                result = {
+                        "suggestions": "{0}/{1}".format(server_address, "suggestions"), 
+                        "textsearch": "{0}/{1}".format(server_address, "textsearch"), 
+                        "getkey": "{0}/{1}".format(server_address, "getkey"), 
+                        "userprofile": "{0}/{1}".format(server_address, "userprofile"), 
+                        "gettrending": "{0}/{1}".format(server_address, "gettrending"), 
+                        "nearesteateries": "{0}/{1}".format(server_address, "nearesteateries"), 
+                        "usersdetails": "{0}/{1}".format(server_address, "usersdetails"), 
+                        "usersfeedback": "{0}/{1}".format(server_address, "usersfeedback"), 
+                        "writereview": "{0}/{1}".format(server_address, "writereview"), 
+                        "fetchreview": "{0}/{1}".format(server_address, "fetchreview"), 
+                        "geteatery": "{0}/{1}".format(server_address, "geteatery"),
+                        }
+
+                self.write({
+                            "error": True, 
+                            "success": False, 
+                            "result": result,
+                            })
+                self.finish()
+                return 
+
 class UsersFeedback(tornado.web.RequestHandler):
 	@cors
 	@tornado.gen.coroutine
@@ -260,6 +310,7 @@ class WriteReview(tornado.web.RequestHandler):
 
                 __dict.update({"epoch": time.strftime('%m/%d/%Y %H:%M:%S',  time.gmtime(1346114717972/1000.))})
                 users_reviews_collection.insert(__dict)
+                
                 self.write({
                             "error": False, 
                             "success": True, 
@@ -408,7 +459,7 @@ class NearestEateries(tornado.web.RequestHandler):
                         self.finish()
                         return 
                         
-                projection={"__eatery_id": True, "eatery_name": True, "eatery_address": True, "location": True, "_id": False, \
+                projection={"__eatery_id": True, "eatery_name": True, "eatery_address": True, "location": True, "_id": False, "food": True, \
                         "overall": True}
                 
                 result = short_eatery_result_collection.find({"location": {"$near": [latitude, longitude]}}, projection ).limit(10)
@@ -418,12 +469,14 @@ class NearestEateries(tornado.web.RequestHandler):
                 final_result = list()
                 for element in result:
                             sentiments = element.pop("overall")
+                            dishes = element.pop("food")
                             element.update({"eatery_details": 
                                 {"location": element.pop("location"),
-                                    "__eatery_id": element.pop("__eatery_id"), 
+                                    "__eatery_id": element.get("__eatery_id"), 
                                     "eatery_address": element.pop("eatery_address"), 
                                     "eatery_name": element.pop("eatery_name"),
-                                    "overall": {"total_sentiments": sentiments.get("total_sentiments")}
+                                    "overall": {"total_sentiments": sentiments.get("total_sentiments")},
+                                    "food": dishes,
                                     }})
                                     
                             element.update({"excellent": sentiments.get("excellent"), 
@@ -597,6 +650,49 @@ class GetEatery(tornado.web.RequestHandler):
 
                 return 
 
+class GetUserProfile(tornado.web.RequestHandler):
+        @cors
+	@print_execution
+	@tornado.gen.coroutine
+        def post(self):
+                """
+                """
+                fb_id = self.get_argument("fb_id")
+
+                try:
+                        limit = self.get_argument("limit")
+                except Exception as e:
+                        print e
+                        limit = 10
+                
+                try:
+                        skip = self.get_argument("skip")
+                except Exception as e:
+                        print e
+                        skip = 0
+
+
+
+                __result =  [post for post in users_reviews_collection.find({"fb_id": fb_id}).skip(skip).limit(limit)]
+                if not __result:
+                        self.write({"success": False,
+			        "error": True, 
+                                "messege": "No reviews present for this user", 
+                                })
+                        self.finish()
+                        return 
+
+                result = [post.pop("_id") for post in __result]
+                self.write({"success": True,
+			        "error": False,
+                                "result": result,  
+                                })
+                
+                
+                self.finish()
+                return 
+
+
 
 def process_result(result):
                 number_of_dishes = 20
@@ -635,12 +731,13 @@ app = tornado.web.Application([
                     (r"/textsearch", TextSearch),
                     (r"/test", Test),
                     (r"/getkey", GetKey),
-                    
+                    (r"/userprofile", GetUserProfile),
+                    (r"/apis", GetApis),
+                                        
                     (r"/gettrending", GetTrending),
                     (r"/nearesteateries", NearestEateries),
                     (r"/usersdetails", UsersDetails),
                     (r"/usersfeedback", UsersFeedback),
-                    (r"/usersdetails", UsersDetails),
                     (r"/writereview", WriteReview),
                     (r"/fetchreview", FetchReview),
                     (r"/geteatery", GetEatery),])
