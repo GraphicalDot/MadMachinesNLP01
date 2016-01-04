@@ -377,7 +377,7 @@ class UsersDetails(tornado.web.RequestHandler):
                 name = self.get_argument("name")
                 email = self.get_argument("email")
                 picture = self.get_argument("picture")
-                print users_details_collection.update({"fb_id": fb_id}, {"$set": { "name": name, "email": email, "picture": picture}}, upsert=True, multi=False)
+                print users_details_collection.update({"email": email}, {"$set": { "name": name, "fb_id": fb_id, "picture": picture}}, upsert=True, multi=False)
                 self.write({"success": True,
 			"error": False,
 			})
@@ -682,10 +682,10 @@ class GetUserProfile(tornado.web.RequestHandler):
                         self.finish()
                         return 
 
-                result = [post.pop("_id") for post in __result]
+                [post.pop("_id") for post in __result]
                 self.write({"success": True,
 			        "error": False,
-                                "result": result,  
+                                "result": __result,  
                                 })
                 
                 
