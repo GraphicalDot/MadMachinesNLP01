@@ -24,6 +24,9 @@ import StringIO
 import difflib
 from textblob.np_extractors import ConllExtractor 
 from bson.json_util import dumps
+from datetime import datetime, timedelta
+from pytz import timezone
+import pytz
 
 from compiler.ast import flatten
 from topia.termextract import extract
@@ -297,7 +300,15 @@ class WriteReview(tornado.web.RequestHandler):
                         return 
 
 
-                user = users_details_collection.find_one({"fb_id": fb_id}, {"_id": False, "fb_id": False, "email": False}):
+                fmt = "%d %B %Y %H:%M:%S"
+                now_utc = datetime.now(timezone('UTC'))
+                utctimestamp = __utc.strftime(fmt)
+
+
+                indian = now_utc.astimezone(timezone('Asia/Kolkata'))
+                indian_time = indian.strftime(fmt)
+
+                user = users_details_collection.find_one({"fb_id": fb_id}, {"_id": False, "fb_id": False, "email": False})
 
                 __dict = {"review_text": review_text, "fb_id": fb_id, "__eatery_id": __eatery_id, "__eatery_name": __eatery_name}
                 if users_reviews_collection.find_one(__dict):
@@ -309,8 +320,8 @@ class WriteReview(tornado.web.RequestHandler):
                         self.finish()
                         return 
                 
-
-                __dict.update({"epoch": time.strftime('%m/%d/%Y %H:%M:%S',  time.gmtime(1346114717972/1000.))})
+                __dict.update({"utc": utctimestamp})
+                __dict.update({"epoch": indian_time })
                 __dict.update(user)
                 users_reviews_collection.insert(__dict)
                 
@@ -354,8 +365,7 @@ class FetchReview(tornado.web.RequestHandler):
                         return 
                         
 
-                for review in users_reviews_collection.find({"__eatery_id": __eatery_id}).skip(skip).limit(limit):
-                        review.pop("_id")
+                for review in users_reviews_collection.find({"__eatery_id": __eatery_id}, {"_id": False, "utc": False}).skip(skip).limit(limit):
                         result.append(review)
 
                 self.write({
