@@ -285,6 +285,7 @@ class WriteReview(tornado.web.RequestHandler):
                 __eatery_id = self.get_argument("__eatery_id")
                 __eatery_name = self.get_argument("eatery_name")
 
+
                 if not users_details_collection.find_one({"fb_id": fb_id}):
                         self.set_status(401)
                         self.write({
@@ -296,6 +297,7 @@ class WriteReview(tornado.web.RequestHandler):
                         return 
 
 
+                user = users_details_collection.find_one({"fb_id": fb_id}, {"_id": False, "fb_id": False, "email": False}):
 
                 __dict = {"review_text": review_text, "fb_id": fb_id, "__eatery_id": __eatery_id, "__eatery_name": __eatery_name}
                 if users_reviews_collection.find_one(__dict):
@@ -309,6 +311,7 @@ class WriteReview(tornado.web.RequestHandler):
                 
 
                 __dict.update({"epoch": time.strftime('%m/%d/%Y %H:%M:%S',  time.gmtime(1346114717972/1000.))})
+                __dict.update(user)
                 users_reviews_collection.insert(__dict)
                 
                 self.write({
@@ -377,7 +380,7 @@ class UsersDetails(tornado.web.RequestHandler):
                 name = self.get_argument("name")
                 email = self.get_argument("email")
                 picture = self.get_argument("picture")
-                print users_details_collection.update({"email": email}, {"$set": { "name": name, "fb_id": fb_id, "picture": picture}}, upsert=True, multi=False)
+                print users_details_collection.update({"fb_id": fb_id}, {"$set": { "name": name, "email": email, "picture": picture}}, upsert=True, multi=False)
                 self.write({"success": True,
 			"error": False,
 			})

@@ -305,13 +305,15 @@ class ElasticSearchScripts(object):
                 for post in eateries_results_collection.find():
                         try:
                                 cuisines = post.get("eatery_cuisine")
-                                eatery_cuisine_split = cuisines.replace(" ", "").split(",")
+                                eatery_cuisine_split = cuisines.split(",")
                                 cuisines_list.extend(eatery_cuisine_split)
                                                                  
                         except Exception as e:       
                                 print e, "In finding cusines"
                                 pass
-                for cuisine in set(cuisines_list):
+                __cuisines_list = [e.replace("Quick", "").replace("Bites", "").replace("Cuisines:", "").lstrip()  for e in set(cuisines_list)]
+
+                for cuisine in __cuisines_list:
                                 print "Updating cuisine %s"%cuisine
                                 ES_CLIENT.index(index="eatery", doc_type="cuisines", body={"name": cuisine})
 
