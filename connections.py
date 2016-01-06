@@ -41,6 +41,7 @@ reviews_results_collection = result_db[config.get("resultsDB", "review_result")]
 eateries_results_collection = result_db[config.get("resultsDB", "eatery_result")]
 discarded_nps_collection=  result_db[config.get("resultsDB", "discarded_nps")]
 short_eatery_result_collection = result_db[config.get("resultsDB", "short_eatery_result")]
+area_collection = result_db[config.get("resultsDB", "area")]
 
 
 users_db_connection = pymongo.MongoClient(config.get("usersDB", "ip"), config.getint("usersDB", "port"))
