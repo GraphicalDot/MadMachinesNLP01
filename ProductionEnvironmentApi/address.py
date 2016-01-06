@@ -66,28 +66,41 @@ print set(result)
 
 
 
-def if_not_location(latitude, longitude, , address):
+def edit_location(latitude, longitude, , address):
+	"""
+	This function was made bacuse of the incomptency of various websites to 
+	even acutally write proper address, 
+
+	they didnt even tries to reverse the geocode, Bloody jokers!!
+
+	{'status': 'OK', 
+		'city': u'New Delhi', 
+		'confidence': 9, 'ok': True, 'encoding': 'utf-8', 'country': u'IN', 'provider': 'google', 
+		'location': 'upreme Plaza, Main Market, Sector 6, Dwarka, New Delhi', 
+		'county': u'South West Delhi', 'state': u'DL', 'street': u'Mall Rd', 
+		'bbox': {'northeast': [28.5928047302915, 77.06019673029151], 'southwest': [28.5901067697085, 77.0574987697085]}, 
+		'status_code': 200, 
+		'address': u'Odeon Plaza, Mall Rd, Sec-6 Market, Sector 6 Dwarka, Dwarka, New Delhi, Delhi 110075, India', 'lat': 28.5914558, 'lng': 77.0588478, 
+		'postal': u'110075', 'quality': u'premise', 'sublocality': u'Dwarka', 'accuracy': u'ROOFTOP'}
+
+	"""
+
         if int(latitude) == 0:
                 g  = geocoder.google(address)
-                location = g.geojson.get("bbox").get("northeast")
+                location = g.ltalng
 
-
-	g = geocoder.google(address)
-        try:
-                location = g.geojson.get("bbox").get("northeast")
-
-        except Exception as e:
-                for i in range(0, len(address.split(","))):
-                        try:
-                                __address  = ", ".join(address.split(",")[i: ])
-                                print "trying %s"%__address
-                                g = geocoder.google(address)
-                                location = g.geojson.get("bbox").get("northeast")
-                                break
-                        except:
-                                    pass
-
-        return location, address
+	else:
+		g = geocoder.google([latitude, longitude], method='reverse')
+		g = geocoder.google(address)
+	
+	
+	county = g.geojson["properties"].get("county")
+	city = g.geojson["properties"].get("city")
+	sublocality = g.geojson["properties"].get("sublocality")
+	pincode = g.geojson["properties"].get("postal")
+	street = g.geojson["properties"].get("street")
+        
+	return location, address, (street, sublocality, county, city, postal)
 
 
 

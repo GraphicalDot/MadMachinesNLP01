@@ -42,14 +42,13 @@ eateries_results_collection = result_db[config.get("resultsDB", "eatery_result")
 discarded_nps_collection=  result_db[config.get("resultsDB", "discarded_nps")]
 short_eatery_result_collection = result_db[config.get("resultsDB", "short_eatery_result")]
 area_collection = result_db[config.get("resultsDB", "area")]
-
+print area_collection
 
 users_db_connection = pymongo.MongoClient(config.get("usersDB", "ip"), config.getint("usersDB", "port"))
 users_db  = users_db_connection[config.get("usersDB", "database")]
 users_reviews_collection = users_db[config.get("usersDB", "usersreviews")]
 users_feedback_collection = users_db[config.get("usersDB", "usersfeedback")]
 users_details_collection = users_db[config.get("usersDB", "usersdetails")]
-print users_reviews_collection, users_details_collection, users_feedback_collection
 
 
 
