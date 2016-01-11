@@ -60,7 +60,7 @@ from jwt import _JWTError
 import ConfigParser
 from Text_Processing.Sentence_Tokenization.Sentence_Tokenization_Classes import SentenceTokenizationOnRegexOnInterjections
 from connections import eateries, reviews, eateries_results_collection, reviews_results_collection, short_eatery_result_collection, \
-        bcolors, users_reviews_collection, users_feedback_collection, users_details_collection, server_address
+        bcolors, users_reviews_collection, users_feedback_collection, users_details_collection, server_address, picture_collection
 
 from ProductionEnvironmentApi.text_processing_api import PerReview, EachEatery, DoClusters
 from ProductionEnvironmentApi.text_processing_db_scripts import MongoScriptsReviews, MongoScriptsDoClusters
@@ -311,6 +311,8 @@ class WriteReview(tornado.web.RequestHandler):
                 user = users_details_collection.find_one({"fb_id": fb_id}, {"_id": False, "fb_id": False, "email": False})
 
                 __dict = {"review_text": review_text, "fb_id": fb_id, "__eatery_id": __eatery_id, "__eatery_name": __eatery_name}
+                review_id = hashlib.sha256(indian_time + __eatery_id + review_text).hexdigest()
+                
                 if users_reviews_collection.find_one(__dict):
                         self.write({
                             "error": True, 
@@ -323,6 +325,7 @@ class WriteReview(tornado.web.RequestHandler):
                 __dict.update({"utc": utctimestamp})
                 __dict.update({"epoch": indian_time })
                 __dict.update(user)
+                __dict.update({"review_id": review_id})
                 users_reviews_collection.insert(__dict)
                 
                 self.write({
@@ -365,7 +368,7 @@ class FetchReview(tornado.web.RequestHandler):
                         return 
                         
 
-                for review in users_reviews_collection.find({"__eatery_id": __eatery_id}, {"_id": False, "utc": False}).skip(skip).limit(limit):
+                for review in users_reviews_collection.find({"__eatery_id": __eatery_id}, {"_id": False, "utc": False}).sort("epoch", -1).skip(skip).limit(limit):
                         result.append(review)
 
                 self.write({
@@ -475,8 +478,8 @@ class NearestEateries(tornado.web.RequestHandler):
                 projection={"__eatery_id": True, "eatery_name": True, "eatery_address": True, "location": True, "_id": False, "food": True, \
                         "overall": True}
                 
-                result = short_eatery_result_collection.find({"location": {"$near": [latitude, longitude]}}, projection ).limit(10)
-                
+                result = short_eatery_result_collection.find({"location": { "$geoWithin": { "$centerSphere": [[latitude, longitude], .5/3963.2] } }}, \
+                        projection).sort("overall.total_sentiments", -1).limit(10)
                 ##__result  = list(result)
 
                 final_result = list()
@@ -501,6 +504,9 @@ class NearestEateries(tornado.web.RequestHandler):
                                     })
 
                             final_result.append(element)
+
+
+                final_result = sorted(final_result, reverse=True, key = lambda x: x.get("total_sentiments"))
                 self.write({"success": True,
 			"error": False,
                         "result": final_result,
@@ -653,8 +659,10 @@ class GetEatery(tornado.web.RequestHandler):
                                 "result": "SOmehoe eatery with this eatery is not present in the DB"})
                         self.finish()
                         return 
-                
-                result = process_result(result)
+               
+
+                __result = process_google_results(result, __eatery_id)
+                result = process_result(__result)
                 cprint(figlet_format('Finished executing %s'%self.__class__.__name__, font='mini'), attrs=['bold'])
                 self.write({"success": True,
 			"error": False,
@@ -662,6 +670,38 @@ class GetEatery(tornado.web.RequestHandler):
                 self.finish()
 
                 return 
+
+
+
+def process_google_result(result, __eatery_id):
+                """
+
+                """
+                try:
+                        google = result.pop("google")
+                        if google == 'No entry exists on google':
+                                return result
+                except Exception as e:
+        
+                        pass
+
+                if google.get("location"):
+                        result["location"] = google.get("location")
+                        print "location found in google result for %s"%__eatery_id
+
+                if google.get("eatery_address"):
+                        result["eatery_address"] = google.get("eatery_address")
+                        print "Address found in google result for %s"%__eatery_id
+                
+                if google.get("eatery_phone_number"):
+                        result["eatery_phone_number"] = google.get("eatery_phone_number")
+                else:
+                        result["eatery_phone_number"] = None
+                        
+
+                return result
+
+
 
 class GetUserProfile(tornado.web.RequestHandler):
         @cors
@@ -706,6 +746,179 @@ class GetUserProfile(tornado.web.RequestHandler):
                 return 
 
 
+class GetPics(tornado.web.RequestHandler):
+        @cors
+	@print_execution
+	@tornado.gen.coroutine
+        def post(self):
+                """
+                the kys which exists for a particular picture in the picture_collection
+                [u'width', u'url', u'eatery_id', u'height', u'__eatery_id', u'filename', u'pic_id', u'_id', u'data']
+                """
+
+                __eatery_id = self.get_argument("__eatery_id")
+
+                try:
+                        limit = self.get_argument("limit")
+                except Exception as e:
+                        print e
+                        limit = 10
+                
+                try:
+                        skip = self.get_argument("skip")
+                except Exception as e:
+                        print e
+                        skip = 0
+
+                projection = {"_id": False, "width": False, "height":  False, "eatery_id": False, "filename": False}
+                result = list(picture_collection.find({"__eatery_id": eatery_id}, projection).sort("epoch", -1).skip(skip).limit(limit))
+                self.write({"success": True,
+			        "error": False,
+                                "result": result,  
+                                })
+                self.finish()
+                return 
+
+
+                
+
+
+
+
+
+class UploadPic(tornado.web.RequestHandler):
+        @cors
+	@print_execution
+	@tornado.gen.coroutine
+        def post(self):
+                """
+                This api end point will be used to upload picture for the eatery, also 
+                user can upload pic for the related dish, in that case a dish name has be made available
+                the picture that has been uploaded successfult will have following fields 
+
+                    "epoch": indian_time, 
+                    "utctimestamp": utctimestamp, 
+                    "pic_id": pic_id, 
+                    "data": data, 
+                    "__eatery_id": __eatery_id, 
+                    "fb_id": fb_id, 
+                    "likes": Int number of likes
+                    "users": "A list of users with their fb_ids and their picture url who has liked this pic
+                """
+
+                __eatery_id = self.get_argument("__eatery_id")
+                pic_data = self.get_argument("pic_data")
+                fb_id = self.get_argument("fb_id")
+
+                picture = {}
+                try:
+                        dish_name = selg.get_argument("dish_name")
+                except Exception as e:
+                        dish_name = None
+
+
+                try:
+                        based.b64decode(pic_data)
+
+                except TypeError as e:
+                        self.write({"success": False,
+			        "error": True,
+                                "messege": "Image cant be uploaded because of the incorrect format",  
+                                })
+                        self.finish()
+                        return 
+                        
+                fmt = "%d %B %Y %H:%M:%S"
+                now_utc = datetime.now(timezone('UTC'))
+                utctimestamp = __utc.strftime(fmt)
+
+
+                indian = now_utc.astimezone(timezone('Asia/Kolkata'))
+                indian_time = indian.strftime(fmt)
+
+                picture.update({"epoch": indian_time, "utctimestamp": utctimestamp, "pic_id": pic_id, "data": data, "__eatery_id": __eatery_id, "fb_id": fb_id, "likes": 0, "users": []})
+
+                try:
+                        picture_collection.insert(picture)
+                        success = True
+                        error = False
+                        messege = "The image has been uploaded successfully"
+                except Exception as e:
+                        success = False
+                        error =True
+                        messege = "The image already exists"
+
+                self.write({"success": success,
+			        "error": error,
+                                "messege": messege,  
+                                })
+                self.finish()
+                return 
+
+
+
+        
+                
+class LikePic(tornado.web.RequestHandler):
+        """
+        If a user wants to like a pic, for that to happend a pic_id and fb_id must be given
+        """
+        @cors
+	@print_execution
+	@tornado.gen.coroutine
+        def post(self):
+                pic_id = self.get_argument("pic_id")
+                fb_id = self.get_argument("fb_id")
+                picture = self.get("picture")
+
+                if picture_collection.find_one({"pic_id": pic_id, "users": {"fb_id": fb_id, "picture": picture}}):
+                        self.write({"success": False,
+			        "error": True,
+                                "messege": "User already have liked the picture",  
+                                })
+                        self.finish()
+                        return 
+
+                        
+
+
+
+                picture_collection.update({"pic_id": pic_id}, {"$inc": {"likes": 1}, "$addToSet": {"users": {"fb_id": fb_id, "picture": picture}}},  upsert=False)
+                self.write({"success": True,
+			    "error": False,
+                            "messege": "Picture has been liked by the user",  
+                            })
+                self.finish()
+                return 
+
+
+                
+
+class AddDish(tornado.web.RequestHandler):
+        @cors
+	@print_execution
+	@tornado.gen.coroutine
+        def post(self):
+                """
+                If a user wants to add dish to an eatery_id
+                """
+                dish = self.get_argument("dish")
+                __eatery_id = self.get_argument("__eatery_id")
+                sentiment = self.get_argument("sentiment")
+
+                if user_dish_collection.find_one({"eatery_id": eatery_id}, {"$exists": {"dish": True}}):
+                        self.write({"success": False,
+			        "error": True, 
+                                "messege": "The dish already exists for the eatery", 
+                                })
+                        self.finish()
+                        return 
+                
+                ##upsert=False, becuase the eatery already exists in the database
+                user_dish_collection.update({"eatery_id": eatery_id}, {"$set": {"dish": True}})
+
+
+
 
 def process_result(result):
                 number_of_dishes = 20
@@ -746,6 +959,7 @@ app = tornado.web.Application([
                     (r"/getkey", GetKey),
                     (r"/userprofile", GetUserProfile),
                     (r"/apis", GetApis),
+                    (r"/pics", GetPics),
                                         
                     (r"/gettrending", GetTrending),
                     (r"/nearesteateries", NearestEateries),

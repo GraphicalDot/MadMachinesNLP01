@@ -40,9 +40,42 @@ os.chdir(file_path)
 ##These cateories shouldnt contain null values for any category
 sentiment_tags =   ["good", "poor", "average", "excellent", "terrible", "mixed"]
 food_tags =  ["dishes",  "overall-food"]
-ambience_tags = ['smoking-zone', 'decor', 'ambience-overall', 'in-seating', 'crowd', 'open-area', 'dancefloor', 'music', 'location', 'romantic', 'sports', 'live-matches', 'view']
+ambience_tags = ['smoking-zone', 'decor', 'ambience-overall', 'in-seating', 'crowd', 'open-area', 'dancefloor', 'music', 'location', 'romantic', 'sports', 'live-matches', 'view', "bowling"]
 cost_tags =  ["vfm", "expensive", "cheap", "not worth"]
 service_tags = [u'management', u'service-charges', u'service-overall', u'service-null', u'waiting-hours', u'presentation', u'booking', u'staff'] 
+
+
+"""
+
+ address_mappings = {"area":                        
+                        {"properties": {
+                            "address_autocomplete": { 'analyzer': 'custom_analyzer', 'type': 'string'},
+                            "address": {"type": "string", "copy_to": ["address_autocomplete"]},
+
+                            "location": {"type": "string"}}}}
+
+
+
+
+body = {"_source": ["address"],
+                        "from": 0,
+                        "size": 50,
+                                "query": {
+                                        "match": {
+                                                "address_autocomplete": {
+                                                        "query":    "new delhi",
+                                                        "analyzer": "standard"
+                                                                    }
+                                                }
+                                        }
+                            }
+
+
+
+
+"""
+
+
 
 
 
@@ -751,20 +784,6 @@ class ElasticSearchScripts(object):
         @staticmethod
         def get_trending(latitude, longitude):
                 """
-                """
-
-                food_body = {"_source": ["name", "location", "eatery_name", "__eatery_id", "good", "poor", "average", "excellent", "terrible", "total_sentiments"],
-                        "from": 0, 
-                        "size": 200, 
-                        "query": {
-                                "match_all": {}
-                                            },
-                        "filter": {
-                                "geo_distance": {
-                                        "distance": "2km",
-                                        "location": [longitude, latitude],
-                                                }     
-                                },
                         "sort": [
                                 {
                                     "_geo_distance" : {
@@ -776,6 +795,23 @@ class ElasticSearchScripts(object):
                                     }
                                                         },
 
+                                ],
+                """
+
+                food_body = {"_source": ["name", "location", "eatery_name", "__eatery_id", "good", "poor", "average", "excellent", "terrible", "total_sentiments"],
+                        "from": 0, 
+                        "size": 200, 
+                        "query": {
+                                "match_all": {}
+                                            },
+                        "filter": {
+                                "geo_distance": {
+                                        "distance": "20km",
+                                        "location": [longitude, latitude],
+                                                }     
+                                },
+                        "sort": [
+                                {"trending_factor" : {"order" : "desc"}}
                                 ],
                         }
                 trending_dishes = ES_CLIENT.search(index="food", doc_type="dishes", body=food_body)
