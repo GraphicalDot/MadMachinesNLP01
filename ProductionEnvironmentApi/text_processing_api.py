@@ -46,6 +46,8 @@ from elasticsearch_db import ElasticSearchScripts
 from Normalized import NormalizingFactor
 from topia.termextract import extract  
 from simplejson import loads
+from google_places import google_already_present, find_google_places
+
 from connections import sentiment_classifier, tag_classifier, food_sb_classifier, ambience_sb_classifier, service_sb_classifier, \
             cost_sb_classifier, SolveEncoding, bcolors, corenlpserver,  reviews, eateries, eateries_results_collection, reviews_results_collection
 
@@ -73,7 +75,6 @@ class EachEatery:
 
                 case 3: 
                     All the reviews has already been processed, No reviews are left to be processed 
-                """
                 all_reviews = MongoScriptsReviews.return_all_reviews(self.eatery_id) 
                 try:
                         ##case1: all_processed_reviews riases StandardError as there is no key in eatery result for processed_reviews
@@ -81,7 +82,6 @@ class EachEatery:
 
                 except StandardError as e:
                         warnings.warn("Starting processing whole eatery, YAY!!!!")
-                        return MongoScriptsReviews.reviews_with_text(all_reviews)
                 reviews_ids = list(set.symmetric_difference(set(all_reviews), set(all_processed_reviews)))
                 if reviews_ids:
                         ##case2: returning reviews which are yet to be processed 
@@ -90,6 +90,26 @@ class EachEatery:
                 else:
                         warnings.warn("{0} No New reviews to be considered for eatery id {1} {2}".format(bcolors.OKBLUE, self.eatery_id, bcolors.RESET))
                         return list() 
+                """
+                google = MongoScriptsReviews.insert_eatery_into_results_collection(self.eatery_id)
+                if google:
+                        google_already_present(eatery_id, google)
+                    
+                else:
+                        find_google_places(eatery_id)
+                
+                
+                review_ids = MongoScriptsReviews.review_ids_to_be_processed(self.eatery_id)
+                if not review_ids:
+                        print "No reviews are to be processed"
+               
+                
+                reviews_ids = MongoScriptsReviews.reviews_with_text(review_ids)
+                print review_ids
+                return review_ids
+
+
+
 
 class PerReview:
         sent_tokenizer = SentenceTokenizationOnRegexOnInterjections()
@@ -444,123 +464,47 @@ class DoClusters(object):
                                 = <<{1}>> {2}".format(bcolors.OKBLUE, self.eatery_id, bcolors.RESET)
                         return 
 
-                old_considered_ids = self.mongo_instance.old_considered_ids()
-                if not old_considered_ids:
-                        #That clustering is running for the first time
-                        warnings.warn("{0} No clustering of noun phrases has been done yet  for eatery_id\
+                #That clustering is running for the first time
+                warnings.warn("{0} No clustering of noun phrases has been done yet  for eatery_id\
                                 = <<{1}>>{2}".format(bcolors.FAIL, self.eatery_id, bcolors.RESET))
                        
-                        ##update eatery with all the details in eatery reslut collection
-                        self.mongo_instance.update_eatery_result_collection(self.eatery_id)
+                ##update eatery with all the details in eatery reslut collection
 
-                        __nps_food = self.mongo_instance.fetch_reviews("food", review_list=None)
+                __nps_food = self.mongo_instance.fetch_reviews("food", review_list=None)
                         
-                        ##sub_tag_dict = {u'dishes': [[u'super-positive', 'sent', [u'paneer chilli pepper starter']],
-                        ##[u'positive', sent, []],
-                        ##u'menu-food': [[u'positive', sent, []]], u'null-food': [[u'negative', sent, []],
-                        ##[u'negative', sent, []],
-                        sub_tag_dict = self.unmingle_food_sub(__nps_food)
+                ##sub_tag_dict = {u'dishes': [[u'super-positive', 'sent', [u'paneer chilli pepper starter']],
+                ##[u'positive', sent, []],
+                ##u'menu-food': [[u'positive', sent, []]], u'null-food': [[u'negative', sent, []],
+                ##[u'negative', sent, []],
+                sub_tag_dict = self.unmingle_food_sub(__nps_food)
 
 
-                        __result = self.clustering(sub_tag_dict.get("dishes"), "dishes")
+                __result = self.clustering(sub_tag_dict.get("dishes"), "dishes")
                         
-                        ##this now returns three keys ina dictionary, nps, excluded_nps and dropped nps
-                        self.mongo_instance.update_food_sub_nps(__result, "dishes")
+                ##this now returns three keys ina dictionary, nps, excluded_nps and dropped nps
+                self.mongo_instance.update_food_sub_nps(__result, "dishes")
                         
-                        #REsult corresponding to the menu-food tag
-                        __result = self.aggregation(sub_tag_dict.get("overall-food"))
-                        self.mongo_instance.update_food_sub_nps(__result, "overall-food")
+                #REsult corresponding to the menu-food tag
+                __result = self.aggregation(sub_tag_dict.get("overall-food"))
+                self.mongo_instance.update_food_sub_nps(__result, "overall-food")
                         
 
 
-                        for __category in ["ambience_result", "service_result", "cost_result"]:
-                                __nps = self.mongo_instance.fetch_reviews(__category)
-                                __whle_nps = self.make_cluster(__nps, __category)
+                for __category in ["ambience_result", "service_result", "cost_result"]:
+                        __nps = self.mongo_instance.fetch_reviews(__category)
+                        __whle_nps = self.make_cluster(__nps, __category)
                                 
-                                self.mongo_instance.update_nps(__category.replace("_result", ""), __whle_nps)
+                        self.mongo_instance.update_nps(__category.replace("_result", ""), __whle_nps)
                         
                         
-                        __nps = self.mongo_instance.fetch_reviews("overall")
-                        overall_result = self.__overall(__nps)
-                        self.mongo_instance.update_nps("overall", overall_result)
+                __nps = self.mongo_instance.fetch_reviews("overall")
+                overall_result = self.__overall(__nps)
+                self.mongo_instance.update_nps("overall", overall_result)
                         
-                        __nps = self.mongo_instance.fetch_reviews("menu_result")
-                        overall_result = self.__overall(__nps)
-                        self.mongo_instance.update_nps("menu", overall_result)
-                        self.mongo_instance.update_considered_ids()
-                else:
-                        processed_reviews = self.mongo_instance.processed_reviews()
-                        reviews_ids = list(set.symmetric_difference(set(old_considered_ids), \
-                                set(processed_reviews)))
-                       
-                        print "New review to be consider are %s"%reviews_ids
+                __nps = self.mongo_instance.fetch_reviews("menu_result")
+                overall_result = self.__overall(__nps)
+                self.mongo_instance.update_nps("menu", overall_result)
                 
-                """
-                else:
-                        
-                        processed_reviews = self.mongo_instance.processed_reviews()
-                        reviews_ids = list(set.symmetric_difference(set(old_considered_ids), \
-                                set(processed_reviews)))
-
-                        print "{0} These are the review ids {1} required to be considered for eatery_id\
-                                = <<{2}>> {3}".format(bcolors.OKBLUE, reviews_ids, self.eatery_id, bcolors.RESET)
-
-                        if not bool(reviews_ids):
-                                warnings.warn("{0} All the noun phrases has already been processed {1}".format(\
-                                    bcolors.OKBLUE, bcolors.RESET))
-                                return 
-
-                        MongoScriptsDoClusters.reviews_with_time(reviews_ids)
-                        __nps_food = self.mongo_instance.fetch_reviews("food", reviews_ids)
-                            
-                            
-                        ##{u'dishes': [[u'positive', sent, [u'paneer chilli pepper starter']],
-                        ##[u'positive', sent, []],
-                        ##u'menu-food': [[u'positive', sent, []]], u'null-food': [[u'negative', sent, []],
-                        ##[u'negative', sent, []],
-                        sub_tag_dict = DoClusters.unmingle_food_sub(__nps_food)
-
-                        for sub_category in ["dishes", "place-food", "sub-food"]:
-                                #deals with clustering in ProductionHeuristicClustering
-                                __nps_new_result = self.clustering(sub_tag_dict.get(sub_category), sub_category)
-                                #old noun phrases stored already in mongodbunder food.sub_category
-                                __nps_old_result = self.mongo_instance.fetch_nps_frm_eatery("food", sub_category)
-                                
-                                
-                                __whle = __nps_old_result + __nps_new_result
-                                __whle_result = self.join_two_clusters(__whle, sub_category)
-                                self.mongo_instance.update_food_sub_nps(__whle_result, sub_category)
-                        
-                        for sub_category in ["menu-food", "overall-food"]:
-                                #REsult corresponding to the menu-food tag
-                                __nps_new_result = DoClusters.aggregation(sub_tag_dict.get(sub_category))
-                                __nps_old_result = self.mongo_instance.fetch_nps_frm_eatery("food", sub_category)
-                    
-                                __whl_new_result = DoClusters.aggregation(__nps_old_result, __nps_new_result)
-                                self.mongo_instance.update_food_sub_nps(__whl_new_result, sub_category)
-                        
-
-                                        
-
-                        for __category in ["ambience", "service", "cost"]:
-                                __nps = self.mongo_instance.fetch_reviews(__category, reviews_ids)
-                                __nps_new_result = DoClusters.make_cluster(__nps, __category)
-
-
-                                print "Start Printing new reuslt for category %s"%__category
-                                print __nps_new_result
-                                print "Finish Printing new reuslt for category %s"%__category
-
-                                __nps_old_result = self.mongo_instance.fetch_nps_frm_eatery(__category)
-                                __whle_nps = DoClusters.adding_new_old_nps(__nps_old_result, __nps_new_result)
-                                
-                                print "Start Printing whole result for category %s"%__category
-                                print __whle_nps
-                                print "Finish Printing whole result for category %s"%__category
-                                self.mongo_instance.update_nps(__category, __whle_nps)
-                        
-                        self.mongo_instance.update_considered_ids(review_list=reviews_ids)
-
                 """
                 ##NOw all the reviews has been classified, tokenized, in short processed, 
                 ##time to populate elastic search
@@ -568,7 +512,7 @@ class DoClusters(object):
                 ##instance.run()
                 ##ElasticSearchScripts.insert_eatery(self.eatery_id)
 
-
+                """
                 
                 return 
 
@@ -901,19 +845,16 @@ if __name__ == "__main__":
             ins = DoClusters(eatery_id)
             ins.run()
 
-
-            for eatery_id in [u'309156', u'310912', u'1185', u'1207', u'6281', u'301422', u'8409', u'310078', u'66', u'307958', u'308609', u'309589', u'9315', u'1199', u'301559', u'853', u'5565', u'4905', u'3695', u'300463', u'308544', u'305856', u'8843', u'313299', u'305661', u'301653', u'166', u'3721', u'3226', u'312601', u'309136', u'1533', u'5918', u'7461']:
             """
-            __ids = [u'1354', u'9776', u'7452', u'312963', u'2098', u'3597', u'303434', u'2777', u'4361', u'304941', u'2781', u'309302', u'1900', u'1324', u'7681', u'3185', u'2049', u'6880', u'9980', u'307700', u'300720', u'304976', u'9536', u'908', u'3522', u'307877', u'9792', u'6667', u'308618', u'3403', u'4140', u'310887', u'311797', u'306044', u'7472', u'306027', u'311123', u'6851', u'309354', u'310914', u'9161', u'306366', u'311798', u'4104', u'300712', u'4557', u'307158', u'305656', u'307276', u'309494', u'7371', u'311387', u'306477', u'309207', u'310702', u'308785', u'305440', u'6769', u'18144469', u'18025114', u'18208912', u'18146299', u'306831', u'4059', u'3170', u'300438', u'301328', u'580', u'6161', u'7166', u'308353', u'311069', u'8010', u'5663', u'3739', u'300323', u'1451', u'8234', u'301303', u'972', u'7785', u'5931', u'1375', u'310444', u'300973', u'6988', u'3126', u'4154', u'312581', u'306526', u'309291', u'311490', u'306571', u'302195', u'304518', u'312339', u'307304', u'306149', u'310909', u'308914', u'306168', u'312899', u'310207', u'310502', u'304646', u'6646', u'311482', u'312946', u'304550', u'306107', u'312813', u'308001', u'313276', u'18146403', u'18138419', u'18017269', u'300439', u'18153536', u'312537', u'18128857', u'4380', u'6824', u'310917', u'303204', u'3635', u'3002', u'3010', u'302973', u'4034', u'1727', u'9459', u'300957', u'6658', u'1039', u'2114', u'304969', u'301452', u'300283', u'4919', u'309463', u'3362', u'2407', u'301940', u'3744', u'4367', u'300841', u'304304', u'2000', u'308054', u'301593', u'9122', u'311022', u'313346', u'5411', u'2771', u'308009', u'5089', u'312979', u'308721', u'306446', u'309990', u'312212', u'310541', u'306856', u'302236', u'6549', u'307561', u'308111', u'311290', u'7777', u'312267', u'311421', u'307524', u'847', u'307407', u'311600', u'310216', u'306598', u'313378', u'18175291', u'18144458', u'18133508', u'17953911', u'9969', u'17977798', u'18157409', u'3580', u'5928', u'2334', u'8473', u'3128', u'1030', u'2438', u'6194', u'3907', u'8872', u'309540', u'4086', u'9806', u'3493', u'300268', u'5427', u'310544', u'819', u'5735', u'3013', u'3071', u'4714', u'7770', u'306400', u'305606', u'305293', u'7861', u'307098', u'304192', u'301898', u'6552', u'5797', u'7764', u'308404', u'312998', u'311478', u'6023', u'309081', u'1025', u'300717', u'974', u'311336', u'311977', u'307954', u'311694', u'306810', u'304956', u'313104', u'9571', u'313296', u'18124355', u'18153534', u'3634', u'18146392', u'18037828', u'7431', u'9343', u'18133481', u'307647', u'3764', u'1726', u'310764', u'7915', u'5819', u'1201', u'4439', u'1956', u'6794', u'6451', u'1271', u'4172', u'3303', u'1402', u'310380', u'312744', u'306073', u'8995', u'308773', u'3812', u'300452', u'304609', u'306017', u'130', u'1182', u'7306', u'5190', u'307371', u'7427', u'7281', u'7738', u'301448', u'302239', u'305924', u'300430', u'301626', u'302459', u'304480', u'8225', u'7518', u'305732', u'307849', u'2486', u'305766', u'309422', u'7231', u'1170', u'307867', u'6971', u'8771', u'304665', u'312130', u'306761', u'309594', u'1044', u'6310', u'1235', u'308208', u'303592', u'301608', u'307880', u'305817', u'312261', u'308070', u'309063', u'311477', u'303590', u'9803', u'3975', u'8237', u'304986', u'2019', u'1538', u'310963', u'7150', u'8931', u'8469', u'310472', u'18128896', u'18124378', u'305682', u'18037833', u'302267', u'17977764', u'2921', u'5494', u'2064', u'2377', u'4823', u'308194', u'6529', u'312649', u'5267', u'6308', u'782', u'2012', u'7691', u'5776', u'7679', u'301714', u'306855', u'677', u'9001', u'311581', u'3108', u'304004', u'312548', u'311108', u'313233', u'5455', u'308593', u'300982', u'310075', u'311435', u'311449', u'310933', u'313414', u'18203171', u'17979576', u'18163933', u'8879', u'18175330', u'302644', u'18175276', u'310401', u'528', u'2349', u'6910', u'4292', u'978', u'6427', u'5135', u'307006', u'307366', u'312425', u'5759', u'310640', u'304243', u'300983', u'2279', u'308243', u'300873', u'3811', u'7656', u'308270', u'303752', u'3054', u'304259', u'3857', u'9929', u'312271', u'307869', u'6513', u'8199', u'1700', u'6052', u'6605', u'4322', u'301201', u'304711', u'308874', u'2087', u'1599', u'5469', u'1665', u'1924', u'306556', u'305685', u'3494', u'311326', u'309366', u'308528', u'308007', u'312610', u'308410', u'307004', u'306658', u'310944', u'3551', u'8949', u'310321', u'306491', u'300414', u'306603', u'312978', u'305803', u'309604', u'309793', u'18017241', u'17989102', u'18153541', u'17977787', u'17953940', u'313208', u'2702', u'7466', u'17953932', u'3626', u'3269', u'2017', u'302153', u'2363', u'309041', u'2688', u'4077', u'3504', u'2405', u'308233', u'2297', u'6357', u'7507', u'7154', u'2366', u'303635', u'8160', u'3003', u'311153', u'9524', u'717', u'308476', u'306847', u'9637', u'8322', u'8892', u'7382', u'702', u'304135', u'309227', u'309246', u'305684', u'312351', u'301615', u'310760', u'5100', u'303478', u'1408', u'3966', u'305274', u'7725', u'310262', u'5744', u'301239', u'309639', u'4499', u'5195', u'302284', u'305595', u'312550', u'307283', u'1437', u'3637', u'304339', u'304199', u'307820', u'301127', u'305241', u'305278', u'9427', u'305160', u'303987', u'310093', u'304275', u'7457', u'7599', u'9186', u'306152', u'310903', u'8345', u'312255', u'307101', u'305341', u'310466', u'6540', u'311594', u'310171', u'311973', u'308156', u'302671', u'8644', u'17944374', u'18085858', u'18017253', u'18089241', u'311013', u'18014141', u'18157402', u'313423', u'306311', u'301062', u'17977758', u'309574', u'18034066', u'306572', u'305168', u'6057', u'891', u'6377', u'7875', u'104', u'7242', u'308323', u'1337', u'9853', u'8646', u'1741', u'2565', u'304592', u'1544', u'306596', u'4501', u'4019', u'307502', u'300321', u'8918', u'4577', u'5366', u'7450', u'4683', u'1412', u'306643', u'300334', u'305219', u'5802', u'310208', u'3961', u'8348', u'309644', u'362', u'300195', u'302892', u'305625', u'7814', u'309824', u'8695', u'306099', u'5840', u'303607', u'300763', u'306085', u'2061', u'313240', u'309123', u'309307', u'311028', u'300201', u'309066', u'311962', u'312509', u'307406', u'308694', u'3855', u'310433', u'309783', u'301429', u'307568', u'308455', u'309696', u'302310', u'9050', u'301229', u'313082', u'307878', u'307409', u'310566', u'307577', u'311659', u'312003', u'306887', u'310237', u'313312', u'313246', u'305770', u'18126082', u'18025098', u'18082091', u'18208886', u'308169', u'18034047', u'17977755', u'313380', u'17953936', u'17977789', u'5189', u'301505', u'8894', u'6453', u'306310', u'3972', u'306619', u'301383', u'4018', u'5869', u'5997', u'1284', u'6499', u'2054', u'302344', u'300849', u'304274', u'311609', u'307874', u'301542', u'6284', u'7422', u'8202', u'313045', u'303477', u'302932', u'1197', u'300986', u'311520', u'7424', u'3515', u'307106', u'306531', u'5152', u'4338', u'4602', u'300759', u'304271', u'309250', u'310155', u'8359', u'301591', u'305773', u'4522', u'304153', u'311714', u'804', u'4973', u'307223', u'312854', u'8780', u'300969', u'308107', u'6487', u'8864', u'302024', u'307720', u'307501', u'9026', u'310884', u'311422', u'307570', u'310684', u'7618', u'307853', u'309926', u'311779', u'308276', u'309380', u'308645', u'8762', u'8399', u'313048', u'18175277', u'300676', u'2192', u'18146373', u'18082208']
-
-            for eatery_id in __ids:
-                    instance = EachEatery(eatery_id, False)
-                    result = instance.return_non_processed_reviews()
-                    result = [(e[0], e[1], e[2], eatery_id) for e in result]
-                    for element in result:
+            eatery_id = "308022"
+            instance = EachEatery(eatery_id)
+            result = instance.return_non_processed_reviews()
+            result = [(e[0], e[1], e[2], eatery_id) for e in result]
+            for element in result:
                             instance = PerReview(element[0], element[1], element[2], element[3])
                             instance.run()
-                    ins = DoClusters(eatery_id)
-                    ins.run()
+            ins = DoClusters(eatery_id)
+            ins.run()
+
 
 

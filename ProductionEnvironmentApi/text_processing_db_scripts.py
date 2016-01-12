@@ -20,28 +20,44 @@ os.chdir(file_path)
 
 
 class MongoScriptsReviews(object):
-        
-        @staticmethod
-        def return_reviews(eatery_id, start_epoch=None, end_epoch=None):
-                if start_epoch and end_epoch:
-                        review_list = [post.get("review_id") for post in reviews.find({"eatery_id" :eatery_id, \
-                            "converted_epoch": {"$gt":  start_epoch, "$lt" : end_epoch}})]
-                else:
-                        review_list = [post.get("review_id") for post in reviews.find({"eatery_id" :eatery_id})]
-                    
-                return review_list
+        """
+        if eatery_id not present in the eateries_results_collection implies processing for the first time
+        if eatery_id is present
+                if key google is present or its value 0
+
+
+        """
+
 
         @staticmethod
-        def return_all_reviews(eatery_id):
-                review_list = [post.get("review_id") for post in reviews.find({"eatery_id" :eatery_id})]
-                return review_list
+        def insert_eatery_into_results_collection(eatery_id):
+                """
+                First time when eatery will bei nserted into the eateries_results_collection
+                By default, if you are running a eatery, this will flush the eatery and update the result
+                again 
+                """
+               
+                try:
+                        google = eateries_results_collection.find_one({"eatery_id": eatery_id}).get("google") 
+                except Exception as e:
+                        print e
+                        google = None
+                
+                print google
+                eateries_results_collection.remove({"eatery_id": eatery_id}) 
 
-        @staticmethod
-        def return_all_reviews_with_text(eatery_id):
-                review_list = [(post.get("review_id"), post.get("review_text"), post.get("review_time")) for post \
-                        in reviews.find({"eatery_id" :eatery_id}) if bool(post.get("review_text")) and post.get("review_text") != " "]
-                return review_list
+                eatery = eateries.find_one({"eatery_id": eatery_id}, {"_id": False, "__eatery_id": True, "eatery_id": True, "eatery_name": True, \
+                        "eatery_address": True, "location": True, "eatery_area_or_city": True, "eatery_cost": True, "eatery_url": True})
+               
+                latitude, longitude = eatery.pop("location")
 
+                latitude, longitude = float(latitude), float(longitude)
+                location = [latitude, longitude]
+                eatery.update({"location": location})
+
+                print eatery
+                print eateries_results_collection.insert(eatery)
+                return google 
 
         @staticmethod
         def reviews_with_text(reviews_ids):
@@ -65,23 +81,8 @@ class MongoScriptsReviews(object):
 
                 print reviews_results_collection.update({"review_id": review_id}, {"$set": kwargs}, upsert=True, multi=False)
                 
-                
-                ##pushing review id to processed_reviews list of the eatery
-                eateries_results_collection.update({"eatery_id": eatery_id}, {"$push": {
-                    "processed_reviews": review_id}}, upsert=True, multi=False)
                 return 
 
-        @staticmethod
-        def get_proccessed_reviews(eatery_id):
-                result = eateries_results_collection.find_one({"eatery_id": eatery_id}, {"_id": False, 
-                                    "processed_reviews": True})
-  
-                try:
-                        if result.get("processed_reviews"):
-                                return result.get("processed_reviews")
-                except Exception as e:
-                        print "No processed reviews present"
-                        raise StandardError("No processed reviews are present")
 
 
         @staticmethod
@@ -95,17 +96,18 @@ class MongoScriptsReviews(object):
         def update_eatery_places_cusines(eatery_id, places, cuisines):
             if places or cuisines:    
                     eateries_results_collection.update({"eatery_id": eatery_id}, {"$push": \
-                        {"places": places, "cuisines": cuisines }}, upsert=True)
-
+                        {"places": places, "cuisines": cuisines }}, upsert=False)
 
        
-        @staticmethod
-        def update_processed_reviews_list(eatery_id, review_id):
-
-                warnings.warn("{0} Updating processed_review list of eatery --<<{1}>>-- with review_id\
-                        {2}{3}".format(bcolors.OKBLUE, eatery_id, review_id, bcolors.RESET))
-                return
  
+        @staticmethod
+        def review_ids_to_be_processed(eatery_id):
+                total_reviews = [e.get("review_id") for e in reviews.find({"eatery_id": eatery_id}, {"review_id": True, "_id": False})]
+
+                reviews_in_results = [e.get("review_id") for e in reviews_results_collection.find({"eatery_id": eatery_id}, {"review_id": True, "_id": False})]
+                review_ids = list(set.symmetric_difference(set(total_reviews), set(reviews_in_results)))
+                return review_ids
+
 
 
 
@@ -116,24 +118,6 @@ class MongoScriptsDoClusters(object):
                 self.eatery_address = eateries.find_one({"eatery_id": self.eatery_id}).get("eatery_address")
 
 
-        @staticmethod
-        def update_eatery_result_collection(eatery_id):
-                eatery_dict = eateries.find_one({"eatery_id": eatery_id}, {"_id": False, "eatery_name": True, "eatery_longitude_latitude": True, \
-                        "eatery_type": True, "eatery_cuisine": True, "eatery_address": True, "eatery_known_for": True, "location": True, \
-                        "eatery_highlights": True, "eatery_trending": True, "eatery_area_or_city": True, "eatery_url": True, "__eatery_id": True})
-
-                try:
-                        latitude, longitude = eatery_dict["location"]
-                        latitude, longitude = float(latitude), float(longitude)
-                        
-                except Exception as e:
-                        print e
-                        raise StandardError("Eatery location not available for eatery id %s"%self.eatery_id)
-
-                eatery_dict.update({"location": [latitude, longitude]})
-                eateries_results_collection.update({"eatery_id": eatery_id}, {"$set": eatery_dict}, upsert=True, multi=False)
-                short_eatery_result_collection.update({"eatery_id": eatery_id}, {"$set": eatery_dict}, upsert=True, multi=False)
-                return 
 
 
         @staticmethod
@@ -192,7 +176,7 @@ class MongoScriptsDoClusters(object):
 
         def fetch_reviews(self, category, review_list=None):
                 if not review_list:
-                        review_list = eateries_results_collection.find_one({"eatery_id": self.eatery_id}).get("processed_reviews")
+                        review_list = [review.get("review_id") for review in reviews_results_collection.find({"eatery_id": self.eatery_id})]
 
 
                 if category == "food":
@@ -232,10 +216,10 @@ class MongoScriptsDoClusters(object):
                         
                         try:
                                 eateries_results_collection.update({"eatery_id": self.eatery_id}, {"$set": \
-                                        {"food.{0}".format(category): nps[0: 20]}}, upsert=False)
+                                        {"food.{0}".format(category): nps[0: 25]}}, upsert=False)
                                 
                                 eateries_results_collection.update({"eatery_id": self.eatery_id}, {"$set": \
-                                        {"food.more_{0}".format(category): nps[20:]}}, upsert=False)
+                                        {"food.more_{0}".format(category): nps[25:]}}, upsert=False)
                                 
                                 
                                 
@@ -277,27 +261,6 @@ class MongoScriptsDoClusters(object):
                         return eateries_results_collection.find_one({"eatery_id": self.eatery_id}).get(category).get(sub_category)
                         
                 return eateries_results_collection.find_one({"eatery_id": self.eatery_id}).get(category)
-
-        def update_considered_ids(self, review_list=None):
-                """
-                Updating considered ids, Adding review ids to eateries considered_ids list, Thre reviews ids
-                for which the noun phrases of all categories has been added to respective lists in eateries
-                
-                if reviews_list is not present updated old_considered_ids with all the ids present 
-                in processed_reviews list of the eatery
-                """
-                if not review_list:
-                        review_list = eateries_results_collection.find_one({"eatery_id":\
-                                    self.eatery_id}).get("processed_reviews")
-                
-                print "This is the fucking review list %s"%review_list
-                try:
-                        eateries_results_collection.update({"eatery_id": self.eatery_id}, {"$push": \
-                                {"old_considered_ids": {"$each": review_list }}}, upsert=False)
-
-                except Exception as e:
-                        raise StandardError(e)
-                return
 
         def update_nps(self, category, category_nps):
                 """

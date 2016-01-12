@@ -145,6 +145,8 @@ class ProductionHeuristicClustering:
 
                 self.list_to_exclude = list()
 
+                print places
+
                 if places:
                         places = list(set(flatten(places)))
                         print "List of places %s"%places
@@ -153,13 +155,15 @@ class ProductionHeuristicClustering:
 
                 if eatery_name:
                         self.list_to_exclude.extend(eatery_name.lower().split())
+                        self.list_to_exclude.append(eatery_name.lower())
 
                 if eatery_address:
                         self.list_to_exclude.extend(eatery_address.lower().split(","))
 
 
                 self.list_to_exclude.extend(["i", "drink", "good", "great", "food", "service", "cost", "ambience", "place", "rs"])
-                        
+                print self.list_to_exclude
+
 
                 self.dropped_nps = list()
                 self.sentiment_np_time = sentiment_np_time
