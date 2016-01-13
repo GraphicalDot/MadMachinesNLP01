@@ -60,7 +60,7 @@ from jwt import _JWTError
 import ConfigParser
 from Text_Processing.Sentence_Tokenization.Sentence_Tokenization_Classes import SentenceTokenizationOnRegexOnInterjections
 from connections import eateries, reviews, eateries_results_collection, reviews_results_collection, short_eatery_result_collection, \
-        bcolors, users_reviews_collection, users_feedback_collection, users_details_collection, server_address, picture_collection
+        bcolors, users_reviews_collection, users_feedback_collection, users_details_collection, server_address, pictures_collection
 
 from ProductionEnvironmentApi.text_processing_api import PerReview, EachEatery, DoClusters
 from ProductionEnvironmentApi.text_processing_db_scripts import MongoScriptsReviews, MongoScriptsDoClusters
@@ -311,7 +311,7 @@ class WriteReview(tornado.web.RequestHandler):
                 user = users_details_collection.find_one({"fb_id": fb_id}, {"_id": False, "fb_id": False, "email": False})
 
                 __dict = {"review_text": review_text, "fb_id": fb_id, "__eatery_id": __eatery_id, "__eatery_name": __eatery_name}
-                review_id = hashlib.sha256(indian_time + __eatery_id + review_text).hexdigest()
+                review_id = hashlib.sha256(indian_time + __eatery_id + review_text + _dict.get("fb_id")).hexdigest()
                 
                 if users_reviews_collection.find_one(__dict):
                         self.write({
@@ -661,7 +661,7 @@ class GetEatery(tornado.web.RequestHandler):
                         return 
                
 
-                __result = process_google_results(result, __eatery_id)
+                __result = process_google_result(result, __eatery_id)
                 result = process_result(__result)
                 cprint(figlet_format('Finished executing %s'%self.__class__.__name__, font='mini'), attrs=['bold'])
                 self.write({"success": True,

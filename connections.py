@@ -51,6 +51,9 @@ users_feedback_collection = users_db[config.get("usersDB", "usersfeedback")]
 users_details_collection = users_db[config.get("usersDB", "usersdetails")]
 
 
+pictures_connection = pymongo.MongoClient(config.get("picturesDB", "ip"), config.getint("picturesDB", "port"))
+pictures_db  = pictures_connection[config.get("picturesDB", "database")]
+pictures_collection = pictures_db[config.get("picturesDB", "collection")]
 
 
 corenlpserver = jsonrpclib.Server("http://{0}:{1}".format(config.get("corenlpserver", "ip"), config.getint("corenlpserver", "port")))
