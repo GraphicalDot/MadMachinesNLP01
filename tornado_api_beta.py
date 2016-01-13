@@ -664,10 +664,13 @@ class GetEatery(tornado.web.RequestHandler):
                 __result = process_google_result(result, __eatery_id)
                 result = process_result(__result)
                 cprint(figlet_format('Finished executing %s'%self.__class__.__name__, font='mini'), attrs=['bold'])
+                result = process_google_result(result, __eatery_id)
+                print result
                 self.write({"success": True,
 			"error": False,
                         "result": result})
                 self.finish()
+
 
                 return 
 
@@ -677,6 +680,7 @@ def process_google_result(result, __eatery_id):
                 """
 
                 """
+                google = eateries_results_collection.find_one({"__eatery_id": __eatery_id}).get("google")
                 try:
                         google = result.pop("google")
                         if google == 'No entry exists on google':

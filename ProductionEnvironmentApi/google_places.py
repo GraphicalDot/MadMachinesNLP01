@@ -147,6 +147,11 @@ import hashlib
 from googleplaces import GooglePlaces, types, lang
 import base64
 import datetime
+import geocoder
+from blessings import Terminal
+
+terminal = Terminal()
+
 
 fmt = "%d %B %Y %H:%M:%S"
 
@@ -173,17 +178,29 @@ def find_google_places(eatery_id):
         latitude, longitude = eatery_result.get("location")
         eatery_name = eatery_result.get("eatery_name")
 
+
+
         google = dict()
         latitude = float(latitude)
         longitude = float(longitude)
+        
+        print eatery_name, latitude, longitude
         g = GooglePlaces.nearby_search(google_places, name=eatery_name, lat_lng={"lat": latitude, "lng": longitude},  types= [u'restaurant', u'food', u'point_of_interest', u'establishment'])
-        place = g.places[0]
+        
+        """
+        TODO: If no extry prsent og google places
         if not place:
                 return None
 
+        """
+        try:
+                place = g.places[0]
+        except Exception as e:
+                print terminal.red(str(e))
+                google = "No entry exists on google"
+                eateries_results_collection.update({"eatery_id": eatery_id}, {"$set": {"google": google}}, upsert=False)
 
-
-        print "\nThe match we found for eatery_name %s is %s\n"%(eatery_name, place)
+        print terminal.green("\nThe match we found for eatery_name %s is %s\n"%(eatery_name, place))
 
 
         place.get_details()
@@ -199,11 +216,13 @@ def find_google_places(eatery_id):
 
 
         if place.photos:
-                print "\n Pics found for  eatery_name %s are %s\n"%(eatery_name, len(place.photos))
+                print terminal.green("\n Pics found for  eatery_name %s are %s\n"%(eatery_name, len(place.photos)))
                 for picture in place.photos:
                         picture.get(picture.orig_width, picture.orig_height)
                         print picture.filename
                         pic_list.append({"data": picture.data, "width": picture.orig_width, "height": picture.orig_height, "url": picture.url})
+        else:
+                print terminal.red("No pic can be found for %s <<[%s, %s]>>"%(eatery_name, latitude, longitude))
 
 
         review_list = list()
@@ -212,7 +231,10 @@ def find_google_places(eatery_id):
                 for review in result.get("reviews"):
                         review_list.append(review)
 
-
+        else:
+                print terminal.red("No reviews can be found for %s <<[%s, %s]>>"%(eatery_name, latitude, longitude))
+                
+                
         google.update({"location": location, "eatery_address": eatery_address, "eatery_phone_number": eatery_phone_number, \
                 "place_id": place_id, "address_components": address_components, "eatery_international_phone_number": eatery_international_phone_number,\
                 "opening_hours": opening_hours})
@@ -254,17 +276,28 @@ def google_already_present(eatery_id, google):
                     pic_list = []
 
 
-            try:
-                    address_components = google.pop("pincode")
-            except Exception as e:
-                    address_components = google.pop("address_components")
-
-
-
             latitude, longitude = google.get("location")
             latitude, longitude = float(latitude), float(longitude)
             google.update({"location": [latitude, longitude]})
+            try:
+                    address_components = google.pop("pincode")
+            except Exception as e:
+                    try:
+                            address_components = google.pop("address_components")
+                    except Exception as e:
+                            g = GooglePlaces.nearby_search(google_places, name=eatery_name, lat_lng={"lat": latitude, "lng": longitude},  types= [u'restaurant', u'food', u'point_of_interest', u'establishment'])
+                                                        
+                            place = g.places[0]
+                            place.get_details()
+                            result = place.details
+                            address_components = result.get("address_components")
 
+
+
+            google.update({"address_components":address_components})
+
+            print review_list
+            print len(pic_list)
             insert_images(__eatery_id, eatery_name, pic_list)
             insert_reviews(__eatery_id, eatery_name, review_list)
             eateries_results_collection.update({"eatery_id": eatery_id}, {"$set": {"google": google}}, upsert=False)
@@ -284,8 +317,8 @@ def insert_images(__eatery_id, eatery_name, pic_list):
                 try:
                         print pictures_collection.insert(pic)
                 except Exception as e:
-                        print e
-                        print "Error occureed in pic_id %s"%pic_id
+                        print terminal.red(str(e))
+                        print terminal.red("Error occureed in pic_id %s"%pic_id)
 
 
         return 
@@ -296,20 +329,23 @@ def insert_images(__eatery_id, eatery_name, pic_list):
 
 def insert_reviews(__eatery_id, eatery_name, review_list):
         fmt = "%d %B %Y %H:%M:%S"
+        if not review_list:
+                return 
+
 
         for review in review_list:
             if review.get("text"):
                 epoch = datetime.datetime.fromtimestamp(review.get("time")).strftime(fmt)
                 review_text = review.pop("text")
                 fb_id = "google"
-                review_id = hashlib.sha256(epoch + __eatery_id + review_text + fb_id).hexdigest() 
+                review_id = hashlib.sha256(epoch + __eatery_id + review_text.encode("ascii", "ignore") + fb_id).hexdigest() 
                 name = review.pop("author_name")
                 review.update({"fb_id": fb_id, "eatery_name": eatery_name, "name": name, "epoch": epoch, "review_text": review_text, "review_id": review_id})
                 try:
-                        print users_reviews_collection.insert(review)
+                        print terminal.green(users_reviews_collection.insert(review))
                 except Exception as e:
-                        print e
-                        print "Error occurred in %s"%review_id
+                        print terminal.red(str(e))
+                        print terminal.red("Error occurred in review_id%s"%review_id)
         return 
 
 

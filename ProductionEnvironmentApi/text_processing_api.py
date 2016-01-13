@@ -104,9 +104,9 @@ class EachEatery:
                         print "No reviews are to be processed"
                
                 
-                reviews_ids = MongoScriptsReviews.reviews_with_text(review_ids)
+                result = MongoScriptsReviews.reviews_with_text(review_ids)
                 print review_ids
-                return review_ids
+                return result
 
 
 
@@ -120,6 +120,8 @@ class PerReview:
                 self.review_id, self.review_text, self.review_time, self.eatery_id = review_id, \
                         SolveEncoding.to_unicode_or_bust(review_text.lower().replace("&nbsp;&nbsp;\n", "")), review_time, eatery_id
 
+
+                print self.review_time, self.review_text, self.review_id, self.eatery_id
                 self.cuisine_name = list()
                 self.places_names = list()
                 self.np_extractor = extract.TermExtractor() 
@@ -834,21 +836,10 @@ if __name__ == "__main__":
             ##ins = PerReview('2036121', 'Average quality food, you can give a try to garlic veg chowmien if you are looking for a quick lunch in Sector 44, Gurgaon where not much options are available.','2014-08-08 15:09:17', '302115')
             ##ins.run()
             
-            """
-            eatery_id = "306478"
-            instance = EachEatery(eatery_id, True)
-            result = instance.return_non_processed_reviews()
-            result = [(e[0], e[1], e[2], eatery_id) for e in result]
-            for element in result:
-                            instance = PerReview(element[0], element[1], element[2], element[3])
-                            instance.run()
-            ins = DoClusters(eatery_id)
-            ins.run()
-
-            """
-            eatery_id = "308022"
+            eatery_id = "306133"
             instance = EachEatery(eatery_id)
             result = instance.return_non_processed_reviews()
+            print result
             result = [(e[0], e[1], e[2], eatery_id) for e in result]
             for element in result:
                             instance = PerReview(element[0], element[1], element[2], element[3])
@@ -856,5 +847,21 @@ if __name__ == "__main__":
             ins = DoClusters(eatery_id)
             ins.run()
 
+            """
+            i = 0
+            for post in eateries_results_collection.find():
+                    eatery_id = post.get("eatery_id")
+                    instance = EachEatery(eatery_id)
+                    result = instance.return_non_processed_reviews()
+                    result = [(e[0], e[1], e[2], eatery_id) for e in result]
+                    for element in result:
+                            instance = PerReview(element[0], element[1], element[2], element[3])
+                            instance.run()
+                    ins = DoClusters(eatery_id)
+                    ins.run()
+                    print "\n\n"
+                    print "This is the count %s"%i
+                    i += 1
+            """
 
 

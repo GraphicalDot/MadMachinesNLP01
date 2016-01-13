@@ -9,6 +9,8 @@ import os
 import sys
 import warnings
 import itertools
+import geocoder
+
 
 file_path = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.dirname(file_path)
@@ -48,14 +50,19 @@ class MongoScriptsReviews(object):
 
                 eatery = eateries.find_one({"eatery_id": eatery_id}, {"_id": False, "__eatery_id": True, "eatery_id": True, "eatery_name": True, \
                         "eatery_address": True, "location": True, "eatery_area_or_city": True, "eatery_cost": True, "eatery_url": True})
-               
-                latitude, longitude = eatery.pop("location")
 
+                latitude, longitude = eatery.pop("location")
                 latitude, longitude = float(latitude), float(longitude)
                 location = [latitude, longitude]
+             
+                if int(latitude) == 0:
+                        g  = geocoder.google(eatery.get("eatery_address"))
+                        longitude, latitude = g.geojson.get("geometry").get("coordinates")
+                        location = [latitude, longitude]
+                        print "eatery_id <<%s>> has not lcoation, founded by google is <<%s>>"%(eatery_id, location)
+                        eateries.update({"eatery_id": eatery_id}, {"$set": {"location": location}}, upsert=False)
                 eatery.update({"location": location})
 
-                print eatery
                 print eateries_results_collection.insert(eatery)
                 return google 
 
@@ -69,6 +76,7 @@ class MongoScriptsReviews(object):
                         if bool(review_text) and review_text != " ":
                                 review_list.append((review_id, review_text, review_time))
                 print len(review_list)
+                print review_list
                 return review_list
 
         @staticmethod

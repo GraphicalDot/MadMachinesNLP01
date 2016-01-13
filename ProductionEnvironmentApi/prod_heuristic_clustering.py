@@ -33,6 +33,9 @@ sys.path.append(this_file_path)
 from Text_Processing.PosTaggers import PosTaggerDirPath, HunPosModelPath, HunPosTagPath
 from Text_Processing.colored_print import bcolors
 from Text_Processing import SentenceTokenizationOnRegexOnInterjections
+from nltk.stem.snowball import SnowballStemmer
+
+stemmer = SnowballStemmer("english")
 
 
 def encoding_helper(__object):
@@ -145,27 +148,32 @@ class ProductionHeuristicClustering:
 
                 self.list_to_exclude = list()
 
-                print places
+                print "List of places %s"%places
 
                 if places:
                         places = list(set(flatten(places)))
-                        print "List of places %s"%places
                         self.list_to_exclude.extend(places)
                 
 
                 if eatery_name:
-                        self.list_to_exclude.extend(eatery_name.lower().split())
+                        #self.list_to_exclude.extend(eatery_name.lower().split())
                         self.list_to_exclude.append(eatery_name.lower())
 
                 if eatery_address:
-                        self.list_to_exclude.extend(eatery_address.lower().split(","))
+                        self.list_to_exclude.extend([e.lstrip() for e in eatery_address.lower().split(",")])
 
 
-                self.list_to_exclude.extend(["i", "drink", "good", "great", "food", "service", "cost", "ambience", "place", "rs"])
+                self.list_to_exclude.extend(["i", "drink", "good", "great", "food", "service", "cost", "ambience", "place", "rs", "ok", "r", "taste", "lovers", "lover"])
+
+
+
                 print self.list_to_exclude
 
 
                 self.dropped_nps = list()
+
+                ##stemming noun_phrases with snowball english stemmer 
+                #self.sentiment_np_time = [(sentiment, [stemmer.stem(np) for np in nps], review_time) for (sentiment, nps, review_time) in sentiment_np_time]
                 self.sentiment_np_time = sentiment_np_time
                 self.sentences = sentences
                 self.sub_category = sub_category
@@ -186,6 +194,9 @@ class ProductionHeuristicClustering:
                 __result = self.filter_on_basis_pos_tag(__result)
                 
                 result = [e for e in __result if e.get("total_sentiments") >1]
+                
+                
+                ##the noun_phrase which have frequency lower than 1
                 excluded_nps = [e for e in __result if e.get("total_sentiments") <=1]
 
                 
@@ -231,7 +242,6 @@ class ProductionHeuristicClustering:
                                 print "This noun_phrase belongs to ner {0}".format(i.get("name"))
                                 pass
                                 """
-                                #if bool(set.intersection(set(__np.split(" ")),  set(self.list_to_exclude))):
                                 
                                 __list = [pos_tag for (np, pos_tag) in nltk.pos_tag(nltk.wordpunct_tokenize(__np.encode("ascii", "ignore")))]
                                 if __np in self.list_to_exclude:
@@ -240,11 +250,14 @@ class ProductionHeuristicClustering:
                                         self.dropped_nps.append(__np)
                                
                                 elif not set.intersection(set(["NN", "NNS"]), set(__list)):
-                                        print "This will be fucking dropped <<%s>>"%__np
+                                        print "This will be fucking dropped because of no presence of NNS and NN <<%s>>"%__np
                                         print nltk.pos_tag(nltk.wordpunct_tokenize(__np))
                                         self.dropped_nps.append(__np)
 
-
+                                elif bool(set.intersection(set(__np.split(" ")),  set(self.list_to_exclude))):
+                                        print "This will be dropped because of the list to exclude match in np <<%s>>"%__np
+                                        self.dropped_nps.append(__np)
+                                        
                         
                                 elif without_similar_elements.get(__np):
                                         result = without_similar_elements.get(__np)
@@ -351,6 +364,7 @@ class ProductionHeuristicClustering:
                 self.clusters = new_clusters
                 #Removing duplicate elements from clusters list
                 return 
+
 
         #@print_execution
         def populate_result(self):
