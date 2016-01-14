@@ -49,6 +49,8 @@ users_db  = users_db_connection[config.get("usersDB", "database")]
 users_reviews_collection = users_db[config.get("usersDB", "usersreviews")]
 users_feedback_collection = users_db[config.get("usersDB", "usersfeedback")]
 users_details_collection = users_db[config.get("usersDB", "usersdetails")]
+users_queried_addresses_collection = users_db[config.get("usersDB", "usersqueriedaddresses")]
+users_dish_collection = users_db[config.get("usersDB", "usersdishcollection")]
 
 
 pictures_connection = pymongo.MongoClient(config.get("picturesDB", "ip"), config.getint("picturesDB", "port"))

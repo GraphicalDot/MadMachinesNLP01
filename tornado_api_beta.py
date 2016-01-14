@@ -60,8 +60,9 @@ from jwt import _JWTError
 import ConfigParser
 from Text_Processing.Sentence_Tokenization.Sentence_Tokenization_Classes import SentenceTokenizationOnRegexOnInterjections
 from connections import eateries, reviews, eateries_results_collection, reviews_results_collection, short_eatery_result_collection, \
-        bcolors, users_reviews_collection, users_feedback_collection, users_details_collection, server_address, pictures_collection
-
+        bcolors, users_reviews_collection, users_feedback_collection, users_details_collection, server_address, pictures_collection,\
+        users_queried_addresses_collection, users_dish_collection
+        
 from ProductionEnvironmentApi.text_processing_api import PerReview, EachEatery, DoClusters
 from ProductionEnvironmentApi.text_processing_db_scripts import MongoScriptsReviews, MongoScriptsDoClusters
 from ProductionEnvironmentApi.prod_heuristic_clustering import ProductionHeuristicClustering
@@ -896,7 +897,70 @@ class LikePic(tornado.web.RequestHandler):
                 return 
 
 
+
+
                 
+class LikeReview(tornado.web.RequestHandler):
+        """
+        If a user wants to like a review, for that to happened a pic_id and fb_id must be given
+        """
+        @cors
+	@print_execution
+	@tornado.gen.coroutine
+        def post(self):
+                review_id = self.get_argument("review_id")
+                fb_id = self.get_argument("fb_id")
+
+                if users_reviews_collection.find_one({"pic_id": pic_id, "users": {"fb_id": fb_id, "picture": picture}}):
+                        self.write({"success": False,
+			        "error": True,
+                                "messege": "User already have liked the picture",  
+                                })
+                        self.finish()
+                        return 
+
+                        
+
+
+
+                users_reviews_collection.update({"pic_id": pic_id}, {"$inc": {"likes": 1}, "$addToSet": {"users": {"fb_id": fb_id, "picture": picture}}},  upsert=False)
+                self.write({"success": True,
+			    "error": False,
+                            "messege": "Review has been liked by the user",  
+                            })
+                self.finish()
+                return 
+
+
+
+
+class StoreAddressStrings(tornado.web.RequestHandler):
+        """
+        When a user enters the address query or when preseeed enter that address is to be pushed at this end point
+        this will be helpful for us later
+        One example could be to provde autocomlpete address strings rather then using google places api
+        """
+        @cors
+	@print_execution
+	@tornado.gen.coroutine
+        def  post(self):
+                address_string = self.get_argument("address_string")
+                try:
+                        fb_id = self.get_argument("fb_id")
+                except Exception as e:
+                        fb_id = None
+
+                x_real_ip = self.request.headers.get("X-Real-IP")
+                remote_ip = x_real_ip or self.request.remote_ip
+
+                users_queried_addresses_collection.insert({"address_string": address_string, "fb_id": fb_id, "ip": remote_ip, "epoch": time.time()})
+                self.write({
+                        "success": True, 
+                        "error": False, 
+                        })
+
+
+
 
 class AddDish(tornado.web.RequestHandler):
         @cors
@@ -904,13 +968,29 @@ class AddDish(tornado.web.RequestHandler):
 	@tornado.gen.coroutine
         def post(self):
                 """
-                If a user wants to add dish to an eatery_id
+                If a user wants to add dish to an eatery_id, This will be stored in a different collection called as user_dish_collection
+                A user also has to mention a sentiment, whether excellent, good, poor, average, terrible
+                
                 """
                 dish = self.get_argument("dish")
+                fb_id = self.get_argument("fb_id")
+
                 __eatery_id = self.get_argument("__eatery_id")
                 sentiment = self.get_argument("sentiment")
 
-                if user_dish_collection.find_one({"eatery_id": eatery_id}, {"$exists": {"dish": True}}):
+
+                dish_id = hashlib.sha256(__eatery_id + dish).hexdigest()
+                     
+                if sentiment not in ["terrible", "average", "good", "excellent", "poor"]:
+                        self.write({ "success": False, 
+                                    "error": True, 
+                                    "messege": "The sentiment category that the user has defined is not allowed",
+                            })
+        
+
+                if user_dish_collection.find_one({"eatery_id": eatery_id}, {"$exists": {dish: True}}):
+                        ##if a dish is already present the sentiment will be added to that dish 
+                        user_dish_collection.update({"eatery_id": eatery_id}, {"$addToSet": {dish: sentiment }})
                         self.write({"success": False,
 			        "error": True, 
                                 "messege": "The dish already exists for the eatery", 
@@ -919,7 +999,6 @@ class AddDish(tornado.web.RequestHandler):
                         return 
                 
                 ##upsert=False, becuase the eatery already exists in the database
-                user_dish_collection.update({"eatery_id": eatery_id}, {"$set": {"dish": True}})
 
 
 
@@ -964,6 +1043,9 @@ app = tornado.web.Application([
                     (r"/userprofile", GetUserProfile),
                     (r"/apis", GetApis),
                     (r"/pics", GetPics),
+                    (r"/likepic", LikePic),
+                    (r"/likereview", LikeReview),
+                    (r"/storeaddressstrings", StoreAddressStrings),
                                         
                     (r"/gettrending", GetTrending),
                     (r"/nearesteateries", NearestEateries),

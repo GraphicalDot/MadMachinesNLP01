@@ -836,7 +836,8 @@ if __name__ == "__main__":
             ##ins = PerReview('2036121', 'Average quality food, you can give a try to garlic veg chowmien if you are looking for a quick lunch in Sector 44, Gurgaon where not much options are available.','2014-08-08 15:09:17', '302115')
             ##ins.run()
             
-            eatery_id = "306133"
+            """
+            eatery_id = "308322"
             instance = EachEatery(eatery_id)
             result = instance.return_non_processed_reviews()
             print result
@@ -862,6 +863,5 @@ if __name__ == "__main__":
                     print "\n\n"
                     print "This is the count %s"%i
                     i += 1
-            """
 
 

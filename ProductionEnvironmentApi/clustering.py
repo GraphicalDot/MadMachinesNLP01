@@ -17,8 +17,11 @@ class SimilarityMatrices:
 
 
         @staticmethod
-        def modified_dice_cofficient(__str1, __str2):
-                __str1, __str2 = __str1.replace(" ", ""), __str2.replace(" ", "")
+        def __modified_dice_cofficient(coord):
+		i, j = coord
+		__str1, __str2 = keys[i], keys[j]
+                print i, j, __str1, __str2
+		__str1, __str2 = __str1.replace(" ", ""), __str2.replace(" ", "")
                 __ngrams = lambda __str: ["".join(e) for e in list(nltk.ngrams(__str, 2))]
                 __l = len(set.intersection(set(__ngrams(__str1)), set(__ngrams(__str2))))
                 total = len(__ngrams(__str1)) + len(__ngrams(__str2))
@@ -63,6 +66,14 @@ def run(keys):
         indices = np.where(X > .75)
         new_list = zip(indices[0], indices[1])
 
+
+	a = dict()
+	for (i, j) in new_list:
+		__list = (list(), a.get(i))[a.get(i) != None]
+		__list.append(j)
+		print __list
+		a[i] =  __list
+		print (i, j), a
 
 
         found = False
