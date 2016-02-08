@@ -13,10 +13,10 @@ from itertools import imap, ifilter
 import nltk
 import time
 from compiler.ast import flatten
+import pickle
+from sklearn.externals import joblib
 
-
-
-class SimilarityMatrices:
+class SimilarityMatrices(object):
 
         @staticmethod
         def levenshtein_ratio(__str1, __str2):
@@ -46,8 +46,8 @@ class SimilarityMatrices:
 
 
 
-class BKTree:
-        def __init__(self, distfn, words):
+class BKTree(object):
+        def __init__(self, words):
                 """
                 Create a new BK-tree from the given distance function and
                 words.
@@ -61,7 +61,7 @@ class BKTree:
                 distfn
         
                 """
-                self.distfn = distfn
+                self.distfn = self.modified_dice_cofficient
 
                 it = iter(words)
                 root = it.next()
@@ -70,6 +70,26 @@ class BKTree:
                 for i in it:
                         self._add_word(self.tree, i)
                 self.cluster_tree = self.tree
+        
+        def modified_dice_cofficient(self, __str1, __str2):
+                __str1, __str2 = __str1.replace(" ", ""), __str2.replace(" ", "")
+                __ngrams = lambda __str: ["".join(e) for e in list(nltk.ngrams(__str, 2))]
+                __l = len(set.intersection(set(__ngrams(__str1)), set(__ngrams(__str2))))
+                total = len(__ngrams(__str1)) + len(__ngrams(__str2))
+                """
+                if len(set.intersection(set(__str1.split(" ")), set(__str2.split(" ")))) \
+                        >= min(len(__str1.split(" ")), len(__str2.split(" "))):
+                        print "New matric found  beyween %s and %s\n"%(__str1, __str2)
+                        return 0.9
+                """
+                try:
+                    return  100 -int(float(__l*2)/total*100)
+                except Exception as e:
+                    return 0
+
+
+
+
 
         def _add_word(self, parent, word):
                 """
@@ -171,26 +191,40 @@ def timeof(fn, *args):
 
 if __name__ == "__main__":
 
-        tree_instance = BKTree(SimilarityMatrices.modified_dice_cofficient , keys)
+        keys = ["book", "cake", "boo", "bool", "cool", "books", "cart", "cape", "cook", "boo"]
+        tree_instance = BKTree(keys)
+        distance = 20
         """
         tree_instance = BKTree(levenshtein , keys)
         tree = tree_instance.cluster_tree
         """
-        
+        with open("pickled_tree.pickle", 'wb') as handle:
+              pickle.dump(tree_instance.cluster_tree, handle)
 
         clusters = list()
-        original_keys = keys
-        for dish in iter(keys):
+        for dish in keys:
                 if flatten(clusters) == keys:
                     break
                 result = tree_instance.query(dish, distance)
-                clusters.append(result)
                 print result
-                print origkeys, "\n\n"
-                for e in set(result):
-                        try:
-                                original_keys.remove(e)
-                        except Exception as e:
-                                pass
-        print clusters
-
+                clusters.append(result)
+                if result:
+                        keys =  list(set.symmetric_difference(set(keys), set(result)))
+                        """
+                        keys.remove(dish)
+                        for e in result:
+                                try:
+                                        keys.remove(e)
+                                        print "removed %s"%e
+                                except Exception as error:
+                                        print error
+                                        continue
+                        """
+                else:
+                        keys.remove(dish)
+                        result.append([dish])
+                print "clusters %s"%clusters
+                print "keys %s"%keys
+        print clusters, "\n\n"
+        print keys
+        print tree_instance.query("book", distance)
