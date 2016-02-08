@@ -26,6 +26,9 @@ import pprint
 from celery.exceptions import Ignore
 import redis
 import os 
+from celery.task.control import revoke
+
+
 FILE = os.path.basename(__file__)
 connection = pymongo.Connection()
 db = connection.intermediate
@@ -47,7 +50,7 @@ config = ConfigParser.RawConfigParser()
 config.read("zomato_dom.cfg")
 driver_exec_path = "/home/%s/Downloads/chromedriver"%(getpass.getuser())
 DRIVER_NAME = "CHROME"
-PROXY_ADDRESS ="52.76.147.123:8118"
+PROXY_ADDRESS ="52.74.21.248:8118"
 
 #StartScrapeChain.apply_async(["https://www.zomato.com/ncr/restaurants", 30, 0, False])
 
@@ -233,8 +236,7 @@ class ScrapeEachEatery(celery.Task):
                 logger.info("{0}{1}".format(einfo, bcolors.RESET))
 		r.hset(self.eatery_dict["eatery_url"], "error", "Failed with on failure")
 		r.hset(self.eatery_dict["eatery_url"], "frequency", 0)
-                
-                ip = generate_new_proxy() 
+		revoke(task_id, terminate=True)
 		return 
 
 

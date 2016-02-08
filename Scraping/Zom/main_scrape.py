@@ -33,6 +33,8 @@ import urllib2
 import getpass
 import hashlib
 import pymongo
+from blessings import Terminal
+terminal= Terminal()
 FILE = os.path.basename(__file__)  
 
 config = ConfigParser.RawConfigParser()
@@ -42,7 +44,7 @@ config.read("zomato_dom.cfg")
 driver_exec_path = "/home/%s/Downloads/chromedriver"%(getpass.getuser())
 DRIVER_NAME = "CHROME"
 #PROXY_ADDRESS ="localhost:8118"
-PROXY_ADDRESS ="52.76.147.123:8118"
+PROXY_ADDRESS = "52.74.21.248:8118"
 
 
 connection = pymongo.MongoClient(config.get("zomato", "host"), config.getint("zomato", "port"))
@@ -310,7 +312,25 @@ class EateryData(object):
 		self.eatery = eatery_dict
 
 		self.soup = self.make_soup()
+		
+		try:
+				print terminal.bold_red_on_green(str(e))
+				print terminal.bold_red_on_green("Eatery addrress couldnt be found for %s"%self.eatery["eatery_id"])
+				print terminal.bold_red_on_green("Now changing eatery url to info url")
+				
+                                eatery_url = self.eatery["eatery_url"]
+				eatery_url = "%s/info"%eatery_url
+                                self.eatery["eatery_url"] = eatery_url 
+				print terminal.bold_red_on_green("New Info url for eatery_id %s is %s"%(self.eatery["eatery_id"], self.eatery["eatery_url"]))
 
+
+				self.soup = self.make_soup()
+
+		except Exception as e:
+			print e
+			pass	
+
+		self.retry_eatery_address()
 
         def run(self):
                 process_result(self.eatery, "eatery_name", FILE)(self.retry_eatery_name)()
@@ -318,6 +338,8 @@ class EateryData(object):
                
                 assert(self.eatery["eatery_id"] != None)
                 assert(self.eatery["eatery_name"] != None)
+		
+		print "Found eatery_id==<<{eatery_id}>> and eatery_name==<<{eatery_name}>> time".format(start_color=bcolors.OKGREEN, eatery_id=self.eatery["eatery_id"], eatery_name=self.eatery["eatery_name"].encode("ascii", "ignore"), end_color=bcolors.RESET)
 		__hash = hashlib.sha256(self.eatery["eatery_id"] + self.eatery["eatery_url"]).hexdigest()
 
 		self.eatery.update({"__eatery_id": __hash})
@@ -336,8 +358,7 @@ class EateryData(object):
                         self.eatery["eatery_url"], None, FILE)
                
 
-                process_result(self.eatery, "eatery_address", FILE)(self.retry_eatery_address)()
-                
+
                 process_result(self.eatery, "eatery_cost", FILE)(self.retry_eatery_cost)()
                 process_result(self.eatery, "eatery_trending", FILE)(self.retry_eatery_trending)()
                 process_result(self.eatery, "eatery_rating", FILE)(self.retry_eatery_rating)()
@@ -512,7 +533,7 @@ class EateryData(object):
 				run_load_more()
 			
 		else:
-			for i in range(0, reviews_to_be_scraped/5+3):
+			for i in range(0, reviews_to_be_scraped/5+30):
 				run_load_more()
 				
 
@@ -625,7 +646,7 @@ class EateryData(object):
 if __name__ == "__main__":
 
 
-
+	"""
 	##number_of_restaurants = 60
 	##skip = 10
 	##is_eatery = False
@@ -634,9 +655,10 @@ if __name__ == "__main__":
 	ins = EateriesList(driver_exec_path, url, 30, 5, False)
         for e in ins.eateries_list:
                 print e
-        #ins = EateryData({"eatery_url": "https://www.zomato.com/ncr/yellow-brick-road-taj-vivanta-khan-market-new-delhi"})
+        """
+	ins = EateryData({"eatery_url": "https://www.zomato.com/mumbai/between-breads-pali-hill-bandra-west"})
         #ins = EateryData({"eatery_url": "https://www.zomato.com/ncr/asian-haus-1-east-of-kailash-new-delhi"})
-        #print ins.eatery
+        print ins.eatery
 
 
 

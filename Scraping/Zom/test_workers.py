@@ -4,13 +4,14 @@ import random
 import subprocess
 from ZomatoScrapeTasks import GenerateEateriesList, StartScrapeChain, ScrapeEachEatery
 #GenerateEateriesList.apply_async(["https://www.zomato.com/ncr/restaurants", 30, 0, False])
-StartScrapeChain.apply_async(["https://www.zomato.com/ncr/restaurants", 30, 0, False])
-"""
-for e in range(0, 200):
-		StartScrapeChain.apply_async(["https://www.zomato.com/ncr/restaurants", 30, e, False])
+#StartScrapeChain.apply_async(["https://www.zomato.com/mumbai/restaurants", 30, 0, False])
+
+for e in range(0, 100):
+		StartScrapeChain.apply_async(["https://www.zomato.com/bangalore/restaurants", 30, e, False])
 	
 
 
+"""
 
 StartScrapeChain.apply_async(["https://www.zomato.com/ncr/restaurants", 30, 2, False])
 StartScrapeChain.apply_async(["https://www.zomato.com/ncr/restaurants", 30, 3, False])
