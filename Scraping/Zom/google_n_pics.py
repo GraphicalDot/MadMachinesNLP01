@@ -18,6 +18,7 @@ import PIL
 from PIL import Image
 import requests
 import base64
+import time 
 
 terminal= Terminal()
 FILE = os.path.basename(__file__)
@@ -25,7 +26,7 @@ FILE = os.path.basename(__file__)
 config = ConfigParser.RawConfigParser()
 config.read("zomato_dom.cfg")
 
-driver_exec_path = "/home/%s/Downloads/setups/chromedriver"%(getpass.getuser())
+driver_exec_path = "/home/%s/Downloads/chromedriver"%(getpass.getuser())
 print driver_exec_path
 DRIVER_NAME = "CHROME"
 connection = pymongo.MongoClient(config.get("zomato", "host"), config.getint("zomato", "port"))
@@ -52,7 +53,7 @@ class GoogleNPics(object):
                 
                 if ZomatoEateriesCollection.find_one({"eatery_id": self.eatery_id}).get("pictures"):
                         print terminal.blue("Pictures for the eatery_id %s has already been found"%self.eatery_id)
-                        self.photo_ids = ZomatoEateriesCollection.find_one({"eatery_id": self.eatery_id}).get("pictures")
+                        self.pictures = ZomatoEateriesCollection.find_one({"eatery_id": self.eatery_id}).get("pictures")
                 else:
                         self.get_image_urls()
                         ZomatoEateriesCollection.update({"eatery_id": self.eatery_id}, {"$set": {"pictures": self.pictures}}, upsert=False, multi=False)
@@ -73,7 +74,7 @@ class GoogleNPics(object):
                                     ##convert the image contents into base64 encoding
                                     image_contents = base64.b64encode(image_contents)
                                     print PicturesCollection.insert({"s3_url": s3_url, "url": image_link, "contents": image_contents, 
-                                        "height": height, "width": width, "image_id": key})
+                                        "height": height, "width": width, "image_id": key, "source": "zomato", "time": time.time()})
 
                             
                             except Exception as e:
@@ -92,11 +93,12 @@ class GoogleNPics(object):
                                 opener = urllib.build_opener(proxy)
                                 urllib.install_opener(opener)
                                 try:
-                                        print terminal.red("From proxy %s"%)
-                                except Exception as e:
                                         response = urllib.urlopen("http://www.icanhazip.com")
                                         source = response.read()
                                         print terminal.red("From proxy %s"%source)
+                                except Exception as e:
+                                        print terminal.red("Could scrape icanhazip")
+                                        pass
                         response = urllib.urlopen(image_link)
                         source = response.read()
                         img = Image.open(StringIO(source))

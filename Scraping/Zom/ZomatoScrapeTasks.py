@@ -39,6 +39,7 @@ from selenium import webdriver
 from TorCtl import TorCtl
 import re
 import getpass
+from google_n_pics import GoogleNPics
 
 logger = logging.getLogger(__name__)
 
@@ -53,7 +54,8 @@ DRIVER_NAME = "CHROME"
 PROXY_ADDRESS ="52.74.21.248:8118"
 
 #StartScrapeChain.apply_async(["https://www.zomato.com/ncr/restaurants", 30, 0, False])
-
+from blessings import Terminal
+terminal = Terminal()
 """
 To run tasks for scraping one restaurant 
 runn.apply_async(["https://www.zomato.com/ncr/pita-pit-lounge-greater-kailash-gk-1-delhi", None, None, True])
@@ -90,7 +92,8 @@ runn.apply_async(args=["https://www.zomato.com/ncr/south-delhi-restaurants", 30,
 """
 
 
-r = redis.StrictRedis(host=config.get("redis", "ip"), port=config.getint("redis", "port"), 2)
+r = redis.StrictRedis(host=config.get("redis", "ip"), port=config.getint("redis", "port"), db=config.getint("redis", "error_db"))
+r_pics = redis.StrictRedis(host=config.get("redis", "ip"), port=config.getint("redis", "port"), db=config.getint("redis", "pics_error_db"))
 
 
 
@@ -185,7 +188,8 @@ class GoogleNPicsTask(celery.Task):
                         instance = GoogleNPics(eatery_id, __eatery_id, pics_url)
                         instance.run()    
                 except Exception as e:
-                        r.hset(eatery_id, str(e))
+                        print terminal.red("error occurred saving in redis %s for eatery_id %s"%(str(e), self.eatery_id))
+                        r_pics.hset(eatery_id, "error",  str(e))
                 return
 
         def after_return(self, status, retval, task_id, args, kwargs, einfo):
@@ -193,7 +197,8 @@ class GoogleNPicsTask(celery.Task):
                 pass
 
         def on_failure(self, exc, task_id, args, kwargs, einfo):
-                r.hset(eatery_id, str(e))
+                print terminal.red("error occurred saving in redis %s for eatery_id %s"%(str(e), self.eatery_id))
+                r_pics.hset(self.eatery_id, "error", str(e))
 		revoke(task_id, terminate=True)
 		return 
 

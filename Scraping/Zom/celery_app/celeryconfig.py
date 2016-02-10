@@ -38,6 +38,7 @@ CELERY_ROUTES = {
 				'routing_key': 'GoogleNPicsQueue.import',
 							        },
 			}
+
 #BROKER_HOST = ''
 #BROKER_PORT = ''
 #BROKER_USER = ''
