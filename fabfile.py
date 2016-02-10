@@ -209,6 +209,20 @@ def mongo_restore(dump):
         with cd(PATH):
                 run("sudo mongorestore 21-feb")
 
+
+
+def install_awscli():
+        """
+        This function will install the aws commanline tool to fetch and download the keys atored in madmachiens buket on s3
+
+        """
+        pip install awscli
+        aws configure1
+
+
+
+
+
 def deploy():
 	execute(basic_setup)
         #execute(virtual_env)

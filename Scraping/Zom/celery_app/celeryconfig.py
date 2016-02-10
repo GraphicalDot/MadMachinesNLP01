@@ -11,7 +11,9 @@ CELERY_QUEUES = (
 		Queue('GenerateEateriesListQueue', Exchange('default', delivery_mode= 2),  routing_key='GenerateEateriesListQueue.import'),
 		Queue('ScrapeEachEateryQueue', Exchange('default', delivery_mode=2),  routing_key='ScrapeEachEateryQueue.import'),
 		Queue('MapListToTaskQueue', Exchange('default', delivery_mode=2),  routing_key='MapListToTaskQueue.import'),
-		    )
+		Queue('GoogleNPicsQueue', Exchange('default', delivery_mode=2),  routing_key='GoogleNPicsQueue.import'),
+
+                )
 
 CELERY_ROUTES = {
 		'ZomatoScrapeTasks.StartScrapeChain': {
@@ -30,6 +32,10 @@ CELERY_ROUTES = {
 		'ZomatoScrapeTasks.MapListToTask': {
 				'queue': 'MapListToTaskQueue',
 				'routing_key': 'MapListToTaskQueue.import',
+							        },
+		'ZomatoScrapeTasks.GoogleNPicsTask': {
+				'queue': 'GoogleNPicsQueue',
+				'routing_key': 'GoogleNPicsQueue.import',
 							        },
 			}
 #BROKER_HOST = ''

@@ -90,7 +90,7 @@ runn.apply_async(args=["https://www.zomato.com/ncr/south-delhi-restaurants", 30,
 """
 
 
-r = redis.StrictRedis(host=config.get("redis", "ip"), port=config.getint("redis", "port"), db=config.getint("redis", "error_db"))
+r = redis.StrictRedis(host=config.get("redis", "ip"), port=config.getint("redis", "port"), 2)
 
 
 
@@ -174,6 +174,31 @@ class GenerateEateriesList(celery.Task):
 
 
 @app.task()
+class GoogleNPicsTask(celery.Task):
+	ignore_result=True, 
+	max_retries=5, 
+	acks_late=True
+	default_retry_delay = 500
+        def run(self, eatery_id, __eatery_id, pics_url):
+                self.eatery_id = eatery_id
+                try:
+                        instance = GoogleNPics(eatery_id, __eatery_id, pics_url)
+                        instance.run()    
+                except Exception as e:
+                        r.hset(eatery_id, str(e))
+                return
+
+        def after_return(self, status, retval, task_id, args, kwargs, einfo):
+                #exit point of the task whatever is the state
+                pass
+
+        def on_failure(self, exc, task_id, args, kwargs, einfo):
+                r.hset(eatery_id, str(e))
+		revoke(task_id, terminate=True)
+		return 
+
+
+@app.task()
 class ScrapeEachEatery(celery.Task):
 	ignore_result=True, 
 	max_retries=5, 
@@ -240,6 +265,9 @@ class ScrapeEachEatery(celery.Task):
 		return 
 
 
+
+
+@app.task()
 
 
 @app.task()
