@@ -68,7 +68,7 @@ class GoogleNPics(object):
 
 
 
-                for image_link in zomato_cdn_pics[-50:]:
+                for image_link in zomato_cdn_pics[-30:]:
                             try:
                                     key, s3_url, image_contents, height, width = self.each_image(image_link)
                                     ##convert the image contents into base64 encoding
@@ -107,7 +107,7 @@ class GoogleNPics(object):
                         print terminal.red(str(e))
                         return None
 
-                print terminal.yellow("This is the image object %s"%img)
+                print terminal.yellow("This is the image object %s for eatery_id <<%s>>"%(img, self.eatery_id))
                 return self.generate_link(img, image_link)
 
 
@@ -141,11 +141,12 @@ class GoogleNPics(object):
                 s3_key.set_canned_acl('public-read')
                 s3_image_url = s3_key.generate_url(0, query_auth=False, force_http=True)
                
-                print terminal.yellow("This is the url for the image %s"%s3_image_url)
+                print terminal.yellow("This is the url for the image %s for eatery_id <<%s>>"%(s3_image_url, self.eatery_id))
                 return (__key, s3_image_url, eatery_image_contents, eatery_image.height, eatery_image.width)
 
 
         def get_image_urls(self):
+                """
                 if config.getboolean("proxy", "use_proxy"):
                         chrome_options = webdriver.ChromeOptions()
                         chrome_options.add_argument('--proxy-server=%s' % config.get("proxy", "proxy_addr"))
@@ -156,7 +157,9 @@ class GoogleNPics(object):
                         driver = webdriver.Chrome(driver_exec_path)
                         driver.get(self.url)
 
-
+                """
+                driver = webdriver.Chrome(driver_exec_path)
+                driver.get(self.url)
                 time.sleep(20)
                 while True:
                         try:
