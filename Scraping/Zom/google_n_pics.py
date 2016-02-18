@@ -38,13 +38,45 @@ PicturesCollection = connection[config.get("zomato", "picsdatabase")][config.get
 
 class GoogleNPics(object):
         def __init__(self, eatery_id, __eatery_id, url):
-                self.url = url
                 self.eatery_id = eatery_id
                 self.__eatery_id = __eatery_id
+                if url:
+                        self.url = url
+                else:
+                        self.find_photo_link()                        
+                
                 s3_connection = S3Connection(config.get("aws", "key"), config.get("aws", "secret"))
                 self.bucket = s3_connection.get_bucket(config.get("aws", "bucket"))
                 self.basewidth = 400
                 self.image_format = "jpeg"
+
+
+
+
+        def find_photo_link(self):
+                __eatery = ZomatoEateriesCollection.find_one({"eatery_id": self.eatery_id})
+                driver = webdriver.Chrome(driver_exec_path)
+                driver.get(__eatery.get("eatery_url"))
+                time.sleep(10)
+                html = driver.page_source
+                soup = BeautifulSoup(html)
+                try:
+                        self.url = soup.find("a", {"class": "no_underline"})["href"]
+                        ZomatoEateriesCollection.update({"eatery_id": self.eatery_id}, {"$set": {"eatery_photo_link": self.url}}, upsert=False)
+                except Exception as e:
+                        raise StandardError("Culdnt get the eatery photo link for eatery id %s"%self.eatery_id)
+                
+                try:
+                        eatery_area_or_city = soup.find("div", {"class": "breadcrumb absolute-bread  breadcrumb--white"}).findAll("span")[6].text
+                        print terminal.blue("eatery_area_or_city is <<%s>> for eatery id <<%s>> for eatery url <<%s>>"%(eatery_area_or_city, self.eatery_id, __eatery.get("eatery_url"))) 
+                        ZomatoEateriesCollection.update({"eatery_id": self.eatery_id}, {"$set": {"eatery_area_or_city": eatery_area_or_city}}, upsert=False)
+                except Exception as e:
+                        print terminal.red("eatery_area_or_city couldnt be found for eatery id <<%s>> for eatery url <<%s>>"%(self.eatery_id, __eatery.get("eatery_url"))) 
+
+                print ZomatoEateriesCollection.find_one({"eatery_id": self.eatery_id})
+                
+                
+                driver.close()
 
 
 
@@ -74,7 +106,7 @@ class GoogleNPics(object):
                                     ##convert the image contents into base64 encoding
                                     image_contents = base64.b64encode(image_contents)
                                     print PicturesCollection.insert({"s3_url": s3_url, "url": image_link, "contents": image_contents, 
-                                        "height": height, "width": width, "image_id": key, "source": "zomato", "time": time.time()})
+                                        "height": height, "width": width, "image_id": key, "eatery_id":  self.eatery_id, "__eatery_id": self.__eatery_id, "source": "zomato", "time": time.time()})
 
                             
                             except Exception as e:
