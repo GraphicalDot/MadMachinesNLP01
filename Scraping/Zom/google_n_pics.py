@@ -43,14 +43,48 @@ class GoogleNPics(object):
                 if url:
                         self.url = url
                 else:
-                        self.find_photo_link()                        
+                        try:
+                                self.find_photo_link()                        
                 
+                        except StandardError as e:
+                                print terminal.red(str(e))
+                                print terminal.red("Retrying with info link")
+                                self.find_photo_link_from_info()
+
                 s3_connection = S3Connection(config.get("aws", "key"), config.get("aws", "secret"))
                 self.bucket = s3_connection.get_bucket(config.get("aws", "bucket"))
                 self.basewidth = 400
                 self.image_format = "jpeg"
 
 
+
+
+        def find_photo_link_from_info(self):
+                __eatery = ZomatoEateriesCollection.find_one({"eatery_id": self.eatery_id})
+                driver = webdriver.Chrome(driver_exec_path)
+                __url = "%s/info"%(__eatery.get("eatery_url"))
+                time.sleep(10)
+                driver.get(__url)
+                html = driver.page_source
+                soup = BeautifulSoup(html)
+                try:
+                        self.url = soup.find("a", {"class": "no_underline"})["href"]
+                        ZomatoEateriesCollection.update({"eatery_id": self.eatery_id}, {"$set": {"eatery_photo_link": self.url}}, upsert=False)
+                except Exception as e:
+                        driver.close()
+                        raise StandardError("Culdnt get the eatery photo link for eatery id %s"%self.eatery_id)
+                
+                try:
+                        eatery_area_or_city = soup.find("div", {"class": "breadcrumb absolute-bread  breadcrumb--white"}).findAll("span")[6].text
+                        print terminal.blue("eatery_area_or_city is <<%s>> for eatery id <<%s>> for eatery url <<%s>>"%(eatery_area_or_city, self.eatery_id, __eatery.get("eatery_url"))) 
+                        ZomatoEateriesCollection.update({"eatery_id": self.eatery_id}, {"$set": {"eatery_area_or_city": eatery_area_or_city}}, upsert=False)
+                except Exception as e:
+                        driver.close()
+                        print terminal.red("eatery_area_or_city couldnt be found for eatery id <<%s>> for eatery url <<%s>>"%(self.eatery_id, __eatery.get("eatery_url"))) 
+
+                print ZomatoEateriesCollection.find_one({"eatery_id": self.eatery_id})
+                driver.close()
+                return 
 
 
         def find_photo_link(self):
@@ -64,6 +98,7 @@ class GoogleNPics(object):
                         self.url = soup.find("a", {"class": "no_underline"})["href"]
                         ZomatoEateriesCollection.update({"eatery_id": self.eatery_id}, {"$set": {"eatery_photo_link": self.url}}, upsert=False)
                 except Exception as e:
+                        driver.close()
                         raise StandardError("Culdnt get the eatery photo link for eatery id %s"%self.eatery_id)
                 
                 try:
@@ -71,13 +106,12 @@ class GoogleNPics(object):
                         print terminal.blue("eatery_area_or_city is <<%s>> for eatery id <<%s>> for eatery url <<%s>>"%(eatery_area_or_city, self.eatery_id, __eatery.get("eatery_url"))) 
                         ZomatoEateriesCollection.update({"eatery_id": self.eatery_id}, {"$set": {"eatery_area_or_city": eatery_area_or_city}}, upsert=False)
                 except Exception as e:
+                        driver.close()
                         print terminal.red("eatery_area_or_city couldnt be found for eatery id <<%s>> for eatery url <<%s>>"%(self.eatery_id, __eatery.get("eatery_url"))) 
 
                 print ZomatoEateriesCollection.find_one({"eatery_id": self.eatery_id})
-                
-                
                 driver.close()
-
+                return 
 
 
         def run(self):
