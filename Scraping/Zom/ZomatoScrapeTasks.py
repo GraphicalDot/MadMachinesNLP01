@@ -51,7 +51,7 @@ config = ConfigParser.RawConfigParser()
 config.read("zomato_dom.cfg")
 driver_exec_path = "/home/%s/Downloads/chromedriver"%(getpass.getuser())
 DRIVER_NAME = "CHROME"
-PROXY_ADDRESS ="52.74.21.248:8118"
+PROXY_ADDRESS = config.get("proxy", "proxy_addr")
 
 #StartScrapeChain.apply_async(["https://www.zomato.com/ncr/restaurants", 30, 0, False])
 from blessings import Terminal
@@ -94,49 +94,6 @@ runn.apply_async(args=["https://www.zomato.com/ncr/south-delhi-restaurants", 30,
 
 r = redis.StrictRedis(host=config.get("redis", "ip"), port=config.getint("redis", "port"), db=config.getint("redis", "error_db"))
 r_pics = redis.StrictRedis(host=config.get("redis", "ip"), port=config.getint("redis", "port"), db=config.getint("redis", "pics_error_db"))
-
-
-
-def generate_new_proxy():
-        """
-        if proxy os True in zomato_dom.cfg then it connects to tor and privoxy and find a new proxy
-            and redirects all the selenium requests through this proxy
-        if False, return the true ip of the server
-        """
-        print "Called generate_new_proxy"
-        def renew_connection():
-                conn = TorCtl.connect(controlAddr="localhost", controlPort=9051)
-                conn.send_signal("NEWNYM")
-                conn.close()
-
-        def selenium_request(url, use_proxy):
-                if use_proxy:
-			chrome_options = webdriver.ChromeOptions()
-			chrome_options.add_argument('--proxy-server=%s' % "localhost:8118")
-			driver = webdriver.Chrome(driver_exec_path, chrome_options=chrome_options)
-
-		else:
-			driver = webdriver.Chrome(driver_exec_path)
-                
-                driver.get(url)
-                html = driver.page_source
-                driver.close()
-                ip = re.findall("\d+.\d+.\d+.\d+", html)
-                try:
-			return ip[0]
-                except:
-			return None
-			
-        if config.getboolean("proxy", "use_proxy"):
-                        renew_connection()
-                        __ip = selenium_request("http://icanhazip.com/", use_proxy=True)
-        
-        else:
-                __ip = selenium_request("http://icanhazip.com/", use_proxy=False)
-        
-        print "Ip that will be used to scrape new data %s"%__ip
-        return __ip
-        
 
 
 @app.task()
