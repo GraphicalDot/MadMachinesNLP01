@@ -61,7 +61,7 @@ import ConfigParser
 from Text_Processing.Sentence_Tokenization.Sentence_Tokenization_Classes import SentenceTokenizationOnRegexOnInterjections
 from connections import eateries, reviews, eateries_results_collection, reviews_results_collection, short_eatery_result_collection, \
         bcolors, users_reviews_collection, users_feedback_collection, users_details_collection, server_address, pictures_collection,\
-        users_queried_addresses_collection, users_dish_collection, pictures_collection
+        users_queried_addresses_collection, users_dish_collection
         
 from ProductionEnvironmentApi.text_processing_api import PerReview, EachEatery, DoClusters
 from ProductionEnvironmentApi.text_processing_db_scripts import MongoScriptsReviews, MongoScriptsDoClusters
@@ -649,7 +649,6 @@ class GetEatery(tornado.web.RequestHandler):
                         
                 __eatery_id =  self.get_argument("__eatery_id")
                 result = eateries_results_collection.find_one({"__eatery_id": __eatery_id})
-                images = list(pictures_collection.find({"__eatery_id": __eatery_id}, {"_id": False, "s3_url": True, "image_id": True, "likes": True}).limit(10))
                 if not result:
                         """
                         If the eatery name couldnt found in the mongodb for the popular matches
@@ -658,18 +657,19 @@ class GetEatery(tornado.web.RequestHandler):
 
                         self.write({"success": False,
 			        "error": True,
-                                "result": "Somehow eatery with this eatery is not present in the DB"})
+                                "result": "SOmehoe eatery with this eatery is not present in the DB"})
                         self.finish()
                         return 
                
 
+                __result = process_google_result(result, __eatery_id)
+                result = process_result(__result)
                 cprint(figlet_format('Finished executing %s'%self.__class__.__name__, font='mini'), attrs=['bold'])
-                
-                __result = process_result(result)
-                __result.update({"images": images})
+                result = process_google_result(result, __eatery_id)
+                print result
                 self.write({"success": True,
 			"error": False,
-                        "result": __result})
+                        "result": result})
                 self.finish()
 
 
@@ -751,6 +751,43 @@ class GetUserProfile(tornado.web.RequestHandler):
                 return 
 
 
+class GetPics(tornado.web.RequestHandler):
+        @cors
+	@print_execution
+	@tornado.gen.coroutine
+        def post(self):
+                """
+                the kys which exists for a particular picture in the picture_collection
+                [u'width', u'url', u'eatery_id', u'height', u'__eatery_id', u'filename', u'pic_id', u'_id', u'data']
+                """
+
+                __eatery_id = self.get_argument("__eatery_id")
+
+                try:
+                        limit = self.get_argument("limit")
+                except Exception as e:
+                        print e
+                        limit = 10
+                
+                try:
+                        skip = self.get_argument("skip")
+                except Exception as e:
+                        print e
+                        skip = 0
+
+                projection = {"_id": False, "width": False, "height":  False, "eatery_id": False, "filename": False}
+                result = list(picture_collection.find({"__eatery_id": eatery_id}, projection).sort("epoch", -1).skip(skip).limit(limit))
+                self.write({"success": True,
+			        "error": False,
+                                "result": result,  
+                                })
+                self.finish()
+                return 
+
+
+                
+
+
 
 
 
@@ -830,34 +867,16 @@ class UploadPic(tornado.web.RequestHandler):
 class LikePic(tornado.web.RequestHandler):
         """
         If a user wants to like a pic, for that to happend a pic_id and fb_id must be given
-        a like counter shall be incremented by one if the user has alread not have likened the pic
-        and alos users_details_collection shall be update with s3_url
         """
         @cors
+	@print_execution
 	@tornado.gen.coroutine
         def post(self):
-                print "lihe_pic called"
-                image_id = self.get_argument("image_id")
-                print image_id
+                pic_id = self.get_argument("pic_id")
                 fb_id = self.get_argument("fb_id")
-                print fb_id
-                s3_url = self.get_argument("s3_url")
-                print s3_url
+                picture = self.get("picture")
 
-                print image_id, fb_id, s3_url
-                if not users_details_collection.find_one({"fb_id": fb_id}):
-                        self.write({"success": False,
-			        "error": True,
-                                "messege": "User havent been registered, Please login with your facebook",  
-                                })
-                        self.finish()
-                        return 
-                
-                
-                
-                
-                
-                if pictures_collection.find_one({"image_id": image_id, "users": {"fb_id": fb_id}}):
+                if picture_collection.find_one({"pic_id": pic_id, "users": {"fb_id": fb_id, "picture": picture}}):
                         self.write({"success": False,
 			        "error": True,
                                 "messege": "User already have liked the picture",  
@@ -868,8 +887,8 @@ class LikePic(tornado.web.RequestHandler):
                         
 
 
-                pictures_collection.update({"image_id": image_id}, {"$inc": {"likes": 1}, "$addToSet": {"users": {"fb_id": fb_id}}},  upsert=False)
-                users_details_collection.update({"fb_id": fb_id}, {"$addToSet": {"images": {"s3_url": s3_url, "image_id": image_id}}},  upsert=False)
+
+                picture_collection.update({"pic_id": pic_id}, {"$inc": {"likes": 1}, "$addToSet": {"users": {"fb_id": fb_id, "picture": picture}}},  upsert=False)
                 self.write({"success": True,
 			    "error": False,
                             "messege": "Picture has been liked by the user",  
@@ -892,7 +911,7 @@ class LikeReview(tornado.web.RequestHandler):
                 review_id = self.get_argument("review_id")
                 fb_id = self.get_argument("fb_id")
 
-                if users_reviews_collection.find_one({"review_id": review_id, "users": {"fb_id": fb_id}}):
+                if users_reviews_collection.find_one({"pic_id": pic_id, "users": {"fb_id": fb_id, "picture": picture}}):
                         self.write({"success": False,
 			        "error": True,
                                 "messege": "User already have liked the picture",  
@@ -904,9 +923,7 @@ class LikeReview(tornado.web.RequestHandler):
 
 
 
-                users_reviews_collection.update({"review_id": review_id}, {"$inc": {"likes": 1}, "$addToSet": {"users": {"fb_id": fb_id}}},  upsert=False)
-                users_details_collection.update({"fb_id": fb_id}, {"$addToSet": {"reviews_liked": {"reviews_id": review_id}}},  upsert=False)
-                
+                users_reviews_collection.update({"pic_id": pic_id}, {"$inc": {"likes": 1}, "$addToSet": {"users": {"fb_id": fb_id, "picture": picture}}},  upsert=False)
                 self.write({"success": True,
 			    "error": False,
                             "messege": "Review has been liked by the user",  
@@ -1025,6 +1042,7 @@ app = tornado.web.Application([
                     (r"/getkey", GetKey),
                     (r"/userprofile", GetUserProfile),
                     (r"/apis", GetApis),
+                    (r"/pics", GetPics),
                     (r"/likepic", LikePic),
                     (r"/likereview", LikeReview),
                     (r"/storeaddressstrings", StoreAddressStrings),

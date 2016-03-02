@@ -33,8 +33,6 @@ def basic_setup():
 	This method should be run before installing virtual environment as it will install python pip
 	required to install virtual environment
 	"""
-	run("sudo apt-get update")
-	run("sudo apt-get upgrade")
 	env.run("sudo apt-get install -y python-pip")
         env.run("sudo apt-get install -y libevent-dev")
 	env.run("sudo apt-get install -y python-all-dev")
@@ -60,6 +58,7 @@ def basic_setup():
 
 @task
 def localhost():
+        env["user"] = "kmama02"
         env.run = lrun
         env.hosts = ['localhost']
 @task
@@ -209,15 +208,6 @@ def mongo_restore(dump):
         with cd(PATH):
                 run("sudo mongorestore 21-feb")
 
-
-
-def install_awscli():
-        """
-        This function will install the aws commanline tool to fetch and download the keys atored in madmachiens buket on s3
-
-        """
-        pip install awscli
-        aws configure1
 
 
 
