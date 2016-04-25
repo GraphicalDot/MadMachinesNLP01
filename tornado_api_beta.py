@@ -1018,6 +1018,24 @@ def process_result(result):
                 return result
 
 
+class TextTokenization(tornado.web.RequestHandler):
+        """
+        This is the demo of the technology we are suing right now, When a sentence or review is posted 
+        We tokenize it and find the sentiment, cateory, sub-category associated with it
+        """
+        @cors
+	@print_execution
+	@tornado.gen.coroutine
+        def  post(self):
+                fb_id = self.get_argument("fb_id")
+
+
+
+
+
+
+
+
 app = tornado.web.Application([
                     (r"/suggestions", Suggestions),
                     (r"/textsearch", TextSearch),

@@ -36,6 +36,11 @@ ZomatoEateriesCollection = connection[config.get("zomato", "database")][config.g
 PicturesCollection = connection[config.get("zomato", "picsdatabase")][config.get("zomato", "picscollection")]
 
 
+connection = pymongo.MongoClient()
+PictureContentCollection = connection.PictureContentCollection.PictureContentCollection
+
+
+
 class GoogleNPics(object):
         def __init__(self, eatery_id, __eatery_id, url):
                 self.eatery_id = eatery_id
@@ -133,16 +138,21 @@ class GoogleNPics(object):
                         return 
 
 
-
+                i = 0 
                 for image_link in zomato_cdn_pics[-30:]:
+                            if i > 30:
+                                    break
                             try:
-                                    key, s3_url, image_contents, height, width = self.each_image(image_link)
+                                    key, s3_url, s3_url_original, image_contents, height, width = self.each_image(image_link)
                                     ##convert the image contents into base64 encoding
                                     image_contents = base64.b64encode(image_contents)
-                                    print PicturesCollection.insert({"s3_url": s3_url, "url": image_link, "contents": image_contents, 
+                                    print PicturesCollection.insert({"s3_url": s3_url, "url": image_link, "s3_url_original": s3_url_original,
+                                        "height": height, "width": width, "image_id": key, "eatery_id":  self.eatery_id, "__eatery_id": self.__eatery_id, "source": "zomato", "time": time.time()})
+                                    
+                                    print PictureContentCollection.insert({"url": image_link, "contents": image_contents, "s3_url": s3_url_original, 
                                         "height": height, "width": width, "image_id": key, "eatery_id":  self.eatery_id, "__eatery_id": self.__eatery_id, "source": "zomato", "time": time.time()})
 
-                            
+                                    i += 1      
                             except Exception as e:
                                     print terminal.red(str(e))
                                     pass
@@ -189,26 +199,35 @@ class GoogleNPics(object):
                 output = StringIO()
                 
                 ##saving the resized image to output string io string
-                resized_img.save(output, self.image_format, optimize=True, quality=85)
+                resized_img.save(output, self.image_format)
                 
                 ##contents of the image 
                 ###saving original image to a stringIO
                 original_image = StringIO()
-                eatery_image.save(original_image, self.image_format, optimize=True, quality=85)
+                eatery_image.save(original_image, self.image_format)
                 eatery_image_contents = original_image.getvalue()
 
 
                 ##generateing a unique key for the image
                 __key = "%s_zcdn_%s"%(self.eatery_id, hashlib.sha224(eatery_image_contents).hexdigest())
-
                 s3_key = self.bucket.new_key(__key)
                 s3_key.set_metadata('Content-Type', 'image/jpg')
                 s3_key.set_contents_from_string(output.getvalue())
                 s3_key.set_canned_acl('public-read')
                 s3_image_url = s3_key.generate_url(0, query_auth=False, force_http=True)
                
+                ##generateing a unique key for the image
+                __key_original = "%s_zcdn_%s_original"%(self.eatery_id, hashlib.sha224(eatery_image_contents).hexdigest())
+                s3_key = self.bucket.new_key(__key_original)
+                s3_key.set_metadata('Content-Type', 'image/jpg')
+                s3_key.set_contents_from_string(eatery_image_contents)
+                s3_key.set_canned_acl('public-read')
+                s3_image_url_original = s3_key.generate_url(0, query_auth=False, force_http=True)
+        
+
                 print terminal.yellow("This is the url for the image %s for eatery_id <<%s>>"%(s3_image_url, self.eatery_id))
-                return (__key, s3_image_url, eatery_image_contents, eatery_image.height, eatery_image.width)
+                print terminal.yellow("This is the url for the image original %s for eatery_id <<%s>>"%(s3_image_url_original, self.eatery_id))
+                return (__key, s3_image_url, s3_image_url_original, eatery_image_contents, eatery_image.height, eatery_image.width)
 
 
         def get_image_urls(self):

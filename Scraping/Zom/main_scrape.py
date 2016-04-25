@@ -43,13 +43,11 @@ config.read("zomato_dom.cfg")
 
 driver_exec_path = "/home/%s/Downloads/chromedriver"%(getpass.getuser())
 DRIVER_NAME = "CHROME"
-#PROXY_ADDRESS ="localhost:8118"
-PROXY_ADDRESS = "52.74.21.248:8118"
 
 
 connection = pymongo.MongoClient(config.get("zomato", "host"), config.getint("zomato", "port"))
 ZomatoReviewsCollection = connection[config.get("zomato", "database")][config.get("zomato", "reviews")]
-
+PROXY_ADDRESS = config.get("proxy", "proxy_Addr")
 
 
 
@@ -202,12 +200,21 @@ class EateriesList(object):
 
         
 		eateries_list=list()
-                for eatery_soup in soup_of_each_page.findAll("li",{"class":"resBB10 even  status1"}):
+                for eatery_soup in soup_of_each_page.findAll("li",{"class":"js-search-result-li even  status 1"}):
 			eatery = dict()
 			eatery["eatery_id"] = eatery_soup.get("data-res_id")
-			eatery["eatery_url"] = eatery_soup.find("a").get("href")
-			eatery["eatery_name"] = eatery_soup.find("a").text
-			
+			eatery["eatery_photo_link"] = eatery_soup.find("a").get("href")
+                        def some(__soup, eatery_name=None):
+                                try:
+                                        result = __soup.find("h3", {"class":" top-res-box-name left"}).find("a")
+
+                                except Exception as e:
+                                        result = __soup.find("h3", {"class":"pt5 top-res-box-name left"}).find("a")
+                                        
+                                return result["href"] if not eatery_name else result.text
+                        eatery["eatery_url"] = some(eatery_soup)
+			eatery["eatery_name"] = some(eatery_soup, True)
+
                         try:
                                 eatery["eatery_address"] = eatery_soup.find("div", {"class": "search-result-address zdark"})["title"]
 			except Exception:
@@ -215,20 +222,20 @@ class EateriesList(object):
 				eatery["eatery_address"] = None
                                 
 			try:
-				eatery["eatery_cuisine"] = eatery_soup.find("div", {"class": "res-snippet-small-cuisine truncate search-page-text"}).text
+                                eatery["eatery_cuisine"] = eatery_soup.find("div", {"class":"res-cuisine mt2 clearfix"})["title"]
 			except Exception:
 				eatery["eatery_cuisine"] = None
 				print "{start_color} Eatery cuisine couldnt be found for eatery_id --<<{id}-->> {end_color}".format(start_color=bcolors.WARNING, id=eatery["eatery_id"], end_color=bcolors.RESET)
 
 			try:
-                                eatery["eatery_cost"] = eatery_soup.find("div", {"class": "res-cost"}).text
+                                eatery["eatery_cost"] = eatery_soup.find("div", {"class":"res-cost clearfix"}).findNext().findNext().text
 			except Exception:
 				eatery["eatery_cost"] = None
 				print "{start_color} Eatery cost couldnt be found for eatery_id --<<{id}-->> {end_color}".format(start_color=bcolors.FAIL, id=eatery["eatery_id"], end_color=bcolors.RESET)
 
 
 			try:
-                                eatery["eatery_type"] = eatery_soup.find("a", {"class": "cblack"}).text
+                                eatery["eatery_type"] = eatery_soup.find("div", {"class": 'res-snippet-small-establishment'}).text
 
 			except Exception:
 				eatery["eatery_type"] = None
@@ -239,7 +246,7 @@ class EateriesList(object):
 
                         ##eatery_delivery_time
                         try:
-                                delivery_time_tag = eatery_soup.find("div", {"class": "del-time mb5"})
+                                delivery_time_tag = eatery_soup.find("div", {"class": "del-time"})
                                 try:
                                         delivery_time_span = delivery_time_tag.find("span")
                                         delivery_time_span.extract()
@@ -272,7 +279,7 @@ class EateriesList(object):
                         
                         
                         try:
-                                eatery["eatery_rating"] = {"rating": eatery_soup.find("div",  {"class": "search_result_rating col-s-4 clearfix"}).findNext().text,
+                                eatery["eatery_rating"] = {"rating": eatery_soup.find("div",  {"class": "search_result_rating col-s-3  clearfix"}).findNext().text,
                                     "votes": eatery_soup.find("div",  {"class": "rating-rank right"}).find("span").text }                                
 			except Exception:
 				eatery["eatery_rating"] = None
@@ -302,7 +309,6 @@ class EateriesList(object):
 			
                         print "{start_color} Eatery with --<<{id}-->> is completed  {end_color}".format(start_color=bcolors.OKGREEN, id=eatery["eatery_id"], end_color=bcolors.RESET)
 			eateries_list.append(eatery)
-
 		return eateries_list
 
 class EateryData(object):
@@ -312,32 +318,28 @@ class EateryData(object):
 		self.eatery = eatery_dict
 
 		self.soup = self.make_soup()
-		
-		try:
-				print terminal.bold_red_on_green(str(e))
-				print terminal.bold_red_on_green("Eatery addrress couldnt be found for %s"%self.eatery["eatery_id"])
-				print terminal.bold_red_on_green("Now changing eatery url to info url")
-				
-                                eatery_url = self.eatery["eatery_url"]
-				eatery_url = "%s/info"%eatery_url
-                                self.eatery["eatery_url"] = eatery_url 
-				print terminal.bold_red_on_green("New Info url for eatery_id %s is %s"%(self.eatery["eatery_id"], self.eatery["eatery_url"]))
-
-
-				self.soup = self.make_soup()
-
-		except Exception as e:
-			print e
-			pass	
-
-		self.retry_eatery_address()
-
-        def run(self):
                 process_result(self.eatery, "eatery_name", FILE)(self.retry_eatery_name)()
                 process_result(self.eatery, "eatery_id", FILE)(self.retry_eatery_id)()
+		try:
+                        assert(self.eatery["eatery_id"] != None)
+                        assert(self.eatery["eatery_name"] != None)
+
+		except Exception as e:
+			print terminal.bold_red_on_green("Now changing eatery url to info url")
+                        eatery_url = self.eatery["eatery_url"]
+			eatery_url = "%s/info"%eatery_url
+                        self.eatery["eatery_url"] = eatery_url 
+			print terminal.bold_red_on_green("New Info url for eatery_id %s is %s"%(self.eatery["eatery_id"], self.eatery["eatery_url"]))
+			self.soup = self.make_soup()
+
+                try:
+                        self.retry_eatery_address()
+                except Exception as e:
+			print terminal.bold_red_on_green("No eatery address could be found for  eatery_id %s is %s"%(self.eatery["eatery_id"], self.eatery["eatery_url"]))
+                
+
+        def run(self):
                
-                assert(self.eatery["eatery_id"] != None)
-                assert(self.eatery["eatery_name"] != None)
 		
 		print "Found eatery_id==<<{eatery_id}>> and eatery_name==<<{eatery_name}>> time".format(start_color=bcolors.OKGREEN, eatery_id=self.eatery["eatery_id"], eatery_name=self.eatery["eatery_name"].encode("ascii", "ignore"), end_color=bcolors.RESET)
 		__hash = hashlib.sha256(self.eatery["eatery_id"] + self.eatery["eatery_url"]).hexdigest()
@@ -388,7 +390,8 @@ class EateryData(object):
                 assert(self.eatery["location"] != None)
 
                 review_soup = self.get_reviews()
-	        #self.last_no_of_reviews_to_be_scrapped = int(self.no_of_reviews_to_be_scrapped) - int(no_of_blogs)
+	        
+                #self.last_no_of_reviews_to_be_scrapped = int(self.no_of_reviews_to_be_scrapped) - int(no_of_blogs)
                 ins = ZomatoReviews(review_soup, self.eatery["eatery_area_or_city"], self.eatery["eatery_id"], self.eatery["eatery_url"])
                 return (self.eatery, ins.reviews_data)
 
@@ -533,7 +536,7 @@ class EateryData(object):
 				run_load_more()
 			
 		else:
-			for i in range(0, reviews_to_be_scraped/5+30):
+			for i in range(0, reviews_to_be_scraped/5+60):
 				run_load_more()
 				
 
@@ -564,8 +567,7 @@ class EateryData(object):
 		return time.time()
 	
         def eatery_area_or_city(self):
-                return eval("self.soup.{0}".format(config.get("zomato", "eatery_area_or_city") ))
-        
+                return self.eatery["eatery_url"].split("/")[3]
         
         
         def eatery_country(self):
@@ -656,9 +658,12 @@ if __name__ == "__main__":
         for e in ins.eateries_list:
                 print e
         """
-	ins = EateryData({"eatery_url": "https://www.zomato.com/mumbai/between-breads-pali-hill-bandra-west"})
+        i = EateriesList("https://www.zomato.com/bangalore/restaurants", 30, 0, False)
+        for e in i.eateries_list:
+            print e
+        #ins = EateryData({"eatery_url": "https://www.zomato.com/mumbai/between-breads-pali-hill-bandra-west"})
         #ins = EateryData({"eatery_url": "https://www.zomato.com/ncr/asian-haus-1-east-of-kailash-new-delhi"})
-        print ins.eatery
+        #print ins.eatery
 
 
 

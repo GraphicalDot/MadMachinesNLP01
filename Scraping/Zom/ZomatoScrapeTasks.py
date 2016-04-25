@@ -36,10 +36,11 @@ collection = db.intermediate_collection
 import traceback
 from error_decorators import print_messege
 from selenium import webdriver
-from TorCtl import TorCtl
 import re
 import getpass
 from google_n_pics import GoogleNPics
+from google_places import find_google_places
+
 
 logger = logging.getLogger(__name__)
 
@@ -205,7 +206,22 @@ class ScrapeEachEatery(celery.Task):
                         	r.hset(eatery_dict["eatery_url"], "reviews_in_db", reviews_in_db)
                                 r.hset(eatery_dict["eatery_url"], "error_cause", "zomato incompetency")
                                 r.hset(eatery_dict["eatery_url"], "frequency", reviews_in_db -  int(eatery_dict['eatery_total_reviews']))
-               			 
+        
+                print eatery_dict
+                eatery_id, __eatery_id, eatery_name, eatery_photo_link, location = eatery_dict["eatery_id"], eatery_dict["__eatery_id"], \
+                                                    eatery_dict["eatery_name"], eatery_dict["eatery_photo_link"], eatery_dict["location"]
+                
+                
+                print terminal.blue("Trying pics for eatery_id=<<%s>>, __eatery_id=<<%s>>, eatery_photo_link=<<%s>>"%(eatery_id, __eatery_id, eatery_photo_link))
+                try:
+                        instance = GoogleNPics(eatery_id, __eatery_id, eatery_photo_link)
+                        instance.run()    
+                except Exception as e:
+                        print terminal.red("error occurred saving in redis %s for eatery_id %s"%(str(e), eatery_dict["eatery_id"]))
+                        r_pics.hset(eatery_id, "error",  str(e))
+
+                google = find_google_places(eatery_id, __eatery_id, eatery_name, location)
+                print google
                 return
 
         def after_return(self, status, retval, task_id, args, kwargs, einfo):
@@ -229,7 +245,6 @@ class ScrapeEachEatery(celery.Task):
 
 
 
-@app.task()
 
 
 @app.task()
