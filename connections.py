@@ -5,9 +5,13 @@ import pymongo
 import ConfigParser
 from sklearn.externals import joblib
 import os
+from topia.termextract import extract 
 import jsonrpclib
 from simplejson import loads
 from elasticsearch import Elasticsearch, helpers
+from Text_Processing.Sentence_Tokenization.Sentence_Tokenization_Classes import SentenceTokenizationOnRegexOnInterjections
+sentence_tokenizer = SentenceTokenizationOnRegexOnInterjections()
+noun_phrase_extractor = extract.TermExtractor()
 
 
 this_file_path = os.path.dirname(os.path.abspath(__file__))
@@ -58,7 +62,14 @@ pictures_db  = pictures_connection[config.get("picturesDB", "database")]
 pictures_collection = pictures_db[config.get("picturesDB", "collection")]
 
 
-corenlpserver = jsonrpclib.Server("http://{0}:{1}".format(config.get("corenlpserver", "ip"), config.getint("corenlpserver", "port")))
+try:
+        corenlpserver = jsonrpclib.Server("http://{0}:{1}".format(config.get("corenlpserver", "ip"), config.getint("corenlpserver", "port")))
+        loads(corenlpserver.parse("Testing corenlp server."))
+except Exception as e:
+        raise StandardError("Corenlp Server is not running, Please run corenlp server  %s at port %s"%(config.get("corenlpserver", "ip"), config.getint("corenlpserver", "port")))
+
+
+
 ES_CLIENT = Elasticsearch(ELASTICSEARCH_IP, timeout=30)
 
 server_address = "{0}://{1}:{2}".format(config.get("server", "protocol"), config.get("server", "ip"), config.getint("server", "port"))

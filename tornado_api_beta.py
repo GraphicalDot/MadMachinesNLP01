@@ -27,7 +27,8 @@ from bson.json_util import dumps
 from datetime import datetime, timedelta
 from pytz import timezone
 import pytz
-
+import jsonrpclib 
+from simplejson import loads 
 from compiler.ast import flatten
 from topia.termextract import extract
 import decimal
@@ -58,6 +59,9 @@ from Crypto.PublicKey import RSA
 import jwt
 from jwt import _JWTError
 import ConfigParser
+
+
+
 from Text_Processing.Sentence_Tokenization.Sentence_Tokenization_Classes import SentenceTokenizationOnRegexOnInterjections
 from connections import eateries, reviews, eateries_results_collection, reviews_results_collection, short_eatery_result_collection, \
         bcolors, users_reviews_collection, users_feedback_collection, users_details_collection, server_address, pictures_collection,\
@@ -70,7 +74,8 @@ from ProductionEnvironmentApi.join_two_clusters import ProductionJoinClusters
 from ProductionEnvironmentApi.elasticsearch_db import ElasticSearchScripts
 
 
-
+from connections import sentiment_classifier, tag_classifier, food_sb_classifier, ambience_sb_classifier, cost_sb_classifier, \
+        service_sb_classifier, sentence_tokenizer, corenlpserver, noun_phrase_extractor, SolveEncoding
 
 print server_address
 file_path = os.path.dirname(os.path.abspath(__file__))
@@ -1027,11 +1032,82 @@ class TextTokenization(tornado.web.RequestHandler):
 	@print_execution
 	@tornado.gen.coroutine
         def  post(self):
-                fb_id = self.get_argument("fb_id")
+                text = self.get_argument("text")
+                
+                test = SolveEncoding.preserve_ascii(text)
+                sentences = sentence_tokenizer.tokenize(text)
+                tags = tag_classifier.predict(sentences)
+                filter_on_tag = lambda category: [sent for (sent, tag) in zip(sentences, tags) if tag == category]
+                """
+                food_sentences, service_sentences, cost_sentences, ambience_sentences, place_sentences, overall_sentences  = filter_on_tag("food", sentences, tags),\
+                        filter_on_tag("service", sentences, tags), filter_on_tag("cost", sentences, tags), \
+                        filter_on_tag("ambience", sentences, tags), filter_on_tag("place", sentences, tags),\
+                        filter_on_tag("overall", sentences, tags)
+                """
+                food_sentences, service_sentences, cost_sentences, ambience_sentences, place_sentences, overall_sentences, \
+                        menu_sentences, cuisine_sentences = filter_on_tag("food"), filter_on_tag("service"),\
+                                                            filter_on_tag("cost"), filter_on_tag("ambience"), \
+                                                            filter_on_tag("place"), filter_on_tag("overall"), \
+                                                            filter_on_tag("menu"), filter_on_tag("cuisine")
+                                                            
 
 
 
+                
+                ##this segment will generate (sentence, sb_tags) for different categories
+                food_sb_sentences = zip(food_sentences, food_sb_classifier.predict(food_sentences))
+                cost_sb_sentences = zip(cost_sentences, cost_sb_classifier.predict(cost_sentences))
+                service_sb_sentences = zip(service_sentences, service_sb_classifier.predict(service_sentences))
+                ambience_sb_sentences = zip(ambience_sentences, ambience_sb_classifier.predict(ambience_sentences))
+                
+                
 
+                ##all sentences now will have the form , (sent, sb_category, noun_phrase or place name, sentiment)
+                cost = map(lambda x: (x[0], "cost", x[1], None), cost_sb_sentences)
+                ambience = map(lambda x: (x[0], "ambience", x[1], None), ambience_sb_sentences)
+                service = map(lambda x: (x[0], "service", x[1], None), service_sb_sentences)
+
+
+
+                overall = map(lambda x: (x, "overall", None, None), overall_sentences)
+                menu = map(lambda x: (x, "menu", None, None), menu_sentences)
+                cuisines = map(lambda x: (x, "cuisines", None, None), cuisine_sentences)
+
+
+
+                find_place = lambda sent: [e[0] for e in loads(corenlpserver.parse(sent))["sentences"][0]["words"] if e[1].get("NamedEntityTag") == "LOCATION"]
+                
+                noun_phrases = [[e[0] for e in noun_phrase_extractor(sent)] for (sent, tag) in food_sb_sentences if tag == "dishes"]
+                places = map(find_place, place_sentences)
+
+
+                ##of the form (sentence, None, place_name_array)
+                place = map(lambda x: (x[0], "place", None, x[1]), zip(place_sentences, map(find_place, place_sentences)))
+                print place
+                print noun_phrases
+                print food_sb_sentences
+
+                food =  map(lambda x: (x[0][0], "food", x[0][1], x[1]), zip(food_sb_sentences, noun_phrases))
+
+                whole = food + place + cost + service + ambience + menu + cuisines + overall
+                
+                
+                sentiments = sentiment_classifier.predict([__tuple[0] for __tuple in whole])
+                
+                result = map(lambda x: {"sentence": x[0][0], 
+                                        "category": x[0][1], 
+                                        "sub_category": x[0][2], 
+                                        "noun_phrase_or_place": x[0][3], 
+                                        "sentiment": x[1]}, zip(whole, sentiments))
+                for element in result:
+                    print element
+
+                self.write({"success": True,
+			        "error": False, 
+                                "result": result, 
+                                })
+                self.finish()
+                return 
 
 
 
@@ -1053,7 +1129,9 @@ app = tornado.web.Application([
                     (r"/usersfeedback", UsersFeedback),
                     (r"/writereview", WriteReview),
                     (r"/fetchreview", FetchReview),
-                    (r"/geteatery", GetEatery),])
+                    (r"/geteatery", GetEatery),
+                    (r"/texttokenization", TextTokenization), 
+                    ])
 
 def main():
         http_server = tornado.httpserver.HTTPServer(app)
