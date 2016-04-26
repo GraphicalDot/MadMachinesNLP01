@@ -328,7 +328,7 @@ class WriteReview(tornado.web.RequestHandler):
                         self.finish()
                         return 
                 
-                d, __dict.update({"utc": utctimestamp})
+                __dict.update({"utc": utctimestamp})
                 __dict.update({"epoch": indian_time })
                 __dict.update(user)
                 __dict.update({"review_id": review_id})
@@ -337,7 +337,7 @@ class WriteReview(tornado.web.RequestHandler):
                 self.write({
                             "error": False, 
                             "success": True, 
-                            "messege": "This review has been posted",
+                            "messege": "This review has been posted %s"%review_id,
                             })
                 self.finish()
                 return 
