@@ -308,7 +308,7 @@ class WriteReview(tornado.web.RequestHandler):
 
                 fmt = "%d %B %Y %H:%M:%S"
                 now_utc = datetime.now(timezone('UTC'))
-                utctimestamp = __utc.strftime(fmt)
+                utctimestamp = now_utc.strftime(fmt)
 
 
                 indian = now_utc.astimezone(timezone('Asia/Kolkata'))
@@ -317,7 +317,7 @@ class WriteReview(tornado.web.RequestHandler):
                 user = users_details_collection.find_one({"fb_id": fb_id}, {"_id": False, "fb_id": False, "email": False})
 
                 __dict = {"review_text": review_text, "fb_id": fb_id, "__eatery_id": __eatery_id, "__eatery_name": __eatery_name}
-                review_id = hashlib.sha256(indian_time + __eatery_id + review_text + _dict.get("fb_id")).hexdigest()
+                review_id = hashlib.sha256(indian_time + __eatery_id + review_text + __dict.get("fb_id")).hexdigest()
                 
                 if users_reviews_collection.find_one(__dict):
                         self.write({
@@ -328,7 +328,7 @@ class WriteReview(tornado.web.RequestHandler):
                         self.finish()
                         return 
                 
-                __dict.update({"utc": utctimestamp})
+                d, __dict.update({"utc": utctimestamp})
                 __dict.update({"epoch": indian_time })
                 __dict.update(user)
                 __dict.update({"review_id": review_id})
@@ -1055,11 +1055,10 @@ class TextTokenization(tornado.web.RequestHandler):
 
                 
                 ##this segment will generate (sentence, sb_tags) for different categories
-                food_sb_sentences = zip(food_sentences, food_sb_classifier.predict(food_sentences))
+                ##food_sb_sentences = zip(food_sentences, food_sb_classifier.predict(food_sentences))
                 cost_sb_sentences = zip(cost_sentences, cost_sb_classifier.predict(cost_sentences))
                 service_sb_sentences = zip(service_sentences, service_sb_classifier.predict(service_sentences))
                 ambience_sb_sentences = zip(ambience_sentences, ambience_sb_classifier.predict(ambience_sentences))
-                
                 
 
                 ##all sentences now will have the form , (sent, sb_category, noun_phrase or place name, sentiment)
@@ -1075,9 +1074,35 @@ class TextTokenization(tornado.web.RequestHandler):
 
 
 
-                find_place = lambda sent: [e[0] for e in loads(corenlpserver.parse(sent))["sentences"][0]["words"] if e[1].get("NamedEntityTag") == "LOCATION"]
-                
-                noun_phrases = [[e[0] for e in noun_phrase_extractor(sent)] for (sent, tag) in food_sb_sentences if tag == "dishes"]
+                def find_place(sent):
+                        i = 0
+                        n_list, __list = [], []
+                        for __tuple in loads(corenlpserver.parse(sent))["sentences"][0]["words"]:
+                                if __tuple[1].get("NamedEntityTag") == "LOCATION":
+                                        __list.append((__tuple[0], i))
+				i += 1
+					
+
+                        for e in __list:
+                                if not n_list:
+                                        n_list.append([e[0]])
+                                else:    
+                                        if n + 1 == e[1]:
+                                                n_list[-1].append(e[0])
+                                        else:    
+                                                n_list.append([e[0]])
+                                n = e[1]
+                        
+			print n_list
+                        return [" ".join(np) for np in n_list]
+
+
+
+
+
+
+
+                noun_phrases = [[e[0] for e in noun_phrase_extractor(sent)] for sent in food_sentences]
                 places = map(find_place, place_sentences)
 
 
@@ -1085,9 +1110,8 @@ class TextTokenization(tornado.web.RequestHandler):
                 place = map(lambda x: (x[0], "place", None, x[1]), zip(place_sentences, map(find_place, place_sentences)))
                 print place
                 print noun_phrases
-                print food_sb_sentences
 
-                food =  map(lambda x: (x[0][0], "food", x[0][1], x[1]), zip(food_sb_sentences, noun_phrases))
+                food =  map(lambda x: (x[0], "food", None, x[1]), zip(food_sentences, noun_phrases))
 
                 whole = food + place + cost + service + ambience + menu + cuisines + overall
                 
