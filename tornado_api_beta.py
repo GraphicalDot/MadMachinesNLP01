@@ -81,6 +81,7 @@ print server_address
 file_path = os.path.dirname(os.path.abspath(__file__))
 parent_dirname = os.path.dirname(os.path.dirname(file_path))
 
+conll_extractor = ConllExtractor() 
 if not os.path.exists("%s/private.pem"%parent_dirname):
         os.chdir(parent_dirname)
         subprocess.call(["openssl", "genrsa", "-out", "private.pem", "1024"])
@@ -332,7 +333,7 @@ class WriteReview(tornado.web.RequestHandler):
                 __dict.update(user)
                 __dict.update({"review_id": review_id})
                 users_reviews_collection.insert(__dict)
-                
+                __dict.pop("_id")                
                 self.write({
                             "error": False, 
                             "success": True, 
@@ -630,7 +631,7 @@ class Suggestions(tornado.web.RequestHandler):
                         cuisines_suggestions= [e.get("name") for e in cuisines_suggestions]
                 
                 if eatery_suggestions:
-                        eatery_suggestions= [{e.get("eatery_name"), e.get("__eatery_id")} for e in eatery_suggestions]
+                        eatery_suggestions= [e.get("eatery_name") for e in eatery_suggestions]
 
 
                 self.write({"success": True,
@@ -1042,7 +1043,9 @@ class TextTokenization(tornado.web.RequestHandler):
 	@print_execution
 	@tornado.gen.coroutine
         def  post(self):
+
                 text = self.get_argument("text")
+                text = text.replace("\n", ".")
                 
                 test = SolveEncoding.preserve_ascii(text)
                 sentences = sentence_tokenizer.tokenize(text)
@@ -1109,21 +1112,39 @@ class TextTokenization(tornado.web.RequestHandler):
 
 
 
+                __place = map(lambda x: (x[0], "place", None, x[1]), zip(place_sentences, map(find_place, place_sentences)))
 
 
+		##(sentence, "place", None, place_name) if place_name is None that means these sentences are qeongly classified
+		##the close probaility is that ther were food sentences, so filtering out the wrong place sentences
+		place_wrong_classified_sentences = [sent for (sent, place_category, sub_category, place_names) in __place if not place_names]
+		place = [__quadple for __quadple in __place if __quadple[3]]
+
+		food_sentences = food_sentences + place_wrong_classified_sentences
 
                 noun_phrases = [[e[0] for e in noun_phrase_extractor(sent)] for sent in food_sentences]
                 places = map(find_place, place_sentences)
 
 
                 ##of the form (sentence, None, place_name_array)
-                place = map(lambda x: (x[0], "place", None, x[1]), zip(place_sentences, map(find_place, place_sentences)))
-                print place
                 print noun_phrases
 
-                food =  map(lambda x: (x[0], "food", None, x[1]), zip(food_sentences, noun_phrases))
+                __food =  map(lambda x: (x[0], "food", None, x[1]), zip(food_sentences, noun_phrases))
+                
+                ##which have no noun phrases extracted from it from topia extractor
 
-                whole = food + place + cost + service + ambience + menu + cuisines + overall
+		food = [__quadple for __quadple in __food if __quadple[3]]
+		no_food_sentences = [sent for (sent, food_category, sub_category, nps) in __food if not  nps ]
+                def nps(sent):
+                        blob = TextBlob(sent, np_extractor=conll_extractor)
+                        return blob.noun_phrases
+                
+                no_food_noun_phrases = [nps(sent) for sent in no_food_sentences] 
+                no_food =  map(lambda x: (x[0], "food", None, x[1]), zip(no_food_sentences, no_food_noun_phrases))
+
+
+                print no_food
+                whole = food + no_food +place + cost + service + ambience + menu + cuisines + overall
                 
                 
                 sentiments = sentiment_classifier.predict([__tuple[0] for __tuple in whole])

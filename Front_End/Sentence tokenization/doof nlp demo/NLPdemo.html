@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
 	<meta charset="UTF-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -24,10 +25,11 @@
 	<script src="../node_modules/materialize-css/dist/js/materialize.min.js"></script>
 	<script src="js/nlpdemo.js"></script>
 </head>
+
 <body>
 	<div class="container">
 		<h2 class="heading-text">Doof NLP Demo</h2>
-		<div class="card-panel z-depth-5">
+		<div class="card-panel text-card z-depth-5">
 			<form class="col s12">
 				<div class="row">
 					<div class="input-field col s10">
@@ -39,6 +41,21 @@
 					</div>
 				</div>
 			</form>
+			<div class="loader hide">
+				<div class="preloader-wrapper active">
+					<div class="spinner-layer spinner-blue-only">
+						<div class="circle-clipper left">
+							<div class="circle"></div>
+						</div>
+						<div class="gap-patch">
+							<div class="circle"></div>
+						</div>
+						<div class="circle-clipper right">
+							<div class="circle"></div>
+						</div>
+					</div>
+				</div>
+			</div>
 		</div>
 		<div class="card-panel result-card z-depth-5 hide">
 			<div class="row result-row">
@@ -60,4 +77,5 @@
 		</div>
 	</div>
 </body>
+
 </html>
