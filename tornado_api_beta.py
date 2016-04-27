@@ -294,7 +294,6 @@ class WriteReview(tornado.web.RequestHandler):
                 __eatery_id = self.get_argument("__eatery_id")
                 __eatery_name = self.get_argument("eatery_name")
 
-
                 if not users_details_collection.find_one({"fb_id": fb_id}):
                         self.set_status(401)
                         self.write({
@@ -338,6 +337,7 @@ class WriteReview(tornado.web.RequestHandler):
                             "error": False, 
                             "success": True, 
                             "messege": "This review has been posted %s"%review_id,
+                            "object": __dict, 
                             })
                 self.finish()
                 return 
@@ -652,8 +652,14 @@ class GetEatery(tornado.web.RequestHandler):
                 """
                 """
                         
-                __eatery_id =  self.get_argument("__eatery_id")
-                result = eateries_results_collection.find_one({"__eatery_id": __eatery_id})
+                __eatery_id =  self.get_argument("__eatery_id", None)
+                eatery_name  =  self.get_argument("eatery_name", None)
+                if __eatery_id:
+                        result = eateries_results_collection.find_one({"__eatery_id": __eatery_id})
+                else:
+                        result = eateries_results_collection.find_one({"eatery_name": eatery_name})
+                        __eatery_id = result.get("__eatery_id")        
+                
                 images = list(pictures_collection.find({"__eatery_id": __eatery_id}, {"_id": False, "s3_url": True, "image_id": True, "likes": True}).limit(10))
                 if not result:
                         """
