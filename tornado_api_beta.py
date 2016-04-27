@@ -630,7 +630,7 @@ class Suggestions(tornado.web.RequestHandler):
                         cuisines_suggestions= [e.get("name") for e in cuisines_suggestions]
                 
                 if eatery_suggestions:
-                        eatery_suggestions= [e.get("eatery_name") for e in eatery_suggestions]
+                        eatery_suggestions= [{e.get("eatery_name"), e.get("__eatery_id")} for e in eatery_suggestions]
 
 
                 self.write({"success": True,
@@ -785,7 +785,7 @@ class UploadPic(tornado.web.RequestHandler):
 
                 picture = {}
                 try:
-                        dish_name = selg.get_argument("dish_name")
+                        dish_name = self.get_argument("dish_name")
                 except Exception as e:
                         dish_name = None
 
@@ -959,6 +959,7 @@ class AddDish(tornado.web.RequestHandler):
                 If a user wants to add dish to an eatery_id, This will be stored in a different collection called as user_dish_collection
                 A user also has to mention a sentiment, whether excellent, good, poor, average, terrible
                 
+                if the dish already exists then the desired sentiment will be added ot it
                 """
                 dish = self.get_argument("dish")
                 fb_id = self.get_argument("fb_id")
@@ -1018,6 +1019,9 @@ def process_result(result):
                             "service": service, 
                             "menu": menu,
                             "overall": overall,
+                            "eatery_address": result["eatery_address"],
+                            "eatery_name": result["eatery_name"],
+                            "__eatery_id": result["__eatery_id"]
                             }
                         
                 return result
@@ -1166,7 +1170,7 @@ def main():
         """
         http_server.bind("8000")
         enable_pretty_logging()
-        http_server.start(0) 
+        http_server.start(10) 
         loop = tornado.ioloop.IOLoop.instance()
         loop.start()
 """

@@ -1,6 +1,6 @@
 /* global Materialize */
 /* global $ */
-var url = "http://localhost:8000/texttokenization";
+var url = "http://52.76.176.188:8000/texttokenization";
 
 
 function clearTable() {
